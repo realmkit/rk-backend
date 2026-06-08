@@ -7,6 +7,10 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/niflaot/gamehub-go/pkg/api/headers"
+	"github.com/niflaot/gamehub-go/pkg/api/openapi"
+	"github.com/niflaot/gamehub-go/pkg/api/swagger"
+	"github.com/niflaot/gamehub-go/pkg/api/versioning"
 	"github.com/niflaot/gamehub-go/pkg/logger"
 )
 
@@ -32,6 +36,44 @@ func TestNewServesHealth(t *testing.T) {
 
 	if res.StatusCode != fiber.StatusNoContent {
 		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusNoContent)
+	}
+}
+
+// TestNewServesVersionedHealth verifies v1 routes are registered centrally.
+func TestNewServesVersionedHealth(t *testing.T) {
+	app := New(nil, false)
+	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/health", nil)
+
+	res, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != fiber.StatusNoContent {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusNoContent)
+	}
+}
+
+// TestNewWritesRequestHeaders verifies common response headers are applied.
+func TestNewWritesRequestHeaders(t *testing.T) {
+	app := New(nil, false)
+	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/health", nil)
+
+	res, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	defer res.Body.Close()
+
+	if res.Header.Get(headers.RequestID) == "" {
+		t.Fatalf("%s header = empty", headers.RequestID)
+	}
+	if res.Header.Get(headers.CorrelationID) == "" {
+		t.Fatalf("%s header = empty", headers.CorrelationID)
+	}
+	if res.Header.Get(headers.RateLimitLimit) == "" {
+		t.Fatalf("%s header = empty", headers.RateLimitLimit)
 	}
 }
 
@@ -78,4 +120,64 @@ func TestNewControlsFiberStartupMessage(t *testing.T) {
 	if !production.Config().DisableStartupMessage {
 		t.Fatalf("production DisableStartupMessage = false, want true")
 	}
+}
+
+// TestNewServesSwaggerOnlyInDevelopment verifies Swagger follows the development gate.
+func TestNewServesSwaggerOnlyInDevelopment(t *testing.T) {
+	development := New(nil, true)
+	production := New(nil, false)
+
+	devRes, err := development.Test(httptest.NewRequest(fiber.MethodGet, swagger.DocsPath, nil), -1)
+	if err != nil {
+		t.Fatalf("development Test() error = %v", err)
+	}
+	defer devRes.Body.Close()
+	prodRes, err := production.Test(httptest.NewRequest(fiber.MethodGet, swagger.DocsPath, nil), -1)
+	if err != nil {
+		t.Fatalf("production Test() error = %v", err)
+	}
+	defer prodRes.Body.Close()
+
+	if devRes.StatusCode != fiber.StatusOK {
+		t.Fatalf("development StatusCode = %d, want %d", devRes.StatusCode, fiber.StatusOK)
+	}
+	if prodRes.StatusCode != fiber.StatusNotFound {
+		t.Fatalf("production StatusCode = %d, want %d", prodRes.StatusCode, fiber.StatusNotFound)
+	}
+}
+
+// TestRegisteredPublicRoutesExistInOpenAPI verifies Fiber routes are documented.
+func TestRegisteredPublicRoutesExistInOpenAPI(t *testing.T) {
+	app := New(nil, true)
+
+	for _, route := range app.GetRoutes() {
+		if !requiresContract(route) {
+			continue
+		}
+
+		ok, err := openapi.OperationExists(route.Method, route.Path)
+		if err != nil {
+			t.Fatalf("OperationExists() error = %v", err)
+		}
+		if !ok {
+			t.Fatalf("%s %s missing OpenAPI operation", route.Method, route.Path)
+		}
+	}
+}
+
+// requiresContract reports whether route must exist in OpenAPI.
+func requiresContract(route fiber.Route) bool {
+	if route.Method == fiber.MethodHead {
+		return false
+	}
+	if route.Path == "/" {
+		return false
+	}
+	if route.Path == versioning.V1.Prefix {
+		return false
+	}
+	if route.Path == swagger.DocsPath || route.Path == swagger.OpenAPIPath {
+		return false
+	}
+	return route.Method != "USE"
 }

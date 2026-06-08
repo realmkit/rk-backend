@@ -59,3 +59,9 @@ Run the backend:
 ```bash
 go run ./pkg/cmd
 ```
+
+## API
+
+API versions are defined in `pkg/api/versioning`. The current public version is `versioning.V1`, which owns the `/api/v1` route prefix.
+
+OpenAPI is embedded from `pkg/api/openapi/gamehub.v1.json`. In development, Swagger UI is served at `/docs` and the raw OpenAPI contract is served at `/docs/openapi.json`.
