@@ -10,13 +10,17 @@ import (
 )
 
 const (
+	// defaultEnvFile is the default dotenv file read by Load.
 	defaultEnvFile = ".env"
-	defaultPrefix  = "GAMEHUB"
+
+	// defaultPrefix is the environment variable prefix used by Load.
+	defaultPrefix = "GAMEHUB"
 )
 
 // Option changes the behavior of the configuration loader.
 type Option func(*loader)
 
+// loader contains configuration loading settings.
 type loader struct {
 	envFile string
 	prefix  string

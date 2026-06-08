@@ -13,6 +13,7 @@ import (
 // Option changes the behavior of the logger builder.
 type Option func(*settings)
 
+// settings contains logger builder settings.
 type settings struct {
 	output      zapcore.WriteSyncer
 	errorOutput zapcore.WriteSyncer

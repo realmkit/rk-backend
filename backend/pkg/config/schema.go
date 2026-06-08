@@ -9,12 +9,17 @@ import (
 )
 
 const (
-	defaultTag      = "default"
+	// defaultTag is the struct tag that marks optional configuration fields.
+	defaultTag = "default"
+
+	// mapstructureTag is the struct tag used to derive configuration keys.
 	mapstructureTag = "mapstructure"
 )
 
+// schemaCache stores reflected configuration schemas by Go type.
 var schemaCache sync.Map
 
+// fieldSpec describes one leaf configuration field.
 type fieldSpec struct {
 	key          string
 	defaultValue string

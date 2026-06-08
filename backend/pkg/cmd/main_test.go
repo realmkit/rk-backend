@@ -13,10 +13,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// failingSyncer captures logs and fails when Sync is called.
 type failingSyncer struct {
 	bytes.Buffer
 }
 
+// Sync returns a deterministic sync failure for finalizer tests.
 func (syncer *failingSyncer) Sync() error {
 	return errors.New("sync failed")
 }
@@ -24,6 +26,9 @@ func (syncer *failingSyncer) Sync() error {
 // TestRunReturnsConfiguredLoggerErrors verifies run returns configured logger errors explicitly.
 func TestRunReturnsConfiguredLoggerErrors(t *testing.T) {
 	t.Setenv("GAMEHUB_LOG_LEVEL", "loud")
+	t.Setenv("GAMEHUB_POSTGRES_DATABASE", "gamehub")
+	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "gamehub")
+	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "gamehub")
 
 	activeLogger := zap.NewNop()
 	err := run(&activeLogger)

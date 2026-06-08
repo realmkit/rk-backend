@@ -10,6 +10,7 @@ import (
 // TestLoadUsesTaggedDefaults verifies Load returns tag defaults when no external configuration exists.
 func TestLoadUsesTaggedDefaults(t *testing.T) {
 	clearGameHubEnv(t)
+	setRequiredPostgresEnv(t)
 
 	cfg, err := Load(WithEnvFile(filepath.Join(t.TempDir(), ".env")))
 	if err != nil {
@@ -28,6 +29,15 @@ func TestLoadUsesTaggedDefaults(t *testing.T) {
 	if cfg.Logging.Level != "info" {
 		t.Fatalf("Level = %q, want %q", cfg.Logging.Level, "info")
 	}
+	if cfg.Postgres.Host != "localhost" {
+		t.Fatalf("Postgres.Host = %q, want %q", cfg.Postgres.Host, "localhost")
+	}
+	if cfg.Postgres.Port != 5432 {
+		t.Fatalf("Postgres.Port = %d, want %d", cfg.Postgres.Port, 5432)
+	}
+	if cfg.Postgres.Database != "gamehub" {
+		t.Fatalf("Postgres.Database = %q, want %q", cfg.Postgres.Database, "gamehub")
+	}
 }
 
 // TestLoadReadsGameHubEnvFile verifies GAMEHUB-prefixed values are loaded from .env files.
@@ -35,7 +45,7 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\nGAMEHUB_LOG_LEVEL=debug\n")
+	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\nGAMEHUB_LOG_LEVEL=debug\nGAMEHUB_POSTGRES_HOST=db\nGAMEHUB_POSTGRES_PORT=5433\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_POSTGRES_SSL_MODE=require\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -57,6 +67,15 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 	if cfg.Logging.Level != "debug" {
 		t.Fatalf("Level = %q, want %q", cfg.Logging.Level, "debug")
 	}
+	if cfg.Postgres.Host != "db" {
+		t.Fatalf("Postgres.Host = %q, want %q", cfg.Postgres.Host, "db")
+	}
+	if cfg.Postgres.Port != 5433 {
+		t.Fatalf("Postgres.Port = %d, want %d", cfg.Postgres.Port, 5433)
+	}
+	if cfg.Postgres.SSLMode != "require" {
+		t.Fatalf("Postgres.SSLMode = %q, want %q", cfg.Postgres.SSLMode, "require")
+	}
 }
 
 // TestLoadEnvironmentOverridesEnvFile verifies operating system environment values have highest precedence.
@@ -64,7 +83,7 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\nGAMEHUB_LOG_LEVEL=info\n")
+	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\nGAMEHUB_LOG_LEVEL=info\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -73,6 +92,9 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	t.Setenv("GAMEHUB_PORT", "7070")
 	t.Setenv("GAMEHUB_ENVIRONMENT", "test")
 	t.Setenv("GAMEHUB_LOG_LEVEL", "warn")
+	t.Setenv("GAMEHUB_POSTGRES_DATABASE", "envdb")
+	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "envuser")
+	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "envpass")
 
 	cfg, err := Load(WithEnvFile(path))
 	if err != nil {
@@ -91,11 +113,15 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	if cfg.Logging.Level != "warn" {
 		t.Fatalf("Level = %q, want %q", cfg.Logging.Level, "warn")
 	}
+	if cfg.Postgres.Database != "envdb" {
+		t.Fatalf("Postgres.Database = %q, want %q", cfg.Postgres.Database, "envdb")
+	}
 }
 
 // TestLoadWithDisabledEnvFile verifies the loader can run without reading any .env file.
 func TestLoadWithDisabledEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
+	setRequiredPostgresEnv(t)
 
 	cfg, err := Load(WithEnvFile(""))
 	if err != nil {
@@ -112,7 +138,7 @@ func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("host=127.0.0.2\nport=6060\nenvironment=local\nlog.level=error\n")
+	content := []byte("host=127.0.0.2\nport=6060\nenvironment=local\nlog.level=error\npostgres.database=keydb\npostgres.username=keyuser\npostgres.password=keypass\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -134,11 +160,15 @@ func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
 	if cfg.Logging.Level != "error" {
 		t.Fatalf("Level = %q, want %q", cfg.Logging.Level, "error")
 	}
+	if cfg.Postgres.Username != "keyuser" {
+		t.Fatalf("Postgres.Username = %q, want %q", cfg.Postgres.Username, "keyuser")
+	}
 }
 
 // TestLoadReturnsEnvFileReadErrors verifies invalid .env paths return useful errors.
 func TestLoadReturnsEnvFileReadErrors(t *testing.T) {
 	clearGameHubEnv(t)
+	setRequiredPostgresEnv(t)
 
 	if _, err := Load(WithEnvFile(t.TempDir())); err == nil {
 		t.Fatalf("Load() error = nil, want error")
@@ -201,6 +231,20 @@ func clearGameHubEnv(t *testing.T) {
 	t.Setenv("GAMEHUB_LOG_LEVEL", "")
 	t.Setenv("GAMEHUB_TOKEN", "")
 	t.Setenv("GAMEHUB_ENABLED", "")
+	t.Setenv("GAMEHUB_POSTGRES_HOST", "")
+	t.Setenv("GAMEHUB_POSTGRES_PORT", "")
+	t.Setenv("GAMEHUB_POSTGRES_DATABASE", "")
+	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "")
+	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "")
+	t.Setenv("GAMEHUB_POSTGRES_SSL_MODE", "")
+}
+
+// setRequiredPostgresEnv sets required PostgreSQL variables for root config tests.
+func setRequiredPostgresEnv(t *testing.T) {
+	t.Helper()
+	t.Setenv("GAMEHUB_POSTGRES_DATABASE", "gamehub")
+	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "gamehub")
+	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "gamehub")
 }
 
 // TestSchemaCollectsSquashedFields verifies squashed structs expose root-level GAMEHUB variables.
@@ -215,7 +259,7 @@ func TestSchemaCollectsSquashedFields(t *testing.T) {
 		got = append(got, field.key)
 	}
 
-	want := []string{"host", "port", "environment", "log.level"}
+	want := []string{"host", "port", "environment", "log.level", "postgres.host", "postgres.port", "postgres.database", "postgres.username", "postgres.password", "postgres.ssl_mode"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fields = %v, want %v", got, want)
 	}

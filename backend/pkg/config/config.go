@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/niflaot/gamehub/backend/pkg/logger"
+	"github.com/niflaot/gamehub/backend/pkg/postgres"
 	"github.com/niflaot/gamehub/backend/pkg/server"
 )
 
@@ -17,6 +18,9 @@ type Config struct {
 
 	// Logging contains JSON logger settings.
 	Logging logger.Config `mapstructure:"log"`
+
+	// Postgres contains PostgreSQL connection settings.
+	Postgres postgres.Config `mapstructure:"postgres"`
 }
 
 // Runtime contains the essential runtime settings required to start GameHub.
