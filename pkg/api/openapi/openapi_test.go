@@ -38,3 +38,14 @@ func TestOperationExistsFindsDocumentedOperations(t *testing.T) {
 		t.Fatalf("OperationExists() = false, want true")
 	}
 }
+
+// TestOperationExistsNormalizesFiberParameters verifies Fiber paths match OpenAPI paths.
+func TestOperationExistsNormalizesFiberParameters(t *testing.T) {
+	ok, err := OperationExists("GET", "/api/v1/metadata/metafield-definitions/:definition_id")
+	if err != nil {
+		t.Fatalf("OperationExists() error = %v", err)
+	}
+	if !ok {
+		t.Fatalf("OperationExists() = false, want true")
+	}
+}

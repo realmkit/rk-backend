@@ -7,11 +7,17 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
+	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
+	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
+	"github.com/niflaot/gamehub-go/module/metadata/application"
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
 	"github.com/niflaot/gamehub-go/pkg/api/openapi"
 	"github.com/niflaot/gamehub-go/pkg/api/swagger"
 	"github.com/niflaot/gamehub-go/pkg/api/versioning"
 	"github.com/niflaot/gamehub-go/pkg/logger"
+	"github.com/niflaot/gamehub-go/pkg/orm"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // TestConfigAddress verifies server addresses are formatted for Listen.
@@ -165,6 +171,25 @@ func TestRegisteredPublicRoutesExistInOpenAPI(t *testing.T) {
 	}
 }
 
+// TestRegisteredMetadataRoutesExistInOpenAPI verifies optional metadata routes are documented.
+func TestRegisteredMetadataRoutesExistInOpenAPI(t *testing.T) {
+	app := New(nil, true, WithMetadata(newMetadataServices(t)))
+
+	for _, route := range app.GetRoutes() {
+		if !requiresContract(route) {
+			continue
+		}
+
+		ok, err := openapi.OperationExists(route.Method, route.Path)
+		if err != nil {
+			t.Fatalf("OperationExists() error = %v", err)
+		}
+		if !ok {
+			t.Fatalf("%s %s missing OpenAPI operation", route.Method, route.Path)
+		}
+	}
+}
+
 // requiresContract reports whether route must exist in OpenAPI.
 func requiresContract(route fiber.Route) bool {
 	if route.Method == fiber.MethodHead {
@@ -180,4 +205,24 @@ func requiresContract(route fiber.Route) bool {
 		return false
 	}
 	return route.Method != "USE"
+}
+
+// newMetadataServices creates metadata services for server tests.
+func newMetadataServices(t *testing.T) metadatahttp.Services {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("gorm.Open() error = %v", err)
+	}
+	if err := metadatapostgres.Migrate(db); err != nil {
+		t.Fatalf("Migrate() error = %v", err)
+	}
+	store := orm.NewStore(db)
+	service := application.NewService(application.Dependencies{
+		Definitions:           metadatapostgres.NewMetafieldDefinitionRepository(store),
+		Values:                metadatapostgres.NewMetafieldValueRepository(store),
+		MetaobjectDefinitions: metadatapostgres.NewMetaobjectDefinitionRepository(store),
+		MetaobjectEntries:     metadatapostgres.NewMetaobjectEntryRepository(store),
+	})
+	return metadatahttp.Services{Definitions: service, Values: service, Metaobjects: service}
 }

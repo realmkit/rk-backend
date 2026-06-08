@@ -1,6 +1,7 @@
 package problem
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -97,8 +98,12 @@ func Write(ctx *fiber.Ctx, payload Problem) error {
 	if payload.RequestID == "" {
 		payload.RequestID = headers.CurrentRequestID(ctx)
 	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
 	ctx.Set(headers.ContentType, ContentType)
-	return ctx.Status(payload.Status).JSON(payload)
+	return ctx.Status(payload.Status).Send(body)
 }
 
 // titleFor returns the default problem title for status.

@@ -33,6 +33,15 @@ type Page struct {
 	Cursor string
 }
 
+// Result contains one page of items and an optional next cursor.
+type Result[T any] struct {
+	// Items contains the current page items.
+	Items []T
+
+	// NextCursor is the cursor for the next page.
+	NextCursor string
+}
+
 // New returns normalized pagination options.
 func New(request Request) (Page, error) {
 	if request.Limit < 0 {

@@ -37,7 +37,9 @@ func run(activeLogger **zap.Logger) error {
 		func(cfg logger.Config) (*zap.Logger, error) {
 			return logger.New(cfg)
 		},
-		server.New,
+		func(log *zap.Logger, development bool) *fiber.App {
+			return server.New(log, development)
+		},
 		listen,
 	)
 }

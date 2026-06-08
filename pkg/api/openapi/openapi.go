@@ -30,10 +30,24 @@ func OperationExists(method string, path string) (bool, error) {
 
 	operations, ok := contract.Paths[path]
 	if !ok {
+		operations, ok = contract.Paths[normalizeFiberPath(path)]
+	}
+	if !ok {
 		return false, nil
 	}
 	_, ok = operations[strings.ToLower(method)]
 	return ok, nil
+}
+
+// normalizeFiberPath converts Fiber route parameters to OpenAPI parameters.
+func normalizeFiberPath(path string) string {
+	parts := strings.Split(path, "/")
+	for index, part := range parts {
+		if strings.HasPrefix(part, ":") {
+			parts[index] = "{" + strings.TrimPrefix(part, ":") + "}"
+		}
+	}
+	return strings.Join(parts, "/")
 }
 
 // contractDocument contains the OpenAPI fields needed by contract checks.
