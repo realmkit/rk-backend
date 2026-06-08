@@ -8,12 +8,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
 	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
 	"github.com/niflaot/gamehub-go/module/metadata/application"
 	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
+	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
 	"github.com/niflaot/gamehub-go/pkg/api/openapi"
 	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
 	"github.com/niflaot/gamehub-go/pkg/api/swagger"
@@ -21,6 +23,8 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/orm"
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
+	goredis "github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -37,6 +41,17 @@ func (store denyingRateLimitStore) Allow(context.Context, string, ratelimit.Poli
 	}, nil
 }
 
+// TestNewRequiresIdempotencyStore verifies server construction requires Redis-backed idempotency.
+func TestNewRequiresIdempotencyStore(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatalf("recover() = nil, want idempotency store panic")
+		}
+	}()
+
+	_ = New(nil, false)
+}
+
 // TestConfigAddress verifies server addresses are formatted for Listen.
 func TestConfigAddress(t *testing.T) {
 	cfg := Config{Host: "127.0.0.1", Port: 9090}
@@ -48,7 +63,7 @@ func TestConfigAddress(t *testing.T) {
 
 // TestNewServesHealth verifies the server exposes a health endpoint.
 func TestNewServesHealth(t *testing.T) {
-	app := New(nil, false)
+	app := newApp(t, nil, false)
 	req := httptest.NewRequest(fiber.MethodGet, "/health", nil)
 
 	res, err := app.Test(req, -1)
@@ -64,7 +79,7 @@ func TestNewServesHealth(t *testing.T) {
 
 // TestNewServesVersionedHealth verifies v1 routes are registered centrally.
 func TestNewServesVersionedHealth(t *testing.T) {
-	app := New(nil, false)
+	app := newApp(t, nil, false)
 	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/health", nil)
 
 	res, err := app.Test(req, -1)
@@ -80,7 +95,7 @@ func TestNewServesVersionedHealth(t *testing.T) {
 
 // TestNewWritesRequestHeaders verifies common response headers are applied.
 func TestNewWritesRequestHeaders(t *testing.T) {
-	app := New(nil, false)
+	app := newApp(t, nil, false)
 	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/health", nil)
 
 	res, err := app.Test(req, -1)
@@ -102,7 +117,7 @@ func TestNewWritesRequestHeaders(t *testing.T) {
 
 // TestNewAppliesCORS verifies configured browser origins are allowed.
 func TestNewAppliesCORS(t *testing.T) {
-	app := New(nil, false, WithCORS(gamehubcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000"}))
+	app := newApp(t, nil, false, WithCORS(gamehubcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000"}))
 	req := httptest.NewRequest(fiber.MethodOptions, "/api/v1/health", nil)
 	req.Header.Set("Origin", "http://localhost:3000")
 	req.Header.Set("Access-Control-Request-Method", fiber.MethodGet)
@@ -120,7 +135,7 @@ func TestNewAppliesCORS(t *testing.T) {
 
 // TestNewUsesInjectedRateLimitStore verifies server options wire custom rate limit stores.
 func TestNewUsesInjectedRateLimitStore(t *testing.T) {
-	app := New(nil, false, WithRateLimitStore(denyingRateLimitStore{}))
+	app := newApp(t, nil, false, WithRateLimitStore(denyingRateLimitStore{}))
 	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/health", nil)
 
 	res, err := app.Test(req, -1)
@@ -142,7 +157,7 @@ func TestNewUsesZapFiberMiddleware(t *testing.T) {
 		t.Fatalf("logger.New() error = %v", err)
 	}
 
-	app := New(log, false)
+	app := newApp(t, log, false)
 	req := httptest.NewRequest(fiber.MethodGet, "/health", nil)
 	res, err := app.Test(req, -1)
 	if err != nil {
@@ -168,8 +183,8 @@ func TestNewUsesZapFiberMiddleware(t *testing.T) {
 
 // TestNewControlsFiberStartupMessage verifies Fiber's banner is development-only.
 func TestNewControlsFiberStartupMessage(t *testing.T) {
-	development := New(nil, true)
-	production := New(nil, false)
+	development := newApp(t, nil, true)
+	production := newApp(t, nil, false)
 
 	if development.Config().DisableStartupMessage {
 		t.Fatalf("development DisableStartupMessage = true, want false")
@@ -181,8 +196,8 @@ func TestNewControlsFiberStartupMessage(t *testing.T) {
 
 // TestNewServesSwaggerOnlyInDevelopment verifies Swagger follows the development gate.
 func TestNewServesSwaggerOnlyInDevelopment(t *testing.T) {
-	development := New(nil, true)
-	production := New(nil, false)
+	development := newApp(t, nil, true)
+	production := newApp(t, nil, false)
 
 	devRes, err := development.Test(httptest.NewRequest(fiber.MethodGet, swagger.DocsPath, nil), -1)
 	if err != nil {
@@ -205,7 +220,7 @@ func TestNewServesSwaggerOnlyInDevelopment(t *testing.T) {
 
 // TestRegisteredPublicRoutesExistInOpenAPI verifies Fiber routes are documented.
 func TestRegisteredPublicRoutesExistInOpenAPI(t *testing.T) {
-	app := New(nil, true)
+	app := newApp(t, nil, true)
 
 	for _, route := range app.GetRoutes() {
 		if !requiresContract(route) {
@@ -224,7 +239,7 @@ func TestRegisteredPublicRoutesExistInOpenAPI(t *testing.T) {
 
 // TestRegisteredMetadataRoutesExistInOpenAPI verifies optional metadata routes are documented.
 func TestRegisteredMetadataRoutesExistInOpenAPI(t *testing.T) {
-	app := New(nil, true, WithMetadata(newMetadataServices(t)))
+	app := newApp(t, nil, true, WithMetadata(newMetadataServices(t)))
 
 	for _, route := range app.GetRoutes() {
 		if !requiresContract(route) {
@@ -256,6 +271,27 @@ func requiresContract(route fiber.Route) bool {
 		return false
 	}
 	return route.Method != "USE"
+}
+
+// newApp creates a server with Redis-backed idempotency for tests.
+func newApp(t *testing.T, log *zap.Logger, development bool, opts ...Option) *fiber.App {
+	t.Helper()
+	options := []Option{WithIdempotencyStore(newRedisIdempotencyStore(t))}
+	options = append(options, opts...)
+	return New(log, development, options...)
+}
+
+// newRedisIdempotencyStore creates a Redis idempotency store for server tests.
+func newRedisIdempotencyStore(t *testing.T) idempotency.RedisStore {
+	t.Helper()
+	server := miniredis.RunT(t)
+	client := goredis.NewClient(&goredis.Options{Addr: server.Addr()})
+	t.Cleanup(func() {
+		if err := client.Close(); err != nil {
+			t.Fatalf("Close() error = %v", err)
+		}
+	})
+	return idempotency.NewRedisStore(client, idempotency.WithRedisScope("server-test"))
 }
 
 // newMetadataServices creates metadata services for server tests.

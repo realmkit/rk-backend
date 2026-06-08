@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -63,13 +62,6 @@ type settings struct {
 	ttl time.Duration
 }
 
-// MemoryStore stores idempotency records in process memory.
-type MemoryStore struct {
-	mu      sync.Mutex
-	entries map[string]Entry
-	now     func() time.Time
-}
-
 // WithLogger configures structured idempotency logging.
 func WithLogger(log *zap.Logger) Option {
 	return func(settings *settings) {
@@ -82,37 +74,6 @@ func WithTTL(ttl time.Duration) Option {
 	return func(settings *settings) {
 		settings.ttl = ttl
 	}
-}
-
-// NewMemoryStore creates an in-memory idempotency store.
-func NewMemoryStore() *MemoryStore {
-	return &MemoryStore{
-		entries: make(map[string]Entry),
-		now:     time.Now,
-	}
-}
-
-// Reserve reserves key for fingerprint or returns an existing entry.
-func (store *MemoryStore) Reserve(_ context.Context, key string, fingerprint string, ttl time.Duration) (Entry, bool, error) {
-	store.mu.Lock()
-	defer store.mu.Unlock()
-
-	if entry, ok := store.entries[key]; ok && entry.ExpiresAt.After(store.now()) {
-		return entry, true, nil
-	}
-
-	entry := Entry{Fingerprint: fingerprint, ExpiresAt: store.now().Add(ttl)}
-	store.entries[key] = entry
-	return entry, false, nil
-}
-
-// Complete stores the response for key.
-func (store *MemoryStore) Complete(_ context.Context, key string, entry Entry) error {
-	store.mu.Lock()
-	defer store.mu.Unlock()
-
-	store.entries[key] = entry
-	return nil
 }
 
 // Middleware returns idempotency middleware.
@@ -132,7 +93,7 @@ func Middleware(store Store, options ...Option) fiber.Handler {
 		}
 
 		fingerprint := fingerprintFor(ctx)
-		entry, exists, err := store.Reserve(ctx.Context(), key, fingerprint, settings.ttl)
+		entry, exists, err := store.Reserve(ctx.UserContext(), key, fingerprint, settings.ttl)
 		if err != nil {
 			return err
 		}
@@ -150,7 +111,7 @@ func Middleware(store Store, options ...Option) fiber.Handler {
 			return problem.Write(ctx, problem.New(fiber.StatusInternalServerError, "idempotency_response_too_large", "Response is too large to store for idempotent replay."))
 		}
 
-		return store.Complete(ctx.Context(), key, Entry{
+		return store.Complete(ctx.UserContext(), key, Entry{
 			Fingerprint: fingerprint,
 			Status:      ctx.Response().StatusCode(),
 			Body:        append([]byte(nil), ctx.Response().Body()...),

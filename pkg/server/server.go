@@ -25,10 +25,11 @@ type Option func(*options)
 
 // options contains optional server modules.
 type options struct {
-	cors             gamehubcors.Config
-	idempotencyStore idempotency.Store
-	metadata         *metadatahttp.Services
-	rateLimitStore   ratelimit.Store
+	cors                  gamehubcors.Config
+	idempotencyConfigured bool
+	idempotencyRedisStore idempotency.RedisStore
+	metadata              *metadatahttp.Services
+	rateLimitStore        ratelimit.Store
 }
 
 // WithCORS configures browser cross-origin middleware.
@@ -38,10 +39,11 @@ func WithCORS(cfg gamehubcors.Config) Option {
 	}
 }
 
-// WithIdempotencyStore configures the idempotency store.
-func WithIdempotencyStore(store idempotency.Store) Option {
+// WithIdempotencyStore configures the Redis idempotency store.
+func WithIdempotencyStore(store idempotency.RedisStore) Option {
 	return func(options *options) {
-		options.idempotencyStore = store
+		options.idempotencyConfigured = true
+		options.idempotencyRedisStore = store
 	}
 }
 
@@ -77,7 +79,7 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 		Logger: log,
 	}))
 	app.Use(ratelimit.Middleware(options.rateLimitStore, DefaultRateLimit))
-	app.Use(idempotency.Middleware(options.idempotencyStore, idempotency.WithLogger(log)))
+	app.Use(idempotency.Middleware(options.idempotencyRedisStore, idempotency.WithLogger(log)))
 	app.Get("/health", health)
 	v1 := versioning.V1.Group(app)
 	v1.Use(headers.RequireJSON())
@@ -97,15 +99,14 @@ func health(ctx *fiber.Ctx) error {
 // optionsFrom applies server options.
 func optionsFrom(opts []Option) options {
 	options := options{
-		cors:             gamehubcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000,http://127.0.0.1:3000"},
-		idempotencyStore: idempotency.NewMemoryStore(),
-		rateLimitStore:   ratelimit.NewMemoryStore(),
+		cors:           gamehubcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000,http://127.0.0.1:3000"},
+		rateLimitStore: ratelimit.NewMemoryStore(),
 	}
 	for _, opt := range opts {
 		opt(&options)
 	}
-	if options.idempotencyStore == nil {
-		options.idempotencyStore = idempotency.NewMemoryStore()
+	if !options.idempotencyConfigured {
+		panic("redis idempotency store is required")
 	}
 	if options.rateLimitStore == nil {
 		options.rateLimitStore = ratelimit.NewMemoryStore()

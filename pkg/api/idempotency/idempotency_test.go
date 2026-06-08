@@ -18,8 +18,10 @@ import (
 
 // TestMiddlewareReplaysCompletedRequests verifies matching retries replay responses.
 func TestMiddlewareReplaysCompletedRequests(t *testing.T) {
+	store, closeStore := newRedisStore(t)
+	defer closeStore()
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
-	app.Use(Middleware(NewMemoryStore()))
+	app.Use(Middleware(store))
 	calls := 0
 	app.Post("/create", func(ctx *fiber.Ctx) error {
 		calls++
@@ -49,8 +51,10 @@ func TestMiddlewareReplaysCompletedRequests(t *testing.T) {
 
 // TestMiddlewareRejectsConflictingRequests verifies key reuse with different bodies fails.
 func TestMiddlewareRejectsConflictingRequests(t *testing.T) {
+	store, closeStore := newRedisStore(t)
+	defer closeStore()
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
-	app.Use(Middleware(NewMemoryStore()))
+	app.Use(Middleware(store))
 	app.Post("/create", func(ctx *fiber.Ctx) error {
 		return ctx.SendString("ok")
 	})
@@ -73,8 +77,10 @@ func TestMiddlewareRejectsConflictingRequests(t *testing.T) {
 
 // TestMiddlewareIgnoresSafeMethods verifies GET requests bypass idempotency.
 func TestMiddlewareIgnoresSafeMethods(t *testing.T) {
+	store, closeStore := newRedisStore(t)
+	defer closeStore()
 	app := fiber.New()
-	app.Use(Middleware(NewMemoryStore()))
+	app.Use(Middleware(store))
 	app.Get("/read", func(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusNoContent)
 	})
@@ -92,8 +98,10 @@ func TestMiddlewareIgnoresSafeMethods(t *testing.T) {
 
 // TestMiddlewareRejectsLongKeys verifies client-provided keys are bounded.
 func TestMiddlewareRejectsLongKeys(t *testing.T) {
+	store, closeStore := newRedisStore(t)
+	defer closeStore()
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
-	app.Use(Middleware(NewMemoryStore()))
+	app.Use(Middleware(store))
 	app.Post("/create", func(ctx *fiber.Ctx) error {
 		return ctx.SendString("ok")
 	})
