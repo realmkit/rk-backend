@@ -25,6 +25,9 @@ func TestLoadUsesTaggedDefaults(t *testing.T) {
 	if cfg.Runtime.Environment != "development" {
 		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "development")
 	}
+	if cfg.Logging.Level != "info" {
+		t.Fatalf("Level = %q, want %q", cfg.Logging.Level, "info")
+	}
 }
 
 // TestLoadReadsGameHubEnvFile verifies GAMEHUB-prefixed values are loaded from .env files.
@@ -32,7 +35,7 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\n")
+	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\nGAMEHUB_LOG_LEVEL=debug\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -51,6 +54,9 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 	if cfg.Runtime.Environment != "test" {
 		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "test")
 	}
+	if cfg.Logging.Level != "debug" {
+		t.Fatalf("Level = %q, want %q", cfg.Logging.Level, "debug")
+	}
 }
 
 // TestLoadEnvironmentOverridesEnvFile verifies operating system environment values have highest precedence.
@@ -58,7 +64,7 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\n")
+	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\nGAMEHUB_LOG_LEVEL=info\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -66,6 +72,7 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	t.Setenv("GAMEHUB_HOST", "localhost")
 	t.Setenv("GAMEHUB_PORT", "7070")
 	t.Setenv("GAMEHUB_ENVIRONMENT", "test")
+	t.Setenv("GAMEHUB_LOG_LEVEL", "warn")
 
 	cfg, err := Load(WithEnvFile(path))
 	if err != nil {
@@ -80,6 +87,9 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	}
 	if cfg.Runtime.Environment != "test" {
 		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "test")
+	}
+	if cfg.Logging.Level != "warn" {
+		t.Fatalf("Level = %q, want %q", cfg.Logging.Level, "warn")
 	}
 }
 
@@ -102,7 +112,7 @@ func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("host=127.0.0.2\nport=6060\nenvironment=local\n")
+	content := []byte("host=127.0.0.2\nport=6060\nenvironment=local\nlog.level=error\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -120,6 +130,9 @@ func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
 	}
 	if cfg.Runtime.Environment != "local" {
 		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "local")
+	}
+	if cfg.Logging.Level != "error" {
+		t.Fatalf("Level = %q, want %q", cfg.Logging.Level, "error")
 	}
 }
 
@@ -185,6 +198,7 @@ func clearGameHubEnv(t *testing.T) {
 	t.Setenv("GAMEHUB_HOST", "")
 	t.Setenv("GAMEHUB_PORT", "")
 	t.Setenv("GAMEHUB_ENVIRONMENT", "")
+	t.Setenv("GAMEHUB_LOG_LEVEL", "")
 	t.Setenv("GAMEHUB_TOKEN", "")
 	t.Setenv("GAMEHUB_ENABLED", "")
 }
@@ -201,7 +215,7 @@ func TestSchemaCollectsSquashedFields(t *testing.T) {
 		got = append(got, field.key)
 	}
 
-	want := []string{"host", "port", "environment"}
+	want := []string{"host", "port", "environment", "log.level"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fields = %v, want %v", got, want)
 	}

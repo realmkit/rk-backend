@@ -31,6 +31,7 @@ Initial runtime configuration is loaded by `backend/pkg/config` through Viper us
 - `GAMEHUB_HOST`, default `0.0.0.0`
 - `GAMEHUB_PORT`, default `8080`
 - `GAMEHUB_ENVIRONMENT`, default `development`
+- `GAMEHUB_LOG_LEVEL`, default `info`
 
 The backend must be designed for idempotency, resilience, and fault tolerance. Cross-cutting behavior such as rate limiting, retries, circuit breakers, timeouts, health checks, and cache policy should be implemented in deliberate infrastructure packages rather than scattered through feature code.
 

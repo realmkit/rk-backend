@@ -36,6 +36,8 @@ The repository is a monorepo with a Go backend and a future Next.js frontend:
 - Do not place explanatory comments inside function bodies. Prefer clear names and small functions.
 - Internal comments are allowed only for generated code markers or unavoidable tool directives.
 - Use Viper for environment-backed configuration.
+- Every package that owns configurable behavior must define its own configuration struct in that package.
+- The root runtime configuration must compose package-owned configuration structs instead of redefining their fields.
 - Config fields must be grouped into purpose-specific structs, such as runtime, PostgreSQL, Redis, and telemetry structs.
 - Config fields must use a `default` struct tag when optional. Fields without a `default` tag are mandatory and loading configuration must fail when they are absent.
 - Only essential runtime configuration should be environment-driven, such as database credentials, Redis credentials, server bind address, and secrets.
@@ -43,6 +45,7 @@ The repository is a monorepo with a Go backend and a future Next.js frontend:
 - Use PostgreSQL as the primary durable database.
 - Use GORM for database access.
 - Use Redis for caching, rate limiting, and distributed coordination when appropriate.
+- Use Zap for structured JSON logging, with the log level controlled by `GAMEHUB_LOG_LEVEL`.
 - Define HTTP contracts through OpenAPI before or alongside handlers.
 - Design cache behavior deliberately with clear ownership, invalidation, TTL strategy, and failure behavior.
 - Include circuit breakers, rate limiters, timeouts, retries, and health checks where integration risk justifies them.
