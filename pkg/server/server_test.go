@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub/backend/pkg/logger"
+	"github.com/niflaot/gamehub-go/pkg/logger"
 )
 
 // TestConfigAddress verifies server addresses are formatted for Listen.

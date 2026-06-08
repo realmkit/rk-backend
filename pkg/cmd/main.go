@@ -6,9 +6,9 @@ import (
 	"syscall"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub/backend/pkg/config"
-	"github.com/niflaot/gamehub/backend/pkg/logger"
-	"github.com/niflaot/gamehub/backend/pkg/server"
+	"github.com/niflaot/gamehub-go/pkg/config"
+	"github.com/niflaot/gamehub-go/pkg/logger"
+	"github.com/niflaot/gamehub-go/pkg/server"
 	"go.uber.org/zap"
 )
 

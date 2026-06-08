@@ -1,4 +1,4 @@
-module github.com/niflaot/gamehub/backend
+module github.com/niflaot/gamehub-go
 
 go 1.26.1
 

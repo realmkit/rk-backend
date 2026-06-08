@@ -3,9 +3,9 @@ package config
 import (
 	"strings"
 
-	"github.com/niflaot/gamehub/backend/pkg/logger"
-	"github.com/niflaot/gamehub/backend/pkg/postgres"
-	"github.com/niflaot/gamehub/backend/pkg/server"
+	"github.com/niflaot/gamehub-go/pkg/logger"
+	"github.com/niflaot/gamehub-go/pkg/postgres"
+	"github.com/niflaot/gamehub-go/pkg/server"
 )
 
 // Config contains the GameHub backend runtime configuration.

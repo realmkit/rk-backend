@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/niflaot/gamehub/backend/pkg/orm"
+	"github.com/niflaot/gamehub-go/pkg/orm"
 	postgresdriver "gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
