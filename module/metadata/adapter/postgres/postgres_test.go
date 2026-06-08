@@ -10,6 +10,7 @@ import (
 	"github.com/niflaot/gamehub-go/module/metadata/domain"
 	"github.com/niflaot/gamehub-go/module/metadata/port"
 	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -154,7 +155,7 @@ func newDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("gorm.Open() error = %v", err)
 	}
-	if err := Migrate(db); err != nil {
+	if _, err := migrations.NewRunner(db, migrations.DefaultSource()).Up(context.Background()); err != nil {
 		t.Fatalf("Migrate() error = %v", err)
 	}
 	return db

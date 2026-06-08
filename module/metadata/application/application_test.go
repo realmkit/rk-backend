@@ -12,6 +12,7 @@ import (
 	"github.com/niflaot/gamehub-go/module/metadata/port"
 	"github.com/niflaot/gamehub-go/pkg/orm"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -247,7 +248,7 @@ func newServiceWithOwnerResolver(t *testing.T, resolver port.OwnerResolver) Serv
 	if err != nil {
 		t.Fatalf("gorm.Open() error = %v", err)
 	}
-	if err := metadatapostgres.Migrate(db); err != nil {
+	if _, err := migrations.NewRunner(db, migrations.DefaultSource()).Up(context.Background()); err != nil {
 		t.Fatalf("Migrate() error = %v", err)
 	}
 	store := orm.NewStore(db)

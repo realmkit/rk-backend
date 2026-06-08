@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http/httptest"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/api/versioning"
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -214,7 +216,7 @@ func newMetadataServices(t *testing.T) metadatahttp.Services {
 	if err != nil {
 		t.Fatalf("gorm.Open() error = %v", err)
 	}
-	if err := metadatapostgres.Migrate(db); err != nil {
+	if _, err := migrations.NewRunner(db, migrations.DefaultSource()).Up(context.Background()); err != nil {
 		t.Fatalf("Migrate() error = %v", err)
 	}
 	store := orm.NewStore(db)

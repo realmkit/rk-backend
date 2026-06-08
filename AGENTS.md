@@ -32,7 +32,9 @@ The Next.js frontend lives in the separate `gamehub-frontend` repository.
 - Place business and application-specific modules in `module`.
 - Keep application entrypoints in `pkg/cmd`.
 - Keep OpenAPI and Swagger specifications in `pkg/api/openapi`.
-- Keep database migrations in `pkg/migrations`.
+- Keep database migrations in `pkg/postgres/migrations`.
+- Database migrations must be managed as one global PostgreSQL timeline; modules must not run their own independent migration streams.
+- Do not rely on GORM `AutoMigrate` for production schema management.
 - Each Go package may contain at most 6 production files and their corresponding test files. If a package needs more production files, split it into smaller packages.
 - All packages, types, interfaces, functions, methods, constants, and variables must have Go doc comments, including private functions and methods.
 - Do not place explanatory comments inside function bodies. Prefer clear names and small functions.

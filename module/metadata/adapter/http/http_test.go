@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +15,7 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
 	"github.com/niflaot/gamehub-go/pkg/api/problem"
 	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -226,7 +228,7 @@ func newTestApp(t *testing.T) *fiber.App {
 	if err != nil {
 		t.Fatalf("gorm.Open() error = %v", err)
 	}
-	if err := metadatapostgres.Migrate(db); err != nil {
+	if _, err := migrations.NewRunner(db, migrations.DefaultSource()).Up(context.Background()); err != nil {
 		t.Fatalf("Migrate() error = %v", err)
 	}
 	store := orm.NewStore(db)

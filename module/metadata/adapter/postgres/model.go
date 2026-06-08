@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/pkg/orm"
-	"gorm.io/gorm"
 )
 
 // JSON stores JSON values in SQL.
@@ -110,42 +109,6 @@ type MetaobjectEntryModel struct {
 // TableName returns the database table name.
 func (MetaobjectEntryModel) TableName() string {
 	return "metadata_metaobject_entries"
-}
-
-// Migrate applies metadata database migrations.
-func Migrate(db *gorm.DB) error {
-	if err := db.AutoMigrate(
-		&MetafieldDefinitionModel{},
-		&MetafieldValueModel{},
-		&MetaobjectDefinitionModel{},
-		&MetaobjectEntryModel{},
-	); err != nil {
-		return err
-	}
-	for _, statement := range indexStatements(db.Dialector.Name()) {
-		if err := db.Exec(statement).Error; err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// indexStatements returns unique partial index statements.
-func indexStatements(dialect string) []string {
-	if dialect == "sqlite" {
-		return []string{
-			"CREATE UNIQUE INDEX IF NOT EXISTS idx_metadata_metafield_definitions_key ON metadata_metafield_definitions(owner_type, namespace, key) WHERE deleted_at IS NULL",
-			"CREATE UNIQUE INDEX IF NOT EXISTS idx_metadata_metafield_values_owner ON metadata_metafield_values(definition_id, owner_type, owner_id) WHERE deleted_at IS NULL",
-			"CREATE UNIQUE INDEX IF NOT EXISTS idx_metadata_metaobject_definitions_type ON metadata_metaobject_definitions(type) WHERE deleted_at IS NULL",
-			"CREATE UNIQUE INDEX IF NOT EXISTS idx_metadata_metaobject_entries_handle ON metadata_metaobject_entries(definition_id, handle) WHERE deleted_at IS NULL",
-		}
-	}
-	return []string{
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_metadata_metafield_definitions_key ON metadata_metafield_definitions(owner_type, namespace, key) WHERE deleted_at IS NULL",
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_metadata_metafield_values_owner ON metadata_metafield_values(definition_id, owner_type, owner_id) WHERE deleted_at IS NULL",
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_metadata_metaobject_definitions_type ON metadata_metaobject_definitions(type) WHERE deleted_at IS NULL",
-		"CREATE UNIQUE INDEX IF NOT EXISTS idx_metadata_metaobject_entries_handle ON metadata_metaobject_entries(definition_id, handle) WHERE deleted_at IS NULL",
-	}
 }
 
 // marshalJSON marshals value into JSON.
