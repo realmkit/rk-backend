@@ -6,7 +6,9 @@ import (
 	"io/fs"
 	"testing"
 	"testing/fstest"
+	"time"
 
+	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -151,6 +153,53 @@ func TestRunnerResetEmptyDatabaseIsNoop(t *testing.T) {
 	}
 	if len(status.Applied) != 0 {
 		t.Fatalf("Applied = %d, want 0", len(status.Applied))
+	}
+}
+
+// TestRunnerOptionsConfigureMetadata verifies runner options are retained.
+func TestRunnerOptionsConfigureMetadata(t *testing.T) {
+	log := zap.NewNop()
+	runner := NewRunner(newDB(t), DefaultSource(), WithLogger(log), WithExecutor("tester"), WithAppVersion("v1.2.3"))
+	if runner.log != log {
+		t.Fatalf("log = %p, want %p", runner.log, log)
+	}
+	if runner.executor != "tester" {
+		t.Fatalf("executor = %q, want tester", runner.executor)
+	}
+	if runner.appVersion != "v1.2.3" {
+		t.Fatalf("appVersion = %q, want v1.2.3", runner.appVersion)
+	}
+}
+
+// TestStoreFailMarksDirtyRecord verifies failed migrations remain dirty.
+func TestStoreFailMarksDirtyRecord(t *testing.T) {
+	db := newDB(t)
+	store := NewStore(db)
+	if err := store.Ensure(context.Background()); err != nil {
+		t.Fatalf("Ensure() error = %v", err)
+	}
+	migrations, err := Load(DefaultSource())
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if err := store.Start(context.Background(), migrations[0], "tester", "v1"); err != nil {
+		t.Fatalf("Start() error = %v", err)
+	}
+
+	started := time.Now().UTC().Add(-time.Second)
+	if err := store.Fail(context.Background(), migrations[0], started, errors.New("boom")); err != nil {
+		t.Fatalf("Fail() error = %v", err)
+	}
+
+	records, err := store.Applied(context.Background())
+	if err != nil {
+		t.Fatalf("Applied() error = %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("len(records) = %d, want 1", len(records))
+	}
+	if records[0].Success || !records[0].Dirty || records[0].Error != "boom" {
+		t.Fatalf("record = %+v, want failed dirty boom record", records[0])
 	}
 }
 

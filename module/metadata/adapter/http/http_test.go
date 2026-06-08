@@ -12,6 +12,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
 	"github.com/niflaot/gamehub-go/module/metadata/application"
+	"github.com/niflaot/gamehub-go/module/metadata/domain"
+	"github.com/niflaot/gamehub-go/module/metadata/port"
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
 	"github.com/niflaot/gamehub-go/pkg/api/problem"
 	"github.com/niflaot/gamehub-go/pkg/orm"
@@ -60,6 +62,81 @@ func TestCreateDefinitionRequiresIdempotencyKey(t *testing.T) {
 	}
 }
 
+// TestOptionalExpectedVersionParsesHeaders verifies optional version parsing.
+func TestOptionalExpectedVersionParsesHeaders(t *testing.T) {
+	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
+	app.Get("/version", func(ctx *fiber.Ctx) error {
+		version, err := optionalExpectedVersion(ctx)
+		if err != nil {
+			return err
+		}
+		if version == nil {
+			return ctx.SendStatus(fiber.StatusNoContent)
+		}
+		return ctx.SendString(strconv.FormatUint(*version, 10))
+	})
+
+	res, err := app.Test(httptest.NewRequest(fiber.MethodGet, "/version", nil), -1)
+	if err != nil {
+		t.Fatalf("Test() no header error = %v", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != fiber.StatusNoContent {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusNoContent)
+	}
+
+	req := httptest.NewRequest(fiber.MethodGet, "/version", nil)
+	req.Header.Set(headers.IfMatch, "bad")
+	res, err = app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test() bad header error = %v", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusBadRequest)
+	}
+
+	req = httptest.NewRequest(fiber.MethodGet, "/version", nil)
+	req.Header.Set(headers.IfMatch, `"7"`)
+	res, err = app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test() version header error = %v", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != fiber.StatusOK {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusOK)
+	}
+}
+
+// TestHandleErrorMapsValidationAndReferenced verifies HTTP problem mapping.
+func TestHandleErrorMapsValidationAndReferenced(t *testing.T) {
+	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
+	app.Get("/validation", func(ctx *fiber.Ctx) error {
+		return handleError(ctx, domain.ValidationError{Violations: []domain.Violation{{Field: "name", Message: "is required"}}})
+	})
+	app.Get("/referenced", func(ctx *fiber.Ctx) error {
+		return handleError(ctx, port.ErrReferenced)
+	})
+
+	res, err := app.Test(httptest.NewRequest(fiber.MethodGet, "/validation", nil), -1)
+	if err != nil {
+		t.Fatalf("Test() validation error = %v", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != fiber.StatusUnprocessableEntity {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusUnprocessableEntity)
+	}
+
+	res, err = app.Test(httptest.NewRequest(fiber.MethodGet, "/referenced", nil), -1)
+	if err != nil {
+		t.Fatalf("Test() referenced error = %v", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != fiber.StatusConflict {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusConflict)
+	}
+}
+
 // TestSetValueReturnsCanonicalValue verifies value writes are normalized.
 func TestSetValueReturnsCanonicalValue(t *testing.T) {
 	app := newTestApp(t)
@@ -86,6 +163,46 @@ func TestSetValueReturnsCanonicalValue(t *testing.T) {
 	value := payload["value"].(map[string]any)
 	if value["value"] != "Ready" {
 		t.Fatalf("value.value = %v, want Ready", value["value"])
+	}
+}
+
+// TestValueLifecycleExercisesReadListAndDelete verifies owner value HTTP lifecycle.
+func TestValueLifecycleExercisesReadListAndDelete(t *testing.T) {
+	app := newTestApp(t)
+	createDefinition(t, app)
+	ownerID := "4d8decb9-2e4a-4cc7-9d76-5ee74a2dbad8"
+	value := setOwnerValue(t, app, ownerID, "Ready")
+	version := uint64(value["version"].(float64))
+
+	listReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/owners/user/"+ownerID+"/metafields?namespace=profile&include_empty=false", nil)
+	listRes, err := app.Test(listReq, -1)
+	if err != nil {
+		t.Fatalf("list values Test() error = %v", err)
+	}
+	defer listRes.Body.Close()
+	if listRes.StatusCode != fiber.StatusOK {
+		t.Fatalf("list values StatusCode = %d, want %d", listRes.StatusCode, fiber.StatusOK)
+	}
+
+	getReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/owners/user/"+ownerID+"/metafields/profile/motto", nil)
+	getRes, err := app.Test(getReq, -1)
+	if err != nil {
+		t.Fatalf("get value Test() error = %v", err)
+	}
+	defer getRes.Body.Close()
+	if getRes.StatusCode != fiber.StatusOK {
+		t.Fatalf("get value StatusCode = %d, want %d", getRes.StatusCode, fiber.StatusOK)
+	}
+
+	deleteReq := httptest.NewRequest(fiber.MethodDelete, "/api/v1/metadata/owners/user/"+ownerID+"/metafields/profile/motto", nil)
+	deleteReq.Header.Set(headers.IfMatch, quoteVersion(version))
+	deleteRes, err := app.Test(deleteReq, -1)
+	if err != nil {
+		t.Fatalf("delete value Test() error = %v", err)
+	}
+	defer deleteRes.Body.Close()
+	if deleteRes.StatusCode != fiber.StatusNoContent {
+		t.Fatalf("delete value StatusCode = %d, want %d", deleteRes.StatusCode, fiber.StatusNoContent)
 	}
 }
 
@@ -181,6 +298,42 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	}
 	definition := decodeObject(t, res)
 	definitionID := definition["id"].(string)
+	definitionVersion := uint64(definition["version"].(float64))
+
+	definitionListReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/metaobject-definitions?type=profile_card&active=true", nil)
+	definitionListRes, err := app.Test(definitionListReq, -1)
+	if err != nil {
+		t.Fatalf("list definitions Test() error = %v", err)
+	}
+	defer definitionListRes.Body.Close()
+	if definitionListRes.StatusCode != fiber.StatusOK {
+		t.Fatalf("list definitions StatusCode = %d, want %d", definitionListRes.StatusCode, fiber.StatusOK)
+	}
+
+	definitionGetReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/metaobject-definitions/"+definitionID, nil)
+	definitionGetRes, err := app.Test(definitionGetReq, -1)
+	if err != nil {
+		t.Fatalf("get definition Test() error = %v", err)
+	}
+	defer definitionGetRes.Body.Close()
+	if definitionGetRes.StatusCode != fiber.StatusOK {
+		t.Fatalf("get definition StatusCode = %d, want %d", definitionGetRes.StatusCode, fiber.StatusOK)
+	}
+
+	definitionPatchBody := []byte(`{"name":"Profile Card Updated","description":"Shown on profiles","active":true}`)
+	definitionPatchReq := httptest.NewRequest(fiber.MethodPatch, "/api/v1/metadata/metaobject-definitions/"+definitionID, bytes.NewReader(definitionPatchBody))
+	definitionPatchReq.Header.Set(headers.ContentType, "application/json")
+	definitionPatchReq.Header.Set(headers.IfMatch, quoteVersion(definitionVersion))
+	definitionPatchRes, err := app.Test(definitionPatchReq, -1)
+	if err != nil {
+		t.Fatalf("patch definition Test() error = %v", err)
+	}
+	defer definitionPatchRes.Body.Close()
+	if definitionPatchRes.StatusCode != fiber.StatusOK {
+		t.Fatalf("patch definition StatusCode = %d, want %d", definitionPatchRes.StatusCode, fiber.StatusOK)
+	}
+	patchedDefinition := decodeObject(t, definitionPatchRes)
+	definitionVersion = uint64(patchedDefinition["version"].(float64))
 
 	entryBody := []byte(`{"handle":"first_card","display_name":"First Card","fields":{"motto":"Ready"}}`)
 	entryReq := httptest.NewRequest(fiber.MethodPost, "/api/v1/metadata/metaobject-definitions/"+definitionID+"/entries", bytes.NewReader(entryBody))
@@ -208,6 +361,16 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 		t.Fatalf("list entries StatusCode = %d, want %d", listRes.StatusCode, fiber.StatusOK)
 	}
 
+	getEntryReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID, nil)
+	getEntryRes, err := app.Test(getEntryReq, -1)
+	if err != nil {
+		t.Fatalf("get entry Test() error = %v", err)
+	}
+	defer getEntryRes.Body.Close()
+	if getEntryRes.StatusCode != fiber.StatusOK {
+		t.Fatalf("get entry StatusCode = %d, want %d", getEntryRes.StatusCode, fiber.StatusOK)
+	}
+
 	patchReq := httptest.NewRequest(fiber.MethodPatch, "/api/v1/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID, bytes.NewReader([]byte(`{"display_name":"Updated Card","fields":{"motto":"Still ready"}}`)))
 	patchReq.Header.Set(headers.ContentType, "application/json")
 	patchReq.Header.Set(headers.IfMatch, quoteVersion(entryVersion))
@@ -218,6 +381,30 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	defer patchRes.Body.Close()
 	if patchRes.StatusCode != fiber.StatusOK {
 		t.Fatalf("patch entry StatusCode = %d, want %d", patchRes.StatusCode, fiber.StatusOK)
+	}
+	patchedEntry := decodeObject(t, patchRes)
+	entryVersion = uint64(patchedEntry["version"].(float64))
+
+	deleteEntryReq := httptest.NewRequest(fiber.MethodDelete, "/api/v1/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID, nil)
+	deleteEntryReq.Header.Set(headers.IfMatch, quoteVersion(entryVersion))
+	deleteEntryRes, err := app.Test(deleteEntryReq, -1)
+	if err != nil {
+		t.Fatalf("delete entry Test() error = %v", err)
+	}
+	defer deleteEntryRes.Body.Close()
+	if deleteEntryRes.StatusCode != fiber.StatusNoContent {
+		t.Fatalf("delete entry StatusCode = %d, want %d", deleteEntryRes.StatusCode, fiber.StatusNoContent)
+	}
+
+	deleteDefinitionReq := httptest.NewRequest(fiber.MethodDelete, "/api/v1/metadata/metaobject-definitions/"+definitionID, nil)
+	deleteDefinitionReq.Header.Set(headers.IfMatch, quoteVersion(definitionVersion))
+	deleteDefinitionRes, err := app.Test(deleteDefinitionReq, -1)
+	if err != nil {
+		t.Fatalf("delete definition Test() error = %v", err)
+	}
+	defer deleteDefinitionRes.Body.Close()
+	if deleteDefinitionRes.StatusCode != fiber.StatusNoContent {
+		t.Fatalf("delete definition StatusCode = %d, want %d", deleteDefinitionRes.StatusCode, fiber.StatusNoContent)
 	}
 }
 
@@ -279,6 +466,27 @@ func createDefinitionResponse(t *testing.T, app *fiber.App) *http.Response {
 		t.Fatalf("Test() error = %v", err)
 	}
 	return res
+}
+
+// setOwnerValue writes the default owner value and returns its payload.
+func setOwnerValue(t *testing.T, app *fiber.App, ownerID string, value string) map[string]any {
+	t.Helper()
+	body, err := json.Marshal(map[string]string{"value": value})
+	if err != nil {
+		t.Fatalf("Marshal() error = %v", err)
+	}
+	req := httptest.NewRequest(fiber.MethodPut, "/api/v1/metadata/owners/user/"+ownerID+"/metafields/profile/motto", bytes.NewReader(body))
+	req.Header.Set(headers.ContentType, "application/json")
+	req.Header.Set(headers.IdempotencyKey, "set-value-"+ownerID)
+	res, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("set value Test() error = %v", err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != fiber.StatusCreated {
+		t.Fatalf("set value StatusCode = %d, want %d", res.StatusCode, fiber.StatusCreated)
+	}
+	return decodeObject(t, res)
 }
 
 // decodeObject decodes response body into an object.

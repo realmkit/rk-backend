@@ -82,6 +82,111 @@ func TestServiceListValuesForOwnerIncludesEmpty(t *testing.T) {
 	}
 }
 
+// TestServiceGetAndDeleteValue verifies value read and delete use cases.
+func TestServiceGetAndDeleteValue(t *testing.T) {
+	service := newService(t)
+	definition, err := service.CreateDefinition(context.Background(), port.CreateDefinitionCommand{Definition: testDefinition()})
+	if err != nil {
+		t.Fatalf("CreateDefinition() error = %v", err)
+	}
+	ownerID := uuid.New()
+	value, _, err := service.SetValue(context.Background(), port.SetValueCommand{
+		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
+		Namespace: definition.Namespace,
+		Key:       definition.Key,
+		RawValue:  json.RawMessage(`"hello"`),
+	})
+	if err != nil {
+		t.Fatalf("SetValue() error = %v", err)
+	}
+	found, err := service.GetValue(context.Background(), port.GetValueQuery{
+		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
+		Namespace: definition.Namespace,
+		Key:       definition.Key,
+	})
+	if err != nil {
+		t.Fatalf("GetValue() error = %v", err)
+	}
+	if found.ID != value.ID {
+		t.Fatalf("GetValue() ID = %s, want %s", found.ID, value.ID)
+	}
+	err = service.DeleteValue(context.Background(), port.DeleteValueCommand{
+		Owner:           port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
+		Namespace:       definition.Namespace,
+		Key:             definition.Key,
+		ExpectedVersion: value.Version,
+	})
+	if err != nil {
+		t.Fatalf("DeleteValue() error = %v", err)
+	}
+	if _, err := service.GetValue(context.Background(), port.GetValueQuery{Owner: port.OwnerRef{Type: definition.OwnerType, ID: ownerID}, Namespace: definition.Namespace, Key: definition.Key}); !errors.Is(err, port.ErrNotFound) {
+		t.Fatalf("GetValue() deleted error = %v, want %v", err, port.ErrNotFound)
+	}
+}
+
+// TestServiceSetValueValidatesReferenceLists verifies list reference targets are checked.
+func TestServiceSetValueValidatesReferenceLists(t *testing.T) {
+	service := newServiceWithReferenceResolver(t, missingReferenceResolver{})
+	definition, err := service.CreateDefinition(context.Background(), port.CreateDefinitionCommand{Definition: domain.MetafieldDefinition{
+		OwnerType: domain.OwnerUser,
+		Namespace: "profile",
+		Key:       "friends",
+		Name:      "Friends",
+		ValueType: domain.ValueOwnerReference,
+		List:      true,
+		Active:    true,
+		Version:   1,
+	}})
+	if err != nil {
+		t.Fatalf("CreateDefinition() error = %v", err)
+	}
+	raw, err := json.Marshal([]domain.OwnerReference{{Type: domain.OwnerUser, ID: uuid.New()}})
+	if err != nil {
+		t.Fatalf("Marshal() error = %v", err)
+	}
+
+	_, _, err = service.SetValue(context.Background(), port.SetValueCommand{
+		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: uuid.New()},
+		Namespace: definition.Namespace,
+		Key:       definition.Key,
+		RawValue:  raw,
+	})
+	if !errors.Is(err, port.ErrNotFound) {
+		t.Fatalf("SetValue() reference error = %v, want %v", err, port.ErrNotFound)
+	}
+}
+
+// TestServiceSetValueValidatesMetaobjectReferences verifies metaobject reference targets are checked.
+func TestServiceSetValueValidatesMetaobjectReferences(t *testing.T) {
+	service := newServiceWithReferenceResolver(t, missingReferenceResolver{})
+	definition, err := service.CreateDefinition(context.Background(), port.CreateDefinitionCommand{Definition: domain.MetafieldDefinition{
+		OwnerType: domain.OwnerUser,
+		Namespace: "profile",
+		Key:       "card",
+		Name:      "Card",
+		ValueType: domain.ValueMetaobjectReference,
+		Active:    true,
+		Version:   1,
+	}})
+	if err != nil {
+		t.Fatalf("CreateDefinition() error = %v", err)
+	}
+	raw, err := json.Marshal(domain.MetaobjectReference{DefinitionID: uuid.New(), EntryID: uuid.New()})
+	if err != nil {
+		t.Fatalf("Marshal() error = %v", err)
+	}
+
+	_, _, err = service.SetValue(context.Background(), port.SetValueCommand{
+		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: uuid.New()},
+		Namespace: definition.Namespace,
+		Key:       definition.Key,
+		RawValue:  raw,
+	})
+	if !errors.Is(err, port.ErrNotFound) {
+		t.Fatalf("SetValue() reference error = %v, want %v", err, port.ErrNotFound)
+	}
+}
+
 // TestServiceArchiveDefinitionRejectsActiveValues verifies referenced definitions are protected.
 func TestServiceArchiveDefinitionRejectsActiveValues(t *testing.T) {
 	service := newService(t)
@@ -163,6 +268,13 @@ func TestServiceDefinitionUpdateListAndArchive(t *testing.T) {
 	if len(list.Items) != 1 {
 		t.Fatalf("ListDefinitions() items = %d, want 1", len(list.Items))
 	}
+	found, err := service.GetDefinition(context.Background(), port.GetDefinitionQuery{ID: updated.ID})
+	if err != nil {
+		t.Fatalf("GetDefinition() error = %v", err)
+	}
+	if found.ID != updated.ID {
+		t.Fatalf("GetDefinition() ID = %s, want %s", found.ID, updated.ID)
+	}
 
 	if err := service.ArchiveDefinition(context.Background(), port.ArchiveDefinitionCommand{ID: updated.ID, ExpectedVersion: updated.Version}); err != nil {
 		t.Fatalf("ArchiveDefinition() error = %v", err)
@@ -192,6 +304,20 @@ func TestServiceMetaobjectLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UpdateMetaobjectDefinition() error = %v", err)
 	}
+	definitions, err := service.ListMetaobjectDefinitions(context.Background(), port.ListMetaobjectDefinitionsQuery{Page: testPage()})
+	if err != nil {
+		t.Fatalf("ListMetaobjectDefinitions() error = %v", err)
+	}
+	if len(definitions.Items) != 1 {
+		t.Fatalf("ListMetaobjectDefinitions() items = %d, want 1", len(definitions.Items))
+	}
+	foundDefinition, err := service.GetMetaobjectDefinition(context.Background(), port.GetMetaobjectDefinitionQuery{ID: updatedDefinition.ID})
+	if err != nil {
+		t.Fatalf("GetMetaobjectDefinition() error = %v", err)
+	}
+	if foundDefinition.ID != updatedDefinition.ID {
+		t.Fatalf("GetMetaobjectDefinition() ID = %s, want %s", foundDefinition.ID, updatedDefinition.ID)
+	}
 	entry, err := service.CreateMetaobjectEntry(context.Background(), port.CreateMetaobjectEntryCommand{
 		Entry: domain.MetaobjectEntry{
 			DefinitionID: updatedDefinition.ID,
@@ -211,6 +337,13 @@ func TestServiceMetaobjectLifecycle(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("UpdateMetaobjectEntry() error = %v", err)
+	}
+	foundEntry, err := service.GetMetaobjectEntry(context.Background(), port.GetMetaobjectEntryQuery{ID: updatedEntry.ID})
+	if err != nil {
+		t.Fatalf("GetMetaobjectEntry() error = %v", err)
+	}
+	if foundEntry.ID != updatedEntry.ID {
+		t.Fatalf("GetMetaobjectEntry() ID = %s, want %s", foundEntry.ID, updatedEntry.ID)
 	}
 	list, err := service.ListMetaobjectEntries(context.Background(), port.ListMetaobjectEntriesQuery{DefinitionID: updatedDefinition.ID, Page: testPage()})
 	if err != nil {
@@ -235,10 +368,57 @@ func (missingOwnerResolver) Exists(context.Context, domain.OwnerType, uuid.UUID)
 	return false, nil
 }
 
+// missingReferenceResolver reports every reference as missing.
+type missingReferenceResolver struct{}
+
+// OwnerExists reports whether owner reference exists.
+func (missingReferenceResolver) OwnerExists(context.Context, domain.OwnerReference) (bool, error) {
+	return false, nil
+}
+
+// MetaobjectEntryExists reports whether metaobject entry reference exists.
+func (missingReferenceResolver) MetaobjectEntryExists(context.Context, domain.MetaobjectReference) (bool, error) {
+	return false, nil
+}
+
+// TestExistingResolversReportExistence verifies default resolvers accept references.
+func TestExistingResolversReportExistence(t *testing.T) {
+	ownerID := uuid.New()
+	if ok, err := (ExistingOwnerResolver{}).Exists(context.Background(), domain.OwnerUser, ownerID); err != nil || !ok {
+		t.Fatalf("ExistingOwnerResolver.Exists() = (%v, %v), want true nil", ok, err)
+	}
+	if ok, err := (ExistingReferenceResolver{}).OwnerExists(context.Background(), domain.OwnerReference{Type: domain.OwnerUser, ID: ownerID}); err != nil || !ok {
+		t.Fatalf("ExistingReferenceResolver.OwnerExists() = (%v, %v), want true nil", ok, err)
+	}
+	if ok, err := (ExistingReferenceResolver{}).MetaobjectEntryExists(context.Background(), domain.MetaobjectReference{DefinitionID: uuid.New(), EntryID: uuid.New()}); err != nil || !ok {
+		t.Fatalf("ExistingReferenceResolver.MetaobjectEntryExists() = (%v, %v), want true nil", ok, err)
+	}
+}
+
 // newService creates a metadata service backed by test repositories.
 func newService(t *testing.T) Service {
 	t.Helper()
 	return newServiceWithOwnerResolver(t, ExistingOwnerResolver{})
+}
+
+// newServiceWithReferenceResolver creates a metadata service with reference resolver.
+func newServiceWithReferenceResolver(t *testing.T, resolver port.ReferenceResolver) Service {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("gorm.Open() error = %v", err)
+	}
+	if _, err := migrations.NewRunner(db, migrations.DefaultSource()).Up(context.Background()); err != nil {
+		t.Fatalf("Migrate() error = %v", err)
+	}
+	store := orm.NewStore(db)
+	return NewService(Dependencies{
+		Definitions:           metadatapostgres.NewMetafieldDefinitionRepository(store),
+		Values:                metadatapostgres.NewMetafieldValueRepository(store),
+		MetaobjectDefinitions: metadatapostgres.NewMetaobjectDefinitionRepository(store),
+		MetaobjectEntries:     metadatapostgres.NewMetaobjectEntryRepository(store),
+		References:            resolver,
+	})
 }
 
 // newServiceWithOwnerResolver creates a metadata service with owner resolver.

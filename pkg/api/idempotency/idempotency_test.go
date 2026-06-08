@@ -14,6 +14,7 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
 	"github.com/niflaot/gamehub-go/pkg/api/problem"
 	goredis "github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 // TestMiddlewareReplaysCompletedRequests verifies matching retries replay responses.
@@ -115,6 +116,26 @@ func TestMiddlewareRejectsLongKeys(t *testing.T) {
 
 	if res.StatusCode != fiber.StatusBadRequest {
 		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusBadRequest)
+	}
+}
+
+// TestMiddlewareOptionsNormalizeLoggerAndTTL verifies middleware options are bounded.
+func TestMiddlewareOptionsNormalizeLoggerAndTTL(t *testing.T) {
+	settings := middlewareSettings([]Option{WithLogger(nil), WithTTL(0)})
+	if settings.log == nil {
+		t.Fatalf("log = nil, want fallback logger")
+	}
+	if settings.ttl != DefaultTTL {
+		t.Fatalf("ttl = %s, want %s", settings.ttl, DefaultTTL)
+	}
+
+	log := zap.NewNop()
+	settings = middlewareSettings([]Option{WithLogger(log), WithTTL(time.Minute)})
+	if settings.log != log {
+		t.Fatalf("log = %p, want %p", settings.log, log)
+	}
+	if settings.ttl != time.Minute {
+		t.Fatalf("ttl = %s, want %s", settings.ttl, time.Minute)
 	}
 }
 

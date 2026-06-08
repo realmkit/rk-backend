@@ -58,6 +58,19 @@ func TestHandlerWritesProblemErrors(t *testing.T) {
 	}
 }
 
+// TestErrorReturnsDetailOrTitle verifies problem errors prefer detail.
+func TestErrorReturnsDetailOrTitle(t *testing.T) {
+	withDetail := Error{Problem: New(fiber.StatusConflict, "duplicate", "duplicate request")}
+	if withDetail.Error() != "duplicate request" {
+		t.Fatalf("Error() = %q, want detail", withDetail.Error())
+	}
+
+	withoutDetail := Error{Problem: New(fiber.StatusTeapot, "teapot", "")}
+	if withoutDetail.Error() != "I'm a teapot" {
+		t.Fatalf("Error() = %q, want title", withoutDetail.Error())
+	}
+}
+
 // TestHandlerWritesInternalErrors verifies ordinary errors become internal problems.
 func TestHandlerWritesInternalErrors(t *testing.T) {
 	app := fiber.New(fiber.Config{ErrorHandler: Handler})
