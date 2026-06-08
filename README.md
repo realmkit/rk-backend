@@ -24,6 +24,14 @@ The Go backend will use:
 - OpenAPI and Swagger specifications for HTTP contracts.
 - Telemetry, tracing, metrics, and structured logs as first-class concerns.
 
+The backend is initialized as the Go module `github.com/niflaot/gamehub/backend`.
+
+Initial runtime configuration is loaded by `backend/pkg/config` through Viper using `.env` files and `GAMEHUB_` environment variables:
+
+- `GAMEHUB_HOST`, default `0.0.0.0`
+- `GAMEHUB_PORT`, default `8080`
+- `GAMEHUB_ENVIRONMENT`, default `development`
+
 The backend must be designed for idempotency, resilience, and fault tolerance. Cross-cutting behavior such as rate limiting, retries, circuit breakers, timeouts, health checks, and cache policy should be implemented in deliberate infrastructure packages rather than scattered through feature code.
 
 ## Repository Layout

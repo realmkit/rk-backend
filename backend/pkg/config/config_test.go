@@ -1,0 +1,245 @@
+package config
+
+import (
+	"os"
+	"path/filepath"
+	"reflect"
+	"testing"
+)
+
+// TestLoadUsesTaggedDefaults verifies Load returns tag defaults when no external configuration exists.
+func TestLoadUsesTaggedDefaults(t *testing.T) {
+	clearGameHubEnv(t)
+
+	cfg, err := Load(WithEnvFile(filepath.Join(t.TempDir(), ".env")))
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.Runtime.Host != "0.0.0.0" {
+		t.Fatalf("Host = %q, want %q", cfg.Runtime.Host, "0.0.0.0")
+	}
+	if cfg.Runtime.Port != 8080 {
+		t.Fatalf("Port = %d, want %d", cfg.Runtime.Port, 8080)
+	}
+	if cfg.Runtime.Environment != "development" {
+		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "development")
+	}
+}
+
+// TestLoadReadsGameHubEnvFile verifies GAMEHUB-prefixed values are loaded from .env files.
+func TestLoadReadsGameHubEnvFile(t *testing.T) {
+	clearGameHubEnv(t)
+
+	path := filepath.Join(t.TempDir(), ".env")
+	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\n")
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	cfg, err := Load(WithEnvFile(path))
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.Runtime.Host != "127.0.0.1" {
+		t.Fatalf("Host = %q, want %q", cfg.Runtime.Host, "127.0.0.1")
+	}
+	if cfg.Runtime.Port != 9090 {
+		t.Fatalf("Port = %d, want %d", cfg.Runtime.Port, 9090)
+	}
+	if cfg.Runtime.Environment != "test" {
+		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "test")
+	}
+}
+
+// TestLoadEnvironmentOverridesEnvFile verifies operating system environment values have highest precedence.
+func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
+	clearGameHubEnv(t)
+
+	path := filepath.Join(t.TempDir(), ".env")
+	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\n")
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	t.Setenv("GAMEHUB_HOST", "localhost")
+	t.Setenv("GAMEHUB_PORT", "7070")
+	t.Setenv("GAMEHUB_ENVIRONMENT", "test")
+
+	cfg, err := Load(WithEnvFile(path))
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.Runtime.Host != "localhost" {
+		t.Fatalf("Host = %q, want %q", cfg.Runtime.Host, "localhost")
+	}
+	if cfg.Runtime.Port != 7070 {
+		t.Fatalf("Port = %d, want %d", cfg.Runtime.Port, 7070)
+	}
+	if cfg.Runtime.Environment != "test" {
+		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "test")
+	}
+}
+
+// TestLoadWithDisabledEnvFile verifies the loader can run without reading any .env file.
+func TestLoadWithDisabledEnvFile(t *testing.T) {
+	clearGameHubEnv(t)
+
+	cfg, err := Load(WithEnvFile(""))
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.Runtime.Port != 8080 {
+		t.Fatalf("Port = %d, want %d", cfg.Runtime.Port, 8080)
+	}
+}
+
+// TestLoadReadsUnprefixedEnvFileKeys verifies .env files may use config keys directly.
+func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
+	clearGameHubEnv(t)
+
+	path := filepath.Join(t.TempDir(), ".env")
+	content := []byte("host=127.0.0.2\nport=6060\nenvironment=local\n")
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	cfg, err := Load(WithEnvFile(path))
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.Runtime.Host != "127.0.0.2" {
+		t.Fatalf("Host = %q, want %q", cfg.Runtime.Host, "127.0.0.2")
+	}
+	if cfg.Runtime.Port != 6060 {
+		t.Fatalf("Port = %d, want %d", cfg.Runtime.Port, 6060)
+	}
+	if cfg.Runtime.Environment != "local" {
+		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "local")
+	}
+}
+
+// TestLoadReturnsEnvFileReadErrors verifies invalid .env paths return useful errors.
+func TestLoadReturnsEnvFileReadErrors(t *testing.T) {
+	clearGameHubEnv(t)
+
+	if _, err := Load(WithEnvFile(t.TempDir())); err == nil {
+		t.Fatalf("Load() error = nil, want error")
+	}
+}
+
+// TestSchemaRequiresFieldsWithoutDefaults verifies a field without a default tag is mandatory.
+func TestSchemaRequiresFieldsWithoutDefaults(t *testing.T) {
+	clearGameHubEnv(t)
+
+	type requiredConfig struct {
+		Token string `mapstructure:"token"`
+	}
+
+	fields, err := schemaFor(requiredConfig{})
+	if err != nil {
+		t.Fatalf("schemaFor() error = %v", err)
+	}
+
+	source := newViper(defaultPrefix)
+	for _, field := range fields {
+		if err := source.BindEnv(field.key, field.env(defaultPrefix)); err != nil {
+			t.Fatalf("BindEnv() error = %v", err)
+		}
+	}
+
+	if err := validateRequired(source, fields); err == nil {
+		t.Fatalf("validateRequired() error = nil, want error")
+	}
+}
+
+// TestValidateRequiredRejectsEmptyString verifies mandatory string settings cannot be blank.
+func TestValidateRequiredRejectsEmptyString(t *testing.T) {
+	fields := []fieldSpec{{key: "token"}}
+	source := newViper(defaultPrefix)
+	source.Set("token", " ")
+
+	if err := validateRequired(source, fields); err == nil {
+		t.Fatalf("validateRequired() error = nil, want error")
+	}
+}
+
+// TestValidateRequiredAcceptsPresentValues verifies mandatory settings pass when configured.
+func TestValidateRequiredAcceptsPresentValues(t *testing.T) {
+	fields := []fieldSpec{{key: "enabled"}}
+	source := newViper(defaultPrefix)
+	source.Set("enabled", false)
+
+	if err := validateRequired(source, fields); err != nil {
+		t.Fatalf("validateRequired() error = %v", err)
+	}
+}
+
+// clearGameHubEnv clears GAMEHUB variables that can affect loader tests.
+func clearGameHubEnv(t *testing.T) {
+	t.Helper()
+	t.Setenv("GAMEHUB_HOST", "")
+	t.Setenv("GAMEHUB_PORT", "")
+	t.Setenv("GAMEHUB_ENVIRONMENT", "")
+	t.Setenv("GAMEHUB_TOKEN", "")
+	t.Setenv("GAMEHUB_ENABLED", "")
+}
+
+// TestSchemaCollectsSquashedFields verifies squashed structs expose root-level GAMEHUB variables.
+func TestSchemaCollectsSquashedFields(t *testing.T) {
+	fields, err := schemaFor(Config{})
+	if err != nil {
+		t.Fatalf("schemaFor() error = %v", err)
+	}
+
+	got := make([]string, 0, len(fields))
+	for _, field := range fields {
+		got = append(got, field.key)
+	}
+
+	want := []string{"host", "port", "environment"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("fields = %v, want %v", got, want)
+	}
+}
+
+// TestSchemaRejectsNonStructs verifies only struct values can define configuration schemas.
+func TestSchemaRejectsNonStructs(t *testing.T) {
+	if _, err := schemaFor("invalid"); err == nil {
+		t.Fatalf("schemaFor() error = nil, want error")
+	}
+}
+
+// TestSchemaCollectsNestedAndSkippedFields verifies nested structs, skipped tags, and fallback names.
+func TestSchemaCollectsNestedAndSkippedFields(t *testing.T) {
+	type databaseConfig struct {
+		URL     string `mapstructure:"url" default:"postgres://localhost/gamehub"`
+		NoTag   string `default:"fallback"`
+		Ignored string `mapstructure:"-"`
+	}
+	type appConfig struct {
+		Database databaseConfig `mapstructure:"database"`
+	}
+
+	fields, err := schemaFor(appConfig{})
+	if err != nil {
+		t.Fatalf("schemaFor() error = %v", err)
+	}
+
+	got := make([]string, 0, len(fields))
+	for _, field := range fields {
+		got = append(got, field.key)
+	}
+
+	want := []string{"database.url", "database.no_tag"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("fields = %v, want %v", got, want)
+	}
+	if fields[0].env(defaultPrefix) != "GAMEHUB_DATABASE_URL" {
+		t.Fatalf("env = %q, want %q", fields[0].env(defaultPrefix), "GAMEHUB_DATABASE_URL")
+	}
+}

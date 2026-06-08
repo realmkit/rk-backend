@@ -36,6 +36,8 @@ The repository is a monorepo with a Go backend and a future Next.js frontend:
 - Do not place explanatory comments inside function bodies. Prefer clear names and small functions.
 - Internal comments are allowed only for generated code markers or unavoidable tool directives.
 - Use Viper for environment-backed configuration.
+- Config fields must be grouped into purpose-specific structs, such as runtime, PostgreSQL, Redis, and telemetry structs.
+- Config fields must use a `default` struct tag when optional. Fields without a `default` tag are mandatory and loading configuration must fail when they are absent.
 - Only essential runtime configuration should be environment-driven, such as database credentials, Redis credentials, server bind address, and secrets.
 - Do not expose low-level tuning knobs such as circuit breaker delays, pool sizes, retry intervals, or cache internals as required environment variables unless there is a strong operational reason.
 - Use PostgreSQL as the primary durable database.
@@ -65,6 +67,8 @@ The repository is a monorepo with a Go backend and a future Next.js frontend:
 ## Testing Guidance
 
 - Add focused tests with new implementation work.
+- Keep test coverage as high as practical for the changed package, aiming for the maximum meaningful coverage without brittle tests.
+- Unit test functions must have Go doc comments just like exported production signatures.
 - Keep tests near the package they verify.
 - Prefer deterministic unit tests for domain behavior.
 - Use integration tests for database, Redis, HTTP contract, and adapter behavior when the boundary matters.
