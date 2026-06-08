@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"bytes"
@@ -12,10 +12,28 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/postgres"
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
+	"github.com/niflaot/gamehub-go/pkg/server"
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+// TestRootCommandShowsHelpByDefault verifies no-arg execution shows commands.
+func TestRootCommandShowsHelpByDefault(t *testing.T) {
+	activeLogger := zap.NewNop()
+	cmd := newRootCommand(&activeLogger, testCommandDeps(t))
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	cmd.SetErr(&output)
+	cmd.SetArgs(nil)
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if !strings.Contains(output.String(), "start") || !strings.Contains(output.String(), "migrate") {
+		t.Fatalf("output = %q, want start and migrate commands", output.String())
+	}
+}
 
 // TestRootCommandHelpPrintsUsage verifies help is the usage-printing path.
 func TestRootCommandHelpPrintsUsage(t *testing.T) {
@@ -85,8 +103,8 @@ func TestMigrateDownRequiresDestructiveConfirmation(t *testing.T) {
 	}
 }
 
-// TestExecuteReturnsServeErrors verifies default command still serves the API.
-func TestExecuteReturnsServeErrors(t *testing.T) {
+// TestExecuteReturnsStartErrors verifies the start command serves the API.
+func TestExecuteReturnsStartErrors(t *testing.T) {
 	activeLogger := zap.NewNop()
 	want := errors.New("listen failed")
 	deps := testCommandDeps(t)
@@ -94,9 +112,46 @@ func TestExecuteReturnsServeErrors(t *testing.T) {
 		return want
 	}
 
-	err := execute(&activeLogger, nil, deps)
+	err := execute(&activeLogger, []string{"start"}, deps)
 	if !errors.Is(err, want) {
 		t.Fatalf("execute() error = %v, want %v", err, want)
+	}
+}
+
+// TestRunStartLogsStartup verifies startup logging uses Zap in every environment.
+func TestRunStartLogsStartup(t *testing.T) {
+	var output bytes.Buffer
+	activeLogger := zap.NewNop()
+	cfg := config.Config{
+		Server:  server.Config{Host: "127.0.0.1", Port: 9090},
+		Runtime: config.Runtime{Environment: "development"},
+		Logging: logger.Config{Level: "info"},
+	}
+	deps := testCommandDeps(t)
+	deps.loadConfig = func() (config.Config, error) {
+		return cfg, nil
+	}
+	deps.newLogger = func(cfg logger.Config) (*zap.Logger, error) {
+		return logger.New(cfg, logger.WithOutput(&output))
+	}
+	deps.newServer = func(_ *zap.Logger, development bool) *fiber.App {
+		if !development {
+			t.Fatalf("development = false, want true")
+		}
+		return fiber.New()
+	}
+	deps.listenServer = func(_ *fiber.App, address string) error {
+		if address != "127.0.0.1:9090" {
+			t.Fatalf("address = %q, want %q", address, "127.0.0.1:9090")
+		}
+		return nil
+	}
+
+	if err := execute(&activeLogger, []string{"start"}, deps); err != nil {
+		t.Fatalf("execute() error = %v", err)
+	}
+	if !bytes.Contains(output.Bytes(), []byte("starting gamehub backend")) {
+		t.Fatalf("output = %q, want startup log", output.String())
 	}
 }
 

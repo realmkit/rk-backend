@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"os"
 	"syscall"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/config"
+	"github.com/niflaot/gamehub-go/pkg/cli"
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -24,48 +22,7 @@ func main() {
 		finish(activeLogger, runErr, os.Exit)
 	}()
 
-	runErr = runArgs(&activeLogger, os.Args[1:])
-}
-
-// run initializes configuration, logging, and the HTTP server.
-func run(activeLogger **zap.Logger) error {
-	return runArgs(activeLogger, nil)
-}
-
-// runArgs executes the GameHub CLI with args.
-func runArgs(activeLogger **zap.Logger, args []string) error {
-	return execute(activeLogger, args, defaultCommandDeps())
-}
-
-// execute executes the root command with dependencies.
-func execute(activeLogger **zap.Logger, args []string, deps commandDeps) error {
-	cmd := newRootCommand(activeLogger, deps)
-	cmd.SetArgs(args)
-	return cmd.Execute()
-}
-
-// runWith runs startup using injected dependencies for testable orchestration.
-func runWith(
-	activeLogger **zap.Logger,
-	loadConfig func() (config.Config, error),
-	newLogger func(logger.Config) (*zap.Logger, error),
-	newServer func(*zap.Logger, bool) *fiber.App,
-	listenServer func(*fiber.App, string) error,
-) error {
-	return runServe(context.Background(), activeLogger, commandDeps{
-		loadConfig:    loadConfig,
-		newLogger:     newLogger,
-		newServer:     newServer,
-		listenServer:  listenServer,
-		openPostgres:  nil,
-		closePostgres: nil,
-		newRunner:     nil,
-	})
-}
-
-// listen starts the Fiber application on the configured address.
-func listen(app *fiber.App, address string) error {
-	return app.Listen(address)
+	runErr = cli.Run(os.Args[1:], &activeLogger)
 }
 
 // finish logs final errors, syncs the logger, and exits when needed.
@@ -95,9 +52,14 @@ func syncLogger(log *zap.Logger) error {
 		return nil
 	}
 
-	if err := log.Sync(); err != nil && !errors.Is(err, syscall.EINVAL) {
+	if err := log.Sync(); err != nil && !unsupportedSyncError(err) {
 		return err
 	}
 
 	return nil
+}
+
+// unsupportedSyncError reports whether Zap cannot sync the current output target.
+func unsupportedSyncError(err error) bool {
+	return errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.EBADF) || errors.Is(err, syscall.ENOTTY)
 }

@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -28,6 +28,11 @@ type commandDeps struct {
 	newRunner     func(*gorm.DB, *zap.Logger) migrations.Runner
 }
 
+// Run executes the GameHub CLI.
+func Run(args []string, activeLogger **zap.Logger) error {
+	return execute(activeLogger, args, defaultCommandDeps())
+}
+
 // defaultCommandDeps returns production command dependencies.
 func defaultCommandDeps() commandDeps {
 	return commandDeps{
@@ -51,6 +56,13 @@ func defaultCommandDeps() commandDeps {
 	}
 }
 
+// execute executes the root command with dependencies.
+func execute(activeLogger **zap.Logger, args []string, deps commandDeps) error {
+	cmd := newRootCommand(activeLogger, deps)
+	cmd.SetArgs(args)
+	return cmd.Execute()
+}
+
 // newRootCommand creates the GameHub CLI root command.
 func newRootCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
 	cmd := &cobra.Command{
@@ -59,23 +71,24 @@ func newRootCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command 
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runServe(cmd.Context(), activeLogger, deps)
+			return cmd.Help()
 		},
 	}
-	cmd.AddCommand(newServeCommand(activeLogger, deps))
+	cmd.AddCommand(newStartCommand(activeLogger, deps))
 	cmd.AddCommand(newMigrateCommand(activeLogger, deps))
 	return cmd
 }
 
-// newServeCommand creates the serve command.
-func newServeCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
+// newStartCommand creates the start command.
+func newStartCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
 	return &cobra.Command{
-		Use:           "serve",
+		Use:           "start",
+		Aliases:       []string{"serve"},
 		Short:         "Start the HTTP API server",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runServe(cmd.Context(), activeLogger, deps)
+			return runStart(cmd.Context(), activeLogger, deps)
 		},
 	}
 }
@@ -234,8 +247,8 @@ func newMigrateResetCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.
 	return cmd
 }
 
-// runServe starts the HTTP API server.
-func runServe(ctx context.Context, activeLogger **zap.Logger, deps commandDeps) error {
+// runStart starts the HTTP API server.
+func runStart(ctx context.Context, activeLogger **zap.Logger, deps commandDeps) error {
 	cfg, log, err := runtime(ctx, activeLogger, deps)
 	if err != nil {
 		return err
@@ -302,4 +315,9 @@ func writeStatus(output io.Writer, status migrations.Status) {
 	for _, migration := range status.Pending {
 		fmt.Fprintf(output, "pending %06d %s\n", migration.Version, migration.Name)
 	}
+}
+
+// listen starts the Fiber application on the configured address.
+func listen(app *fiber.App, address string) error {
+	return app.Listen(address)
 }

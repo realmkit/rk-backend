@@ -3,12 +3,10 @@ package main
 import (
 	"bytes"
 	"errors"
+	"syscall"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/config"
 	"github.com/niflaot/gamehub-go/pkg/logger"
-	"github.com/niflaot/gamehub-go/pkg/server"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -18,186 +16,20 @@ type failingSyncer struct {
 	bytes.Buffer
 }
 
+// unsupportedSyncer captures logs and reports an unsupported stdout sync failure.
+type unsupportedSyncer struct {
+	bytes.Buffer
+	err error
+}
+
 // Sync returns a deterministic sync failure for finalizer tests.
 func (syncer *failingSyncer) Sync() error {
 	return errors.New("sync failed")
 }
 
-// TestRunReturnsConfiguredLoggerErrors verifies run returns configured logger errors explicitly.
-func TestRunReturnsConfiguredLoggerErrors(t *testing.T) {
-	t.Setenv("GAMEHUB_LOG_LEVEL", "loud")
-	t.Setenv("GAMEHUB_POSTGRES_DATABASE", "gamehub")
-	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "gamehub")
-	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "gamehub")
-
-	activeLogger := zap.NewNop()
-	err := run(&activeLogger)
-	if err == nil {
-		t.Fatalf("run() error = nil, want error")
-	}
-}
-
-// TestRunWithReturnsConfigErrors verifies startup stops when configuration fails.
-func TestRunWithReturnsConfigErrors(t *testing.T) {
-	activeLogger := zap.NewNop()
-	want := errors.New("load failed")
-
-	err := runWith(
-		&activeLogger,
-		func() (config.Config, error) {
-			return config.Config{}, want
-		},
-		func(logger.Config) (*zap.Logger, error) {
-			t.Fatalf("newLogger called after config failure")
-			return nil, nil
-		},
-		func(*zap.Logger, bool) *fiber.App {
-			t.Fatalf("newServer called after config failure")
-			return nil
-		},
-		func(*fiber.App, string) error {
-			t.Fatalf("listenServer called after config failure")
-			return nil
-		},
-	)
-
-	if !errors.Is(err, want) {
-		t.Fatalf("runWith() error = %v, want %v", err, want)
-	}
-}
-
-// TestRunWithReturnsLoggerErrors verifies startup stops when logger creation fails.
-func TestRunWithReturnsLoggerErrors(t *testing.T) {
-	activeLogger := zap.NewNop()
-	want := errors.New("logger failed")
-
-	err := runWith(
-		&activeLogger,
-		func() (config.Config, error) {
-			return config.Config{}, nil
-		},
-		func(logger.Config) (*zap.Logger, error) {
-			return nil, want
-		},
-		func(*zap.Logger, bool) *fiber.App {
-			t.Fatalf("newServer called after logger failure")
-			return nil
-		},
-		func(*fiber.App, string) error {
-			t.Fatalf("listenServer called after logger failure")
-			return nil
-		},
-	)
-
-	if !errors.Is(err, want) {
-		t.Fatalf("runWith() error = %v, want %v", err, want)
-	}
-}
-
-// TestRunWithLogsStartup verifies startup logging uses Zap in every environment.
-func TestRunWithLogsStartup(t *testing.T) {
-	var output bytes.Buffer
-	activeLogger := zap.NewNop()
-	cfg := config.Config{
-		Server:  server.Config{Host: "127.0.0.1", Port: 9090},
-		Runtime: config.Runtime{Environment: "development"},
-		Logging: logger.Config{Level: "info"},
-	}
-
-	err := runWith(
-		&activeLogger,
-		func() (config.Config, error) {
-			return cfg, nil
-		},
-		func(cfg logger.Config) (*zap.Logger, error) {
-			return logger.New(cfg, logger.WithOutput(&output))
-		},
-		func(_ *zap.Logger, development bool) *fiber.App {
-			if !development {
-				t.Fatalf("development = false, want true")
-			}
-			return fiber.New()
-		},
-		func(_ *fiber.App, address string) error {
-			if address != "127.0.0.1:9090" {
-				t.Fatalf("address = %q, want %q", address, "127.0.0.1:9090")
-			}
-			return nil
-		},
-	)
-	if err != nil {
-		t.Fatalf("runWith() error = %v", err)
-	}
-
-	if !bytes.Contains(output.Bytes(), []byte("starting gamehub backend")) {
-		t.Fatalf("output = %q, want startup log", output.String())
-	}
-	if !bytes.Contains(output.Bytes(), []byte("127.0.0.1:9090")) {
-		t.Fatalf("output = %q, want startup address", output.String())
-	}
-}
-
-// TestRunWithLogsStartupOutsideDevelopment verifies startup logging is not environment-gated.
-func TestRunWithLogsStartupOutsideDevelopment(t *testing.T) {
-	var output bytes.Buffer
-	activeLogger := zap.NewNop()
-	cfg := config.Config{
-		Server:  server.Config{Host: "127.0.0.1", Port: 9090},
-		Runtime: config.Runtime{Environment: "production"},
-		Logging: logger.Config{Level: "info"},
-	}
-
-	err := runWith(
-		&activeLogger,
-		func() (config.Config, error) {
-			return cfg, nil
-		},
-		func(cfg logger.Config) (*zap.Logger, error) {
-			return logger.New(cfg, logger.WithOutput(&output))
-		},
-		func(_ *zap.Logger, development bool) *fiber.App {
-			if development {
-				t.Fatalf("development = true, want false")
-			}
-			return fiber.New()
-		},
-		func(*fiber.App, string) error {
-			return nil
-		},
-	)
-	if err != nil {
-		t.Fatalf("runWith() error = %v", err)
-	}
-
-	if !bytes.Contains(output.Bytes(), []byte("starting gamehub backend")) {
-		t.Fatalf("output = %q, want startup log", output.String())
-	}
-}
-
-// TestRunWithReturnsListenErrors verifies listener failures return explicitly.
-func TestRunWithReturnsListenErrors(t *testing.T) {
-	activeLogger := zap.NewNop()
-	want := errors.New("listen failed")
-
-	err := runWith(
-		&activeLogger,
-		func() (config.Config, error) {
-			return config.Config{Logging: logger.Config{Level: "info"}}, nil
-		},
-		func(cfg logger.Config) (*zap.Logger, error) {
-			return logger.New(cfg)
-		},
-		func(*zap.Logger, bool) *fiber.App {
-			return fiber.New()
-		},
-		func(*fiber.App, string) error {
-			return want
-		},
-	)
-
-	if !errors.Is(err, want) {
-		t.Fatalf("runWith() error = %v, want %v", err, want)
-	}
+// Sync returns an unsupported stdout sync failure.
+func (syncer *unsupportedSyncer) Sync() error {
+	return syncer.err
 }
 
 // TestFinishLogsAndExitsOnError verifies finalization logs failures once and exits nonzero.
@@ -271,5 +103,22 @@ func TestFinishExitsOnSyncError(t *testing.T) {
 func TestSyncLoggerAcceptsNil(t *testing.T) {
 	if err := syncLogger(nil); err != nil {
 		t.Fatalf("syncLogger() error = %v", err)
+	}
+}
+
+// TestSyncLoggerIgnoresUnsupportedOutputSync verifies stdout sync incompatibility is tolerated.
+func TestSyncLoggerIgnoresUnsupportedOutputSync(t *testing.T) {
+	cases := []error{syscall.EINVAL, syscall.EBADF, syscall.ENOTTY}
+
+	for _, syncErr := range cases {
+		log := zap.New(zapcore.NewCore(
+			zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+			&unsupportedSyncer{err: syncErr},
+			zapcore.InfoLevel,
+		))
+
+		if err := syncLogger(log); err != nil {
+			t.Fatalf("syncLogger() error = %v", err)
+		}
 	}
 }
