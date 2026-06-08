@@ -1,0 +1,82 @@
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Project planning notes
+plan/
+
+# Go
+bin/
+dist/
+coverage/
+*.cover
+*.out
+*.test
+*.prof
+*.pprof
+vendor/
+go.work
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go tool caches
+.gocache/
+.gomodcache/
+
+# Node and Next.js
+node_modules/
+.next/
+out/
+build/
+coverage/
+next-env.d.ts
+.vercel/
+.turbo/
+
+# Package manager caches
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# TypeScript
+*.tsbuildinfo
+
+# Test and browser tooling
+playwright-report/
+test-results/
+.nyc_output/
+
+# Docker and local runtime state
+*.pid
+*.seed
+*.sqlite
+*.sqlite3
+tmp/
+temp/
