@@ -71,6 +71,7 @@ func WithEnvFile(path string) Option {
 	}
 }
 
+// applyEnvFile applies .env values as defaults before real environment overrides.
 func applyEnvFile(source *viper.Viper, fields []fieldSpec, settings loader) error {
 	if settings.envFile == "" {
 		return nil
@@ -101,6 +102,7 @@ func applyEnvFile(source *viper.Viper, fields []fieldSpec, settings loader) erro
 	return nil
 }
 
+// newViper creates a Viper instance configured for GAMEHUB-style env keys.
 func newViper(prefix string) *viper.Viper {
 	source := viper.New()
 	source.SetEnvPrefix(prefix)
@@ -109,6 +111,7 @@ func newViper(prefix string) *viper.Viper {
 	return source
 }
 
+// validateRequired verifies fields without default tags are present and nonblank.
 func validateRequired(source *viper.Viper, fields []fieldSpec) error {
 	for _, field := range fields {
 		if field.hasDefault {

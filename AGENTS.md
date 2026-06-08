@@ -32,7 +32,7 @@ The repository is a monorepo with a Go backend and a future Next.js frontend:
 - Keep OpenAPI and Swagger specifications in `backend/pkg/api/openapi`.
 - Keep database migrations in `backend/pkg/migrations`.
 - Each Go package may contain at most 6 production files and their corresponding test files. If a package needs more production files, split it into smaller packages.
-- All exported packages, types, interfaces, functions, methods, and significant constants must have Go doc comments.
+- All packages, types, interfaces, functions, methods, constants, and variables must have Go doc comments, including private functions and methods.
 - Do not place explanatory comments inside function bodies. Prefer clear names and small functions.
 - Internal comments are allowed only for generated code markers or unavoidable tool directives.
 - Use Viper for environment-backed configuration.
@@ -46,6 +46,11 @@ The repository is a monorepo with a Go backend and a future Next.js frontend:
 - Use GORM for database access.
 - Use Redis for caching, rate limiting, and distributed coordination when appropriate.
 - Use Zap for structured JSON logging, with the log level controlled by `GAMEHUB_LOG_LEVEL`.
+- Use Fiber for HTTP serving and FiberZap for structured request logging.
+- Startup logging must use Zap and must emit the GameHub startup message in every environment.
+- Fiber's startup/welcome message must be enabled only in the `development` environment.
+- Entrypoints must centralize final error handling through one deferred finalizer that logs with Zap, syncs the logger, and exits nonzero when an error is present.
+- Entrypoints must return errors explicitly from setup steps instead of repeating fatal logging at each dependency initialization site.
 - Define HTTP contracts through OpenAPI before or alongside handlers.
 - Design cache behavior deliberately with clear ownership, invalidation, TTL strategy, and failure behavior.
 - Include circuit breakers, rate limiters, timeouts, retries, and health checks where integration risk justifies them.

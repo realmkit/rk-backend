@@ -16,11 +16,11 @@ func TestLoadUsesTaggedDefaults(t *testing.T) {
 		t.Fatalf("Load() error = %v", err)
 	}
 
-	if cfg.Runtime.Host != "0.0.0.0" {
-		t.Fatalf("Host = %q, want %q", cfg.Runtime.Host, "0.0.0.0")
+	if cfg.Server.Host != "0.0.0.0" {
+		t.Fatalf("Host = %q, want %q", cfg.Server.Host, "0.0.0.0")
 	}
-	if cfg.Runtime.Port != 8080 {
-		t.Fatalf("Port = %d, want %d", cfg.Runtime.Port, 8080)
+	if cfg.Server.Port != 8080 {
+		t.Fatalf("Port = %d, want %d", cfg.Server.Port, 8080)
 	}
 	if cfg.Runtime.Environment != "development" {
 		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "development")
@@ -45,11 +45,11 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 		t.Fatalf("Load() error = %v", err)
 	}
 
-	if cfg.Runtime.Host != "127.0.0.1" {
-		t.Fatalf("Host = %q, want %q", cfg.Runtime.Host, "127.0.0.1")
+	if cfg.Server.Host != "127.0.0.1" {
+		t.Fatalf("Host = %q, want %q", cfg.Server.Host, "127.0.0.1")
 	}
-	if cfg.Runtime.Port != 9090 {
-		t.Fatalf("Port = %d, want %d", cfg.Runtime.Port, 9090)
+	if cfg.Server.Port != 9090 {
+		t.Fatalf("Port = %d, want %d", cfg.Server.Port, 9090)
 	}
 	if cfg.Runtime.Environment != "test" {
 		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "test")
@@ -79,11 +79,11 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 		t.Fatalf("Load() error = %v", err)
 	}
 
-	if cfg.Runtime.Host != "localhost" {
-		t.Fatalf("Host = %q, want %q", cfg.Runtime.Host, "localhost")
+	if cfg.Server.Host != "localhost" {
+		t.Fatalf("Host = %q, want %q", cfg.Server.Host, "localhost")
 	}
-	if cfg.Runtime.Port != 7070 {
-		t.Fatalf("Port = %d, want %d", cfg.Runtime.Port, 7070)
+	if cfg.Server.Port != 7070 {
+		t.Fatalf("Port = %d, want %d", cfg.Server.Port, 7070)
 	}
 	if cfg.Runtime.Environment != "test" {
 		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "test")
@@ -102,8 +102,8 @@ func TestLoadWithDisabledEnvFile(t *testing.T) {
 		t.Fatalf("Load() error = %v", err)
 	}
 
-	if cfg.Runtime.Port != 8080 {
-		t.Fatalf("Port = %d, want %d", cfg.Runtime.Port, 8080)
+	if cfg.Server.Port != 8080 {
+		t.Fatalf("Port = %d, want %d", cfg.Server.Port, 8080)
 	}
 }
 
@@ -122,11 +122,11 @@ func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
 		t.Fatalf("Load() error = %v", err)
 	}
 
-	if cfg.Runtime.Host != "127.0.0.2" {
-		t.Fatalf("Host = %q, want %q", cfg.Runtime.Host, "127.0.0.2")
+	if cfg.Server.Host != "127.0.0.2" {
+		t.Fatalf("Host = %q, want %q", cfg.Server.Host, "127.0.0.2")
 	}
-	if cfg.Runtime.Port != 6060 {
-		t.Fatalf("Port = %d, want %d", cfg.Runtime.Port, 6060)
+	if cfg.Server.Port != 6060 {
+		t.Fatalf("Port = %d, want %d", cfg.Server.Port, 6060)
 	}
 	if cfg.Runtime.Environment != "local" {
 		t.Fatalf("Environment = %q, want %q", cfg.Runtime.Environment, "local")
@@ -218,6 +218,16 @@ func TestSchemaCollectsSquashedFields(t *testing.T) {
 	want := []string{"host", "port", "environment", "log.level"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fields = %v, want %v", got, want)
+	}
+}
+
+// TestRuntimeIsDevelopment verifies development environment matching is normalized.
+func TestRuntimeIsDevelopment(t *testing.T) {
+	if !(Runtime{Environment: " Development "}).IsDevelopment() {
+		t.Fatalf("IsDevelopment() = false, want true")
+	}
+	if (Runtime{Environment: "production"}).IsDevelopment() {
+		t.Fatalf("IsDevelopment() = true, want false")
 	}
 }
 

@@ -21,11 +21,13 @@ type fieldSpec struct {
 	hasDefault   bool
 }
 
+// env returns the prefixed environment variable name for the field.
 func (field fieldSpec) env(prefix string) string {
 	name := strings.ToUpper(strings.ReplaceAll(field.key, ".", "_"))
 	return prefix + "_" + name
 }
 
+// schemaFor returns the cached configuration field schema for a struct value.
 func schemaFor(value any) ([]fieldSpec, error) {
 	valueType := reflect.TypeOf(value)
 	for valueType.Kind() == reflect.Pointer {
@@ -46,6 +48,7 @@ func schemaFor(value any) ([]fieldSpec, error) {
 	return fields, nil
 }
 
+// collectFields recursively collects leaf configuration fields from a struct.
 func collectFields(valueType reflect.Type, path []string) ([]fieldSpec, error) {
 	fields := make([]fieldSpec, 0, valueType.NumField())
 	for structField := range valueType.Fields() {
@@ -90,6 +93,7 @@ func collectFields(valueType reflect.Type, path []string) ([]fieldSpec, error) {
 	return fields, nil
 }
 
+// fieldTag reads mapstructure metadata for a struct field.
 func fieldTag(structField reflect.StructField) (string, bool, bool) {
 	tag := structField.Tag.Get(mapstructureTag)
 	if tag == "-" {
@@ -110,6 +114,7 @@ func fieldTag(structField reflect.StructField) (string, bool, bool) {
 	return name, squash, false
 }
 
+// appendPath returns the nested config path for a field.
 func appendPath(path []string, name string, squash bool) []string {
 	if squash || name == "" {
 		return path
@@ -121,6 +126,7 @@ func appendPath(path []string, name string, squash bool) []string {
 	return next
 }
 
+// toSnake converts a Go identifier to snake case.
 func toSnake(value string) string {
 	var output strings.Builder
 	for index, current := range value {

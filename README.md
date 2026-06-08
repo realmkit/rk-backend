@@ -21,6 +21,7 @@ The Go backend will use:
 - PostgreSQL for durable relational storage.
 - GORM for database access.
 - Redis for caching, rate limiting, and distributed coordination where appropriate.
+- Fiber for HTTP serving with FiberZap request logging.
 - OpenAPI and Swagger specifications for HTTP contracts.
 - Telemetry, tracing, metrics, and structured logs as first-class concerns.
 

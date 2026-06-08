@@ -51,6 +51,7 @@ func WithErrorOutput(writer io.Writer) Option {
 	}
 }
 
+// levelFor parses a configured Zap level and applies the default level.
 func levelFor(value string) (zapcore.Level, error) {
 	var level zapcore.Level
 	normalized := strings.ToLower(strings.TrimSpace(value))
@@ -63,6 +64,7 @@ func levelFor(value string) (zapcore.Level, error) {
 	return level, nil
 }
 
+// encoderConfig returns the JSON encoder settings used by GameHub logs.
 func encoderConfig() zapcore.EncoderConfig {
 	return zapcore.EncoderConfig{
 		TimeKey:        "time",
