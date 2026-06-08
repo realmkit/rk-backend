@@ -3,8 +3,10 @@ package config
 import (
 	"strings"
 
+	"github.com/niflaot/gamehub-go/pkg/api/cors"
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/postgres"
+	"github.com/niflaot/gamehub-go/pkg/redis"
 	"github.com/niflaot/gamehub-go/pkg/server"
 )
 
@@ -21,6 +23,12 @@ type Config struct {
 
 	// Postgres contains PostgreSQL connection settings.
 	Postgres postgres.Config `mapstructure:"postgres"`
+
+	// Redis contains Redis connection settings.
+	Redis redis.Config `mapstructure:"redis"`
+
+	// CORS contains browser cross-origin settings.
+	CORS cors.Config `mapstructure:"cors"`
 }
 
 // Runtime contains the essential runtime settings required to start GameHub.

@@ -12,7 +12,9 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/postgres"
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
+	gamehubredis "github.com/niflaot/gamehub-go/pkg/redis"
 	"github.com/niflaot/gamehub-go/pkg/server"
+	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -134,9 +136,12 @@ func TestRunStartLogsStartup(t *testing.T) {
 	deps.newLogger = func(cfg logger.Config) (*zap.Logger, error) {
 		return logger.New(cfg, logger.WithOutput(&output))
 	}
-	deps.newServer = func(_ *zap.Logger, development bool) *fiber.App {
+	deps.newServer = func(_ *zap.Logger, development bool, options ...server.Option) *fiber.App {
 		if !development {
 			t.Fatalf("development = false, want true")
+		}
+		if len(options) == 0 {
+			t.Fatalf("server options = empty, want configured options")
 		}
 		return fiber.New()
 	}
@@ -155,6 +160,60 @@ func TestRunStartLogsStartup(t *testing.T) {
 	}
 }
 
+// TestRunStartUsesRedisStores verifies Redis-backed stores are wired for startup.
+func TestRunStartUsesRedisStores(t *testing.T) {
+	activeLogger := zap.NewNop()
+	opened := false
+	closed := false
+	deps := testCommandDeps(t)
+	deps.loadConfig = func() (config.Config, error) {
+		return config.Config{
+			Logging: logger.Config{Level: "info"},
+			Redis:   gamehubredis.Config{Address: "localhost:6379"},
+		}, nil
+	}
+	deps.openRedis = func(context.Context, gamehubredis.Config) (*goredis.Client, error) {
+		opened = true
+		return goredis.NewClient(&goredis.Options{Addr: "localhost:6379"}), nil
+	}
+	deps.closeRedis = func(*goredis.Client) error {
+		closed = true
+		return nil
+	}
+	deps.newServer = func(_ *zap.Logger, _ bool, options ...server.Option) *fiber.App {
+		if len(options) < 3 {
+			t.Fatalf("server options = %d, want CORS, idempotency, and rate limit options", len(options))
+		}
+		return fiber.New()
+	}
+
+	if err := execute(&activeLogger, []string{"start"}, deps); err != nil {
+		t.Fatalf("execute() error = %v", err)
+	}
+	if !opened || !closed {
+		t.Fatalf("redis opened=%v closed=%v, want both true", opened, closed)
+	}
+}
+
+// TestRunStartReturnsRedisErrors verifies Redis is mandatory for startup.
+func TestRunStartReturnsRedisErrors(t *testing.T) {
+	activeLogger := zap.NewNop()
+	want := errors.New("redis failed")
+	deps := testCommandDeps(t)
+	deps.openRedis = func(context.Context, gamehubredis.Config) (*goredis.Client, error) {
+		return nil, want
+	}
+	deps.newServer = func(*zap.Logger, bool, ...server.Option) *fiber.App {
+		t.Fatalf("newServer called after redis failure")
+		return nil
+	}
+
+	err := execute(&activeLogger, []string{"start"}, deps)
+	if !errors.Is(err, want) {
+		t.Fatalf("execute() error = %v, want %v", err, want)
+	}
+}
+
 // testCommandDeps returns deterministic command dependencies.
 func testCommandDeps(t *testing.T) commandDeps {
 	t.Helper()
@@ -165,7 +224,7 @@ func testCommandDeps(t *testing.T) commandDeps {
 		newLogger: func(logger.Config) (*zap.Logger, error) {
 			return zap.NewNop(), nil
 		},
-		newServer: func(*zap.Logger, bool) *fiber.App {
+		newServer: func(*zap.Logger, bool, ...server.Option) *fiber.App {
 			return fiber.New()
 		},
 		listenServer: func(*fiber.App, string) error {
@@ -179,6 +238,12 @@ func testCommandDeps(t *testing.T) commandDeps {
 			return db, nil
 		},
 		closePostgres: func(*gorm.DB) error {
+			return nil
+		},
+		openRedis: func(context.Context, gamehubredis.Config) (*goredis.Client, error) {
+			return goredis.NewClient(&goredis.Options{Addr: "localhost:6379"}), nil
+		},
+		closeRedis: func(*goredis.Client) error {
 			return nil
 		},
 		newRunner: func(db *gorm.DB, log *zap.Logger) migrations.Runner {

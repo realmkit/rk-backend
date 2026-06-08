@@ -7,11 +7,15 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
+	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
 	"github.com/niflaot/gamehub-go/pkg/config"
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/postgres"
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
+	gamehubredis "github.com/niflaot/gamehub-go/pkg/redis"
 	"github.com/niflaot/gamehub-go/pkg/server"
+	goredis "github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -21,10 +25,12 @@ import (
 type commandDeps struct {
 	loadConfig    func() (config.Config, error)
 	newLogger     func(logger.Config) (*zap.Logger, error)
-	newServer     func(*zap.Logger, bool) *fiber.App
+	newServer     func(*zap.Logger, bool, ...server.Option) *fiber.App
 	listenServer  func(*fiber.App, string) error
 	openPostgres  func(context.Context, postgres.Config) (*gorm.DB, error)
 	closePostgres func(*gorm.DB) error
+	openRedis     func(context.Context, gamehubredis.Config) (*goredis.Client, error)
+	closeRedis    func(*goredis.Client) error
 	newRunner     func(*gorm.DB, *zap.Logger) migrations.Runner
 }
 
@@ -42,14 +48,18 @@ func defaultCommandDeps() commandDeps {
 		newLogger: func(cfg logger.Config) (*zap.Logger, error) {
 			return logger.New(cfg)
 		},
-		newServer: func(log *zap.Logger, development bool) *fiber.App {
-			return server.New(log, development)
+		newServer: func(log *zap.Logger, development bool, options ...server.Option) *fiber.App {
+			return server.New(log, development, options...)
 		},
 		listenServer: listen,
 		openPostgres: func(ctx context.Context, cfg postgres.Config) (*gorm.DB, error) {
 			return postgres.Open(ctx, cfg)
 		},
 		closePostgres: postgres.Close,
+		openRedis: func(ctx context.Context, cfg gamehubredis.Config) (*goredis.Client, error) {
+			return gamehubredis.Open(ctx, cfg)
+		},
+		closeRedis: gamehubredis.Close,
 		newRunner: func(db *gorm.DB, log *zap.Logger) migrations.Runner {
 			return migrations.NewRunner(db, migrations.DefaultSource(), migrations.WithLogger(log), migrations.WithExecutor("gamehub-cli"))
 		},
@@ -253,11 +263,34 @@ func runStart(ctx context.Context, activeLogger **zap.Logger, deps commandDeps) 
 	if err != nil {
 		return err
 	}
+	options, closeRuntime, err := runtimeServerOptions(ctx, cfg, deps)
+	if err != nil {
+		return err
+	}
+	defer closeRuntime(log)
 	development := cfg.Runtime.IsDevelopment()
-	app := deps.newServer(log, development)
+	app := deps.newServer(log, development, options...)
 	address := cfg.Server.Address()
 	log.Info("starting gamehub backend", zap.String("address", address))
 	return deps.listenServer(app, address)
+}
+
+// runtimeServerOptions creates server options from runtime dependencies.
+func runtimeServerOptions(ctx context.Context, cfg config.Config, deps commandDeps) ([]server.Option, func(*zap.Logger), error) {
+	options := []server.Option{server.WithCORS(cfg.CORS)}
+	client, err := deps.openRedis(ctx, cfg.Redis)
+	if err != nil {
+		return nil, nil, err
+	}
+	options = append(options,
+		server.WithIdempotencyStore(idempotency.NewRedisStore(client)),
+		server.WithRateLimitStore(ratelimit.NewRedisStore(client)),
+	)
+	return options, func(log *zap.Logger) {
+		if err := deps.closeRedis(client); err != nil {
+			log.Error("close redis failed", zap.Error(err))
+		}
+	}, nil
 }
 
 // runMigration runs a migration command that returns status.

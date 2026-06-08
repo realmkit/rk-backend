@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
+	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
 	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
 	"github.com/niflaot/gamehub-go/pkg/api/problem"
@@ -24,13 +25,37 @@ type Option func(*options)
 
 // options contains optional server modules.
 type options struct {
-	metadata *metadatahttp.Services
+	cors             gamehubcors.Config
+	idempotencyStore idempotency.Store
+	metadata         *metadatahttp.Services
+	rateLimitStore   ratelimit.Store
+}
+
+// WithCORS configures browser cross-origin middleware.
+func WithCORS(cfg gamehubcors.Config) Option {
+	return func(options *options) {
+		options.cors = cfg
+	}
+}
+
+// WithIdempotencyStore configures the idempotency store.
+func WithIdempotencyStore(store idempotency.Store) Option {
+	return func(options *options) {
+		options.idempotencyStore = store
+	}
 }
 
 // WithMetadata registers metadata routes with services.
 func WithMetadata(services metadatahttp.Services) Option {
 	return func(options *options) {
 		options.metadata = &services
+	}
+}
+
+// WithRateLimitStore configures the rate limit store.
+func WithRateLimitStore(store ratelimit.Store) Option {
+	return func(options *options) {
+		options.rateLimitStore = store
 	}
 }
 
@@ -47,11 +72,12 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	})
 	app.Use(recover.New())
 	app.Use(headers.Middleware())
+	app.Use(gamehubcors.New(options.cors))
 	app.Use(fiberzap.New(fiberzap.Config{
 		Logger: log,
 	}))
-	app.Use(ratelimit.Middleware(ratelimit.NewMemoryStore(), DefaultRateLimit))
-	app.Use(idempotency.Middleware(idempotency.NewMemoryStore()))
+	app.Use(ratelimit.Middleware(options.rateLimitStore, DefaultRateLimit))
+	app.Use(idempotency.Middleware(options.idempotencyStore, idempotency.WithLogger(log)))
 	app.Get("/health", health)
 	v1 := versioning.V1.Group(app)
 	v1.Use(headers.RequireJSON())
@@ -70,9 +96,19 @@ func health(ctx *fiber.Ctx) error {
 
 // optionsFrom applies server options.
 func optionsFrom(opts []Option) options {
-	var options options
+	options := options{
+		cors:             gamehubcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000,http://127.0.0.1:3000"},
+		idempotencyStore: idempotency.NewMemoryStore(),
+		rateLimitStore:   ratelimit.NewMemoryStore(),
+	}
 	for _, opt := range opts {
 		opt(&options)
+	}
+	if options.idempotencyStore == nil {
+		options.idempotencyStore = idempotency.NewMemoryStore()
+	}
+	if options.rateLimitStore == nil {
+		options.rateLimitStore = ratelimit.NewMemoryStore()
 	}
 	return options
 }

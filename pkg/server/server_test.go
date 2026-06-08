@@ -6,13 +6,16 @@ import (
 	"encoding/json"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
 	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
 	"github.com/niflaot/gamehub-go/module/metadata/application"
+	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
 	"github.com/niflaot/gamehub-go/pkg/api/openapi"
+	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
 	"github.com/niflaot/gamehub-go/pkg/api/swagger"
 	"github.com/niflaot/gamehub-go/pkg/api/versioning"
 	"github.com/niflaot/gamehub-go/pkg/logger"
@@ -21,6 +24,18 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+// denyingRateLimitStore rejects every request.
+type denyingRateLimitStore struct{}
+
+// Allow returns a denied rate limit decision.
+func (store denyingRateLimitStore) Allow(context.Context, string, ratelimit.Policy) (ratelimit.Decision, error) {
+	return ratelimit.Decision{
+		Allowed: false,
+		Limit:   1,
+		ResetAt: time.Now().Add(time.Minute),
+	}, nil
+}
 
 // TestConfigAddress verifies server addresses are formatted for Listen.
 func TestConfigAddress(t *testing.T) {
@@ -82,6 +97,40 @@ func TestNewWritesRequestHeaders(t *testing.T) {
 	}
 	if res.Header.Get(headers.RateLimitLimit) == "" {
 		t.Fatalf("%s header = empty", headers.RateLimitLimit)
+	}
+}
+
+// TestNewAppliesCORS verifies configured browser origins are allowed.
+func TestNewAppliesCORS(t *testing.T) {
+	app := New(nil, false, WithCORS(gamehubcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000"}))
+	req := httptest.NewRequest(fiber.MethodOptions, "/api/v1/health", nil)
+	req.Header.Set("Origin", "http://localhost:3000")
+	req.Header.Set("Access-Control-Request-Method", fiber.MethodGet)
+
+	res, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	defer res.Body.Close()
+
+	if res.Header.Get("Access-Control-Allow-Origin") != "http://localhost:3000" {
+		t.Fatalf("Access-Control-Allow-Origin = %q, want configured origin", res.Header.Get("Access-Control-Allow-Origin"))
+	}
+}
+
+// TestNewUsesInjectedRateLimitStore verifies server options wire custom rate limit stores.
+func TestNewUsesInjectedRateLimitStore(t *testing.T) {
+	app := New(nil, false, WithRateLimitStore(denyingRateLimitStore{}))
+	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/health", nil)
+
+	res, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != fiber.StatusTooManyRequests {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusTooManyRequests)
 	}
 }
 
