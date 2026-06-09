@@ -10,6 +10,9 @@ import (
 	assetshttp "github.com/niflaot/gamehub-go/module/assets/adapter/http"
 	assetspostgres "github.com/niflaot/gamehub-go/module/assets/adapter/postgres"
 	assetsapp "github.com/niflaot/gamehub-go/module/assets/application"
+	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
+	groupspostgres "github.com/niflaot/gamehub-go/module/groups/adapter/postgres"
+	groupsapp "github.com/niflaot/gamehub-go/module/groups/application"
 	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
 	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
 	"github.com/niflaot/gamehub-go/pkg/config"
@@ -316,10 +319,12 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 	logDevelopmentConnection(cfg, log, "s3 storage connection established", zap.String("bucket", cfg.Storage.Bucket), zap.String("endpoint", cfg.Storage.Endpoint))
 	assetRepository := assetspostgres.NewAssetRepository(orm.NewStore(db))
 	assetService := assetsapp.NewService(assetRepository, assetStorage, cfg.Storage.Bucket)
+	groupService := groupsService(db)
 	options = append(options,
 		server.WithIdempotencyStore(idempotency.NewRedisStore(client)),
 		server.WithRateLimitStore(ratelimit.NewRedisStore(client)),
 		server.WithAssets(assetshttpServices(assetService)),
+		server.WithGroups(groupshttpServices(groupService)),
 	)
 	return options, func(log *zap.Logger) {
 		closeDatabase(log, deps.closePostgres, db)
@@ -327,6 +332,17 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 			log.Error("close redis failed", zap.Error(err))
 		}
 	}, nil
+}
+
+// groupsService creates groups application service.
+func groupsService(db *gorm.DB) groupsapp.Service {
+	store := orm.NewStore(db)
+	return groupsapp.NewService(groupspostgres.NewGroupRepository(store), groupspostgres.NewMembershipRepository(store), groupspostgres.NewTupleRepository(store))
+}
+
+// groupshttpServices creates HTTP services for groups.
+func groupshttpServices(groupService groupsapp.Service) groupshttp.Services {
+	return groupshttp.Services{Groups: groupService, Memberships: groupService, Tuples: groupService, Checker: groupService}
 }
 
 // logDevelopmentConnection logs dependency startup success in development.

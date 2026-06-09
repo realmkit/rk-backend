@@ -29,6 +29,9 @@ const (
 	// OwnerAsset attaches metadata to assets.
 	OwnerAsset OwnerType = "asset"
 
+	// OwnerGroup attaches metadata to groups.
+	OwnerGroup OwnerType = "group"
+
 	// OwnerUser attaches metadata to users.
 	OwnerUser OwnerType = "user"
 )
@@ -54,6 +57,7 @@ const (
 func AllowedOwnerTypes() []OwnerType {
 	return []OwnerType{
 		OwnerAsset,
+		OwnerGroup,
 		OwnerUser,
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	assetshttp "github.com/niflaot/gamehub-go/module/assets/adapter/http"
+	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
 	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
@@ -30,6 +31,7 @@ type options struct {
 	idempotencyConfigured bool
 	idempotencyRedisStore idempotency.RedisStore
 	assets                *assetshttp.Services
+	groups                *groupshttp.Services
 	metadata              *metadatahttp.Services
 	rateLimitStore        ratelimit.Store
 }
@@ -53,6 +55,13 @@ func WithIdempotencyStore(store idempotency.RedisStore) Option {
 func WithAssets(services assetshttp.Services) Option {
 	return func(options *options) {
 		options.assets = &services
+	}
+}
+
+// WithGroups registers groups routes with services.
+func WithGroups(services groupshttp.Services) Option {
+	return func(options *options) {
+		options.groups = &services
 	}
 }
 
@@ -95,6 +104,9 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	v1.Get("/health", health)
 	if options.assets != nil {
 		assetshttp.Register(v1, *options.assets)
+	}
+	if options.groups != nil {
+		groupshttp.Register(v1, *options.groups)
 	}
 	if options.metadata != nil {
 		metadatahttp.Register(v1, *options.metadata)

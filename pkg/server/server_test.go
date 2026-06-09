@@ -10,9 +10,12 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
+	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
+	groupspostgres "github.com/niflaot/gamehub-go/module/groups/adapter/postgres"
+	groupsapplication "github.com/niflaot/gamehub-go/module/groups/application"
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
 	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
-	"github.com/niflaot/gamehub-go/module/metadata/application"
+	metadataapplication "github.com/niflaot/gamehub-go/module/metadata/application"
 	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
 	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
@@ -256,6 +259,25 @@ func TestRegisteredMetadataRoutesExistInOpenAPI(t *testing.T) {
 	}
 }
 
+// TestRegisteredGroupsRoutesExistInOpenAPI verifies optional groups routes are documented.
+func TestRegisteredGroupsRoutesExistInOpenAPI(t *testing.T) {
+	app := newApp(t, nil, true, WithGroups(newGroupsServices(t)))
+
+	for _, route := range app.GetRoutes() {
+		if !requiresContract(route) {
+			continue
+		}
+
+		ok, err := openapi.OperationExists(route.Method, route.Path)
+		if err != nil {
+			t.Fatalf("OperationExists() error = %v", err)
+		}
+		if !ok {
+			t.Fatalf("%s %s missing OpenAPI operation", route.Method, route.Path)
+		}
+	}
+}
+
 // requiresContract reports whether route must exist in OpenAPI.
 func requiresContract(route fiber.Route) bool {
 	if route.Method == fiber.MethodHead {
@@ -305,11 +327,26 @@ func newMetadataServices(t *testing.T) metadatahttp.Services {
 		t.Fatalf("Migrate() error = %v", err)
 	}
 	store := orm.NewStore(db)
-	service := application.NewService(application.Dependencies{
+	service := metadataapplication.NewService(metadataapplication.Dependencies{
 		Definitions:           metadatapostgres.NewMetafieldDefinitionRepository(store),
 		Values:                metadatapostgres.NewMetafieldValueRepository(store),
 		MetaobjectDefinitions: metadatapostgres.NewMetaobjectDefinitionRepository(store),
 		MetaobjectEntries:     metadatapostgres.NewMetaobjectEntryRepository(store),
 	})
 	return metadatahttp.Services{Definitions: service, Values: service, Metaobjects: service}
+}
+
+// newGroupsServices creates groups services for server tests.
+func newGroupsServices(t *testing.T) groupshttp.Services {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("gorm.Open() error = %v", err)
+	}
+	if _, err := migrations.NewRunner(db, migrations.DefaultSource()).Up(context.Background()); err != nil {
+		t.Fatalf("Migrate() error = %v", err)
+	}
+	store := orm.NewStore(db)
+	service := groupsapplication.NewService(groupspostgres.NewGroupRepository(store), groupspostgres.NewMembershipRepository(store), groupspostgres.NewTupleRepository(store))
+	return groupshttp.Services{Groups: service, Memberships: service, Tuples: service, Checker: service}
 }

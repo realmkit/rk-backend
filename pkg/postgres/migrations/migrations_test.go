@@ -19,14 +19,17 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if len(migrations) != 2 {
-		t.Fatalf("len(migrations) = %d, want 2", len(migrations))
+	if len(migrations) != 3 {
+		t.Fatalf("len(migrations) = %d, want 3", len(migrations))
 	}
 	if migrations[0].Version != 1 || migrations[0].Name != "create_metadata_tables" {
 		t.Fatalf("migration[0] = %+v, want metadata version 1", migrations[0])
 	}
 	if migrations[1].Version != 2 || migrations[1].Name != "create_asset_tables" {
 		t.Fatalf("migration[1] = %+v, want assets version 2", migrations[1])
+	}
+	if migrations[2].Version != 3 || migrations[2].Name != "create_group_permission_tables" {
+		t.Fatalf("migration[2] = %+v, want groups version 3", migrations[2])
 	}
 }
 
@@ -58,14 +61,17 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Up() error = %v", err)
 	}
-	if len(status.Applied) != 2 || len(status.Pending) != 0 {
-		t.Fatalf("Status = %+v, want two applied and no pending", status)
+	if len(status.Applied) != 3 || len(status.Pending) != 0 {
+		t.Fatalf("Status = %+v, want three applied and no pending", status)
 	}
 	if !db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table missing")
 	}
 	if !db.Migrator().HasTable("assets") {
 		t.Fatalf("assets table missing")
+	}
+	if !db.Migrator().HasTable("groups") {
+		t.Fatalf("groups table missing")
 	}
 }
 
@@ -139,18 +145,21 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	status, err := runner.Down(context.Background(), 2)
+	status, err := runner.Down(context.Background(), 3)
 	if err != nil {
 		t.Fatalf("Down() error = %v", err)
 	}
-	if len(status.Applied) != 0 || len(status.Pending) != 2 {
-		t.Fatalf("Status = %+v, want no applied and two pending", status)
+	if len(status.Applied) != 0 || len(status.Pending) != 3 {
+		t.Fatalf("Status = %+v, want no applied and three pending", status)
 	}
 	if db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table exists after Down()")
 	}
 	if db.Migrator().HasTable("assets") {
 		t.Fatalf("assets table exists after Down()")
+	}
+	if db.Migrator().HasTable("groups") {
+		t.Fatalf("groups table exists after Down()")
 	}
 }
 
