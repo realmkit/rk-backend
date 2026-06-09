@@ -73,6 +73,9 @@ type VisibilityAuthorizer interface {
 	// CanReply reports whether actor can reply in forum.
 	CanReply(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error)
 
+	// CanLikePosts reports whether actor can like posts in forum.
+	CanLikePosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error)
+
 	// CanManageThreads reports whether actor can manage threads in forum.
 	CanManageThreads(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error)
 

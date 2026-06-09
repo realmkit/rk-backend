@@ -241,6 +241,212 @@ func TestListPostRevisionsRequiresUser(t *testing.T) {
 	}
 }
 
+// TestLikePostRequiresIdempotency verifies like command headers.
+func TestLikePostRequiresIdempotency(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodPut, "/api/v1/posts/"+uuid.NewString()+"/like", nil)
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusBadRequest)
+	}
+}
+
+// TestLikePostReturnsSummary verifies successful like route.
+func TestLikePostReturnsSummary(t *testing.T) {
+	app := newTestApp(httpService{})
+	postID := uuid.New()
+	req, _ := http.NewRequest(http.MethodPut, "/api/v1/posts/"+postID.String()+"/like", nil)
+	req.Header.Set(headers.IdempotencyKey, "like")
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusOK)
+	}
+	var summary domain.PostLikeSummary
+	if err := json.NewDecoder(resp.Body).Decode(&summary); err != nil {
+		t.Fatalf("Decode() error = %v", err)
+	}
+	if !summary.LikedByActor || summary.LikeCount != 1 {
+		t.Fatalf("summary = %+v, want liked summary", summary)
+	}
+}
+
+// TestUnlikePostReturnsSummary verifies successful unlike route.
+func TestUnlikePostReturnsSummary(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodDelete, "/api/v1/posts/"+uuid.NewString()+"/like", nil)
+	req.Header.Set(headers.IdempotencyKey, "unlike")
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusOK)
+	}
+}
+
+// TestLatestPostsRoutesReturnOK verifies latest widget routes.
+func TestLatestPostsRoutesReturnOK(t *testing.T) {
+	app := newTestApp(httpService{})
+	for _, path := range []string{"/api/v1/forums/latest-posts", "/api/v1/forums/" + uuid.NewString() + "/latest-posts"} {
+		req, _ := http.NewRequest(http.MethodGet, path, nil)
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("Test(%s) error = %v", path, err)
+		}
+		if resp.StatusCode != fiber.StatusOK {
+			t.Fatalf("status for %s = %d, want %d", path, resp.StatusCode, fiber.StatusOK)
+		}
+	}
+}
+
+// TestMostLikedPostsRouteReturnsOK verifies most-liked widget route.
+func TestMostLikedPostsRouteReturnsOK(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/forums/"+uuid.NewString()+"/posts/most-liked", nil)
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusOK)
+	}
+}
+
+// TestMarkThreadReadRequiresUser verifies read state auth.
+func TestMarkThreadReadRequiresUser(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/threads/"+uuid.NewString()+"/read", nil)
+	req.Header.Set(headers.IdempotencyKey, "read")
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusUnauthorized)
+	}
+}
+
+// TestMarkForumReadReturnsNoContent verifies forum read route.
+func TestMarkForumReadReturnsNoContent(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/forums/"+uuid.NewString()+"/read", nil)
+	req.Header.Set(headers.IdempotencyKey, "read-forum")
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusNoContent {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusNoContent)
+	}
+}
+
+// TestUnreadSummaryReturnsOK verifies unread summary route.
+func TestUnreadSummaryReturnsOK(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/forums/unread-summary", nil)
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusOK)
+	}
+}
+
+// TestForumHTTPWriteAndReadLifecycleRoutesExerciseHandlers verifies route handler coverage for structure and content.
+func TestForumHTTPWriteAndReadLifecycleRoutesExerciseHandlers(t *testing.T) {
+	app := newTestApp(httpService{})
+	id := uuid.NewString()
+	categoryBody := `{"key":"official","name":"Official","status":"active"}`
+	forumBody := `{"category_id":"` + uuid.NewString() + `","kind":"discussion","key":"news","slug":"news","name":"News","thread_visibility_mode":"all_threads","default_thread_status":"open","status":"active"}`
+	reorderBody := `{"items":[{"id":"` + uuid.NewString() + `","display_order":1}]}`
+	moveBody := `{"category_id":"` + uuid.NewString() + `","display_order":2}`
+	postBody := `{"content_document_json":{"type":"doc"},"content_text":"Body"}`
+	tests := []struct {
+		method string
+		path   string
+		body   string
+		status int
+	}{
+		{method: http.MethodGet, path: "/api/v1/forum-categories/" + id, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/api/v1/forum-categories", status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/api/v1/forum-categories/" + id, body: categoryBody, status: fiber.StatusOK},
+		{method: http.MethodDelete, path: "/api/v1/forum-categories/" + id, status: fiber.StatusNoContent},
+		{method: http.MethodPost, path: "/api/v1/forum-categories/reorder", body: reorderBody, status: fiber.StatusNoContent},
+		{method: http.MethodPost, path: "/api/v1/forums", body: forumBody, status: fiber.StatusCreated},
+		{method: http.MethodGet, path: "/api/v1/forums/" + id, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/api/v1/forums?category_id=" + uuid.NewString() + "&parent_forum_id=" + uuid.NewString() + "&status=active", status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/api/v1/forums/" + id, body: forumBody, status: fiber.StatusOK},
+		{method: http.MethodPost, path: "/api/v1/forums/" + id + "/move", body: moveBody, status: fiber.StatusOK},
+		{method: http.MethodDelete, path: "/api/v1/forums/" + id, status: fiber.StatusNoContent},
+		{method: http.MethodPost, path: "/api/v1/forums/reorder", body: reorderBody, status: fiber.StatusNoContent},
+		{method: http.MethodGet, path: "/api/v1/threads/" + id, status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/api/v1/threads/" + id, body: `{"title":"Updated","slug":"updated"}`, status: fiber.StatusOK},
+		{method: http.MethodDelete, path: "/api/v1/threads/" + id, status: fiber.StatusNoContent},
+		{method: http.MethodPost, path: "/api/v1/threads/" + id + "/posts", body: postBody, status: fiber.StatusCreated},
+		{method: http.MethodDelete, path: "/api/v1/posts/" + id, status: fiber.StatusNoContent},
+		{method: http.MethodGet, path: "/api/v1/posts/" + id + "/revisions", status: fiber.StatusOK},
+		{method: http.MethodPost, path: "/api/v1/threads/" + id + "/read", body: `{"last_read_post_sequence":1}`, status: fiber.StatusOK},
+	}
+	for _, tt := range tests {
+		req, _ := http.NewRequest(tt.method, tt.path, bytes.NewBufferString(tt.body))
+		req.Header.Set(headers.Accept, "application/json")
+		req.Header.Set(headers.ContentType, "application/json")
+		req.Header.Set(headers.IdempotencyKey, "test-key")
+		req.Header.Set(headers.IfMatch, `"1"`)
+		req.Header.Set(currentUserIDHeader, uuid.NewString())
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("Test(%s %s) error = %v", tt.method, tt.path, err)
+		}
+		if resp.StatusCode != tt.status {
+			t.Fatalf("%s %s status = %d, want %d", tt.method, tt.path, resp.StatusCode, tt.status)
+		}
+	}
+}
+
+// TestForumHTTPProblemMappingsExerciseSupport verifies application errors become problem responses.
+func TestForumHTTPProblemMappingsExerciseSupport(t *testing.T) {
+	tests := []struct {
+		err    error
+		status int
+	}{
+		{err: port.ErrNotFound, status: fiber.StatusNotFound},
+		{err: port.ErrPreconditionFailed, status: fiber.StatusPreconditionFailed},
+		{err: port.ErrConflict, status: fiber.StatusConflict},
+		{err: port.ErrInvalidMove, status: fiber.StatusConflict},
+	}
+	for _, tt := range tests {
+		app := newTestApp(httpService{err: tt.err})
+		req, _ := http.NewRequest(http.MethodGet, "/api/v1/forums/"+uuid.NewString(), nil)
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("Test() error = %v", err)
+		}
+		if resp.StatusCode != tt.status {
+			t.Fatalf("status for %v = %d, want %d", tt.err, resp.StatusCode, tt.status)
+		}
+	}
+}
+
 // newTestApp creates a Fiber app with forum routes.
 func newTestApp(service httpService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
@@ -263,17 +469,17 @@ func (service httpService) CreateCategory(context.Context, port.CreateCategoryCo
 
 // UpdateCategory updates a category.
 func (service httpService) UpdateCategory(context.Context, port.UpdateCategoryCommand) (domain.ForumCategory, error) {
-	return domain.ForumCategory{}, service.err
+	return domain.ForumCategory{ID: uuid.New(), Key: "official", Name: "Official", Status: domain.CategoryStatusActive, Version: 2}, service.err
 }
 
 // GetCategory returns one category.
 func (service httpService) GetCategory(context.Context, uuid.UUID) (domain.ForumCategory, error) {
-	return domain.ForumCategory{}, service.err
+	return domain.ForumCategory{ID: uuid.New(), Key: "official", Name: "Official", Status: domain.CategoryStatusActive, Version: 1}, service.err
 }
 
 // ListCategories lists categories.
 func (service httpService) ListCategories(context.Context, port.CategoryFilter, pagination.Page) (pagination.Result[domain.ForumCategory], error) {
-	return pagination.Result[domain.ForumCategory]{}, service.err
+	return pagination.Result[domain.ForumCategory]{Items: []domain.ForumCategory{{ID: uuid.New(), Key: "official", Name: "Official", Status: domain.CategoryStatusActive, Version: 1}}}, service.err
 }
 
 // DeleteCategory deletes a category.
@@ -288,27 +494,27 @@ func (service httpService) ReorderCategories(context.Context, port.ReorderCatego
 
 // CreateForum creates a forum.
 func (service httpService) CreateForum(context.Context, port.CreateForumCommand) (domain.Forum, error) {
-	return domain.Forum{}, service.err
+	return domain.Forum{ID: uuid.New(), Key: "news", Name: "News", Version: 1}, service.err
 }
 
 // UpdateForum updates a forum.
 func (service httpService) UpdateForum(context.Context, port.UpdateForumCommand) (domain.Forum, error) {
-	return domain.Forum{}, service.err
+	return domain.Forum{ID: uuid.New(), Key: "news", Name: "News", Version: 2}, service.err
 }
 
 // MoveForum moves a forum.
 func (service httpService) MoveForum(context.Context, port.MoveForumCommand) (domain.Forum, error) {
-	return domain.Forum{}, service.err
+	return domain.Forum{ID: uuid.New(), Key: "news", Name: "News", Version: 2}, service.err
 }
 
 // GetForum returns one forum.
 func (service httpService) GetForum(context.Context, uuid.UUID) (domain.Forum, error) {
-	return domain.Forum{}, service.err
+	return domain.Forum{ID: uuid.New(), Key: "news", Name: "News", Version: 1}, service.err
 }
 
 // ListForums lists forums.
 func (service httpService) ListForums(context.Context, port.ForumFilter, pagination.Page) (pagination.Result[domain.Forum], error) {
-	return pagination.Result[domain.Forum]{}, service.err
+	return pagination.Result[domain.Forum]{Items: []domain.Forum{{ID: uuid.New(), Key: "news", Name: "News", Version: 1}}}, service.err
 }
 
 // DeleteForum deletes a forum.
@@ -379,4 +585,39 @@ func (service httpService) DeletePost(context.Context, port.DeletePostCommand) e
 // ListPostRevisions lists revisions.
 func (service httpService) ListPostRevisions(context.Context, uuid.UUID, uuid.UUID, pagination.Page) (pagination.Result[domain.PostRevision], error) {
 	return pagination.Result[domain.PostRevision]{}, service.err
+}
+
+// LikePost likes one post.
+func (service httpService) LikePost(context.Context, port.LikePostCommand) (domain.PostLikeSummary, error) {
+	return domain.PostLikeSummary{PostID: uuid.New(), LikeCount: 1, LikedByActor: true}, service.err
+}
+
+// UnlikePost unlikes one post.
+func (service httpService) UnlikePost(context.Context, port.UnlikePostCommand) (domain.PostLikeSummary, error) {
+	return domain.PostLikeSummary{PostID: uuid.New(), LikeCount: 0}, service.err
+}
+
+// ListLatestPosts lists latest posts.
+func (service httpService) ListLatestPosts(context.Context, uuid.UUID, uuid.UUID, pagination.Page) (pagination.Result[domain.LatestPostSummary], error) {
+	return pagination.Result[domain.LatestPostSummary]{Items: []domain.LatestPostSummary{{ForumID: uuid.New(), ThreadID: uuid.New(), PostID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ThreadTitle: "Thread"}}}, service.err
+}
+
+// ListMostLikedPosts lists most-liked posts.
+func (service httpService) ListMostLikedPosts(context.Context, uuid.UUID, uuid.UUID, pagination.Page) (pagination.Result[domain.MostLikedPost], error) {
+	return pagination.Result[domain.MostLikedPost]{Items: []domain.MostLikedPost{{ForumID: uuid.New(), ThreadID: uuid.New(), PostID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ThreadTitle: "Thread", LikeCount: 3}}}, service.err
+}
+
+// MarkThreadRead marks a thread read.
+func (service httpService) MarkThreadRead(context.Context, port.MarkThreadReadCommand) (domain.ThreadReadState, error) {
+	return domain.ThreadReadState{ID: uuid.New(), UserID: uuid.New(), ForumID: uuid.New(), ThreadID: uuid.New(), LastReadPostSequence: 1}, service.err
+}
+
+// MarkForumRead marks a forum read.
+func (service httpService) MarkForumRead(context.Context, port.MarkForumReadCommand) error {
+	return service.err
+}
+
+// GetUnreadSummary returns unread counts.
+func (service httpService) GetUnreadSummary(context.Context, uuid.UUID) (domain.UnreadSummary, error) {
+	return domain.UnreadSummary{UserID: uuid.New(), UnreadThreadCount: 1}, service.err
 }

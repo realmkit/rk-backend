@@ -71,3 +71,18 @@ func referenceModelFromDomain(reference domain.PostReference) PostReferenceModel
 func referenceFromModel(model PostReferenceModel) domain.PostReference {
 	return domain.PostReference{ID: model.ID.ID, SourcePostID: model.SourcePostID, TargetPostID: model.TargetPostID, TargetUserID: model.TargetUserID, TargetAssetID: model.TargetAssetID, ReferenceType: domain.ReferenceType(model.ReferenceType), QuoteExcerpt: model.QuoteExcerpt, LinkURL: model.LinkURL, CreatedAt: model.CreatedAt}
 }
+
+// likeModelFromDomain maps like to persistence.
+func likeModelFromDomain(like domain.PostLike) PostLikeModel {
+	return PostLikeModel{ID: orm.ID{ID: like.ID}, PostID: like.PostID, ThreadID: like.ThreadID, ForumID: like.ForumID, UserID: like.UserID, CreatedAt: like.CreatedAt}
+}
+
+// readStateModelFromDomain maps read state to persistence.
+func readStateModelFromDomain(state domain.ThreadReadState) ThreadReadStateModel {
+	return ThreadReadStateModel{ID: orm.ID{ID: state.ID}, UserID: state.UserID, ForumID: state.ForumID, ThreadID: state.ThreadID, LastReadPostSequence: state.LastReadPostSequence, LastReadAt: state.LastReadAt, CreatedAt: state.CreatedAt, UpdatedAt: state.UpdatedAt}
+}
+
+// readStateFromModel maps persistence read state to domain.
+func readStateFromModel(model ThreadReadStateModel) domain.ThreadReadState {
+	return domain.ThreadReadState{ID: model.ID.ID, UserID: model.UserID, ForumID: model.ForumID, ThreadID: model.ThreadID, LastReadPostSequence: model.LastReadPostSequence, LastReadAt: model.LastReadAt, CreatedAt: model.CreatedAt, UpdatedAt: model.UpdatedAt}
+}

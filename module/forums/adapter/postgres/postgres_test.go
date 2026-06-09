@@ -326,6 +326,113 @@ func TestPostRepositoryStoresReferencesAndNextSequence(t *testing.T) {
 	}
 }
 
+// TestInteractionRepositoryLikeUnlikeIdempotency verifies like counter safety.
+func TestInteractionRepositoryLikeUnlikeIdempotency(t *testing.T) {
+	categories, forums, db := newRepositories(t)
+	threads := NewThreadRepository(orm.NewStore(db))
+	posts := NewPostRepository(orm.NewStore(db))
+	interactions := NewInteractionRepository(orm.NewStore(db))
+	_, forum, thread, post := createContentFixture(t, categories, forums, threads, posts, "likes")
+	userID := uuid.New()
+	like := domain.PostLike{ID: uuid.New(), PostID: post.ID, ThreadID: thread.ID, ForumID: forum.ID, UserID: userID, CreatedAt: time.Now().UTC()}
+
+	changed, err := interactions.LikePost(context.Background(), like)
+	if err != nil {
+		t.Fatalf("LikePost first error = %v", err)
+	}
+	again, err := interactions.LikePost(context.Background(), like)
+	if err != nil {
+		t.Fatalf("LikePost second error = %v", err)
+	}
+	if !changed || again {
+		t.Fatalf("changed=%v again=%v, want first change only", changed, again)
+	}
+	liked, err := interactions.LikedByUser(context.Background(), post.ID, userID)
+	if err != nil {
+		t.Fatalf("LikedByUser error = %v", err)
+	}
+	if !liked {
+		t.Fatalf("LikedByUser = false, want true")
+	}
+	removed, err := interactions.UnlikePost(context.Background(), post.ID, userID)
+	if err != nil {
+		t.Fatalf("UnlikePost first error = %v", err)
+	}
+	missing, err := interactions.UnlikePost(context.Background(), post.ID, userID)
+	if err != nil {
+		t.Fatalf("UnlikePost second error = %v", err)
+	}
+	if !removed || missing {
+		t.Fatalf("removed=%v missing=%v, want first unlike only", removed, missing)
+	}
+	found, err := posts.FindByID(context.Background(), post.ID)
+	if err != nil {
+		t.Fatalf("FindByID error = %v", err)
+	}
+	if found.LikeCount != 0 {
+		t.Fatalf("post like count = %d, want 0", found.LikeCount)
+	}
+}
+
+// TestInteractionRepositoryWidgetsReturnVisibleRows verifies widget queries.
+func TestInteractionRepositoryWidgetsReturnVisibleRows(t *testing.T) {
+	categories, forums, db := newRepositories(t)
+	threads := NewThreadRepository(orm.NewStore(db))
+	posts := NewPostRepository(orm.NewStore(db))
+	interactions := NewInteractionRepository(orm.NewStore(db))
+	_, forum, thread, post := createContentFixture(t, categories, forums, threads, posts, "widgets")
+	if _, err := interactions.LikePost(context.Background(), domain.PostLike{ID: uuid.New(), PostID: post.ID, ThreadID: thread.ID, ForumID: forum.ID, UserID: uuid.New(), CreatedAt: time.Now().UTC()}); err != nil {
+		t.Fatalf("LikePost error = %v", err)
+	}
+
+	latest, err := interactions.ListLatestPosts(context.Background(), port.LatestPostFilter{ForumIDs: []uuid.UUID{forum.ID}}, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("ListLatestPosts error = %v", err)
+	}
+	mostLiked, err := interactions.ListMostLikedPosts(context.Background(), port.MostLikedFilter{ForumID: forum.ID}, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("ListMostLikedPosts error = %v", err)
+	}
+	if len(latest.Items) != 1 || latest.Items[0].PostID != post.ID {
+		t.Fatalf("latest = %+v, want post", latest.Items)
+	}
+	if len(mostLiked.Items) != 1 || mostLiked.Items[0].LikeCount != 1 {
+		t.Fatalf("mostLiked = %+v, want liked post", mostLiked.Items)
+	}
+}
+
+// TestInteractionRepositoryReadStateAndUnreadSummary verifies read-state persistence.
+func TestInteractionRepositoryReadStateAndUnreadSummary(t *testing.T) {
+	categories, forums, db := newRepositories(t)
+	threads := NewThreadRepository(orm.NewStore(db))
+	posts := NewPostRepository(orm.NewStore(db))
+	interactions := NewInteractionRepository(orm.NewStore(db))
+	_, forum, thread, _ := createContentFixture(t, categories, forums, threads, posts, "reads")
+	userID := uuid.New()
+
+	before, err := interactions.UnreadSummary(context.Background(), userID, []uuid.UUID{forum.ID})
+	if err != nil {
+		t.Fatalf("UnreadSummary before error = %v", err)
+	}
+	if before.UnreadThreadCount != 1 {
+		t.Fatalf("before unread = %+v, want one unread thread", before)
+	}
+	state := domain.ThreadReadState{ID: uuid.New(), UserID: userID, ForumID: forum.ID, ThreadID: thread.ID, LastReadPostSequence: 1, LastReadAt: time.Now().UTC()}
+	if err := interactions.MarkThreadRead(context.Background(), state); err != nil {
+		t.Fatalf("MarkThreadRead error = %v", err)
+	}
+	after, err := interactions.UnreadSummary(context.Background(), userID, []uuid.UUID{forum.ID})
+	if err != nil {
+		t.Fatalf("UnreadSummary after error = %v", err)
+	}
+	if after.UnreadThreadCount != 0 {
+		t.Fatalf("after unread = %+v, want zero unread threads", after)
+	}
+	if err := interactions.MarkForumRead(context.Background(), userID, forum.ID, time.Now().UTC()); err != nil {
+		t.Fatalf("MarkForumRead error = %v", err)
+	}
+}
+
 // newRepositories creates migrated forum repositories.
 func newRepositories(t *testing.T) (CategoryRepository, ForumRepository, *gorm.DB) {
 	t.Helper()
@@ -338,6 +445,30 @@ func newRepositories(t *testing.T) (CategoryRepository, ForumRepository, *gorm.D
 	}
 	store := orm.NewStore(db)
 	return NewCategoryRepository(store), NewForumRepository(store), db
+}
+
+// createContentFixture creates one category, forum, thread, and opener post.
+func createContentFixture(t *testing.T, categories CategoryRepository, forums ForumRepository, threads ThreadRepository, posts PostRepository, key string) (domain.ForumCategory, domain.Forum, domain.Thread, domain.Post) {
+	t.Helper()
+	category, err := categories.Create(context.Background(), testCategory())
+	if err != nil {
+		t.Fatalf("Create category error = %v", err)
+	}
+	forum, err := forums.Create(context.Background(), testForum(category.ID, nil, key))
+	if err != nil {
+		t.Fatalf("Create forum error = %v", err)
+	}
+	authorID := uuid.New()
+	openerID := uuid.New()
+	thread, err := threads.Create(context.Background(), testThread(forum.ID, authorID, openerID))
+	if err != nil {
+		t.Fatalf("Create thread error = %v", err)
+	}
+	post, err := posts.Create(context.Background(), testPost(thread.ID, forum.ID, authorID, openerID, 1), nil)
+	if err != nil {
+		t.Fatalf("Create opener error = %v", err)
+	}
+	return category, forum, thread, post
 }
 
 // createTuple stores one visibility tuple.

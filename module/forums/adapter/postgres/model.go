@@ -165,3 +165,36 @@ type PostReferenceModel struct {
 func (PostReferenceModel) TableName() string {
 	return "forum_post_references"
 }
+
+// PostLikeModel is the GORM model for post likes.
+type PostLikeModel struct {
+	orm.ID
+	PostID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	ThreadID  uuid.UUID `gorm:"type:uuid;not null;index"`
+	ForumID   uuid.UUID `gorm:"type:uuid;not null;index"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	CreatedAt time.Time `gorm:"not null"`
+	orm.SoftDelete
+}
+
+// TableName returns the database table name.
+func (PostLikeModel) TableName() string {
+	return "forum_post_likes"
+}
+
+// ThreadReadStateModel is the GORM model for thread read states.
+type ThreadReadStateModel struct {
+	orm.ID
+	UserID               uuid.UUID `gorm:"type:uuid;not null;index"`
+	ForumID              uuid.UUID `gorm:"type:uuid;not null;index"`
+	ThreadID             uuid.UUID `gorm:"type:uuid;not null;index"`
+	LastReadPostSequence int64     `gorm:"not null"`
+	LastReadAt           time.Time `gorm:"not null;index"`
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+}
+
+// TableName returns the database table name.
+func (ThreadReadStateModel) TableName() string {
+	return "forum_thread_read_states"
+}

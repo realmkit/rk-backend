@@ -43,6 +43,12 @@ func (authorizer VisibilityAuthorizer) CanReply(ctx context.Context, actorUserID
 	return allowed[forumID], err
 }
 
+// CanLikePosts reports whether actor can like posts in forum.
+func (authorizer VisibilityAuthorizer) CanLikePosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error) {
+	allowed, err := authorizer.allowedForums(ctx, actorUserID, []uuid.UUID{forumID}, []groupsdomain.Relation{groupsdomain.RelationLiker, groupsdomain.RelationManager, groupsdomain.RelationOwner})
+	return allowed[forumID], err
+}
+
 // CanManageThreads reports whether actor can manage threads in forum.
 func (authorizer VisibilityAuthorizer) CanManageThreads(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error) {
 	allowed, err := authorizer.allowedForums(ctx, actorUserID, []uuid.UUID{forumID}, []groupsdomain.Relation{groupsdomain.RelationModerator, groupsdomain.RelationManager, groupsdomain.RelationOwner})

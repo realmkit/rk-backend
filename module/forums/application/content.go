@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,12 @@ import (
 	"github.com/niflaot/gamehub-go/module/forums/port"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 )
+
+// authorPostEditWindow is the default author self-edit window before admin configuration exists.
+const authorPostEditWindow = 10 * time.Minute
+
+// authorPostDeleteWindow is the default author self-delete window before admin configuration exists.
+const authorPostDeleteWindow = 5 * time.Minute
 
 // CreateThread creates a thread and opener post.
 func (service Service) CreateThread(ctx context.Context, command port.CreateThreadCommand) (domain.Thread, domain.Post, error) {
@@ -147,6 +154,9 @@ func (service Service) CreateReply(ctx context.Context, command port.CreateReply
 			return domain.Post{}, err
 		}
 	}
+	if err := service.validateReferences(ctx, command.ActorUserID, references); err != nil {
+		return domain.Post{}, err
+	}
 	var created domain.Post
 	err = service.transactions.WithinTx(ctx, func(ctx context.Context) error {
 		stored, err := service.posts.Create(ctx, post, references)
@@ -203,7 +213,15 @@ func (service Service) UpdatePost(ctx context.Context, command port.UpdatePostCo
 	if err != nil {
 		return domain.Post{}, err
 	}
-	if command.ActorUserID != current.AuthorUserID {
+	if command.ActorUserID == current.AuthorUserID {
+		allowed, err := service.authorCanUpdatePost(ctx, current)
+		if err != nil {
+			return domain.Post{}, err
+		}
+		if !allowed {
+			return domain.Post{}, port.ErrForbidden
+		}
+	} else {
 		if err := service.requireManagePosts(ctx, command.ActorUserID, current.ForumID); err != nil {
 			return domain.Post{}, err
 		}
@@ -230,7 +248,11 @@ func (service Service) DeletePost(ctx context.Context, command port.DeletePostCo
 	if err != nil {
 		return err
 	}
-	if command.ActorUserID != post.AuthorUserID {
+	if command.ActorUserID == post.AuthorUserID {
+		if !post.CreatedAt.IsZero() && time.Since(post.CreatedAt) > authorPostDeleteWindow {
+			return port.ErrForbidden
+		}
+	} else {
 		if err := service.requireManagePosts(ctx, command.ActorUserID, post.ForumID); err != nil {
 			return err
 		}
@@ -253,6 +275,192 @@ func (service Service) ListPostRevisions(ctx context.Context, actorUserID uuid.U
 	return service.posts.ListRevisions(ctx, postID, page)
 }
 
+// LikePost likes one post idempotently.
+func (service Service) LikePost(ctx context.Context, command port.LikePostCommand) (domain.PostLikeSummary, error) {
+	if command.ActorUserID == uuid.Nil {
+		return domain.PostLikeSummary{}, port.ErrForbidden
+	}
+	post, err := service.posts.FindByID(ctx, command.PostID)
+	if err != nil {
+		return domain.PostLikeSummary{}, err
+	}
+	if err := service.requireLikePosts(ctx, command.ActorUserID, post.ForumID); err != nil {
+		return domain.PostLikeSummary{}, err
+	}
+	like := domain.PostLike{ID: uuid.New(), PostID: post.ID, ThreadID: post.ThreadID, ForumID: post.ForumID, UserID: command.ActorUserID, CreatedAt: time.Now().UTC()}
+	if err := like.Validate(); err != nil {
+		return domain.PostLikeSummary{}, err
+	}
+	changed, err := service.interactions.LikePost(ctx, like)
+	if err != nil {
+		return domain.PostLikeSummary{}, err
+	}
+	if changed {
+		_ = service.clearInteractionCaches(ctx)
+	}
+	updated, err := service.posts.FindByID(ctx, post.ID)
+	if err != nil {
+		return domain.PostLikeSummary{}, err
+	}
+	return domain.PostLikeSummary{PostID: updated.ID, LikeCount: updated.LikeCount, LikedByActor: true}, nil
+}
+
+// UnlikePost unlikes one post idempotently.
+func (service Service) UnlikePost(ctx context.Context, command port.UnlikePostCommand) (domain.PostLikeSummary, error) {
+	if command.ActorUserID == uuid.Nil {
+		return domain.PostLikeSummary{}, port.ErrForbidden
+	}
+	post, err := service.posts.FindByID(ctx, command.PostID)
+	if err != nil {
+		return domain.PostLikeSummary{}, err
+	}
+	if err := service.requireLikePosts(ctx, command.ActorUserID, post.ForumID); err != nil {
+		return domain.PostLikeSummary{}, err
+	}
+	changed, err := service.interactions.UnlikePost(ctx, post.ID, command.ActorUserID)
+	if err != nil {
+		return domain.PostLikeSummary{}, err
+	}
+	if changed {
+		_ = service.clearInteractionCaches(ctx)
+	}
+	updated, err := service.posts.FindByID(ctx, post.ID)
+	if err != nil {
+		return domain.PostLikeSummary{}, err
+	}
+	return domain.PostLikeSummary{PostID: updated.ID, LikeCount: updated.LikeCount, LikedByActor: false}, nil
+}
+
+// ListLatestPosts lists latest posts across visible forums.
+func (service Service) ListLatestPosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID, page pagination.Page) (pagination.Result[domain.LatestPostSummary], error) {
+	forumIDs, err := service.visibleForumIDs(ctx, actorUserID, forumID)
+	if err != nil {
+		return pagination.Result[domain.LatestPostSummary]{}, err
+	}
+	key := latestPostsCacheKey(actorUserID, forumID, page)
+	if service.cache != nil {
+		if cached, ok, err := service.cache.GetLatestPosts(ctx, key); err == nil && ok {
+			return cached, nil
+		}
+	}
+	result, err := service.interactions.ListLatestPosts(ctx, port.LatestPostFilter{ForumIDs: forumIDs}, page)
+	if err != nil {
+		return pagination.Result[domain.LatestPostSummary]{}, err
+	}
+	if service.cache != nil {
+		_ = service.cache.SetLatestPosts(ctx, key, result, widgetCacheTTL)
+	}
+	return result, nil
+}
+
+// ListMostLikedPosts lists most-liked posts for one visible forum.
+func (service Service) ListMostLikedPosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID, page pagination.Page) (pagination.Result[domain.MostLikedPost], error) {
+	forumIDs, err := service.visibleForumIDs(ctx, actorUserID, forumID)
+	if err != nil {
+		return pagination.Result[domain.MostLikedPost]{}, err
+	}
+	if len(forumIDs) == 0 {
+		return pagination.Result[domain.MostLikedPost]{}, port.ErrForbidden
+	}
+	key := mostLikedCacheKey(actorUserID, forumID, page)
+	if service.cache != nil {
+		if cached, ok, err := service.cache.GetMostLikedPosts(ctx, key); err == nil && ok {
+			return cached, nil
+		}
+	}
+	result, err := service.interactions.ListMostLikedPosts(ctx, port.MostLikedFilter{ForumID: forumIDs[0]}, page)
+	if err != nil {
+		return pagination.Result[domain.MostLikedPost]{}, err
+	}
+	if service.cache != nil {
+		_ = service.cache.SetMostLikedPosts(ctx, key, result, widgetCacheTTL)
+	}
+	return result, nil
+}
+
+// MarkThreadRead stores read state for one thread.
+func (service Service) MarkThreadRead(ctx context.Context, command port.MarkThreadReadCommand) (domain.ThreadReadState, error) {
+	if command.ActorUserID == uuid.Nil {
+		return domain.ThreadReadState{}, port.ErrForbidden
+	}
+	thread, err := service.threads.FindByID(ctx, command.ThreadID)
+	if err != nil {
+		return domain.ThreadReadState{}, err
+	}
+	if err := service.requireThreadView(ctx, command.ActorUserID, thread); err != nil {
+		return domain.ThreadReadState{}, err
+	}
+	sequence := command.LastReadPostSequence
+	if sequence < 1 {
+		sequence = thread.VisiblePostCount
+	}
+	state := domain.ThreadReadState{ID: uuid.New(), UserID: command.ActorUserID, ForumID: thread.ForumID, ThreadID: thread.ID, LastReadPostSequence: sequence, LastReadAt: time.Now().UTC()}
+	if err := state.Validate(); err != nil {
+		return domain.ThreadReadState{}, err
+	}
+	return state, service.interactions.MarkThreadRead(ctx, state)
+}
+
+// MarkForumRead stores read state for visible threads in one forum.
+func (service Service) MarkForumRead(ctx context.Context, command port.MarkForumReadCommand) error {
+	if command.ActorUserID == uuid.Nil {
+		return port.ErrForbidden
+	}
+	forumIDs, err := service.visibleForumIDs(ctx, command.ActorUserID, command.ForumID)
+	if err != nil {
+		return err
+	}
+	if len(forumIDs) == 0 {
+		return port.ErrForbidden
+	}
+	return service.interactions.MarkForumRead(ctx, command.ActorUserID, forumIDs[0], time.Now().UTC())
+}
+
+// GetUnreadSummary returns unread totals for visible forums.
+func (service Service) GetUnreadSummary(ctx context.Context, actorUserID uuid.UUID) (domain.UnreadSummary, error) {
+	if actorUserID == uuid.Nil {
+		return domain.UnreadSummary{}, port.ErrForbidden
+	}
+	forumIDs, err := service.visibleForumIDs(ctx, actorUserID, uuid.Nil)
+	if err != nil {
+		return domain.UnreadSummary{}, err
+	}
+	return service.interactions.UnreadSummary(ctx, actorUserID, forumIDs)
+}
+
+// validateReferences verifies post and attachment references.
+func (service Service) validateReferences(ctx context.Context, actorUserID uuid.UUID, references []domain.PostReference) error {
+	for _, reference := range references {
+		if reference.TargetPostID != nil {
+			if _, err := service.GetPost(ctx, actorUserID, *reference.TargetPostID); err != nil {
+				return err
+			}
+		}
+		if reference.TargetAssetID != nil && service.assets != nil {
+			exists, err := service.assets.AssetExists(ctx, *reference.TargetAssetID)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				return port.ErrNotFound
+			}
+		}
+	}
+	return nil
+}
+
+// authorCanUpdatePost reports whether an author can still edit a post.
+func (service Service) authorCanUpdatePost(ctx context.Context, post domain.Post) (bool, error) {
+	if post.CreatedAt.IsZero() || time.Since(post.CreatedAt) > authorPostEditWindow {
+		return false, nil
+	}
+	thread, err := service.threads.FindByID(ctx, post.ThreadID)
+	if err != nil {
+		return false, err
+	}
+	return thread.Replyable(), nil
+}
+
 // requireThreadCreate verifies thread creation permission.
 func (service Service) requireThreadCreate(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) error {
 	allowed, err := service.authorizer.CanCreateThread(ctx, actorUserID, forumID)
@@ -262,6 +470,12 @@ func (service Service) requireThreadCreate(ctx context.Context, actorUserID uuid
 // requireReply verifies reply permission.
 func (service Service) requireReply(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) error {
 	allowed, err := service.authorizer.CanReply(ctx, actorUserID, forumID)
+	return decisionError(allowed, err)
+}
+
+// requireLikePosts verifies like permission.
+func (service Service) requireLikePosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) error {
+	allowed, err := service.authorizer.CanLikePosts(ctx, actorUserID, forumID)
 	return decisionError(allowed, err)
 }
 
@@ -292,6 +506,44 @@ func (service Service) requireThreadView(ctx context.Context, actorUserID uuid.U
 	return service.requireManageThreads(ctx, actorUserID, thread.ForumID)
 }
 
+// visibleForumIDs returns visible forum IDs for widget reads.
+func (service Service) visibleForumIDs(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) ([]uuid.UUID, error) {
+	forumIDs := []uuid.UUID{}
+	if forumID != uuid.Nil {
+		forumIDs = append(forumIDs, forumID)
+	} else {
+		forums, err := service.forums.List(ctx, port.ForumFilter{Status: domain.ForumStatusActive}, port.Page{Limit: 1000})
+		if err != nil {
+			return nil, err
+		}
+		for _, forum := range forums.Items {
+			forumIDs = append(forumIDs, forum.ID)
+		}
+	}
+	visible, err := service.authorizer.VisibleForums(ctx, actorUserID, forumIDs)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]uuid.UUID, 0, len(forumIDs))
+	for _, id := range forumIDs {
+		if visible[id] {
+			result = append(result, id)
+		}
+	}
+	return result, nil
+}
+
+// clearInteractionCaches clears caches affected by interaction writes.
+func (service Service) clearInteractionCaches(ctx context.Context) error {
+	if service.cache == nil {
+		return nil
+	}
+	if err := service.cache.ClearLatestPosts(ctx); err != nil {
+		return err
+	}
+	return service.cache.ClearMostLikedPosts(ctx)
+}
+
 // decisionError maps authorization decision to error.
 func decisionError(allowed bool, err error) error {
 	if err != nil {
@@ -310,6 +562,32 @@ func checksum(provided string, content []byte) string {
 	}
 	sum := sha256.Sum256(content)
 	return hex.EncodeToString(sum[:])
+}
+
+// latestPostsCacheKey returns a cache key for latest-post widgets.
+func latestPostsCacheKey(actorUserID uuid.UUID, forumID uuid.UUID, page pagination.Page) string {
+	return "forums:latest:v1:" + widgetScope(forumID) + ":" + actorScope(actorUserID) + ":" + page.Cursor + ":" + strconv.Itoa(page.Limit)
+}
+
+// mostLikedCacheKey returns a cache key for most-liked widgets.
+func mostLikedCacheKey(actorUserID uuid.UUID, forumID uuid.UUID, page pagination.Page) string {
+	return "forums:most-liked:v1:" + forumID.String() + ":all:" + actorScope(actorUserID) + ":" + page.Cursor + ":" + strconv.Itoa(page.Limit)
+}
+
+// widgetScope returns cache scope for global or forum-specific widgets.
+func widgetScope(forumID uuid.UUID) string {
+	if forumID == uuid.Nil {
+		return "global:all"
+	}
+	return "forum:" + forumID.String()
+}
+
+// actorScope returns cache scope for actor visibility.
+func actorScope(actorUserID uuid.UUID) string {
+	if actorUserID == uuid.Nil {
+		return "anonymous"
+	}
+	return "user:" + actorUserID.String()
 }
 
 // prepareReferences fills source IDs on references.

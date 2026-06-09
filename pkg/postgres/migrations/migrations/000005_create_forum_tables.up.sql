@@ -155,3 +155,33 @@ CREATE INDEX forum_post_references_source_idx ON forum_post_references (source_p
 CREATE INDEX forum_post_references_target_post_idx ON forum_post_references (target_post_id);
 CREATE INDEX forum_post_references_target_user_idx ON forum_post_references (target_user_id);
 CREATE INDEX forum_post_references_target_asset_idx ON forum_post_references (target_asset_id);
+
+CREATE TABLE forum_post_likes (
+    id uuid PRIMARY KEY,
+    post_id uuid NOT NULL,
+    thread_id uuid NOT NULL,
+    forum_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    created_at timestamptz NOT NULL,
+    deleted_at timestamptz NULL
+);
+
+CREATE UNIQUE INDEX forum_post_likes_post_user_active_idx ON forum_post_likes (post_id, user_id) WHERE deleted_at IS NULL;
+CREATE INDEX forum_post_likes_user_created_active_idx ON forum_post_likes (user_id, created_at DESC) WHERE deleted_at IS NULL;
+CREATE INDEX forum_post_likes_forum_created_active_idx ON forum_post_likes (forum_id, created_at DESC) WHERE deleted_at IS NULL;
+CREATE INDEX forum_post_likes_thread_active_idx ON forum_post_likes (thread_id) WHERE deleted_at IS NULL;
+CREATE INDEX forum_post_likes_deleted_at_idx ON forum_post_likes (deleted_at);
+
+CREATE TABLE forum_thread_read_states (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL,
+    forum_id uuid NOT NULL,
+    thread_id uuid NOT NULL,
+    last_read_post_sequence bigint NOT NULL,
+    last_read_at timestamptz NOT NULL,
+    created_at timestamptz NOT NULL,
+    updated_at timestamptz NOT NULL
+);
+
+CREATE UNIQUE INDEX forum_thread_read_states_user_thread_idx ON forum_thread_read_states (user_id, thread_id);
+CREATE INDEX forum_thread_read_states_user_forum_read_idx ON forum_thread_read_states (user_id, forum_id, last_read_at DESC);

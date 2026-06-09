@@ -7,6 +7,7 @@ import (
 
 	"github.com/niflaot/gamehub-go/module/forums/domain"
 	"github.com/niflaot/gamehub-go/module/forums/port"
+	"github.com/niflaot/gamehub-go/pkg/pagination"
 	goredis "github.com/redis/go-redis/v9"
 )
 
@@ -47,7 +48,70 @@ func (cache TreeCache) SetTree(ctx context.Context, key string, tree domain.Foru
 
 // ClearTree removes forum tree cache entries.
 func (cache TreeCache) ClearTree(ctx context.Context) error {
-	keys, err := cache.client.Keys(ctx, "forums:tree:v1:*").Result()
+	return cache.clearPattern(ctx, "forums:tree:v1:*")
+}
+
+// GetLatestPosts returns a cached latest-post page when present.
+func (cache TreeCache) GetLatestPosts(ctx context.Context, key string) (pagination.Result[domain.LatestPostSummary], bool, error) {
+	var result pagination.Result[domain.LatestPostSummary]
+	ok, err := cache.getJSON(ctx, key, &result)
+	return result, ok, err
+}
+
+// SetLatestPosts stores a latest-post page for ttl.
+func (cache TreeCache) SetLatestPosts(ctx context.Context, key string, result pagination.Result[domain.LatestPostSummary], ttl time.Duration) error {
+	return cache.setJSON(ctx, key, result, ttl)
+}
+
+// ClearLatestPosts removes latest-post cache entries.
+func (cache TreeCache) ClearLatestPosts(ctx context.Context) error {
+	return cache.clearPattern(ctx, "forums:latest:v1:*")
+}
+
+// GetMostLikedPosts returns a cached most-liked page when present.
+func (cache TreeCache) GetMostLikedPosts(ctx context.Context, key string) (pagination.Result[domain.MostLikedPost], bool, error) {
+	var result pagination.Result[domain.MostLikedPost]
+	ok, err := cache.getJSON(ctx, key, &result)
+	return result, ok, err
+}
+
+// SetMostLikedPosts stores a most-liked page for ttl.
+func (cache TreeCache) SetMostLikedPosts(ctx context.Context, key string, result pagination.Result[domain.MostLikedPost], ttl time.Duration) error {
+	return cache.setJSON(ctx, key, result, ttl)
+}
+
+// ClearMostLikedPosts removes most-liked cache entries.
+func (cache TreeCache) ClearMostLikedPosts(ctx context.Context) error {
+	return cache.clearPattern(ctx, "forums:most-liked:v1:*")
+}
+
+// getJSON reads a JSON cache item.
+func (cache TreeCache) getJSON(ctx context.Context, key string, target any) (bool, error) {
+	value, err := cache.client.Get(ctx, key).Bytes()
+	if err == goredis.Nil {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if err := json.Unmarshal(value, target); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// setJSON stores a JSON cache item.
+func (cache TreeCache) setJSON(ctx context.Context, key string, payload any, ttl time.Duration) error {
+	value, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	return cache.client.Set(ctx, key, value, ttl).Err()
+}
+
+// clearPattern removes cache keys matching pattern.
+func (cache TreeCache) clearPattern(ctx context.Context, pattern string) error {
+	keys, err := cache.client.Keys(ctx, pattern).Result()
 	if err != nil {
 		return err
 	}
@@ -57,5 +121,5 @@ func (cache TreeCache) ClearTree(ctx context.Context) error {
 	return cache.client.Del(ctx, keys...).Err()
 }
 
-// Ensure TreeCache implements port.TreeCache.
-var _ port.TreeCache = TreeCache{}
+// Ensure TreeCache implements port.ReadCache.
+var _ port.ReadCache = TreeCache{}

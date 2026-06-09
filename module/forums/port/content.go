@@ -3,6 +3,7 @@ package port
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/module/forums/domain"
@@ -120,6 +121,45 @@ type DeletePostCommand struct {
 	ExpectedVersion uint64
 }
 
+// LikePostCommand likes a post.
+type LikePostCommand struct {
+	// ActorUserID is the liking user.
+	ActorUserID uuid.UUID
+
+	// PostID is the target post.
+	PostID uuid.UUID
+}
+
+// UnlikePostCommand unlikes a post.
+type UnlikePostCommand struct {
+	// ActorUserID is the unliking user.
+	ActorUserID uuid.UUID
+
+	// PostID is the target post.
+	PostID uuid.UUID
+}
+
+// MarkThreadReadCommand marks one thread as read.
+type MarkThreadReadCommand struct {
+	// ActorUserID is the reading user.
+	ActorUserID uuid.UUID
+
+	// ThreadID is the target thread.
+	ThreadID uuid.UUID
+
+	// LastReadPostSequence is the highest read post sequence.
+	LastReadPostSequence int64
+}
+
+// MarkForumReadCommand marks visible threads in one forum as read.
+type MarkForumReadCommand struct {
+	// ActorUserID is the reading user.
+	ActorUserID uuid.UUID
+
+	// ForumID is the target forum.
+	ForumID uuid.UUID
+}
+
 // ThreadFilter filters thread lists.
 type ThreadFilter struct {
 	// ForumID filters by forum.
@@ -139,6 +179,18 @@ type PostFilter struct {
 
 	// IncludeHidden includes hidden or pending posts when allowed.
 	IncludeHidden bool
+}
+
+// LatestPostFilter filters latest-post widgets.
+type LatestPostFilter struct {
+	// ForumIDs limits results to visible forums.
+	ForumIDs []uuid.UUID
+}
+
+// MostLikedFilter filters most-liked widgets.
+type MostLikedFilter struct {
+	// ForumID filters by forum.
+	ForumID uuid.UUID
 }
 
 // ThreadRepository stores threads.
@@ -184,4 +236,37 @@ type PostRepository interface {
 
 	// ListReferences returns references for posts.
 	ListReferences(ctx context.Context, postIDs []uuid.UUID) (map[uuid.UUID][]domain.PostReference, error)
+}
+
+// InteractionRepository stores likes, widgets, and read state.
+type InteractionRepository interface {
+	// LikePost creates or restores an active like and returns whether counters changed.
+	LikePost(ctx context.Context, like domain.PostLike) (bool, error)
+
+	// UnlikePost removes an active like and returns whether counters changed.
+	UnlikePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID) (bool, error)
+
+	// LikedByUser reports whether user currently likes post.
+	LikedByUser(ctx context.Context, postID uuid.UUID, userID uuid.UUID) (bool, error)
+
+	// ListLatestPosts returns latest visible post summaries.
+	ListLatestPosts(ctx context.Context, filter LatestPostFilter, page pagination.Page) (pagination.Result[domain.LatestPostSummary], error)
+
+	// ListMostLikedPosts returns most-liked visible posts.
+	ListMostLikedPosts(ctx context.Context, filter MostLikedFilter, page pagination.Page) (pagination.Result[domain.MostLikedPost], error)
+
+	// MarkThreadRead stores one thread read state.
+	MarkThreadRead(ctx context.Context, state domain.ThreadReadState) error
+
+	// MarkForumRead stores read states for every visible thread in a forum.
+	MarkForumRead(ctx context.Context, userID uuid.UUID, forumID uuid.UUID, readAt time.Time) error
+
+	// UnreadSummary returns unread counts for visible forums.
+	UnreadSummary(ctx context.Context, userID uuid.UUID, forumIDs []uuid.UUID) (domain.UnreadSummary, error)
+}
+
+// AssetResolver validates attachment references against the assets module.
+type AssetResolver interface {
+	// AssetExists reports whether an attachment asset exists.
+	AssetExists(ctx context.Context, id uuid.UUID) (bool, error)
 }

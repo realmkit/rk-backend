@@ -3,6 +3,7 @@ package domain
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -83,5 +84,24 @@ func TestPostReferenceValidateRequiresTargets(t *testing.T) {
 	reference.TargetAssetID = &assetID
 	if err := reference.Validate(); err != nil {
 		t.Fatalf("Validate() valid attachment error = %v", err)
+	}
+}
+
+// TestPostLikeValidateRequiresIdentity verifies like identity validation.
+func TestPostLikeValidateRequiresIdentity(t *testing.T) {
+	like := PostLike{ID: uuid.New(), PostID: uuid.New(), ThreadID: uuid.New(), ForumID: uuid.New(), UserID: uuid.New()}
+
+	if err := like.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+}
+
+// TestThreadReadStateValidateRejectsAnonymousOrEmptySequence verifies read-state validation.
+func TestThreadReadStateValidateRejectsAnonymousOrEmptySequence(t *testing.T) {
+	state := ThreadReadState{ID: uuid.New(), ForumID: uuid.New(), ThreadID: uuid.New(), LastReadAt: time.Now().UTC()}
+
+	err := state.Validate()
+	if err == nil {
+		t.Fatalf("Validate() error = nil, want validation error")
 	}
 }

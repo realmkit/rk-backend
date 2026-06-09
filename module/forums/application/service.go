@@ -15,14 +15,19 @@ import (
 // treeCacheTTL is the visible forum tree cache lifetime.
 const treeCacheTTL = 30 * time.Second
 
+// widgetCacheTTL is the forum widget cache lifetime.
+const widgetCacheTTL = 20 * time.Second
+
 // Service manages forum structure use cases.
 type Service struct {
 	categories   port.CategoryRepository
 	forums       port.ForumRepository
 	threads      port.ThreadRepository
 	posts        port.PostRepository
+	interactions port.InteractionRepository
+	assets       port.AssetResolver
 	authorizer   port.VisibilityAuthorizer
-	cache        port.TreeCache
+	cache        port.ReadCache
 	transactions transaction.Runner
 }
 
@@ -40,11 +45,17 @@ type Dependencies struct {
 	// Posts stores posts.
 	Posts port.PostRepository
 
+	// Interactions stores likes, widgets, and read state.
+	Interactions port.InteractionRepository
+
+	// Assets resolves attachment assets.
+	Assets port.AssetResolver
+
 	// Authorizer checks forum permissions.
 	Authorizer port.VisibilityAuthorizer
 
 	// Cache caches visible trees.
-	Cache port.TreeCache
+	Cache port.ReadCache
 
 	// Transactions runs transactional use cases.
 	Transactions transaction.Runner
@@ -57,6 +68,8 @@ func NewService(deps Dependencies) Service {
 		forums:       deps.Forums,
 		threads:      deps.Threads,
 		posts:        deps.Posts,
+		interactions: deps.Interactions,
+		assets:       deps.Assets,
 		authorizer:   deps.Authorizer,
 		cache:        deps.Cache,
 		transactions: deps.Transactions,

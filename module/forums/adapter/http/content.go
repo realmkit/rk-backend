@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/module/forums/domain"
 	"github.com/niflaot/gamehub-go/module/forums/port"
 )
@@ -55,6 +56,23 @@ type postListResponse struct {
 type revisionListResponse struct {
 	Items         []domain.PostRevision `json:"items"`
 	NextPageToken string                `json:"next_page_token,omitempty"`
+}
+
+// latestPostListResponse contains latest-post widget rows.
+type latestPostListResponse struct {
+	Items         []domain.LatestPostSummary `json:"items"`
+	NextPageToken string                     `json:"next_page_token,omitempty"`
+}
+
+// mostLikedPostListResponse contains most-liked widget rows.
+type mostLikedPostListResponse struct {
+	Items         []domain.MostLikedPost `json:"items"`
+	NextPageToken string                 `json:"next_page_token,omitempty"`
+}
+
+// readThreadRequest marks a thread read through a sequence.
+type readThreadRequest struct {
+	LastReadPostSequence int64 `json:"last_read_post_sequence"`
 }
 
 // createThread creates a thread.
@@ -308,4 +326,154 @@ func (handler handler) listPostRevisions(ctx *fiber.Ctx) error {
 		return handleError(ctx, err)
 	}
 	return writeJSON(ctx, fiber.StatusOK, revisionListResponse{Items: result.Items, NextPageToken: result.NextCursor})
+}
+
+// likePost likes one post.
+func (handler handler) likePost(ctx *fiber.Ctx) error {
+	if err := requireIdempotency(ctx); err != nil {
+		return err
+	}
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	postID, err := idFromParam(ctx, "post_id")
+	if err != nil {
+		return err
+	}
+	summary, err := handler.services.Forums.LikePost(ctx.Context(), port.LikePostCommand{ActorUserID: actor, PostID: postID})
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, summary)
+}
+
+// unlikePost unlikes one post.
+func (handler handler) unlikePost(ctx *fiber.Ctx) error {
+	if err := requireIdempotency(ctx); err != nil {
+		return err
+	}
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	postID, err := idFromParam(ctx, "post_id")
+	if err != nil {
+		return err
+	}
+	summary, err := handler.services.Forums.UnlikePost(ctx.Context(), port.UnlikePostCommand{ActorUserID: actor, PostID: postID})
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, summary)
+}
+
+// listLatestPosts lists global latest-post widget rows.
+func (handler handler) listLatestPosts(ctx *fiber.Ctx) error {
+	return handler.latestPosts(ctx, uuid.Nil)
+}
+
+// listForumLatestPosts lists forum latest-post widget rows.
+func (handler handler) listForumLatestPosts(ctx *fiber.Ctx) error {
+	forumID, err := idFromParam(ctx, "forum_id")
+	if err != nil {
+		return err
+	}
+	return handler.latestPosts(ctx, forumID)
+}
+
+// latestPosts lists latest-post widget rows.
+func (handler handler) latestPosts(ctx *fiber.Ctx, forumID uuid.UUID) error {
+	actor, err := optionalUserID(ctx)
+	if err != nil {
+		return err
+	}
+	page, err := pageFromQuery(ctx)
+	if err != nil {
+		return err
+	}
+	result, err := handler.services.Forums.ListLatestPosts(ctx.Context(), actor, forumID, page)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, latestPostListResponse{Items: result.Items, NextPageToken: result.NextCursor})
+}
+
+// listMostLikedPosts lists most-liked posts for one forum.
+func (handler handler) listMostLikedPosts(ctx *fiber.Ctx) error {
+	actor, err := optionalUserID(ctx)
+	if err != nil {
+		return err
+	}
+	forumID, err := idFromParam(ctx, "forum_id")
+	if err != nil {
+		return err
+	}
+	page, err := pageFromQuery(ctx)
+	if err != nil {
+		return err
+	}
+	result, err := handler.services.Forums.ListMostLikedPosts(ctx.Context(), actor, forumID, page)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, mostLikedPostListResponse{Items: result.Items, NextPageToken: result.NextCursor})
+}
+
+// markThreadRead marks one thread read.
+func (handler handler) markThreadRead(ctx *fiber.Ctx) error {
+	if err := requireIdempotency(ctx); err != nil {
+		return err
+	}
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	threadID, err := idFromParam(ctx, "thread_id")
+	if err != nil {
+		return err
+	}
+	var request readThreadRequest
+	if len(ctx.Body()) > 0 {
+		if err := decodeJSON(ctx, &request); err != nil {
+			return err
+		}
+	}
+	state, err := handler.services.Forums.MarkThreadRead(ctx.Context(), port.MarkThreadReadCommand{ActorUserID: actor, ThreadID: threadID, LastReadPostSequence: request.LastReadPostSequence})
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, state)
+}
+
+// markForumRead marks visible forum threads read.
+func (handler handler) markForumRead(ctx *fiber.Ctx) error {
+	if err := requireIdempotency(ctx); err != nil {
+		return err
+	}
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	forumID, err := idFromParam(ctx, "forum_id")
+	if err != nil {
+		return err
+	}
+	if err := handler.services.Forums.MarkForumRead(ctx.Context(), port.MarkForumReadCommand{ActorUserID: actor, ForumID: forumID}); err != nil {
+		return handleError(ctx, err)
+	}
+	return writeNoContent(ctx)
+}
+
+// unreadSummary returns unread forum counts.
+func (handler handler) unreadSummary(ctx *fiber.Ctx) error {
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	summary, err := handler.services.Forums.GetUnreadSummary(ctx.Context(), actor)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, summary)
 }

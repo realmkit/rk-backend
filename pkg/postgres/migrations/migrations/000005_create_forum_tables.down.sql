@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS forum_thread_read_states;
+DROP TABLE IF EXISTS forum_post_likes;
 DROP TABLE IF EXISTS forum_post_references;
 DROP TABLE IF EXISTS forum_post_revisions;
 DROP TABLE IF EXISTS forum_posts;

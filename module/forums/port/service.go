@@ -84,4 +84,25 @@ type Service interface {
 
 	// ListPostRevisions lists post revisions.
 	ListPostRevisions(ctx context.Context, actorUserID uuid.UUID, postID uuid.UUID, page pagination.Page) (pagination.Result[domain.PostRevision], error)
+
+	// LikePost likes one post.
+	LikePost(ctx context.Context, command LikePostCommand) (domain.PostLikeSummary, error)
+
+	// UnlikePost unlikes one post.
+	UnlikePost(ctx context.Context, command UnlikePostCommand) (domain.PostLikeSummary, error)
+
+	// ListLatestPosts lists latest posts for visible forums.
+	ListLatestPosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID, page pagination.Page) (pagination.Result[domain.LatestPostSummary], error)
+
+	// ListMostLikedPosts lists most-liked posts for one forum.
+	ListMostLikedPosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID, page pagination.Page) (pagination.Result[domain.MostLikedPost], error)
+
+	// MarkThreadRead marks one thread read.
+	MarkThreadRead(ctx context.Context, command MarkThreadReadCommand) (domain.ThreadReadState, error)
+
+	// MarkForumRead marks visible forum threads read.
+	MarkForumRead(ctx context.Context, command MarkForumReadCommand) error
+
+	// GetUnreadSummary returns unread counts for the actor.
+	GetUnreadSummary(ctx context.Context, actorUserID uuid.UUID) (domain.UnreadSummary, error)
 }

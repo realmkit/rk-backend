@@ -3,6 +3,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/orm"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // ThreadRepository stores forum threads in PostgreSQL.
@@ -230,6 +232,160 @@ func (repository PostRepository) incrementThreadAndForum(ctx context.Context, po
 	return repository.store.DB(ctx).Model(&StatsModel{}).Where("forum_id = ?", post.ForumID).Updates(map[string]any{"post_count": gorm.Expr("post_count + ?", 1), "visible_post_count": gorm.Expr("visible_post_count + ?", visible), "latest_post_id": post.ID, "latest_post_author_user_id": post.AuthorUserID, "latest_post_at": post.CreatedAt, "updated_at": time.Now().UTC()}).Error
 }
 
+// InteractionRepository stores forum interactions in PostgreSQL.
+type InteractionRepository struct {
+	store orm.Store
+}
+
+// NewInteractionRepository creates an interaction repository.
+func NewInteractionRepository(store orm.Store) InteractionRepository {
+	return InteractionRepository{store: store}
+}
+
+// LikePost creates or restores an active like and returns whether counters changed.
+func (repository InteractionRepository) LikePost(ctx context.Context, like domain.PostLike) (bool, error) {
+	var active PostLikeModel
+	err := repository.store.DB(ctx).Where("post_id = ? AND user_id = ?", like.PostID, like.UserID).First(&active).Error
+	if err == nil {
+		return false, nil
+	}
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, err
+	}
+	var existing PostLikeModel
+	err = repository.store.DB(ctx).Unscoped().Where("post_id = ? AND user_id = ?", like.PostID, like.UserID).First(&existing).Error
+	if err == nil {
+		if err := repository.store.DB(ctx).Unscoped().Model(&PostLikeModel{}).Where("id = ?", existing.ID.ID).Updates(map[string]any{"deleted_at": nil, "thread_id": like.ThreadID, "forum_id": like.ForumID, "created_at": like.CreatedAt}).Error; err != nil {
+			return false, err
+		}
+		return true, repository.updateLikeCounts(ctx, like.PostID, like.ThreadID, 1)
+	}
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, err
+	}
+	model := likeModelFromDomain(like)
+	if err := repository.store.DB(ctx).Create(&model).Error; err != nil {
+		return false, port.ErrConflict
+	}
+	return true, repository.updateLikeCounts(ctx, like.PostID, like.ThreadID, 1)
+}
+
+// UnlikePost removes an active like and returns whether counters changed.
+func (repository InteractionRepository) UnlikePost(ctx context.Context, postID uuid.UUID, userID uuid.UUID) (bool, error) {
+	var active PostLikeModel
+	err := repository.store.DB(ctx).Where("post_id = ? AND user_id = ?", postID, userID).First(&active).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if err := repository.store.DB(ctx).Delete(&active).Error; err != nil {
+		return false, err
+	}
+	return true, repository.updateLikeCounts(ctx, active.PostID, active.ThreadID, -1)
+}
+
+// LikedByUser reports whether user currently likes post.
+func (repository InteractionRepository) LikedByUser(ctx context.Context, postID uuid.UUID, userID uuid.UUID) (bool, error) {
+	if userID == uuid.Nil {
+		return false, nil
+	}
+	var count int64
+	err := repository.store.DB(ctx).Model(&PostLikeModel{}).Where("post_id = ? AND user_id = ?", postID, userID).Count(&count).Error
+	return count > 0, err
+}
+
+// ListLatestPosts returns latest visible post summaries.
+func (repository InteractionRepository) ListLatestPosts(ctx context.Context, filter port.LatestPostFilter, page pagination.Page) (pagination.Result[domain.LatestPostSummary], error) {
+	if len(filter.ForumIDs) == 0 {
+		return pagination.Result[domain.LatestPostSummary]{Items: []domain.LatestPostSummary{}}, nil
+	}
+	var rows []latestPostRow
+	err := repository.store.DB(ctx).Table("forum_posts AS p").Select("p.forum_id, p.thread_id, p.id AS post_id, p.author_user_id, p.sequence, t.title AS thread_title, t.slug AS thread_slug, p.content_text AS excerpt, p.created_at").Joins("JOIN forum_threads AS t ON t.id = p.thread_id AND t.deleted_at IS NULL").Where("p.forum_id IN ? AND p.deleted_at IS NULL AND p.status IN ? AND t.status IN ?", filter.ForumIDs, visiblePostStatuses(), visibleThreadStatuses()).Order("p.created_at DESC, p.id ASC").Limit(page.Limit + 1).Find(&rows).Error
+	if err != nil {
+		return pagination.Result[domain.LatestPostSummary]{}, err
+	}
+	return latestPostPage(rows, page.Limit), nil
+}
+
+// ListMostLikedPosts returns most-liked visible posts.
+func (repository InteractionRepository) ListMostLikedPosts(ctx context.Context, filter port.MostLikedFilter, page pagination.Page) (pagination.Result[domain.MostLikedPost], error) {
+	var rows []mostLikedPostRow
+	err := repository.store.DB(ctx).Table("forum_posts AS p").Select("p.forum_id, p.thread_id, p.id AS post_id, p.author_user_id, p.sequence, t.title AS thread_title, t.slug AS thread_slug, p.content_text AS excerpt, p.like_count, p.created_at").Joins("JOIN forum_threads AS t ON t.id = p.thread_id AND t.deleted_at IS NULL").Where("p.forum_id = ? AND p.deleted_at IS NULL AND p.status IN ? AND t.status IN ?", filter.ForumID, visiblePostStatuses(), visibleThreadStatuses()).Order("p.like_count DESC, p.created_at DESC, p.id ASC").Limit(page.Limit + 1).Find(&rows).Error
+	if err != nil {
+		return pagination.Result[domain.MostLikedPost]{}, err
+	}
+	return mostLikedPostPage(rows, page.Limit), nil
+}
+
+// MarkThreadRead stores one thread read state.
+func (repository InteractionRepository) MarkThreadRead(ctx context.Context, state domain.ThreadReadState) error {
+	now := state.LastReadAt
+	if state.CreatedAt.IsZero() {
+		state.CreatedAt = now
+	}
+	state.UpdatedAt = now
+	model := readStateModelFromDomain(state)
+	return repository.store.DB(ctx).Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "user_id"}, {Name: "thread_id"}}, DoUpdates: clause.Assignments(map[string]any{"forum_id": state.ForumID, "last_read_post_sequence": state.LastReadPostSequence, "last_read_at": state.LastReadAt, "updated_at": state.UpdatedAt})}).Create(&model).Error
+}
+
+// MarkForumRead stores read states for every visible thread in a forum.
+func (repository InteractionRepository) MarkForumRead(ctx context.Context, userID uuid.UUID, forumID uuid.UUID, readAt time.Time) error {
+	var rows []forumReadTargetRow
+	err := repository.store.DB(ctx).Table("forum_threads AS t").Select("t.id AS thread_id, t.forum_id, COALESCE(MAX(p.sequence), 1) AS last_read_post_sequence").Joins("JOIN forum_posts AS p ON p.thread_id = t.id AND p.deleted_at IS NULL AND p.status IN ?", visiblePostStatuses()).Where("t.forum_id = ? AND t.deleted_at IS NULL AND t.status IN ?", forumID, visibleThreadStatuses()).Group("t.id, t.forum_id").Find(&rows).Error
+	if err != nil {
+		return err
+	}
+	for _, row := range rows {
+		state := domain.ThreadReadState{ID: uuid.New(), UserID: userID, ForumID: row.ForumID, ThreadID: row.ThreadID, LastReadPostSequence: row.LastReadPostSequence, LastReadAt: readAt}
+		if err := repository.MarkThreadRead(ctx, state); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// UnreadSummary returns unread counts for visible forums.
+func (repository InteractionRepository) UnreadSummary(ctx context.Context, userID uuid.UUID, forumIDs []uuid.UUID) (domain.UnreadSummary, error) {
+	summary := domain.UnreadSummary{UserID: userID, Forums: []domain.ForumUnreadSummary{}}
+	if len(forumIDs) == 0 {
+		return summary, nil
+	}
+	var rows []unreadForumRow
+	err := repository.store.DB(ctx).Table("forum_threads AS t").Select("t.forum_id, COUNT(*) AS unread_thread_count").Joins("LEFT JOIN forum_thread_read_states AS rs ON rs.thread_id = t.id AND rs.user_id = ?", userID).Where("t.forum_id IN ? AND t.deleted_at IS NULL AND t.status IN ? AND COALESCE(rs.last_read_post_sequence, 0) < t.visible_post_count", forumIDs, visibleThreadStatuses()).Group("t.forum_id").Find(&rows).Error
+	if err != nil {
+		return domain.UnreadSummary{}, err
+	}
+	for _, row := range rows {
+		summary.UnreadThreadCount += row.UnreadThreadCount
+		summary.Forums = append(summary.Forums, domain.ForumUnreadSummary{ForumID: row.ForumID, UnreadThreadCount: row.UnreadThreadCount})
+	}
+	return summary, nil
+}
+
+// updateLikeCounts changes post and thread like counters.
+func (repository InteractionRepository) updateLikeCounts(ctx context.Context, postID uuid.UUID, threadID uuid.UUID, delta int64) error {
+	expr := gorm.Expr("like_count + ?", delta)
+	if delta < 0 {
+		expr = gorm.Expr("CASE WHEN like_count > 0 THEN like_count - 1 ELSE 0 END")
+	}
+	if err := repository.store.DB(ctx).Model(&PostModel{}).Where("id = ?", postID).Update("like_count", expr).Error; err != nil {
+		return err
+	}
+	return repository.store.DB(ctx).Model(&ThreadModel{}).Where("id = ?", threadID).Update("like_count", expr).Error
+}
+
+// visiblePostStatuses returns statuses normal widget readers may see.
+func visiblePostStatuses() []domain.PostStatus {
+	return []domain.PostStatus{domain.PostStatusVisible, domain.PostStatusSystem}
+}
+
+// visibleThreadStatuses returns statuses normal widget readers may see.
+func visibleThreadStatuses() []domain.ThreadStatus {
+	return []domain.ThreadStatus{domain.ThreadStatusOpen, domain.ThreadStatusClosed, domain.ThreadStatusLocked}
+}
+
 // threadPage maps models into a page.
 func threadPage(models []ThreadModel, limit int) pagination.Result[domain.Thread] {
 	next := ""
@@ -272,8 +428,79 @@ func revisionPage(models []PostRevisionModel, limit int) pagination.Result[domai
 	return pagination.Result[domain.PostRevision]{Items: items, NextCursor: next}
 }
 
+// latestPostRow is a compact latest-post query row.
+type latestPostRow struct {
+	ForumID      uuid.UUID
+	ThreadID     uuid.UUID
+	PostID       uuid.UUID
+	AuthorUserID uuid.UUID
+	Sequence     int64
+	ThreadTitle  string
+	ThreadSlug   string
+	Excerpt      string
+	CreatedAt    time.Time
+}
+
+// mostLikedPostRow is a compact most-liked query row.
+type mostLikedPostRow struct {
+	ForumID      uuid.UUID
+	ThreadID     uuid.UUID
+	PostID       uuid.UUID
+	AuthorUserID uuid.UUID
+	Sequence     int64
+	ThreadTitle  string
+	ThreadSlug   string
+	Excerpt      string
+	LikeCount    int64
+	CreatedAt    time.Time
+}
+
+// forumReadTargetRow is a thread read-state target row.
+type forumReadTargetRow struct {
+	ThreadID             uuid.UUID
+	ForumID              uuid.UUID
+	LastReadPostSequence int64
+}
+
+// unreadForumRow is an unread count query row.
+type unreadForumRow struct {
+	ForumID           uuid.UUID
+	UnreadThreadCount int64
+}
+
+// latestPostPage maps latest-post rows into a page.
+func latestPostPage(rows []latestPostRow, limit int) pagination.Result[domain.LatestPostSummary] {
+	next := ""
+	if len(rows) > limit {
+		next = rows[limit-1].PostID.String()
+		rows = rows[:limit]
+	}
+	items := make([]domain.LatestPostSummary, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, domain.LatestPostSummary{ForumID: row.ForumID, ThreadID: row.ThreadID, PostID: row.PostID, AuthorUserID: row.AuthorUserID, Sequence: row.Sequence, ThreadTitle: row.ThreadTitle, ThreadSlug: domain.Slug(row.ThreadSlug), Excerpt: row.Excerpt, CreatedAt: row.CreatedAt})
+	}
+	return pagination.Result[domain.LatestPostSummary]{Items: items, NextCursor: next}
+}
+
+// mostLikedPostPage maps most-liked rows into a page.
+func mostLikedPostPage(rows []mostLikedPostRow, limit int) pagination.Result[domain.MostLikedPost] {
+	next := ""
+	if len(rows) > limit {
+		next = rows[limit-1].PostID.String()
+		rows = rows[:limit]
+	}
+	items := make([]domain.MostLikedPost, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, domain.MostLikedPost{ForumID: row.ForumID, ThreadID: row.ThreadID, PostID: row.PostID, AuthorUserID: row.AuthorUserID, Sequence: row.Sequence, ThreadTitle: row.ThreadTitle, ThreadSlug: domain.Slug(row.ThreadSlug), Excerpt: row.Excerpt, LikeCount: row.LikeCount, CreatedAt: row.CreatedAt})
+	}
+	return pagination.Result[domain.MostLikedPost]{Items: items, NextCursor: next}
+}
+
 // Ensure ThreadRepository implements port.ThreadRepository.
 var _ port.ThreadRepository = ThreadRepository{}
 
 // Ensure PostRepository implements port.PostRepository.
 var _ port.PostRepository = PostRepository{}
+
+// Ensure InteractionRepository implements port.InteractionRepository.
+var _ port.InteractionRepository = InteractionRepository{}

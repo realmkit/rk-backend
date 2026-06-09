@@ -146,7 +146,7 @@ func TestServiceMoveForumRejectsDescendantParent(t *testing.T) {
 
 // TestServiceCreateThreadCreatesOpenerPost verifies thread creation transaction inputs.
 func TestServiceCreateThreadCreatesOpenerPost(t *testing.T) {
-	service, categories, forums, threads, posts, auth := newContentTestService()
+	service, categories, forums, threads, posts, auth, _ := newContentTestService()
 	actorID := uuid.New()
 	category := testCategory()
 	forum := testForum(category.ID, nil, 0, "news")
@@ -165,7 +165,7 @@ func TestServiceCreateThreadCreatesOpenerPost(t *testing.T) {
 
 // TestServiceCreateReplyRequiresOpenThread verifies reply state rules.
 func TestServiceCreateReplyRequiresOpenThread(t *testing.T) {
-	service, categories, forums, threads, _, auth := newContentTestService()
+	service, categories, forums, threads, _, auth, _ := newContentTestService()
 	actorID := uuid.New()
 	category := testCategory()
 	forum := testForum(category.ID, nil, 0, "support")
@@ -184,7 +184,7 @@ func TestServiceCreateReplyRequiresOpenThread(t *testing.T) {
 
 // TestServiceCreateReplyStoresNextSequence verifies reply sequence allocation.
 func TestServiceCreateReplyStoresNextSequence(t *testing.T) {
-	service, _, forums, threads, posts, auth := newContentTestService()
+	service, _, forums, threads, posts, auth, _ := newContentTestService()
 	actorID := uuid.New()
 	forum := testForum(uuid.New(), nil, 0, "games")
 	thread := testThread(forum.ID, uuid.New())
@@ -202,11 +202,31 @@ func TestServiceCreateReplyStoresNextSequence(t *testing.T) {
 	}
 }
 
+// TestServiceCreateReplyRejectsMissingAttachment verifies asset references are validated.
+func TestServiceCreateReplyRejectsMissingAttachment(t *testing.T) {
+	service, _, forums, threads, _, auth, _ := newContentTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "attachments")
+	thread := testThread(forum.ID, actorID)
+	assetID := uuid.New()
+	forums.items[forum.ID] = forum
+	threads.items[thread.ID] = thread
+	auth.reply[forum.ID] = true
+	auth.visible[forum.ID] = true
+
+	_, err := service.CreateReply(context.Background(), port.CreateReplyCommand{ActorUserID: actorID, ThreadID: thread.ID, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "Reply", References: []domain.PostReference{{TargetAssetID: &assetID, ReferenceType: domain.ReferenceAttachment}}})
+	if !errors.Is(err, port.ErrNotFound) {
+		t.Fatalf("CreateReply() error = %v, want %v", err, port.ErrNotFound)
+	}
+}
+
 // TestServiceUpdatePostWritesRevision verifies edit history is preserved.
 func TestServiceUpdatePostWritesRevision(t *testing.T) {
-	service, _, _, _, posts, _ := newContentTestService()
+	service, _, _, threads, posts, _, _ := newContentTestService()
 	actorID := uuid.New()
-	post := testPost(uuid.New(), uuid.New(), actorID, 1)
+	thread := testThread(uuid.New(), actorID)
+	post := testPost(thread.ID, thread.ForumID, actorID, 1)
+	threads.items[thread.ID] = thread
 	posts.items[post.ID] = post
 
 	updated, err := service.UpdatePost(context.Background(), port.UpdatePostCommand{ActorUserID: actorID, PostID: post.ID, ContentDocumentJSON: []byte(`{"type":"doc","content":[{"type":"paragraph"}]}`), ContentText: "Edited", EditReason: "typo", ExpectedVersion: post.Version})
@@ -218,9 +238,25 @@ func TestServiceUpdatePostWritesRevision(t *testing.T) {
 	}
 }
 
+// TestServiceUpdatePostRejectsExpiredAuthorWindow verifies edit window policy.
+func TestServiceUpdatePostRejectsExpiredAuthorWindow(t *testing.T) {
+	service, _, _, threads, posts, _, _ := newContentTestService()
+	actorID := uuid.New()
+	thread := testThread(uuid.New(), actorID)
+	post := testPost(thread.ID, thread.ForumID, actorID, 1)
+	post.CreatedAt = time.Now().UTC().Add(-authorPostEditWindow - time.Minute)
+	threads.items[thread.ID] = thread
+	posts.items[post.ID] = post
+
+	_, err := service.UpdatePost(context.Background(), port.UpdatePostCommand{ActorUserID: actorID, PostID: post.ID, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "Too late", ExpectedVersion: post.Version})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("UpdatePost() error = %v, want %v", err, port.ErrForbidden)
+	}
+}
+
 // TestServiceGetThreadAllowsVisibleForum verifies thread visibility through forum grants.
 func TestServiceGetThreadAllowsVisibleForum(t *testing.T) {
-	service, _, forums, threads, _, auth := newContentTestService()
+	service, _, forums, threads, _, auth, _ := newContentTestService()
 	actorID := uuid.New()
 	forum := testForum(uuid.New(), nil, 0, "visible")
 	thread := testThread(forum.ID, uuid.New())
@@ -239,7 +275,7 @@ func TestServiceGetThreadAllowsVisibleForum(t *testing.T) {
 
 // TestServiceUpdateThreadTitleRequiresManageForNonAuthor verifies title edit gates.
 func TestServiceUpdateThreadTitleRequiresManageForNonAuthor(t *testing.T) {
-	service, _, forums, threads, _, auth := newContentTestService()
+	service, _, forums, threads, _, auth, _ := newContentTestService()
 	actorID := uuid.New()
 	forum := testForum(uuid.New(), nil, 0, "threads")
 	thread := testThread(forum.ID, uuid.New())
@@ -258,7 +294,7 @@ func TestServiceUpdateThreadTitleRequiresManageForNonAuthor(t *testing.T) {
 
 // TestServiceListPostsIncludeHiddenRequiresManagePermission verifies hidden post gates.
 func TestServiceListPostsIncludeHiddenRequiresManagePermission(t *testing.T) {
-	service, _, forums, threads, posts, auth := newContentTestService()
+	service, _, forums, threads, posts, auth, _ := newContentTestService()
 	actorID := uuid.New()
 	forum := testForum(uuid.New(), nil, 0, "staff")
 	thread := testThread(forum.ID, uuid.New())
@@ -284,7 +320,7 @@ func TestServiceListPostsIncludeHiddenRequiresManagePermission(t *testing.T) {
 
 // TestServiceDeletePostRequiresManageForNonAuthor verifies delete gates.
 func TestServiceDeletePostRequiresManageForNonAuthor(t *testing.T) {
-	service, _, _, _, posts, auth := newContentTestService()
+	service, _, _, _, posts, auth, _ := newContentTestService()
 	actorID := uuid.New()
 	post := testPost(uuid.New(), uuid.New(), uuid.New(), 1)
 	posts.items[post.ID] = post
@@ -301,7 +337,7 @@ func TestServiceDeletePostRequiresManageForNonAuthor(t *testing.T) {
 
 // TestServiceListPostRevisionsRequiresManagePermission verifies revision gates.
 func TestServiceListPostRevisionsRequiresManagePermission(t *testing.T) {
-	service, _, forums, _, posts, auth := newContentTestService()
+	service, _, forums, _, posts, auth, _ := newContentTestService()
 	actorID := uuid.New()
 	post := testPost(uuid.New(), uuid.New(), uuid.New(), 1)
 	forums.items[post.ForumID] = testForum(uuid.New(), nil, 0, "mods")
@@ -317,15 +353,125 @@ func TestServiceListPostRevisionsRequiresManagePermission(t *testing.T) {
 	}
 }
 
+// TestServiceLikePostIsIdempotent verifies like commands do not drift counts.
+func TestServiceLikePostIsIdempotent(t *testing.T) {
+	service, _, forums, threads, posts, auth, interactions := newContentTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "likes")
+	thread := testThread(forum.ID, uuid.New())
+	post := testPost(thread.ID, forum.ID, uuid.New(), 1)
+	forums.items[forum.ID] = forum
+	threads.items[thread.ID] = thread
+	posts.items[post.ID] = post
+	auth.like[forum.ID] = true
+
+	first, err := service.LikePost(context.Background(), port.LikePostCommand{ActorUserID: actorID, PostID: post.ID})
+	if err != nil {
+		t.Fatalf("LikePost first error = %v", err)
+	}
+	second, err := service.LikePost(context.Background(), port.LikePostCommand{ActorUserID: actorID, PostID: post.ID})
+	if err != nil {
+		t.Fatalf("LikePost second error = %v", err)
+	}
+	if first.LikeCount != 1 || second.LikeCount != 1 || posts.items[post.ID].LikeCount != 1 || len(interactions.likes) != 1 {
+		t.Fatalf("like summaries first=%+v second=%+v count=%d likes=%d, want idempotent count", first, second, posts.items[post.ID].LikeCount, len(interactions.likes))
+	}
+}
+
+// TestServiceUnlikePostIsIdempotent verifies unlike commands do not drift counts.
+func TestServiceUnlikePostIsIdempotent(t *testing.T) {
+	service, _, forums, threads, posts, auth, _ := newContentTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "unlikes")
+	thread := testThread(forum.ID, uuid.New())
+	post := testPost(thread.ID, forum.ID, uuid.New(), 1)
+	forums.items[forum.ID] = forum
+	threads.items[thread.ID] = thread
+	posts.items[post.ID] = post
+	auth.like[forum.ID] = true
+
+	if _, err := service.LikePost(context.Background(), port.LikePostCommand{ActorUserID: actorID, PostID: post.ID}); err != nil {
+		t.Fatalf("LikePost error = %v", err)
+	}
+	first, err := service.UnlikePost(context.Background(), port.UnlikePostCommand{ActorUserID: actorID, PostID: post.ID})
+	if err != nil {
+		t.Fatalf("UnlikePost first error = %v", err)
+	}
+	second, err := service.UnlikePost(context.Background(), port.UnlikePostCommand{ActorUserID: actorID, PostID: post.ID})
+	if err != nil {
+		t.Fatalf("UnlikePost second error = %v", err)
+	}
+	if first.LikeCount != 0 || second.LikeCount != 0 || posts.items[post.ID].LikeCount != 0 {
+		t.Fatalf("unlike summaries first=%+v second=%+v count=%d, want idempotent zero", first, second, posts.items[post.ID].LikeCount)
+	}
+}
+
+// TestServiceLatestPostsUsesVisibleForumsAndCache verifies widget visibility and caching.
+func TestServiceLatestPostsUsesVisibleForumsAndCache(t *testing.T) {
+	service, _, forums, _, _, auth, interactions := newContentTestService()
+	actorID := uuid.New()
+	visibleForum := testForum(uuid.New(), nil, 0, "visible")
+	hiddenForum := testForum(uuid.New(), nil, 0, "hidden")
+	forums.items[visibleForum.ID] = visibleForum
+	forums.items[hiddenForum.ID] = hiddenForum
+	auth.visible[visibleForum.ID] = true
+	interactions.latest = []domain.LatestPostSummary{{ForumID: visibleForum.ID, ThreadID: uuid.New(), PostID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ThreadTitle: "Visible"}}
+
+	first, err := service.ListLatestPosts(context.Background(), actorID, uuid.Nil, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("ListLatestPosts first error = %v", err)
+	}
+	interactions.latest = nil
+	second, err := service.ListLatestPosts(context.Background(), actorID, uuid.Nil, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("ListLatestPosts second error = %v", err)
+	}
+	if len(first.Items) != 1 || len(second.Items) != 1 || interactions.latestFilters[0].ForumIDs[0] != visibleForum.ID {
+		t.Fatalf("latest first=%+v second=%+v filters=%+v, want cached visible latest", first.Items, second.Items, interactions.latestFilters)
+	}
+}
+
+// TestServiceReadStateRequiresAuthenticatedActor verifies anonymous read state is rejected.
+func TestServiceReadStateRequiresAuthenticatedActor(t *testing.T) {
+	service, _, _, _, _, _, _ := newContentTestService()
+
+	_, err := service.MarkThreadRead(context.Background(), port.MarkThreadReadCommand{ThreadID: uuid.New(), LastReadPostSequence: 1})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("MarkThreadRead() error = %v, want %v", err, port.ErrForbidden)
+	}
+	if err := service.MarkForumRead(context.Background(), port.MarkForumReadCommand{ForumID: uuid.New()}); !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("MarkForumRead() error = %v, want %v", err, port.ErrForbidden)
+	}
+}
+
+// TestServiceUnreadSummaryUsesVisibleForums verifies unread summaries are visibility-aware.
+func TestServiceUnreadSummaryUsesVisibleForums(t *testing.T) {
+	service, _, forums, _, _, auth, interactions := newContentTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "unread")
+	forums.items[forum.ID] = forum
+	auth.visible[forum.ID] = true
+	interactions.unread = domain.UnreadSummary{UserID: actorID, UnreadThreadCount: 3, Forums: []domain.ForumUnreadSummary{{ForumID: forum.ID, UnreadThreadCount: 3}}}
+
+	summary, err := service.GetUnreadSummary(context.Background(), actorID)
+	if err != nil {
+		t.Fatalf("GetUnreadSummary() error = %v", err)
+	}
+	if summary.UnreadThreadCount != 3 || len(interactions.unreadForumIDs) != 1 || interactions.unreadForumIDs[0] != forum.ID {
+		t.Fatalf("summary=%+v visible=%+v, want visible unread summary", summary, interactions.unreadForumIDs)
+	}
+}
+
 // newContentTestService creates a forum service with exposed content stores.
-func newContentTestService() (Service, *memoryCategories, *memoryForums, *memoryThreads, *memoryPosts, *memoryAuthorizer) {
+func newContentTestService() (Service, *memoryCategories, *memoryForums, *memoryThreads, *memoryPosts, *memoryAuthorizer, *memoryInteractions) {
 	categories := &memoryCategories{items: map[uuid.UUID]domain.ForumCategory{}}
 	forums := &memoryForums{items: map[uuid.UUID]domain.Forum{}, stats: map[uuid.UUID]domain.ForumStats{}}
 	threads := &memoryThreads{items: map[uuid.UUID]domain.Thread{}}
 	posts := &memoryPosts{items: map[uuid.UUID]domain.Post{}, revisions: map[uuid.UUID][]domain.PostRevision{}}
-	auth := &memoryAuthorizer{visible: map[uuid.UUID]bool{}, manage: map[uuid.UUID]bool{}, create: map[uuid.UUID]bool{}, reply: map[uuid.UUID]bool{}, manageThreads: map[uuid.UUID]bool{}, managePosts: map[uuid.UUID]bool{}}
-	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Authorizer: auth, Cache: &memoryCache{items: map[string]domain.ForumTree{}}, Transactions: noopTx{}})
-	return service, categories, forums, threads, posts, auth
+	interactions := &memoryInteractions{posts: posts, threads: threads, likes: map[string]domain.PostLike{}, readStates: map[string]domain.ThreadReadState{}}
+	auth := &memoryAuthorizer{visible: map[uuid.UUID]bool{}, manage: map[uuid.UUID]bool{}, create: map[uuid.UUID]bool{}, reply: map[uuid.UUID]bool{}, like: map[uuid.UUID]bool{}, manageThreads: map[uuid.UUID]bool{}, managePosts: map[uuid.UUID]bool{}}
+	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Interactions: interactions, Assets: &memoryAssets{existing: map[uuid.UUID]bool{}}, Authorizer: auth, Cache: newMemoryCache(), Transactions: noopTx{}})
+	return service, categories, forums, threads, posts, auth, interactions
 }
 
 // newTestService creates a forum service with in-memory fakes.
@@ -334,9 +480,10 @@ func newTestService() (Service, *memoryCategories, *memoryForums, *memoryAuthori
 	forums := &memoryForums{items: map[uuid.UUID]domain.Forum{}, stats: map[uuid.UUID]domain.ForumStats{}}
 	threads := &memoryThreads{items: map[uuid.UUID]domain.Thread{}}
 	posts := &memoryPosts{items: map[uuid.UUID]domain.Post{}, revisions: map[uuid.UUID][]domain.PostRevision{}}
-	auth := &memoryAuthorizer{visible: map[uuid.UUID]bool{}, manage: map[uuid.UUID]bool{}, create: map[uuid.UUID]bool{}, reply: map[uuid.UUID]bool{}, manageThreads: map[uuid.UUID]bool{}, managePosts: map[uuid.UUID]bool{}}
-	cache := &memoryCache{items: map[string]domain.ForumTree{}}
-	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Authorizer: auth, Cache: cache, Transactions: noopTx{}})
+	interactions := &memoryInteractions{posts: posts, threads: threads, likes: map[string]domain.PostLike{}, readStates: map[string]domain.ThreadReadState{}}
+	auth := &memoryAuthorizer{visible: map[uuid.UUID]bool{}, manage: map[uuid.UUID]bool{}, create: map[uuid.UUID]bool{}, reply: map[uuid.UUID]bool{}, like: map[uuid.UUID]bool{}, manageThreads: map[uuid.UUID]bool{}, managePosts: map[uuid.UUID]bool{}}
+	cache := newMemoryCache()
+	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Interactions: interactions, Assets: &memoryAssets{existing: map[uuid.UUID]bool{}}, Authorizer: auth, Cache: cache, Transactions: noopTx{}})
 	return service, categories, forums, auth, cache
 }
 
@@ -487,6 +634,7 @@ type memoryAuthorizer struct {
 	manage        map[uuid.UUID]bool
 	create        map[uuid.UUID]bool
 	reply         map[uuid.UUID]bool
+	like          map[uuid.UUID]bool
 	manageThreads map[uuid.UUID]bool
 	managePosts   map[uuid.UUID]bool
 }
@@ -513,6 +661,11 @@ func (authorizer *memoryAuthorizer) CanCreateThread(_ context.Context, _ uuid.UU
 // CanReply returns reply decision.
 func (authorizer *memoryAuthorizer) CanReply(_ context.Context, _ uuid.UUID, forumID uuid.UUID) (bool, error) {
 	return authorizer.reply[forumID], nil
+}
+
+// CanLikePosts returns like decision.
+func (authorizer *memoryAuthorizer) CanLikePosts(_ context.Context, _ uuid.UUID, forumID uuid.UUID) (bool, error) {
+	return authorizer.like[forumID], nil
 }
 
 // CanManageThreads returns thread management decision.
@@ -636,10 +789,122 @@ func (repository *memoryPosts) ListReferences(context.Context, []uuid.UUID) (map
 	return map[uuid.UUID][]domain.PostReference{}, nil
 }
 
+// memoryInteractions stores interactions in memory.
+type memoryInteractions struct {
+	posts          *memoryPosts
+	threads        *memoryThreads
+	likes          map[string]domain.PostLike
+	readStates     map[string]domain.ThreadReadState
+	latest         []domain.LatestPostSummary
+	mostLiked      []domain.MostLikedPost
+	unread         domain.UnreadSummary
+	latestFilters  []port.LatestPostFilter
+	unreadForumIDs []uuid.UUID
+}
+
+// LikePost stores an active like once.
+func (repository *memoryInteractions) LikePost(_ context.Context, like domain.PostLike) (bool, error) {
+	key := likeKey(like.PostID, like.UserID)
+	if _, ok := repository.likes[key]; ok {
+		return false, nil
+	}
+	repository.likes[key] = like
+	post := repository.posts.items[like.PostID]
+	post.LikeCount++
+	repository.posts.items[like.PostID] = post
+	thread := repository.threads.items[like.ThreadID]
+	thread.LikeCount++
+	repository.threads.items[like.ThreadID] = thread
+	return true, nil
+}
+
+// UnlikePost removes an active like once.
+func (repository *memoryInteractions) UnlikePost(_ context.Context, postID uuid.UUID, userID uuid.UUID) (bool, error) {
+	key := likeKey(postID, userID)
+	like, ok := repository.likes[key]
+	if !ok {
+		return false, nil
+	}
+	delete(repository.likes, key)
+	post := repository.posts.items[postID]
+	if post.LikeCount > 0 {
+		post.LikeCount--
+	}
+	repository.posts.items[postID] = post
+	thread := repository.threads.items[like.ThreadID]
+	if thread.LikeCount > 0 {
+		thread.LikeCount--
+	}
+	repository.threads.items[like.ThreadID] = thread
+	return true, nil
+}
+
+// LikedByUser reports whether a like exists.
+func (repository *memoryInteractions) LikedByUser(_ context.Context, postID uuid.UUID, userID uuid.UUID) (bool, error) {
+	_, ok := repository.likes[likeKey(postID, userID)]
+	return ok, nil
+}
+
+// ListLatestPosts returns latest posts.
+func (repository *memoryInteractions) ListLatestPosts(_ context.Context, filter port.LatestPostFilter, _ pagination.Page) (pagination.Result[domain.LatestPostSummary], error) {
+	repository.latestFilters = append(repository.latestFilters, filter)
+	return pagination.Result[domain.LatestPostSummary]{Items: repository.latest}, nil
+}
+
+// ListMostLikedPosts returns most-liked posts.
+func (repository *memoryInteractions) ListMostLikedPosts(_ context.Context, _ port.MostLikedFilter, _ pagination.Page) (pagination.Result[domain.MostLikedPost], error) {
+	return pagination.Result[domain.MostLikedPost]{Items: repository.mostLiked}, nil
+}
+
+// MarkThreadRead stores one read state.
+func (repository *memoryInteractions) MarkThreadRead(_ context.Context, state domain.ThreadReadState) error {
+	repository.readStates[state.ThreadID.String()] = state
+	return nil
+}
+
+// MarkForumRead stores read states for all forum threads.
+func (repository *memoryInteractions) MarkForumRead(_ context.Context, userID uuid.UUID, forumID uuid.UUID, readAt time.Time) error {
+	for _, thread := range repository.threads.items {
+		if thread.ForumID != forumID {
+			continue
+		}
+		repository.readStates[thread.ID.String()] = domain.ThreadReadState{ID: uuid.New(), UserID: userID, ForumID: forumID, ThreadID: thread.ID, LastReadPostSequence: thread.VisiblePostCount, LastReadAt: readAt}
+	}
+	return nil
+}
+
+// UnreadSummary returns unread summary.
+func (repository *memoryInteractions) UnreadSummary(_ context.Context, _ uuid.UUID, forumIDs []uuid.UUID) (domain.UnreadSummary, error) {
+	repository.unreadForumIDs = forumIDs
+	return repository.unread, nil
+}
+
+// likeKey returns an in-memory like key.
+func likeKey(postID uuid.UUID, userID uuid.UUID) string {
+	return postID.String() + ":" + userID.String()
+}
+
+// memoryAssets resolves attachment IDs in memory.
+type memoryAssets struct {
+	existing map[uuid.UUID]bool
+}
+
+// AssetExists reports whether an asset exists.
+func (resolver *memoryAssets) AssetExists(_ context.Context, id uuid.UUID) (bool, error) {
+	return resolver.existing[id], nil
+}
+
 // memoryCache stores trees in memory.
 type memoryCache struct {
-	items map[string]domain.ForumTree
-	sets  int
+	items     map[string]domain.ForumTree
+	latest    map[string]pagination.Result[domain.LatestPostSummary]
+	mostLiked map[string]pagination.Result[domain.MostLikedPost]
+	sets      int
+}
+
+// newMemoryCache creates a memory read cache.
+func newMemoryCache() *memoryCache {
+	return &memoryCache{items: map[string]domain.ForumTree{}, latest: map[string]pagination.Result[domain.LatestPostSummary]{}, mostLiked: map[string]pagination.Result[domain.MostLikedPost]{}}
 }
 
 // GetTree returns a cached tree.
@@ -658,6 +923,42 @@ func (cache *memoryCache) SetTree(_ context.Context, key string, tree domain.For
 // ClearTree clears trees.
 func (cache *memoryCache) ClearTree(context.Context) error {
 	cache.items = map[string]domain.ForumTree{}
+	return nil
+}
+
+// GetLatestPosts returns cached latest posts.
+func (cache *memoryCache) GetLatestPosts(_ context.Context, key string) (pagination.Result[domain.LatestPostSummary], bool, error) {
+	result, ok := cache.latest[key]
+	return result, ok, nil
+}
+
+// SetLatestPosts stores latest posts.
+func (cache *memoryCache) SetLatestPosts(_ context.Context, key string, result pagination.Result[domain.LatestPostSummary], _ time.Duration) error {
+	cache.latest[key] = result
+	return nil
+}
+
+// ClearLatestPosts clears latest posts.
+func (cache *memoryCache) ClearLatestPosts(context.Context) error {
+	cache.latest = map[string]pagination.Result[domain.LatestPostSummary]{}
+	return nil
+}
+
+// GetMostLikedPosts returns cached most-liked posts.
+func (cache *memoryCache) GetMostLikedPosts(_ context.Context, key string) (pagination.Result[domain.MostLikedPost], bool, error) {
+	result, ok := cache.mostLiked[key]
+	return result, ok, nil
+}
+
+// SetMostLikedPosts stores most-liked posts.
+func (cache *memoryCache) SetMostLikedPosts(_ context.Context, key string, result pagination.Result[domain.MostLikedPost], _ time.Duration) error {
+	cache.mostLiked[key] = result
+	return nil
+}
+
+// ClearMostLikedPosts clears most-liked posts.
+func (cache *memoryCache) ClearMostLikedPosts(context.Context) error {
+	cache.mostLiked = map[string]pagination.Result[domain.MostLikedPost]{}
 	return nil
 }
 
@@ -689,5 +990,6 @@ func testThread(forumID uuid.UUID, authorID uuid.UUID) domain.Thread {
 
 // testPost returns a post.
 func testPost(threadID uuid.UUID, forumID uuid.UUID, authorID uuid.UUID, sequence int64) domain.Post {
-	return domain.Post{ID: uuid.New(), ThreadID: threadID, ForumID: forumID, AuthorUserID: authorID, Sequence: sequence, Status: domain.PostStatusVisible, ContentFormat: domain.ContentFormatProseMirror, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "Original", Version: 1}
+	now := time.Now().UTC()
+	return domain.Post{ID: uuid.New(), ThreadID: threadID, ForumID: forumID, AuthorUserID: authorID, Sequence: sequence, Status: domain.PostStatusVisible, ContentFormat: domain.ContentFormatProseMirror, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "Original", Version: 1, CreatedAt: now, UpdatedAt: now}
 }

@@ -10,6 +10,8 @@ import (
 	assetshttp "github.com/niflaot/gamehub-go/module/assets/adapter/http"
 	assetspostgres "github.com/niflaot/gamehub-go/module/assets/adapter/postgres"
 	assetsapp "github.com/niflaot/gamehub-go/module/assets/application"
+	assetsport "github.com/niflaot/gamehub-go/module/assets/port"
+	forumsassets "github.com/niflaot/gamehub-go/module/forums/adapter/assets"
 	forumshttp "github.com/niflaot/gamehub-go/module/forums/adapter/http"
 	forumspostgres "github.com/niflaot/gamehub-go/module/forums/adapter/postgres"
 	forumsredis "github.com/niflaot/gamehub-go/module/forums/adapter/redis"
@@ -328,7 +330,7 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 	assetRepository := assetspostgres.NewAssetRepository(orm.NewStore(db))
 	assetService := assetsapp.NewService(assetRepository, assetStorage, cfg.Storage.Bucket)
 	groupService := groupsService(db)
-	forumService := forumsService(db, client)
+	forumService := forumsService(db, client, assetService)
 	userService := usersService(db, cfg)
 	options = append(options,
 		server.WithIdempotencyStore(idempotency.NewRedisStore(client)),
@@ -348,13 +350,15 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 }
 
 // forumsService creates forums application service.
-func forumsService(db *gorm.DB, client *goredis.Client) forumsapp.Service {
+func forumsService(db *gorm.DB, client *goredis.Client, assetService assetsport.Service) forumsapp.Service {
 	store := orm.NewStore(db)
 	return forumsapp.NewService(forumsapp.Dependencies{
 		Categories:   forumspostgres.NewCategoryRepository(store),
 		Forums:       forumspostgres.NewForumRepository(store),
 		Threads:      forumspostgres.NewThreadRepository(store),
 		Posts:        forumspostgres.NewPostRepository(store),
+		Interactions: forumspostgres.NewInteractionRepository(store),
+		Assets:       forumsassets.NewResolver(assetService),
 		Authorizer:   forumspostgres.NewVisibilityAuthorizer(store),
 		Cache:        forumsredis.NewTreeCache(client),
 		Transactions: transaction.New(db),
