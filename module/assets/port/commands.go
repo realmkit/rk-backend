@@ -1,0 +1,110 @@
+package port
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/niflaot/gamehub-go/module/assets/domain"
+)
+
+// CreateUploadIntentCommand requests an asset row and signed upload URL.
+type CreateUploadIntentCommand struct {
+	// Namespace is the browsable namespace.
+	Namespace domain.Namespace
+
+	// Path is the virtual folder path.
+	Path domain.VirtualPath
+
+	// Filename is the plain filename.
+	Filename domain.Filename
+
+	// DisplayName is the optional human-readable name.
+	DisplayName string
+
+	// Visibility controls future URL resolution.
+	Visibility domain.Visibility
+
+	// ContentType is the upload media type.
+	ContentType string
+
+	// SizeBytes is the expected object size.
+	SizeBytes int64
+
+	// CreatedByUserID is the user creating the intent when known.
+	CreatedByUserID *uuid.UUID
+}
+
+// UpdateAssetCommand changes mutable asset metadata.
+type UpdateAssetCommand struct {
+	// ID is the asset identifier.
+	ID uuid.UUID
+
+	// DisplayName is the replacement display name.
+	DisplayName string
+
+	// Path is the replacement virtual folder path.
+	Path domain.VirtualPath
+
+	// Visibility is the replacement visibility.
+	Visibility domain.Visibility
+
+	// ExpectedVersion is the required current version.
+	ExpectedVersion uint64
+}
+
+// CompleteUploadCommand confirms the upload exists in storage.
+type CompleteUploadCommand struct {
+	// ID is the asset identifier.
+	ID uuid.UUID
+}
+
+// DeleteAssetCommand soft deletes an asset.
+type DeleteAssetCommand struct {
+	// ID is the asset identifier.
+	ID uuid.UUID
+
+	// ExpectedVersion is the required current version.
+	ExpectedVersion uint64
+}
+
+// AssetFilter filters asset lists.
+type AssetFilter struct {
+	// Namespace filters by namespace.
+	Namespace domain.Namespace
+
+	// Path filters by exact virtual folder path.
+	Path domain.VirtualPath
+
+	// PathPrefix filters by folder prefix.
+	PathPrefix domain.VirtualPath
+
+	// Status filters by status.
+	Status domain.Status
+}
+
+// FolderFilter filters virtual folder lists.
+type FolderFilter struct {
+	// Namespace filters by namespace.
+	Namespace domain.Namespace
+
+	// PathPrefix filters by parent virtual folder.
+	PathPrefix domain.VirtualPath
+}
+
+// UploadIntent contains an asset and a signed upload request.
+type UploadIntent struct {
+	// Asset is the pending asset.
+	Asset domain.Asset
+
+	// Method is the upload HTTP method.
+	Method string
+
+	// URL is the presigned upload URL.
+	URL string
+
+	// Headers contains required upload headers.
+	Headers map[string]string
+
+	// ExpiresAt is when the URL expires.
+	ExpiresAt time.Time
+}

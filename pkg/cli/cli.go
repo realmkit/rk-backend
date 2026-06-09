@@ -7,14 +7,19 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	assetshttp "github.com/niflaot/gamehub-go/module/assets/adapter/http"
+	assetspostgres "github.com/niflaot/gamehub-go/module/assets/adapter/postgres"
+	assetsapp "github.com/niflaot/gamehub-go/module/assets/application"
 	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
 	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
 	"github.com/niflaot/gamehub-go/pkg/config"
 	"github.com/niflaot/gamehub-go/pkg/logger"
+	"github.com/niflaot/gamehub-go/pkg/orm"
 	"github.com/niflaot/gamehub-go/pkg/postgres"
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
 	gamehubredis "github.com/niflaot/gamehub-go/pkg/redis"
 	"github.com/niflaot/gamehub-go/pkg/server"
+	"github.com/niflaot/gamehub-go/pkg/storage"
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -31,6 +36,7 @@ type commandDeps struct {
 	closePostgres func(*gorm.DB) error
 	openRedis     func(context.Context, gamehubredis.Config) (*goredis.Client, error)
 	closeRedis    func(*goredis.Client) error
+	newStorage    func(context.Context, storage.Config) (storage.Store, error)
 	newRunner     func(*gorm.DB, *zap.Logger) migrations.Runner
 }
 
@@ -60,6 +66,10 @@ func defaultCommandDeps() commandDeps {
 			return gamehubredis.Open(ctx, cfg)
 		},
 		closeRedis: gamehubredis.Close,
+		newStorage: func(ctx context.Context, cfg storage.Config) (storage.Store, error) {
+			store, err := storage.NewS3Store(ctx, cfg)
+			return store, err
+		},
 		newRunner: func(db *gorm.DB, log *zap.Logger) migrations.Runner {
 			return migrations.NewRunner(db, migrations.DefaultSource(), migrations.WithLogger(log), migrations.WithExecutor("gamehub-cli"))
 		},
@@ -263,7 +273,7 @@ func runStart(ctx context.Context, activeLogger **zap.Logger, deps commandDeps) 
 	if err != nil {
 		return err
 	}
-	options, closeRuntime, err := runtimeServerOptions(ctx, cfg, deps)
+	options, closeRuntime, err := runtimeServerOptions(ctx, cfg, log, deps)
 	if err != nil {
 		return err
 	}
@@ -276,21 +286,59 @@ func runStart(ctx context.Context, activeLogger **zap.Logger, deps commandDeps) 
 }
 
 // runtimeServerOptions creates server options from runtime dependencies.
-func runtimeServerOptions(ctx context.Context, cfg config.Config, deps commandDeps) ([]server.Option, func(*zap.Logger), error) {
+func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logger, deps commandDeps) ([]server.Option, func(*zap.Logger), error) {
+	if log == nil {
+		log = zap.NewNop()
+	}
 	options := []server.Option{server.WithCORS(cfg.CORS)}
 	client, err := deps.openRedis(ctx, cfg.Redis)
 	if err != nil {
 		return nil, nil, err
 	}
+	logDevelopmentConnection(cfg, log, "redis connection established", zap.String("address", cfg.Redis.Address), zap.Int("database", cfg.Redis.Database))
+	db, err := deps.openPostgres(ctx, cfg.Postgres)
+	if err != nil {
+		deps.closeRedis(client)
+		return nil, nil, err
+	}
+	logDevelopmentConnection(cfg, log, "postgres connection established", zap.String("host", cfg.Postgres.Host), zap.Int("port", cfg.Postgres.Port), zap.String("database", cfg.Postgres.Database))
+	assetStorage, err := deps.newStorage(ctx, cfg.Storage)
+	if err != nil {
+		closeDatabase(zap.NewNop(), deps.closePostgres, db)
+		deps.closeRedis(client)
+		return nil, nil, err
+	}
+	if err := assetStorage.Health(ctx); err != nil {
+		closeDatabase(zap.NewNop(), deps.closePostgres, db)
+		deps.closeRedis(client)
+		return nil, nil, err
+	}
+	logDevelopmentConnection(cfg, log, "s3 storage connection established", zap.String("bucket", cfg.Storage.Bucket), zap.String("endpoint", cfg.Storage.Endpoint))
+	assetRepository := assetspostgres.NewAssetRepository(orm.NewStore(db))
+	assetService := assetsapp.NewService(assetRepository, assetStorage, cfg.Storage.Bucket)
 	options = append(options,
 		server.WithIdempotencyStore(idempotency.NewRedisStore(client)),
 		server.WithRateLimitStore(ratelimit.NewRedisStore(client)),
+		server.WithAssets(assetshttpServices(assetService)),
 	)
 	return options, func(log *zap.Logger) {
+		closeDatabase(log, deps.closePostgres, db)
 		if err := deps.closeRedis(client); err != nil {
 			log.Error("close redis failed", zap.Error(err))
 		}
 	}, nil
+}
+
+// logDevelopmentConnection logs dependency startup success in development.
+func logDevelopmentConnection(cfg config.Config, log *zap.Logger, message string, fields ...zap.Field) {
+	if cfg.Runtime.IsDevelopment() {
+		log.Info(message, fields...)
+	}
+}
+
+// assetshttpServices creates HTTP services for assets.
+func assetshttpServices(assetService assetsapp.Service) assetshttp.Services {
+	return assetshttp.Services{Assets: assetService}
 }
 
 // runMigration runs a migration command that returns status.

@@ -8,6 +8,7 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/postgres"
 	"github.com/niflaot/gamehub-go/pkg/redis"
 	"github.com/niflaot/gamehub-go/pkg/server"
+	"github.com/niflaot/gamehub-go/pkg/storage"
 )
 
 // Config contains the GameHub backend runtime configuration.
@@ -26,6 +27,9 @@ type Config struct {
 
 	// Redis contains Redis connection settings.
 	Redis redis.Config `mapstructure:"redis"`
+
+	// Storage contains S3-compatible object storage settings.
+	Storage storage.Config `mapstructure:"storage"`
 
 	// CORS contains browser cross-origin settings.
 	CORS cors.Config `mapstructure:"cors"`

@@ -15,6 +15,10 @@
     },
     {
       "name": "metadata"
+    },
+    {
+      "name": "assets",
+      "description": "Namespaced S3-backed asset management."
     }
   ],
   "paths": {
@@ -1103,6 +1107,433 @@
           }
         }
       }
+    },
+    "/api/v1/assets/upload-intents": {
+      "post": {
+        "operationId": "createAssetUploadIntent",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Create an asset upload intent",
+        "description": "Requires Idempotency-Key. The returned signed URL is used by the client to upload directly to S3-compatible storage.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetUploadIntentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/AssetUploadIntentCreated"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/assets": {
+      "get": {
+        "operationId": "listAssets",
+        "tags": [
+          "assets"
+        ],
+        "summary": "List assets",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AssetNamespaceQuery"
+          },
+          {
+            "$ref": "#/components/parameters/AssetPathQuery"
+          },
+          {
+            "$ref": "#/components/parameters/AssetPathPrefixQuery"
+          },
+          {
+            "$ref": "#/components/parameters/AssetStatusQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AssetList"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/assets/folders": {
+      "get": {
+        "operationId": "listAssetFolders",
+        "tags": [
+          "assets"
+        ],
+        "summary": "List asset virtual folders",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AssetNamespaceQuery"
+          },
+          {
+            "$ref": "#/components/parameters/AssetPathPrefixQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AssetFolders"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{asset_id}": {
+      "get": {
+        "operationId": "getAsset",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Get an asset",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AssetIdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Asset"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateAsset",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Update an asset",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AssetIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Asset"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAsset",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Delete an asset",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AssetIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{asset_id}/url": {
+      "get": {
+        "operationId": "getAssetURL",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Get a signed asset URL",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AssetIdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AssetURL"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{asset_id}/complete": {
+      "post": {
+        "operationId": "completeAssetUpload",
+        "tags": [
+          "assets"
+        ],
+        "summary": "Complete an asset upload",
+        "description": "Requires Idempotency-Key. Confirms the object exists in storage and transitions the asset to available.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AssetIdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Asset"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1323,6 +1754,49 @@
         "required": false,
         "schema": {
           "type": "string"
+        }
+      },
+      "AssetIdPath": {
+        "name": "asset_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "AssetNamespaceQuery": {
+        "name": "namespace",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/MachineKey"
+        }
+      },
+      "AssetPathQuery": {
+        "name": "path",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 700
+        }
+      },
+      "AssetPathPrefixQuery": {
+        "name": "path_prefix",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 700
+        }
+      },
+      "AssetStatusQuery": {
+        "name": "status",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/AssetStatus"
         }
       }
     },
@@ -1696,6 +2170,66 @@
             }
           }
         }
+      },
+      "AssetUploadIntentCreated": {
+        "description": "Asset upload intent created",
+        "headers": {
+          "ETag": {
+            "$ref": "#/components/headers/ETag"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AssetUploadIntent"
+            }
+          }
+        }
+      },
+      "Asset": {
+        "description": "Asset response",
+        "headers": {
+          "ETag": {
+            "$ref": "#/components/headers/ETag"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Asset"
+            }
+          }
+        }
+      },
+      "AssetList": {
+        "description": "Asset list response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AssetList"
+            }
+          }
+        }
+      },
+      "AssetFolders": {
+        "description": "Asset folder list response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AssetFolders"
+            }
+          }
+        }
+      },
+      "AssetURL": {
+        "description": "Asset signed URL response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AssetURL"
+            }
+          }
+        }
       }
     },
     "schemas": {
@@ -1708,6 +2242,7 @@
       "OwnerType": {
         "type": "string",
         "enum": [
+          "asset",
           "user"
         ]
       },
@@ -2309,6 +2844,254 @@
             "items": {
               "$ref": "#/components/schemas/FieldError"
             }
+          }
+        }
+      },
+      "AssetVisibility": {
+        "type": "string",
+        "enum": [
+          "public",
+          "authenticated",
+          "private"
+        ]
+      },
+      "AssetStatus": {
+        "type": "string",
+        "enum": [
+          "pending_upload",
+          "available",
+          "quarantined",
+          "failed"
+        ]
+      },
+      "Asset": {
+        "type": "object",
+        "required": [
+          "id",
+          "namespace",
+          "path",
+          "filename",
+          "display_name",
+          "visibility",
+          "status",
+          "storage_key",
+          "bucket",
+          "content_type",
+          "size_bytes",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "namespace": {
+            "$ref": "#/components/schemas/MachineKey"
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 700
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/AssetVisibility"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssetStatus"
+          },
+          "storage_key": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "bucket": {
+            "type": "string"
+          },
+          "content_type": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "etag": {
+            "type": "string"
+          },
+          "created_by_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AssetUploadIntentRequest": {
+        "type": "object",
+        "required": [
+          "namespace",
+          "filename",
+          "visibility",
+          "content_type",
+          "size_bytes"
+        ],
+        "properties": {
+          "namespace": {
+            "$ref": "#/components/schemas/MachineKey"
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 700
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/AssetVisibility"
+          },
+          "content_type": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "created_by_user_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AssetUpdateRequest": {
+        "type": "object",
+        "required": [
+          "display_name",
+          "path",
+          "visibility"
+        ],
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 700
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/AssetVisibility"
+          }
+        }
+      },
+      "AssetUpload": {
+        "type": "object",
+        "required": [
+          "method",
+          "url",
+          "headers",
+          "expires_at"
+        ],
+        "properties": {
+          "method": {
+            "type": "string",
+            "const": "PUT"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AssetUploadIntent": {
+        "type": "object",
+        "required": [
+          "asset",
+          "upload"
+        ],
+        "properties": {
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
+          },
+          "upload": {
+            "$ref": "#/components/schemas/AssetUpload"
+          }
+        }
+      },
+      "AssetList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Asset"
+            }
+          },
+          "next_page_token": {
+            "type": "string"
+          }
+        }
+      },
+      "AssetFolders": {
+        "type": "object",
+        "required": [
+          "folders"
+        ],
+        "properties": {
+          "folders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AssetURL": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
           }
         }
       }

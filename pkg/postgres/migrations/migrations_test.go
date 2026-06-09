@@ -13,17 +13,20 @@ import (
 	"gorm.io/gorm"
 )
 
-// TestLoadReturnsDefaultMetadataMigration verifies embedded migrations load.
-func TestLoadReturnsDefaultMetadataMigration(t *testing.T) {
+// TestLoadReturnsDefaultMigrations verifies embedded migrations load.
+func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	migrations, err := Load(DefaultSource())
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if len(migrations) != 1 {
-		t.Fatalf("len(migrations) = %d, want 1", len(migrations))
+	if len(migrations) != 2 {
+		t.Fatalf("len(migrations) = %d, want 2", len(migrations))
 	}
 	if migrations[0].Version != 1 || migrations[0].Name != "create_metadata_tables" {
-		t.Fatalf("migration = %+v, want metadata version 1", migrations[0])
+		t.Fatalf("migration[0] = %+v, want metadata version 1", migrations[0])
+	}
+	if migrations[1].Version != 2 || migrations[1].Name != "create_asset_tables" {
+		t.Fatalf("migration[1] = %+v, want assets version 2", migrations[1])
 	}
 }
 
@@ -48,18 +51,21 @@ func TestLoadRejectsMissingDown(t *testing.T) {
 	}
 }
 
-// TestRunnerUpAppliesDefaultMetadataMigration verifies the first migration creates metadata tables.
-func TestRunnerUpAppliesDefaultMetadataMigration(t *testing.T) {
+// TestRunnerUpAppliesDefaultMigrations verifies default migrations create tables.
+func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	db := newDB(t)
 	status, err := NewRunner(db, DefaultSource()).Up(context.Background())
 	if err != nil {
 		t.Fatalf("Up() error = %v", err)
 	}
-	if len(status.Applied) != 1 || len(status.Pending) != 0 {
-		t.Fatalf("Status = %+v, want one applied and no pending", status)
+	if len(status.Applied) != 2 || len(status.Pending) != 0 {
+		t.Fatalf("Status = %+v, want two applied and no pending", status)
 	}
 	if !db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table missing")
+	}
+	if !db.Migrator().HasTable("assets") {
+		t.Fatalf("assets table missing")
 	}
 }
 
@@ -133,15 +139,18 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	status, err := runner.Down(context.Background(), 1)
+	status, err := runner.Down(context.Background(), 2)
 	if err != nil {
 		t.Fatalf("Down() error = %v", err)
 	}
-	if len(status.Applied) != 0 || len(status.Pending) != 1 {
-		t.Fatalf("Status = %+v, want no applied and one pending", status)
+	if len(status.Applied) != 0 || len(status.Pending) != 2 {
+		t.Fatalf("Status = %+v, want no applied and two pending", status)
 	}
 	if db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table exists after Down()")
+	}
+	if db.Migrator().HasTable("assets") {
+		t.Fatalf("assets table exists after Down()")
 	}
 }
 

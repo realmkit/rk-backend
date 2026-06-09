@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/gamehub-go/pkg/config"
@@ -14,8 +16,10 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
 	gamehubredis "github.com/niflaot/gamehub-go/pkg/redis"
 	"github.com/niflaot/gamehub-go/pkg/server"
+	"github.com/niflaot/gamehub-go/pkg/storage"
 	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -91,8 +95,8 @@ func TestMigrateStatusReportsPendingMigration(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if !strings.Contains(output.String(), "pending=1") {
-		t.Fatalf("output = %q, want pending=1", output.String())
+	if !strings.Contains(output.String(), "pending=2") {
+		t.Fatalf("output = %q, want pending=2", output.String())
 	}
 }
 
@@ -122,24 +126,24 @@ func TestMigrateCommandsApplyValidateAndReset(t *testing.T) {
 	if err != nil {
 		t.Fatalf("up Execute() error = %v", err)
 	}
-	if !strings.Contains(output, "applied=1 pending=0") {
-		t.Fatalf("up output = %q, want applied=1 pending=0", output)
+	if !strings.Contains(output, "applied=2 pending=0") {
+		t.Fatalf("up output = %q, want applied=2 pending=0", output)
 	}
 
 	output, err = executeCommand(t, []string{"migrate", "validate"}, deps)
 	if err != nil {
 		t.Fatalf("validate Execute() error = %v", err)
 	}
-	if !strings.Contains(output, "applied=1 pending=0") {
-		t.Fatalf("validate output = %q, want applied=1 pending=0", output)
+	if !strings.Contains(output, "applied=2 pending=0") {
+		t.Fatalf("validate output = %q, want applied=2 pending=0", output)
 	}
 
 	output, err = executeCommand(t, []string{"migrate", "reset", "--i-understand-this-can-destroy-data"}, deps)
 	if err != nil {
 		t.Fatalf("reset Execute() error = %v", err)
 	}
-	if !strings.Contains(output, "applied=0 pending=1") {
-		t.Fatalf("reset output = %q, want applied=0 pending=1", output)
+	if !strings.Contains(output, "applied=0 pending=2") {
+		t.Fatalf("reset output = %q, want applied=0 pending=2", output)
 	}
 }
 
@@ -278,6 +282,52 @@ func TestRunStartReturnsRedisErrors(t *testing.T) {
 	}
 }
 
+// TestRunStartReturnsStorageHealthErrors verifies S3 health is required for startup.
+func TestRunStartReturnsStorageHealthErrors(t *testing.T) {
+	activeLogger := zap.NewNop()
+	want := errors.New("s3 failed")
+	deps := testCommandDeps(t)
+	deps.newStorage = func(context.Context, storage.Config) (storage.Store, error) {
+		return cliStore{healthError: want}, nil
+	}
+	deps.newServer = func(*zap.Logger, bool, ...server.Option) *fiber.App {
+		t.Fatalf("newServer called after storage health failure")
+		return nil
+	}
+
+	err := execute(&activeLogger, []string{"start"}, deps)
+	if !errors.Is(err, want) {
+		t.Fatalf("execute() error = %v, want %v", err, want)
+	}
+}
+
+// TestRunStartLogsDependencyConnectionsInDevelopment verifies successful dependency logs in development.
+func TestRunStartLogsDependencyConnectionsInDevelopment(t *testing.T) {
+	var activeLogger *zap.Logger
+	core, observed := observer.New(zap.InfoLevel)
+	deps := testCommandDeps(t)
+	deps.loadConfig = func() (config.Config, error) {
+		return config.Config{
+			Runtime:  config.Runtime{Environment: "development"},
+			Logging:  logger.Config{Level: "info"},
+			Postgres: postgres.Config{Host: "localhost", Port: 5432, Database: "gamehub"},
+			Redis:    gamehubredis.Config{Address: "localhost:6379"},
+			Storage:  storage.Config{Bucket: "gamehub-assets", Endpoint: "http://localhost:9000"},
+		}, nil
+	}
+	deps.newLogger = func(logger.Config) (*zap.Logger, error) {
+		return zap.New(core), nil
+	}
+
+	if err := execute(&activeLogger, []string{"start"}, deps); err != nil {
+		t.Fatalf("execute() error = %v", err)
+	}
+	messages := observed.FilterMessageSnippet("connection established").All()
+	if len(messages) != 3 {
+		t.Fatalf("connection logs = %d, want 3", len(messages))
+	}
+}
+
 // testCommandDeps returns deterministic command dependencies.
 func testCommandDeps(t *testing.T) commandDeps {
 	t.Helper()
@@ -310,10 +360,48 @@ func testCommandDeps(t *testing.T) commandDeps {
 		closeRedis: func(*goredis.Client) error {
 			return nil
 		},
+		newStorage: func(context.Context, storage.Config) (storage.Store, error) {
+			return cliStore{}, nil
+		},
 		newRunner: func(db *gorm.DB, log *zap.Logger) migrations.Runner {
 			return migrations.NewRunner(db, migrations.DefaultSource(), migrations.WithLogger(log))
 		},
 	}
+}
+
+// cliStore is a fake object store for CLI tests.
+type cliStore struct {
+	healthError error
+}
+
+// Health verifies the storage backend is reachable.
+func (store cliStore) Health(context.Context) error {
+	return store.healthError
+}
+
+// Put stores object bytes.
+func (cliStore) Put(context.Context, storage.Object, io.Reader) (storage.StoredObject, error) {
+	return storage.StoredObject{}, nil
+}
+
+// Delete deletes an object by key.
+func (cliStore) Delete(context.Context, string) error {
+	return nil
+}
+
+// PresignPut creates a presigned upload request.
+func (cliStore) PresignPut(context.Context, storage.PresignPutRequest) (storage.PresignedRequest, error) {
+	return storage.PresignedRequest{}, nil
+}
+
+// PresignGet creates a presigned download URL.
+func (cliStore) PresignGet(context.Context, string, time.Duration) (string, error) {
+	return "", nil
+}
+
+// Head returns object metadata.
+func (cliStore) Head(context.Context, string) (storage.ObjectInfo, error) {
+	return storage.ObjectInfo{}, nil
 }
 
 // executeCommand executes a command and returns captured output.

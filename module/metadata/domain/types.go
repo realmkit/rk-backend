@@ -26,6 +26,10 @@ type ValueType string
 
 // Supported owner types.
 const (
+	// OwnerAsset attaches metadata to assets.
+	OwnerAsset OwnerType = "asset"
+
+	// OwnerUser attaches metadata to users.
 	OwnerUser OwnerType = "user"
 )
 
@@ -49,6 +53,7 @@ const (
 // AllowedOwnerTypes returns the owner types supported by the metadata module.
 func AllowedOwnerTypes() []OwnerType {
 	return []OwnerType{
+		OwnerAsset,
 		OwnerUser,
 	}
 }

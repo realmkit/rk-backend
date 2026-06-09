@@ -10,7 +10,7 @@ import (
 // TestLoadUsesTaggedDefaults verifies Load returns tag defaults when no external configuration exists.
 func TestLoadUsesTaggedDefaults(t *testing.T) {
 	clearGameHubEnv(t)
-	setRequiredPostgresEnv(t)
+	setRequiredRootEnv(t)
 
 	cfg, err := Load(WithEnvFile(filepath.Join(t.TempDir(), ".env")))
 	if err != nil {
@@ -41,6 +41,9 @@ func TestLoadUsesTaggedDefaults(t *testing.T) {
 	if cfg.Redis.Address != "localhost:6379" {
 		t.Fatalf("Redis.Address = %q, want %q", cfg.Redis.Address, "localhost:6379")
 	}
+	if cfg.Storage.Region != "auto" {
+		t.Fatalf("Storage.Region = %q, want %q", cfg.Storage.Region, "auto")
+	}
 	if !cfg.CORS.Enabled {
 		t.Fatalf("CORS.Enabled = false, want true")
 	}
@@ -51,7 +54,7 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\nGAMEHUB_LOG_LEVEL=debug\nGAMEHUB_POSTGRES_HOST=db\nGAMEHUB_POSTGRES_PORT=5433\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_POSTGRES_SSL_MODE=require\nGAMEHUB_REDIS_ADDRESS=redis:6379\nGAMEHUB_CORS_ALLOW_ORIGINS=https://admin.gamehub.test\n")
+	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\nGAMEHUB_LOG_LEVEL=debug\nGAMEHUB_POSTGRES_HOST=db\nGAMEHUB_POSTGRES_PORT=5433\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_POSTGRES_SSL_MODE=require\nGAMEHUB_REDIS_ADDRESS=redis:6379\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\nGAMEHUB_CORS_ALLOW_ORIGINS=https://admin.gamehub.test\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -85,6 +88,9 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 	if cfg.Redis.Address != "redis:6379" {
 		t.Fatalf("Redis.Address = %q, want %q", cfg.Redis.Address, "redis:6379")
 	}
+	if cfg.Storage.Bucket != "file-bucket" {
+		t.Fatalf("Storage.Bucket = %q, want file-bucket", cfg.Storage.Bucket)
+	}
 	if cfg.CORS.AllowOrigins != "https://admin.gamehub.test" {
 		t.Fatalf("CORS.AllowOrigins = %q, want configured origin", cfg.CORS.AllowOrigins)
 	}
@@ -95,7 +101,7 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\nGAMEHUB_LOG_LEVEL=info\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\n")
+	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\nGAMEHUB_LOG_LEVEL=info\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -108,6 +114,7 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "envuser")
 	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "envpass")
 	t.Setenv("GAMEHUB_REDIS_DATABASE", "3")
+	t.Setenv("GAMEHUB_STORAGE_BUCKET", "env-bucket")
 
 	cfg, err := Load(WithEnvFile(path))
 	if err != nil {
@@ -132,12 +139,15 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	if cfg.Redis.Database != 3 {
 		t.Fatalf("Redis.Database = %d, want %d", cfg.Redis.Database, 3)
 	}
+	if cfg.Storage.Bucket != "env-bucket" {
+		t.Fatalf("Storage.Bucket = %q, want env-bucket", cfg.Storage.Bucket)
+	}
 }
 
 // TestLoadWithDisabledEnvFile verifies the loader can run without reading any .env file.
 func TestLoadWithDisabledEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
-	setRequiredPostgresEnv(t)
+	setRequiredRootEnv(t)
 
 	cfg, err := Load(WithEnvFile(""))
 	if err != nil {
@@ -154,7 +164,7 @@ func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("host=127.0.0.2\nport=6060\nenvironment=local\nlog.level=error\npostgres.database=keydb\npostgres.username=keyuser\npostgres.password=keypass\n")
+	content := []byte("host=127.0.0.2\nport=6060\nenvironment=local\nlog.level=error\npostgres.database=keydb\npostgres.username=keyuser\npostgres.password=keypass\nstorage.bucket=key-bucket\nstorage.endpoint=http://storage:9000\nstorage.access_key_id=key-access\nstorage.secret_access_key=key-secret\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -179,12 +189,15 @@ func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
 	if cfg.Postgres.Username != "keyuser" {
 		t.Fatalf("Postgres.Username = %q, want %q", cfg.Postgres.Username, "keyuser")
 	}
+	if cfg.Storage.Bucket != "key-bucket" {
+		t.Fatalf("Storage.Bucket = %q, want key-bucket", cfg.Storage.Bucket)
+	}
 }
 
 // TestLoadReturnsEnvFileReadErrors verifies invalid .env paths return useful errors.
 func TestLoadReturnsEnvFileReadErrors(t *testing.T) {
 	clearGameHubEnv(t)
-	setRequiredPostgresEnv(t)
+	setRequiredRootEnv(t)
 
 	if _, err := Load(WithEnvFile(t.TempDir())); err == nil {
 		t.Fatalf("Load() error = nil, want error")
@@ -256,16 +269,26 @@ func clearGameHubEnv(t *testing.T) {
 	t.Setenv("GAMEHUB_REDIS_ADDRESS", "")
 	t.Setenv("GAMEHUB_REDIS_PASSWORD", "")
 	t.Setenv("GAMEHUB_REDIS_DATABASE", "")
+	t.Setenv("GAMEHUB_STORAGE_BUCKET", "")
+	t.Setenv("GAMEHUB_STORAGE_REGION", "")
+	t.Setenv("GAMEHUB_STORAGE_ENDPOINT", "")
+	t.Setenv("GAMEHUB_STORAGE_ACCESS_KEY_ID", "")
+	t.Setenv("GAMEHUB_STORAGE_SECRET_ACCESS_KEY", "")
+	t.Setenv("GAMEHUB_STORAGE_PUBLIC_BASE_URL", "")
 	t.Setenv("GAMEHUB_CORS_ENABLED", "")
 	t.Setenv("GAMEHUB_CORS_ALLOW_ORIGINS", "")
 }
 
-// setRequiredPostgresEnv sets required PostgreSQL variables for root config tests.
-func setRequiredPostgresEnv(t *testing.T) {
+// setRequiredRootEnv sets required root variables for root config tests.
+func setRequiredRootEnv(t *testing.T) {
 	t.Helper()
 	t.Setenv("GAMEHUB_POSTGRES_DATABASE", "gamehub")
 	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "gamehub")
 	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "gamehub")
+	t.Setenv("GAMEHUB_STORAGE_BUCKET", "gamehub-assets")
+	t.Setenv("GAMEHUB_STORAGE_ENDPOINT", "http://localhost:9000")
+	t.Setenv("GAMEHUB_STORAGE_ACCESS_KEY_ID", "gamehub")
+	t.Setenv("GAMEHUB_STORAGE_SECRET_ACCESS_KEY", "gamehub")
 }
 
 // TestSchemaCollectsSquashedFields verifies squashed structs expose root-level GAMEHUB variables.
@@ -280,7 +303,7 @@ func TestSchemaCollectsSquashedFields(t *testing.T) {
 		got = append(got, field.key)
 	}
 
-	want := []string{"host", "port", "environment", "log.level", "postgres.host", "postgres.port", "postgres.database", "postgres.username", "postgres.password", "postgres.ssl_mode", "redis.address", "redis.password", "redis.database", "cors.enabled", "cors.allow_origins"}
+	want := []string{"host", "port", "environment", "log.level", "postgres.host", "postgres.port", "postgres.database", "postgres.username", "postgres.password", "postgres.ssl_mode", "redis.address", "redis.password", "redis.database", "storage.bucket", "storage.region", "storage.endpoint", "storage.access_key_id", "storage.secret_access_key", "storage.public_base_url", "cors.enabled", "cors.allow_origins"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fields = %v, want %v", got, want)
 	}
