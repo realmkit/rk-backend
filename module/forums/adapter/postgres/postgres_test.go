@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/module/forums/domain"
@@ -197,6 +198,134 @@ func TestVisibilityAuthorizerSupportsGroupMembership(t *testing.T) {
 	}
 }
 
+// TestThreadAndPostRepositoriesUpdateCounters verifies content counters.
+func TestThreadAndPostRepositoriesUpdateCounters(t *testing.T) {
+	categories, forums, db := newRepositories(t)
+	threads := NewThreadRepository(orm.NewStore(db))
+	posts := NewPostRepository(orm.NewStore(db))
+	category, err := categories.Create(context.Background(), testCategory())
+	if err != nil {
+		t.Fatalf("Create category error = %v", err)
+	}
+	forum, err := forums.Create(context.Background(), testForum(category.ID, nil, "news"))
+	if err != nil {
+		t.Fatalf("Create forum error = %v", err)
+	}
+	authorID := uuid.New()
+	openerID := uuid.New()
+	thread := testThread(forum.ID, authorID, openerID)
+	createdThread, err := threads.Create(context.Background(), thread)
+	if err != nil {
+		t.Fatalf("Create thread error = %v", err)
+	}
+	_, err = posts.Create(context.Background(), testPost(createdThread.ID, forum.ID, authorID, openerID, 1), nil)
+	if err != nil {
+		t.Fatalf("Create opener error = %v", err)
+	}
+	reply, err := posts.Create(context.Background(), testPost(createdThread.ID, forum.ID, uuid.New(), uuid.New(), 2), nil)
+	if err != nil {
+		t.Fatalf("Create reply error = %v", err)
+	}
+
+	foundThread, err := threads.FindByID(context.Background(), createdThread.ID)
+	if err != nil {
+		t.Fatalf("Find thread error = %v", err)
+	}
+	if foundThread.ReplyCount != 1 || foundThread.PostCount != 2 || foundThread.LatestPostID != reply.ID {
+		t.Fatalf("thread counters = %+v, want reply/post/latest updates", foundThread)
+	}
+	stats, err := forums.ListStats(context.Background(), []uuid.UUID{forum.ID})
+	if err != nil {
+		t.Fatalf("ListStats error = %v", err)
+	}
+	if stats[forum.ID].ThreadCount != 1 || stats[forum.ID].PostCount != 2 {
+		t.Fatalf("stats = %+v, want one thread and two posts", stats[forum.ID])
+	}
+}
+
+// TestPostRepositoryUpdateWithRevisionPersistsHistory verifies revisions.
+func TestPostRepositoryUpdateWithRevisionPersistsHistory(t *testing.T) {
+	categories, forums, db := newRepositories(t)
+	threads := NewThreadRepository(orm.NewStore(db))
+	posts := NewPostRepository(orm.NewStore(db))
+	category, err := categories.Create(context.Background(), testCategory())
+	if err != nil {
+		t.Fatalf("Create category error = %v", err)
+	}
+	forum, err := forums.Create(context.Background(), testForum(category.ID, nil, "support"))
+	if err != nil {
+		t.Fatalf("Create forum error = %v", err)
+	}
+	authorID := uuid.New()
+	postID := uuid.New()
+	thread, err := threads.Create(context.Background(), testThread(forum.ID, authorID, postID))
+	if err != nil {
+		t.Fatalf("Create thread error = %v", err)
+	}
+	post, err := posts.Create(context.Background(), testPost(thread.ID, forum.ID, authorID, postID, 1), nil)
+	if err != nil {
+		t.Fatalf("Create post error = %v", err)
+	}
+	updated := post
+	updated.ContentDocumentJSON = []byte(`{"type":"doc","content":[]}`)
+	updated.ContentText = "Edited"
+	updated.EditCount = 1
+	revision := domain.PostRevision{ID: uuid.New(), PostID: post.ID, EditedByUserID: authorID, PreviousContentDocumentJSON: post.ContentDocumentJSON, PreviousContentText: post.ContentText, EditReason: "typo"}
+
+	if _, err := posts.UpdateWithRevision(context.Background(), updated, revision, post.Version); err != nil {
+		t.Fatalf("UpdateWithRevision error = %v", err)
+	}
+	revisions, err := posts.ListRevisions(context.Background(), post.ID, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("ListRevisions error = %v", err)
+	}
+	if len(revisions.Items) != 1 || revisions.Items[0].PreviousContentText != post.ContentText {
+		t.Fatalf("revisions = %+v, want previous content", revisions.Items)
+	}
+}
+
+// TestPostRepositoryStoresReferencesAndNextSequence verifies references and sequencing.
+func TestPostRepositoryStoresReferencesAndNextSequence(t *testing.T) {
+	categories, forums, db := newRepositories(t)
+	threads := NewThreadRepository(orm.NewStore(db))
+	posts := NewPostRepository(orm.NewStore(db))
+	category, err := categories.Create(context.Background(), testCategory())
+	if err != nil {
+		t.Fatalf("Create category error = %v", err)
+	}
+	forum, err := forums.Create(context.Background(), testForum(category.ID, nil, "refs"))
+	if err != nil {
+		t.Fatalf("Create forum error = %v", err)
+	}
+	authorID := uuid.New()
+	openerID := uuid.New()
+	thread, err := threads.Create(context.Background(), testThread(forum.ID, authorID, openerID))
+	if err != nil {
+		t.Fatalf("Create thread error = %v", err)
+	}
+	opener, err := posts.Create(context.Background(), testPost(thread.ID, forum.ID, authorID, openerID, 1), nil)
+	if err != nil {
+		t.Fatalf("Create opener error = %v", err)
+	}
+	replyID := uuid.New()
+	reference := domain.PostReference{ID: uuid.New(), SourcePostID: replyID, TargetPostID: &opener.ID, ReferenceType: domain.ReferenceQuote, QuoteExcerpt: "Original"}
+	reply, err := posts.Create(context.Background(), testPost(thread.ID, forum.ID, uuid.New(), replyID, 2), []domain.PostReference{reference})
+	if err != nil {
+		t.Fatalf("Create reply error = %v", err)
+	}
+	next, err := posts.NextSequence(context.Background(), thread.ID)
+	if err != nil {
+		t.Fatalf("NextSequence error = %v", err)
+	}
+	refs, err := posts.ListReferences(context.Background(), []uuid.UUID{reply.ID})
+	if err != nil {
+		t.Fatalf("ListReferences error = %v", err)
+	}
+	if next != 3 || len(refs[reply.ID]) != 1 || refs[reply.ID][0].QuoteExcerpt != "Original" {
+		t.Fatalf("next=%d refs=%+v, want next sequence and quote ref", next, refs)
+	}
+}
+
 // newRepositories creates migrated forum repositories.
 func newRepositories(t *testing.T) (CategoryRepository, ForumRepository, *gorm.DB) {
 	t.Helper()
@@ -251,4 +380,14 @@ func testCategory() domain.ForumCategory {
 func testForum(categoryID uuid.UUID, parentID *uuid.UUID, key string) domain.Forum {
 	id := uuid.New()
 	return domain.Forum{ID: id, CategoryID: categoryID, ParentForumID: parentID, Kind: domain.ForumKindDiscussion, Key: domain.Key(key), Slug: domain.Slug(key), Name: key, Path: "/" + id.String() + "/", ThreadVisibilityMode: domain.ThreadVisibilityAllThreads, DefaultThreadStatus: domain.ThreadStatusOpen, Status: domain.ForumStatusActive, Version: 1}
+}
+
+// testThread returns a persisted thread.
+func testThread(forumID uuid.UUID, authorID uuid.UUID, openerID uuid.UUID) domain.Thread {
+	return domain.Thread{ID: uuid.New(), ForumID: forumID, AuthorUserID: authorID, OpenerPostID: openerID, LatestPostID: openerID, LatestPostAuthorUserID: authorID, LatestPostAt: time.Now().UTC(), Title: "A thread", Slug: "a-thread", Status: domain.ThreadStatusOpen, StickyState: domain.StickyStateNormal, PostCount: 1, VisiblePostCount: 1, Version: 1}
+}
+
+// testPost returns a persisted post.
+func testPost(threadID uuid.UUID, forumID uuid.UUID, authorID uuid.UUID, postID uuid.UUID, sequence int64) domain.Post {
+	return domain.Post{ID: postID, ThreadID: threadID, ForumID: forumID, AuthorUserID: authorID, Sequence: sequence, Status: domain.PostStatusVisible, ContentFormat: domain.ContentFormatProseMirror, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "Original", Version: 1}
 }

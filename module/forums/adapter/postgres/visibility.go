@@ -31,6 +31,30 @@ func (authorizer VisibilityAuthorizer) CanManageForum(ctx context.Context, actor
 	return allowed[forumID], err
 }
 
+// CanCreateThread reports whether actor can create a thread in forum.
+func (authorizer VisibilityAuthorizer) CanCreateThread(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error) {
+	allowed, err := authorizer.allowedForums(ctx, actorUserID, []uuid.UUID{forumID}, []groupsdomain.Relation{groupsdomain.RelationCreator, groupsdomain.RelationManager, groupsdomain.RelationOwner})
+	return allowed[forumID], err
+}
+
+// CanReply reports whether actor can reply in forum.
+func (authorizer VisibilityAuthorizer) CanReply(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error) {
+	allowed, err := authorizer.allowedForums(ctx, actorUserID, []uuid.UUID{forumID}, []groupsdomain.Relation{groupsdomain.RelationReplyer, groupsdomain.RelationManager, groupsdomain.RelationOwner})
+	return allowed[forumID], err
+}
+
+// CanManageThreads reports whether actor can manage threads in forum.
+func (authorizer VisibilityAuthorizer) CanManageThreads(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error) {
+	allowed, err := authorizer.allowedForums(ctx, actorUserID, []uuid.UUID{forumID}, []groupsdomain.Relation{groupsdomain.RelationModerator, groupsdomain.RelationManager, groupsdomain.RelationOwner})
+	return allowed[forumID], err
+}
+
+// CanManagePosts reports whether actor can manage posts in forum.
+func (authorizer VisibilityAuthorizer) CanManagePosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error) {
+	allowed, err := authorizer.allowedForums(ctx, actorUserID, []uuid.UUID{forumID}, []groupsdomain.Relation{groupsdomain.RelationModerator, groupsdomain.RelationManager, groupsdomain.RelationOwner})
+	return allowed[forumID], err
+}
+
 // allowedForums returns forum ids allowed by matching relations.
 func (authorizer VisibilityAuthorizer) allowedForums(ctx context.Context, actorUserID uuid.UUID, forumIDs []uuid.UUID, relations []groupsdomain.Relation) (map[uuid.UUID]bool, error) {
 	allowed := map[uuid.UUID]bool{}

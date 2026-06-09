@@ -353,6 +353,8 @@ func forumsService(db *gorm.DB, client *goredis.Client) forumsapp.Service {
 	return forumsapp.NewService(forumsapp.Dependencies{
 		Categories:   forumspostgres.NewCategoryRepository(store),
 		Forums:       forumspostgres.NewForumRepository(store),
+		Threads:      forumspostgres.NewThreadRepository(store),
+		Posts:        forumspostgres.NewPostRepository(store),
 		Authorizer:   forumspostgres.NewVisibilityAuthorizer(store),
 		Cache:        forumsredis.NewTreeCache(client),
 		Transactions: transaction.New(db),

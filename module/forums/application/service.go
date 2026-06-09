@@ -19,6 +19,8 @@ const treeCacheTTL = 30 * time.Second
 type Service struct {
 	categories   port.CategoryRepository
 	forums       port.ForumRepository
+	threads      port.ThreadRepository
+	posts        port.PostRepository
 	authorizer   port.VisibilityAuthorizer
 	cache        port.TreeCache
 	transactions transaction.Runner
@@ -31,6 +33,12 @@ type Dependencies struct {
 
 	// Forums stores forums.
 	Forums port.ForumRepository
+
+	// Threads stores threads.
+	Threads port.ThreadRepository
+
+	// Posts stores posts.
+	Posts port.PostRepository
 
 	// Authorizer checks forum permissions.
 	Authorizer port.VisibilityAuthorizer
@@ -47,6 +55,8 @@ func NewService(deps Dependencies) Service {
 	return Service{
 		categories:   deps.Categories,
 		forums:       deps.Forums,
+		threads:      deps.Threads,
+		posts:        deps.Posts,
 		authorizer:   deps.Authorizer,
 		cache:        deps.Cache,
 		transactions: deps.Transactions,

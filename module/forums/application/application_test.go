@@ -144,13 +144,199 @@ func TestServiceMoveForumRejectsDescendantParent(t *testing.T) {
 	}
 }
 
+// TestServiceCreateThreadCreatesOpenerPost verifies thread creation transaction inputs.
+func TestServiceCreateThreadCreatesOpenerPost(t *testing.T) {
+	service, categories, forums, threads, posts, auth := newContentTestService()
+	actorID := uuid.New()
+	category := testCategory()
+	forum := testForum(category.ID, nil, 0, "news")
+	categories.items[category.ID] = category
+	forums.items[forum.ID] = forum
+	auth.create[forum.ID] = true
+
+	thread, post, err := service.CreateThread(context.Background(), port.CreateThreadCommand{ActorUserID: actorID, ForumID: forum.ID, Title: "My first thread", Slug: "my-first-thread", ContentDocumentJSON: []byte(`{"type":"doc","content":[{"type":"text","text":"Hello from JSON"}]}`)})
+	if err != nil {
+		t.Fatalf("CreateThread() error = %v", err)
+	}
+	if thread.OpenerPostID != post.ID || post.Sequence != 1 || post.ContentText != "Hello from JSON" || threads.items[thread.ID].ID != thread.ID || posts.items[post.ID].ID != post.ID {
+		t.Fatalf("thread=%+v post=%+v, want opener post stored", thread, post)
+	}
+}
+
+// TestServiceCreateReplyRequiresOpenThread verifies reply state rules.
+func TestServiceCreateReplyRequiresOpenThread(t *testing.T) {
+	service, categories, forums, threads, _, auth := newContentTestService()
+	actorID := uuid.New()
+	category := testCategory()
+	forum := testForum(category.ID, nil, 0, "support")
+	thread := testThread(forum.ID, actorID)
+	thread.Status = domain.ThreadStatusClosed
+	categories.items[category.ID] = category
+	forums.items[forum.ID] = forum
+	threads.items[thread.ID] = thread
+	auth.reply[forum.ID] = true
+
+	_, err := service.CreateReply(context.Background(), port.CreateReplyCommand{ActorUserID: actorID, ThreadID: thread.ID, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "Reply"})
+	if !errors.Is(err, port.ErrConflict) {
+		t.Fatalf("CreateReply() error = %v, want %v", err, port.ErrConflict)
+	}
+}
+
+// TestServiceCreateReplyStoresNextSequence verifies reply sequence allocation.
+func TestServiceCreateReplyStoresNextSequence(t *testing.T) {
+	service, _, forums, threads, posts, auth := newContentTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "games")
+	thread := testThread(forum.ID, uuid.New())
+	forums.items[forum.ID] = forum
+	threads.items[thread.ID] = thread
+	posts.items[thread.OpenerPostID] = testPost(thread.ID, forum.ID, thread.AuthorUserID, 1)
+	auth.reply[forum.ID] = true
+
+	reply, err := service.CreateReply(context.Background(), port.CreateReplyCommand{ActorUserID: actorID, ThreadID: thread.ID, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "Nice"})
+	if err != nil {
+		t.Fatalf("CreateReply() error = %v", err)
+	}
+	if reply.Sequence != 2 || posts.items[reply.ID].ID != reply.ID {
+		t.Fatalf("reply = %+v, want sequence 2 stored reply", reply)
+	}
+}
+
+// TestServiceUpdatePostWritesRevision verifies edit history is preserved.
+func TestServiceUpdatePostWritesRevision(t *testing.T) {
+	service, _, _, _, posts, _ := newContentTestService()
+	actorID := uuid.New()
+	post := testPost(uuid.New(), uuid.New(), actorID, 1)
+	posts.items[post.ID] = post
+
+	updated, err := service.UpdatePost(context.Background(), port.UpdatePostCommand{ActorUserID: actorID, PostID: post.ID, ContentDocumentJSON: []byte(`{"type":"doc","content":[{"type":"paragraph"}]}`), ContentText: "Edited", EditReason: "typo", ExpectedVersion: post.Version})
+	if err != nil {
+		t.Fatalf("UpdatePost() error = %v", err)
+	}
+	if updated.ContentText != "Edited" || updated.EditCount != 1 || len(posts.revisions[post.ID]) != 1 || posts.revisions[post.ID][0].PreviousContentText != post.ContentText {
+		t.Fatalf("updated=%+v revisions=%+v, want edited post and revision", updated, posts.revisions[post.ID])
+	}
+}
+
+// TestServiceGetThreadAllowsVisibleForum verifies thread visibility through forum grants.
+func TestServiceGetThreadAllowsVisibleForum(t *testing.T) {
+	service, _, forums, threads, _, auth := newContentTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "visible")
+	thread := testThread(forum.ID, uuid.New())
+	forums.items[forum.ID] = forum
+	threads.items[thread.ID] = thread
+	auth.visible[forum.ID] = true
+
+	found, err := service.GetThread(context.Background(), actorID, thread.ID)
+	if err != nil {
+		t.Fatalf("GetThread() error = %v", err)
+	}
+	if found.ID != thread.ID {
+		t.Fatalf("found = %+v, want thread", found)
+	}
+}
+
+// TestServiceUpdateThreadTitleRequiresManageForNonAuthor verifies title edit gates.
+func TestServiceUpdateThreadTitleRequiresManageForNonAuthor(t *testing.T) {
+	service, _, forums, threads, _, auth := newContentTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "threads")
+	thread := testThread(forum.ID, uuid.New())
+	forums.items[forum.ID] = forum
+	threads.items[thread.ID] = thread
+
+	_, err := service.UpdateThreadTitle(context.Background(), port.UpdateThreadTitleCommand{ActorUserID: actorID, ThreadID: thread.ID, Title: "Changed title", Slug: "changed-title", ExpectedVersion: thread.Version})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("UpdateThreadTitle() error = %v, want %v", err, port.ErrForbidden)
+	}
+	auth.manageThreads[forum.ID] = true
+	if _, err := service.UpdateThreadTitle(context.Background(), port.UpdateThreadTitleCommand{ActorUserID: actorID, ThreadID: thread.ID, Title: "Changed title", Slug: "changed-title", ExpectedVersion: thread.Version}); err != nil {
+		t.Fatalf("UpdateThreadTitle() allowed error = %v", err)
+	}
+}
+
+// TestServiceListPostsIncludeHiddenRequiresManagePermission verifies hidden post gates.
+func TestServiceListPostsIncludeHiddenRequiresManagePermission(t *testing.T) {
+	service, _, forums, threads, posts, auth := newContentTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "staff")
+	thread := testThread(forum.ID, uuid.New())
+	post := testPost(thread.ID, forum.ID, thread.AuthorUserID, 1)
+	post.Status = domain.PostStatusHidden
+	forums.items[forum.ID] = forum
+	threads.items[thread.ID] = thread
+	posts.items[post.ID] = post
+
+	_, err := service.ListPosts(context.Background(), actorID, port.PostFilter{ThreadID: thread.ID, IncludeHidden: true}, pagination.Page{Limit: 10})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("ListPosts() error = %v, want %v", err, port.ErrForbidden)
+	}
+	auth.managePosts[forum.ID] = true
+	result, err := service.ListPosts(context.Background(), actorID, port.PostFilter{ThreadID: thread.ID, IncludeHidden: true}, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("ListPosts() allowed error = %v", err)
+	}
+	if len(result.Items) != 1 {
+		t.Fatalf("items = %d, want hidden post", len(result.Items))
+	}
+}
+
+// TestServiceDeletePostRequiresManageForNonAuthor verifies delete gates.
+func TestServiceDeletePostRequiresManageForNonAuthor(t *testing.T) {
+	service, _, _, _, posts, auth := newContentTestService()
+	actorID := uuid.New()
+	post := testPost(uuid.New(), uuid.New(), uuid.New(), 1)
+	posts.items[post.ID] = post
+
+	err := service.DeletePost(context.Background(), port.DeletePostCommand{ActorUserID: actorID, PostID: post.ID, ExpectedVersion: post.Version})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("DeletePost() error = %v, want %v", err, port.ErrForbidden)
+	}
+	auth.managePosts[post.ForumID] = true
+	if err := service.DeletePost(context.Background(), port.DeletePostCommand{ActorUserID: actorID, PostID: post.ID, ExpectedVersion: post.Version}); err != nil {
+		t.Fatalf("DeletePost() allowed error = %v", err)
+	}
+}
+
+// TestServiceListPostRevisionsRequiresManagePermission verifies revision gates.
+func TestServiceListPostRevisionsRequiresManagePermission(t *testing.T) {
+	service, _, forums, _, posts, auth := newContentTestService()
+	actorID := uuid.New()
+	post := testPost(uuid.New(), uuid.New(), uuid.New(), 1)
+	forums.items[post.ForumID] = testForum(uuid.New(), nil, 0, "mods")
+	posts.items[post.ID] = post
+
+	_, err := service.ListPostRevisions(context.Background(), actorID, post.ID, pagination.Page{Limit: 10})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("ListPostRevisions() error = %v, want %v", err, port.ErrForbidden)
+	}
+	auth.managePosts[post.ForumID] = true
+	if _, err := service.ListPostRevisions(context.Background(), actorID, post.ID, pagination.Page{Limit: 10}); err != nil {
+		t.Fatalf("ListPostRevisions() allowed error = %v", err)
+	}
+}
+
+// newContentTestService creates a forum service with exposed content stores.
+func newContentTestService() (Service, *memoryCategories, *memoryForums, *memoryThreads, *memoryPosts, *memoryAuthorizer) {
+	categories := &memoryCategories{items: map[uuid.UUID]domain.ForumCategory{}}
+	forums := &memoryForums{items: map[uuid.UUID]domain.Forum{}, stats: map[uuid.UUID]domain.ForumStats{}}
+	threads := &memoryThreads{items: map[uuid.UUID]domain.Thread{}}
+	posts := &memoryPosts{items: map[uuid.UUID]domain.Post{}, revisions: map[uuid.UUID][]domain.PostRevision{}}
+	auth := &memoryAuthorizer{visible: map[uuid.UUID]bool{}, manage: map[uuid.UUID]bool{}, create: map[uuid.UUID]bool{}, reply: map[uuid.UUID]bool{}, manageThreads: map[uuid.UUID]bool{}, managePosts: map[uuid.UUID]bool{}}
+	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Authorizer: auth, Cache: &memoryCache{items: map[string]domain.ForumTree{}}, Transactions: noopTx{}})
+	return service, categories, forums, threads, posts, auth
+}
+
 // newTestService creates a forum service with in-memory fakes.
 func newTestService() (Service, *memoryCategories, *memoryForums, *memoryAuthorizer, *memoryCache) {
 	categories := &memoryCategories{items: map[uuid.UUID]domain.ForumCategory{}}
 	forums := &memoryForums{items: map[uuid.UUID]domain.Forum{}, stats: map[uuid.UUID]domain.ForumStats{}}
-	auth := &memoryAuthorizer{visible: map[uuid.UUID]bool{}, manage: map[uuid.UUID]bool{}}
+	threads := &memoryThreads{items: map[uuid.UUID]domain.Thread{}}
+	posts := &memoryPosts{items: map[uuid.UUID]domain.Post{}, revisions: map[uuid.UUID][]domain.PostRevision{}}
+	auth := &memoryAuthorizer{visible: map[uuid.UUID]bool{}, manage: map[uuid.UUID]bool{}, create: map[uuid.UUID]bool{}, reply: map[uuid.UUID]bool{}, manageThreads: map[uuid.UUID]bool{}, managePosts: map[uuid.UUID]bool{}}
 	cache := &memoryCache{items: map[string]domain.ForumTree{}}
-	service := NewService(Dependencies{Categories: categories, Forums: forums, Authorizer: auth, Cache: cache, Transactions: noopTx{}})
+	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Authorizer: auth, Cache: cache, Transactions: noopTx{}})
 	return service, categories, forums, auth, cache
 }
 
@@ -297,8 +483,12 @@ func (repository *memoryForums) Reorder(_ context.Context, items []port.ReorderI
 
 // memoryAuthorizer stores permission decisions in memory.
 type memoryAuthorizer struct {
-	visible map[uuid.UUID]bool
-	manage  map[uuid.UUID]bool
+	visible       map[uuid.UUID]bool
+	manage        map[uuid.UUID]bool
+	create        map[uuid.UUID]bool
+	reply         map[uuid.UUID]bool
+	manageThreads map[uuid.UUID]bool
+	managePosts   map[uuid.UUID]bool
 }
 
 // VisibleForums returns visible forum IDs.
@@ -313,6 +503,137 @@ func (authorizer *memoryAuthorizer) VisibleForums(_ context.Context, _ uuid.UUID
 // CanManageForum returns management decision.
 func (authorizer *memoryAuthorizer) CanManageForum(_ context.Context, _ uuid.UUID, forumID uuid.UUID) (bool, error) {
 	return authorizer.manage[forumID], nil
+}
+
+// CanCreateThread returns thread creation decision.
+func (authorizer *memoryAuthorizer) CanCreateThread(_ context.Context, _ uuid.UUID, forumID uuid.UUID) (bool, error) {
+	return authorizer.create[forumID], nil
+}
+
+// CanReply returns reply decision.
+func (authorizer *memoryAuthorizer) CanReply(_ context.Context, _ uuid.UUID, forumID uuid.UUID) (bool, error) {
+	return authorizer.reply[forumID], nil
+}
+
+// CanManageThreads returns thread management decision.
+func (authorizer *memoryAuthorizer) CanManageThreads(_ context.Context, _ uuid.UUID, forumID uuid.UUID) (bool, error) {
+	return authorizer.manageThreads[forumID], nil
+}
+
+// CanManagePosts returns post management decision.
+func (authorizer *memoryAuthorizer) CanManagePosts(_ context.Context, _ uuid.UUID, forumID uuid.UUID) (bool, error) {
+	return authorizer.managePosts[forumID], nil
+}
+
+// memoryThreads stores threads in memory.
+type memoryThreads struct {
+	items map[uuid.UUID]domain.Thread
+}
+
+// Create stores a thread.
+func (repository *memoryThreads) Create(_ context.Context, thread domain.Thread) (domain.Thread, error) {
+	repository.items[thread.ID] = thread
+	return thread, nil
+}
+
+// FindByID returns one thread.
+func (repository *memoryThreads) FindByID(_ context.Context, id uuid.UUID) (domain.Thread, error) {
+	item, ok := repository.items[id]
+	if !ok {
+		return domain.Thread{}, port.ErrNotFound
+	}
+	return item, nil
+}
+
+// List returns matching threads.
+func (repository *memoryThreads) List(_ context.Context, filter port.ThreadFilter, _ pagination.Page) (pagination.Result[domain.Thread], error) {
+	items := []domain.Thread{}
+	for _, item := range repository.items {
+		if item.ForumID == filter.ForumID {
+			items = append(items, item)
+		}
+	}
+	return pagination.Result[domain.Thread]{Items: items}, nil
+}
+
+// UpdateTitle stores thread title fields.
+func (repository *memoryThreads) UpdateTitle(_ context.Context, thread domain.Thread, expectedVersion uint64) (domain.Thread, error) {
+	thread.Version = expectedVersion + 1
+	repository.items[thread.ID] = thread
+	return thread, nil
+}
+
+// Delete removes a thread.
+func (repository *memoryThreads) Delete(_ context.Context, id uuid.UUID, _ uint64) error {
+	delete(repository.items, id)
+	return nil
+}
+
+// memoryPosts stores posts in memory.
+type memoryPosts struct {
+	items     map[uuid.UUID]domain.Post
+	revisions map[uuid.UUID][]domain.PostRevision
+}
+
+// Create stores a post.
+func (repository *memoryPosts) Create(_ context.Context, post domain.Post, _ []domain.PostReference) (domain.Post, error) {
+	repository.items[post.ID] = post
+	return post, nil
+}
+
+// FindByID returns one post.
+func (repository *memoryPosts) FindByID(_ context.Context, id uuid.UUID) (domain.Post, error) {
+	item, ok := repository.items[id]
+	if !ok {
+		return domain.Post{}, port.ErrNotFound
+	}
+	return item, nil
+}
+
+// List returns matching posts.
+func (repository *memoryPosts) List(_ context.Context, filter port.PostFilter, _ pagination.Page) (pagination.Result[domain.Post], error) {
+	items := []domain.Post{}
+	for _, item := range repository.items {
+		if item.ThreadID == filter.ThreadID {
+			items = append(items, item)
+		}
+	}
+	return pagination.Result[domain.Post]{Items: items}, nil
+}
+
+// NextSequence returns next sequence.
+func (repository *memoryPosts) NextSequence(_ context.Context, threadID uuid.UUID) (int64, error) {
+	var max int64
+	for _, item := range repository.items {
+		if item.ThreadID == threadID && item.Sequence > max {
+			max = item.Sequence
+		}
+	}
+	return max + 1, nil
+}
+
+// UpdateWithRevision stores an updated post and revision.
+func (repository *memoryPosts) UpdateWithRevision(_ context.Context, post domain.Post, revision domain.PostRevision, expectedVersion uint64) (domain.Post, error) {
+	post.Version = expectedVersion + 1
+	repository.items[post.ID] = post
+	repository.revisions[post.ID] = append(repository.revisions[post.ID], revision)
+	return post, nil
+}
+
+// Delete removes a post.
+func (repository *memoryPosts) Delete(_ context.Context, id uuid.UUID, _ uint64) error {
+	delete(repository.items, id)
+	return nil
+}
+
+// ListRevisions returns revisions.
+func (repository *memoryPosts) ListRevisions(_ context.Context, postID uuid.UUID, _ pagination.Page) (pagination.Result[domain.PostRevision], error) {
+	return pagination.Result[domain.PostRevision]{Items: repository.revisions[postID]}, nil
+}
+
+// ListReferences returns references.
+func (repository *memoryPosts) ListReferences(context.Context, []uuid.UUID) (map[uuid.UUID][]domain.PostReference, error) {
+	return map[uuid.UUID][]domain.PostReference{}, nil
 }
 
 // memoryCache stores trees in memory.
@@ -358,4 +679,15 @@ func testForum(categoryID uuid.UUID, parentID *uuid.UUID, order int, key string)
 	id := uuid.New()
 	path := "/" + id.String() + "/"
 	return domain.Forum{ID: id, CategoryID: categoryID, ParentForumID: parentID, Kind: domain.ForumKindDiscussion, Key: domain.Key(key), Slug: domain.Slug(key), Name: key, DisplayOrder: order, Path: path, ThreadVisibilityMode: domain.ThreadVisibilityAllThreads, DefaultThreadStatus: domain.ThreadStatusOpen, Status: domain.ForumStatusActive, Version: 1}
+}
+
+// testThread returns a thread.
+func testThread(forumID uuid.UUID, authorID uuid.UUID) domain.Thread {
+	postID := uuid.New()
+	return domain.Thread{ID: uuid.New(), ForumID: forumID, AuthorUserID: authorID, OpenerPostID: postID, LatestPostID: postID, LatestPostAuthorUserID: authorID, LatestPostAt: time.Now().UTC(), Title: "A thread", Slug: "a-thread", Status: domain.ThreadStatusOpen, StickyState: domain.StickyStateNormal, PostCount: 1, VisiblePostCount: 1, Version: 1}
+}
+
+// testPost returns a post.
+func testPost(threadID uuid.UUID, forumID uuid.UUID, authorID uuid.UUID, sequence int64) domain.Post {
+	return domain.Post{ID: uuid.New(), ThreadID: threadID, ForumID: forumID, AuthorUserID: authorID, Sequence: sequence, Status: domain.PostStatusVisible, ContentFormat: domain.ContentFormatProseMirror, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "Original", Version: 1}
 }

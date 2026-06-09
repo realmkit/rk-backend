@@ -51,4 +51,37 @@ type Service interface {
 
 	// Tree returns the visible forum tree.
 	Tree(ctx context.Context, actorUserID uuid.UUID) (domain.ForumTree, error)
+
+	// CreateThread creates a thread with its opener post.
+	CreateThread(ctx context.Context, command CreateThreadCommand) (domain.Thread, domain.Post, error)
+
+	// GetThread returns one thread.
+	GetThread(ctx context.Context, actorUserID uuid.UUID, id uuid.UUID) (domain.Thread, error)
+
+	// ListThreads lists threads.
+	ListThreads(ctx context.Context, actorUserID uuid.UUID, filter ThreadFilter, page pagination.Page) (pagination.Result[domain.Thread], error)
+
+	// UpdateThreadTitle updates thread title fields.
+	UpdateThreadTitle(ctx context.Context, command UpdateThreadTitleCommand) (domain.Thread, error)
+
+	// DeleteThread deletes a thread.
+	DeleteThread(ctx context.Context, command DeleteThreadCommand) error
+
+	// CreateReply creates a reply post.
+	CreateReply(ctx context.Context, command CreateReplyCommand) (domain.Post, error)
+
+	// ListPosts lists posts for a thread.
+	ListPosts(ctx context.Context, actorUserID uuid.UUID, filter PostFilter, page pagination.Page) (pagination.Result[domain.Post], error)
+
+	// GetPost returns one post.
+	GetPost(ctx context.Context, actorUserID uuid.UUID, id uuid.UUID) (domain.Post, error)
+
+	// UpdatePost updates one post.
+	UpdatePost(ctx context.Context, command UpdatePostCommand) (domain.Post, error)
+
+	// DeletePost deletes one post.
+	DeletePost(ctx context.Context, command DeletePostCommand) error
+
+	// ListPostRevisions lists post revisions.
+	ListPostRevisions(ctx context.Context, actorUserID uuid.UUID, postID uuid.UUID, page pagination.Page) (pagination.Result[domain.PostRevision], error)
 }

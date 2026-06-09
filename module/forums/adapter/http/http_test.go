@@ -126,6 +126,121 @@ func TestUpdateForumRequiresIfMatch(t *testing.T) {
 	}
 }
 
+// TestCreateThreadReturnsCreated verifies thread creation route response shape.
+func TestCreateThreadReturnsCreated(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/forums/"+uuid.NewString()+"/threads", bytes.NewBufferString(`{"title":"Hello world","slug":"hello-world","content_document_json":{"type":"doc"},"content_text":"Hello"}`))
+	req.Header.Set(headers.ContentType, "application/json")
+	req.Header.Set(headers.Accept, "application/json")
+	req.Header.Set(headers.IdempotencyKey, "create-thread")
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusCreated {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusCreated)
+	}
+	if resp.Header.Get(headers.ETag) != `"1"` {
+		t.Fatalf("ETag = %q, want %q", resp.Header.Get(headers.ETag), `"1"`)
+	}
+}
+
+// TestCreateReplyRequiresIdempotency verifies reply command headers.
+func TestCreateReplyRequiresIdempotency(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/threads/"+uuid.NewString()+"/posts", bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"Reply"}`))
+	req.Header.Set(headers.ContentType, "application/json")
+	req.Header.Set(headers.Accept, "application/json")
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusBadRequest)
+	}
+}
+
+// TestUpdatePostRequiresIfMatch verifies post edit concurrency headers.
+func TestUpdatePostRequiresIfMatch(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodPatch, "/api/v1/posts/"+uuid.NewString(), bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"Edit"}`))
+	req.Header.Set(headers.ContentType, "application/json")
+	req.Header.Set(headers.Accept, "application/json")
+	req.Header.Set(headers.IdempotencyKey, "edit-post")
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusPreconditionRequired {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusPreconditionRequired)
+	}
+}
+
+// TestListThreadsReturnsOK verifies thread list route.
+func TestListThreadsReturnsOK(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/forums/"+uuid.NewString()+"/threads", nil)
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusOK)
+	}
+}
+
+// TestListPostsReturnsOK verifies post page route.
+func TestListPostsReturnsOK(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/threads/"+uuid.NewString()+"/posts", nil)
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusOK)
+	}
+}
+
+// TestGetPostSetsETag verifies direct post response metadata.
+func TestGetPostSetsETag(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/posts/"+uuid.NewString(), nil)
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusOK)
+	}
+	if resp.Header.Get(headers.ETag) != `"1"` {
+		t.Fatalf("ETag = %q, want %q", resp.Header.Get(headers.ETag), `"1"`)
+	}
+}
+
+// TestListPostRevisionsRequiresUser verifies revision route requires authentication.
+func TestListPostRevisionsRequiresUser(t *testing.T) {
+	app := newTestApp(httpService{})
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/posts/"+uuid.NewString()+"/revisions", nil)
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusUnauthorized)
+	}
+}
+
 // newTestApp creates a Fiber app with forum routes.
 func newTestApp(service httpService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
@@ -209,4 +324,59 @@ func (service httpService) ReorderForums(context.Context, port.ReorderForumsComm
 // Tree returns the visible forum tree.
 func (service httpService) Tree(context.Context, uuid.UUID) (domain.ForumTree, error) {
 	return service.tree, service.err
+}
+
+// CreateThread creates a thread.
+func (service httpService) CreateThread(context.Context, port.CreateThreadCommand) (domain.Thread, domain.Post, error) {
+	return domain.Thread{ID: uuid.New(), Title: "Thread", Version: 1}, domain.Post{ID: uuid.New(), Version: 1}, service.err
+}
+
+// GetThread returns one thread.
+func (service httpService) GetThread(context.Context, uuid.UUID, uuid.UUID) (domain.Thread, error) {
+	return domain.Thread{ID: uuid.New(), Version: 1}, service.err
+}
+
+// ListThreads lists threads.
+func (service httpService) ListThreads(context.Context, uuid.UUID, port.ThreadFilter, pagination.Page) (pagination.Result[domain.Thread], error) {
+	return pagination.Result[domain.Thread]{}, service.err
+}
+
+// UpdateThreadTitle updates thread title.
+func (service httpService) UpdateThreadTitle(context.Context, port.UpdateThreadTitleCommand) (domain.Thread, error) {
+	return domain.Thread{ID: uuid.New(), Version: 1}, service.err
+}
+
+// DeleteThread deletes one thread.
+func (service httpService) DeleteThread(context.Context, port.DeleteThreadCommand) error {
+	return service.err
+}
+
+// CreateReply creates a reply.
+func (service httpService) CreateReply(context.Context, port.CreateReplyCommand) (domain.Post, error) {
+	return domain.Post{ID: uuid.New(), Version: 1}, service.err
+}
+
+// ListPosts lists posts.
+func (service httpService) ListPosts(context.Context, uuid.UUID, port.PostFilter, pagination.Page) (pagination.Result[domain.Post], error) {
+	return pagination.Result[domain.Post]{}, service.err
+}
+
+// GetPost returns one post.
+func (service httpService) GetPost(context.Context, uuid.UUID, uuid.UUID) (domain.Post, error) {
+	return domain.Post{ID: uuid.New(), Version: 1}, service.err
+}
+
+// UpdatePost updates one post.
+func (service httpService) UpdatePost(context.Context, port.UpdatePostCommand) (domain.Post, error) {
+	return domain.Post{ID: uuid.New(), Version: 1}, service.err
+}
+
+// DeletePost deletes one post.
+func (service httpService) DeletePost(context.Context, port.DeletePostCommand) error {
+	return service.err
+}
+
+// ListPostRevisions lists revisions.
+func (service httpService) ListPostRevisions(context.Context, uuid.UUID, uuid.UUID, pagination.Page) (pagination.Result[domain.PostRevision], error) {
+	return pagination.Result[domain.PostRevision]{}, service.err
 }

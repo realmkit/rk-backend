@@ -63,6 +63,13 @@ func TestForumMilestoneOneOperationsExist(t *testing.T) {
 		{method: "POST", path: "/api/v1/forums"},
 		{method: "POST", path: "/api/v1/forums/reorder"},
 		{method: "POST", path: "/api/v1/forums/:forum_id/move"},
+		{method: "GET", path: "/api/v1/forums/:forum_id/threads"},
+		{method: "POST", path: "/api/v1/forums/:forum_id/threads"},
+		{method: "PATCH", path: "/api/v1/threads/:thread_id"},
+		{method: "GET", path: "/api/v1/threads/:thread_id/posts"},
+		{method: "POST", path: "/api/v1/threads/:thread_id/posts"},
+		{method: "PATCH", path: "/api/v1/posts/:post_id"},
+		{method: "GET", path: "/api/v1/posts/:post_id/revisions"},
 	}
 
 	for _, tt := range tests {

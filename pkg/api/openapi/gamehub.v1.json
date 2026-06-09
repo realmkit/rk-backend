@@ -3004,6 +3004,597 @@
           }
         }
       }
+    },
+    "/api/v1/forums/{forum_id}/threads": {
+      "get": {
+        "operationId": "listForumThreads",
+        "tags": [
+          "forums"
+        ],
+        "summary": "List forum threads",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ForumIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
+          },
+          {
+            "name": "section",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sticky",
+                "normal",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ThreadStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thread list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createForumThread",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Create forum thread",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ForumIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThreadCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created thread",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThreadCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/threads/{thread_id}": {
+      "get": {
+        "operationId": "getThread",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Get thread",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ThreadIdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thread",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Thread"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateThread",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Update thread",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ThreadIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThreadUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated thread",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Thread"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteThread",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Delete thread",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ThreadIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/threads/{thread_id}/posts": {
+      "get": {
+        "operationId": "listThreadPosts",
+        "tags": [
+          "forums"
+        ],
+        "summary": "List thread posts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ThreadIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
+          },
+          {
+            "name": "include_hidden",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createThreadReply",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Create thread reply",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ThreadIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{post_id}": {
+      "get": {
+        "operationId": "getPost",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Get post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PostIdPath"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updatePost",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Update post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PostIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Post"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deletePost",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Delete post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PostIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{post_id}/revisions": {
+      "get": {
+        "operationId": "listPostRevisions",
+        "tags": [
+          "forums"
+        ],
+        "summary": "List post revisions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PostIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post revisions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostRevisionList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3322,6 +3913,33 @@
           "format": "uuid"
         },
         "description": "Development-only local user bypass header. Ignored outside development and not a production auth mechanism."
+      },
+      "ForumIdPath": {
+        "name": "forum_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ThreadIdPath": {
+        "name": "thread_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PostIdPath": {
+        "name": "post_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
       }
     },
     "requestBodies": {
@@ -5764,6 +6382,486 @@
           "duration": {
             "type": "string",
             "description": "Go duration string such as 10m, 30m, or 24h."
+          }
+        }
+      },
+      "ThreadStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "closed",
+          "locked",
+          "hidden",
+          "archived",
+          "deleted"
+        ]
+      },
+      "StickyState": {
+        "type": "string",
+        "enum": [
+          "normal",
+          "sticky",
+          "announcement"
+        ]
+      },
+      "PostStatus": {
+        "type": "string",
+        "enum": [
+          "visible",
+          "hidden",
+          "pending_review",
+          "deleted",
+          "system"
+        ]
+      },
+      "ContentFormat": {
+        "type": "string",
+        "enum": [
+          "prosemirror_json"
+        ]
+      },
+      "PostReferenceType": {
+        "type": "string",
+        "enum": [
+          "reply_to",
+          "quote",
+          "mention",
+          "attachment",
+          "link"
+        ]
+      },
+      "Thread": {
+        "type": "object",
+        "required": [
+          "id",
+          "forum_id",
+          "author_user_id",
+          "opener_post_id",
+          "latest_post_id",
+          "latest_post_author_user_id",
+          "latest_post_at",
+          "title",
+          "slug",
+          "status",
+          "sticky_state",
+          "reply_count",
+          "visible_reply_count",
+          "post_count",
+          "visible_post_count",
+          "like_count",
+          "view_count",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "forum_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "opener_post_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "latest_post_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "latest_post_author_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "latest_post_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ThreadStatus"
+          },
+          "sticky_state": {
+            "$ref": "#/components/schemas/StickyState"
+          },
+          "sticky_order": {
+            "type": "integer"
+          },
+          "sticky_until": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "locked_reason": {
+            "type": "string"
+          },
+          "reply_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "visible_reply_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "post_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "visible_post_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "like_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "view_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ThreadCreateRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "slug",
+          "content_document_json",
+          "content_text"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "content_document_json": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "content_text": {
+            "type": "string"
+          },
+          "content_checksum": {
+            "type": "string"
+          }
+        }
+      },
+      "ThreadUpdateRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "slug"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "ThreadCreateResponse": {
+        "type": "object",
+        "required": [
+          "thread",
+          "post"
+        ],
+        "properties": {
+          "thread": {
+            "$ref": "#/components/schemas/Thread"
+          },
+          "post": {
+            "$ref": "#/components/schemas/Post"
+          }
+        }
+      },
+      "ThreadList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Thread"
+            }
+          },
+          "next_page_token": {
+            "type": "string"
+          }
+        }
+      },
+      "PostReference": {
+        "type": "object",
+        "required": [
+          "reference_type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source_post_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "target_post_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "target_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "target_asset_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reference_type": {
+            "$ref": "#/components/schemas/PostReferenceType"
+          },
+          "quote_excerpt": {
+            "type": "string"
+          },
+          "link_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Post": {
+        "type": "object",
+        "required": [
+          "id",
+          "thread_id",
+          "forum_id",
+          "author_user_id",
+          "sequence",
+          "status",
+          "content_format",
+          "content_document_json",
+          "content_text",
+          "edit_count",
+          "like_count",
+          "reply_reference_count",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "thread_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "forum_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PostStatus"
+          },
+          "content_format": {
+            "$ref": "#/components/schemas/ContentFormat"
+          },
+          "content_document_json": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "content_text": {
+            "type": "string"
+          },
+          "content_checksum": {
+            "type": "string"
+          },
+          "edited_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "edited_by_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "edit_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "like_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reply_reference_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PostCreateRequest": {
+        "type": "object",
+        "required": [
+          "content_document_json",
+          "content_text"
+        ],
+        "properties": {
+          "content_document_json": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "content_text": {
+            "type": "string"
+          },
+          "content_checksum": {
+            "type": "string"
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostReference"
+            }
+          }
+        }
+      },
+      "PostUpdateRequest": {
+        "type": "object",
+        "required": [
+          "content_document_json",
+          "content_text"
+        ],
+        "properties": {
+          "content_document_json": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "content_text": {
+            "type": "string"
+          },
+          "content_checksum": {
+            "type": "string"
+          },
+          "edit_reason": {
+            "type": "string"
+          }
+        }
+      },
+      "PostList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Post"
+            }
+          },
+          "next_page_token": {
+            "type": "string"
+          }
+        }
+      },
+      "PostRevision": {
+        "type": "object",
+        "required": [
+          "id",
+          "post_id",
+          "edited_by_user_id",
+          "previous_content_document_json",
+          "previous_content_text",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "post_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "edited_by_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "previous_content_document_json": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "previous_content_text": {
+            "type": "string"
+          },
+          "edit_reason": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PostRevisionList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostRevision"
+            }
+          },
+          "next_page_token": {
+            "type": "string"
           }
         }
       }

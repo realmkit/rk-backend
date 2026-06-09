@@ -66,4 +66,16 @@ type VisibilityAuthorizer interface {
 
 	// CanManageForum reports whether actor can manage target forum.
 	CanManageForum(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error)
+
+	// CanCreateThread reports whether actor can create a thread in forum.
+	CanCreateThread(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error)
+
+	// CanReply reports whether actor can reply in forum.
+	CanReply(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error)
+
+	// CanManageThreads reports whether actor can manage threads in forum.
+	CanManageThreads(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error)
+
+	// CanManagePosts reports whether actor can manage posts in forum.
+	CanManagePosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error)
 }

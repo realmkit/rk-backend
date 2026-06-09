@@ -46,3 +46,42 @@ func TestRootForumObjectIDIsStable(t *testing.T) {
 		t.Fatalf("RootForumObjectID() = %s", RootForumObjectID())
 	}
 }
+
+// TestPostValidateRejectsInvalidContent verifies WYSIWYG JSON validation.
+func TestPostValidateRejectsInvalidContent(t *testing.T) {
+	post := Post{ID: uuid.New(), ThreadID: uuid.New(), ForumID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ContentDocumentJSON: []byte(`[]`), ContentText: "hello"}.Normalize()
+	err := post.Validate()
+	if !errors.Is(err, ErrInvalid) {
+		t.Fatalf("Validate() error = %v, want %v", err, ErrInvalid)
+	}
+}
+
+// TestThreadAndPostValidateAcceptValidContent verifies content entities accept valid state.
+func TestThreadAndPostValidateAcceptValidContent(t *testing.T) {
+	authorID := uuid.New()
+	thread := Thread{ID: uuid.New(), ForumID: uuid.New(), AuthorUserID: authorID, OpenerPostID: uuid.New(), LatestPostID: uuid.New(), LatestPostAuthorUserID: authorID, Title: "Valid title", Slug: "valid-title"}.Normalize()
+	if err := thread.Validate(); err != nil {
+		t.Fatalf("Thread Validate() error = %v", err)
+	}
+	post := Post{ID: uuid.New(), ThreadID: thread.ID, ForumID: thread.ForumID, AuthorUserID: authorID, Sequence: 1, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "hello"}.Normalize()
+	if err := post.Validate(); err != nil {
+		t.Fatalf("Post Validate() error = %v", err)
+	}
+	if !thread.Visible() || !thread.Replyable() || !post.Visible() {
+		t.Fatalf("thread/post visibility helpers returned false")
+	}
+}
+
+// TestPostReferenceValidateRequiresTargets verifies structured reference validation.
+func TestPostReferenceValidateRequiresTargets(t *testing.T) {
+	reference := PostReference{ID: uuid.New(), SourcePostID: uuid.New(), ReferenceType: ReferenceAttachment}
+	err := reference.Validate()
+	if !errors.Is(err, ErrInvalid) {
+		t.Fatalf("Validate() error = %v, want %v", err, ErrInvalid)
+	}
+	assetID := uuid.New()
+	reference.TargetAssetID = &assetID
+	if err := reference.Validate(); err != nil {
+		t.Fatalf("Validate() valid attachment error = %v", err)
+	}
+}
