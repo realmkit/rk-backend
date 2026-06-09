@@ -34,6 +34,15 @@ const (
 
 	// OwnerUser attaches metadata to users.
 	OwnerUser OwnerType = "user"
+
+	// OwnerForumCategory attaches metadata to forum categories.
+	OwnerForumCategory OwnerType = "forum_category"
+
+	// OwnerForum attaches metadata to forums.
+	OwnerForum OwnerType = "forum"
+
+	// OwnerForumThread attaches metadata to forum threads.
+	OwnerForumThread OwnerType = "forum_thread"
 )
 
 // Supported value types.
@@ -59,6 +68,9 @@ func AllowedOwnerTypes() []OwnerType {
 		OwnerAsset,
 		OwnerGroup,
 		OwnerUser,
+		OwnerForumCategory,
+		OwnerForum,
+		OwnerForumThread,
 	}
 }
 

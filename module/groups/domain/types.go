@@ -70,6 +70,15 @@ const (
 
 	// ObjectSystem is a system authorization object.
 	ObjectSystem ObjectType = "system"
+
+	// ObjectForum is a forum authorization object.
+	ObjectForum ObjectType = "forum"
+
+	// ObjectForumThread is a forum thread authorization object.
+	ObjectForumThread ObjectType = "forum_thread"
+
+	// ObjectForumPost is a forum post authorization object.
+	ObjectForumPost ObjectType = "forum_post"
 )
 
 const (
@@ -78,6 +87,12 @@ const (
 
 	// SubjectGroup is a group subject.
 	SubjectGroup SubjectType = "group"
+
+	// SubjectPublic grants access to anonymous and authenticated actors.
+	SubjectPublic SubjectType = "public"
+
+	// SubjectAuthenticated grants access to any authenticated local user.
+	SubjectAuthenticated SubjectType = "authenticated"
 )
 
 const (
@@ -98,6 +113,83 @@ const (
 
 	// RelationSelf is a self relation.
 	RelationSelf Relation = "self"
+
+	// RelationCreator is a creator relation.
+	RelationCreator Relation = "creator"
+
+	// RelationReplyer is a replyer relation.
+	RelationReplyer Relation = "replyer"
+
+	// RelationLiker is a liker relation.
+	RelationLiker Relation = "liker"
+
+	// RelationModerator is a moderator relation.
+	RelationModerator Relation = "moderator"
+
+	// RelationAuthor is an author relation.
+	RelationAuthor Relation = "author"
+)
+
+const (
+	// PermissionForumsView allows reading a forum.
+	PermissionForumsView Permission = "forums.view"
+
+	// PermissionForumsManageForum allows managing forum structure and settings.
+	PermissionForumsManageForum Permission = "forums.manage_forum"
+
+	// PermissionForumsCreateThread allows creating threads inside a forum.
+	PermissionForumsCreateThread Permission = "forums.create_thread"
+
+	// PermissionForumsReply allows replying to threads inside a forum.
+	PermissionForumsReply Permission = "forums.reply"
+
+	// PermissionForumsLikePosts allows liking posts inside a forum.
+	PermissionForumsLikePosts Permission = "forums.like_posts"
+
+	// PermissionForumsPinThreads allows pinning threads inside a forum.
+	PermissionForumsPinThreads Permission = "forums.pin_threads"
+
+	// PermissionForumsManageThreads allows moderating threads inside a forum.
+	PermissionForumsManageThreads Permission = "forums.manage_threads"
+
+	// PermissionForumsManagePosts allows moderating posts inside a forum.
+	PermissionForumsManagePosts Permission = "forums.manage_posts"
+
+	// PermissionThreadsView allows reading a thread.
+	PermissionThreadsView Permission = "threads.view"
+
+	// PermissionThreadsUpdate allows updating a thread.
+	PermissionThreadsUpdate Permission = "threads.update"
+
+	// PermissionThreadsClose allows closing a thread.
+	PermissionThreadsClose Permission = "threads.close"
+
+	// PermissionThreadsOpen allows opening a thread.
+	PermissionThreadsOpen Permission = "threads.open"
+
+	// PermissionThreadsDelete allows deleting a thread.
+	PermissionThreadsDelete Permission = "threads.delete"
+
+	// PermissionThreadsPin allows pinning a thread.
+	PermissionThreadsPin Permission = "threads.pin"
+
+	// PermissionPostsView allows reading a post.
+	PermissionPostsView Permission = "posts.view"
+
+	// PermissionPostsUpdate allows updating a post.
+	PermissionPostsUpdate Permission = "posts.update"
+
+	// PermissionPostsDelete allows deleting a post.
+	PermissionPostsDelete Permission = "posts.delete"
+
+	// PermissionPostsLike allows liking a post.
+	PermissionPostsLike Permission = "posts.like"
+
+	// PermissionPostsViewHidden allows reading hidden posts.
+	PermissionPostsViewHidden Permission = "posts.view_hidden"
+
+	// PermissionPostsViewRevisions allows reading post revisions.
+	PermissionPostsViewRevisions Permission = "posts.view_revisions"
 )
 
 const (

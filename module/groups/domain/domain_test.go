@@ -83,6 +83,27 @@ func TestRelationTupleValidateRejectsMissingIdentifiers(t *testing.T) {
 	}
 }
 
+// TestRelationTupleValidateAcceptsPublicSubject verifies public tuple validation.
+func TestRelationTupleValidateAcceptsPublicSubject(t *testing.T) {
+	tuple := RelationTuple{ObjectType: ObjectForum, ObjectID: uuid.New(), Relation: RelationViewer, SubjectType: SubjectPublic, SubjectID: PublicSubjectID()}
+	if err := tuple.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+}
+
+// TestRelationTupleValidateRejectsWrongReservedSubjectID verifies reserved subject IDs.
+func TestRelationTupleValidateRejectsWrongReservedSubjectID(t *testing.T) {
+	tuple := RelationTuple{ObjectType: ObjectForum, ObjectID: uuid.New(), Relation: RelationViewer, SubjectType: SubjectAuthenticated, SubjectID: uuid.New()}
+	err := tuple.Validate()
+	var validation ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("Validate() error = %v, want ValidationError", err)
+	}
+	if len(validation.Violations) == 0 {
+		t.Fatalf("Violations = 0, want reserved subject violation")
+	}
+}
+
 // TestPermissionRuleValidateRejectsInvalidConditions verifies condition validation.
 func TestPermissionRuleValidateRejectsInvalidConditions(t *testing.T) {
 	err := PermissionRule{

@@ -140,6 +140,52 @@ func TestServiceCheckDeniesObjectTypeMismatch(t *testing.T) {
 	}
 }
 
+// TestServiceCheckAllowsPublicSubjectForAnonymous verifies anonymous public grants.
+func TestServiceCheckAllowsPublicSubjectForAnonymous(t *testing.T) {
+	service, _, _, tuples := newTestService()
+	forumID := uuid.New()
+	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectForum, ObjectID: forumID, Relation: domain.RelationViewer, SubjectType: domain.SubjectPublic, SubjectID: domain.PublicSubjectID()}
+
+	decision, err := service.Check(context.Background(), port.CheckRequest{Permission: domain.PermissionForumsView, ObjectType: domain.ObjectForum, ObjectID: forumID})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !decision.Allowed || decision.MatchedRelation != domain.RelationViewer {
+		t.Fatalf("Decision = %+v, want public viewer allowed", decision)
+	}
+}
+
+// TestServiceCheckAllowsAuthenticatedSubjectForSignedInUser verifies authenticated grants.
+func TestServiceCheckAllowsAuthenticatedSubjectForSignedInUser(t *testing.T) {
+	service, _, _, tuples := newTestService()
+	actorID := uuid.New()
+	forumID := uuid.New()
+	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectForum, ObjectID: forumID, Relation: domain.RelationViewer, SubjectType: domain.SubjectAuthenticated, SubjectID: domain.AuthenticatedSubjectID()}
+
+	decision, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: actorID, Permission: domain.PermissionForumsView, ObjectType: domain.ObjectForum, ObjectID: forumID})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !decision.Allowed {
+		t.Fatalf("Decision = %+v, want authenticated viewer allowed", decision)
+	}
+}
+
+// TestServiceCheckDeniesAuthenticatedSubjectForAnonymous verifies anonymous users need public grants.
+func TestServiceCheckDeniesAuthenticatedSubjectForAnonymous(t *testing.T) {
+	service, _, _, tuples := newTestService()
+	forumID := uuid.New()
+	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectForum, ObjectID: forumID, Relation: domain.RelationViewer, SubjectType: domain.SubjectAuthenticated, SubjectID: domain.AuthenticatedSubjectID()}
+
+	decision, err := service.Check(context.Background(), port.CheckRequest{Permission: domain.PermissionForumsView, ObjectType: domain.ObjectForum, ObjectID: forumID})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if decision.Allowed || decision.Reason != "no_matching_relation" {
+		t.Fatalf("Decision = %+v, want anonymous denied", decision)
+	}
+}
+
 // TestServiceCheckEvaluatesPolicyConditions verifies configured policy conditions.
 func TestServiceCheckEvaluatesPolicyConditions(t *testing.T) {
 	service, _, _, tuples, policies := newPolicyTestService()

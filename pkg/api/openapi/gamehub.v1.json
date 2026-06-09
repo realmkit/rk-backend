@@ -4191,14 +4191,19 @@
           "group",
           "asset",
           "user",
-          "system"
+          "system",
+          "forum",
+          "forum_thread",
+          "forum_post"
         ]
       },
       "AuthorizationSubjectType": {
         "type": "string",
         "enum": [
           "user",
-          "group"
+          "group",
+          "public",
+          "authenticated"
         ]
       },
       "AuthorizationRelation": {
@@ -4209,7 +4214,12 @@
           "editor",
           "manager",
           "owner",
-          "self"
+          "self",
+          "creator",
+          "replyer",
+          "liker",
+          "moderator",
+          "author"
         ]
       },
       "Permission": {
@@ -4220,7 +4230,12 @@
           "groups.assign_member",
           "assets.view",
           "assets.update",
-          "metadata.write_user"
+          "metadata.write_user",
+          "forums.view",
+          "forums.create_thread",
+          "forums.reply",
+          "threads.view",
+          "posts.view"
         ]
       },
       "GroupRequest": {
@@ -4455,7 +4470,6 @@
       "PermissionCheckRequest": {
         "type": "object",
         "required": [
-          "actor_user_id",
           "permission",
           "object_type",
           "object_id"
@@ -4463,7 +4477,8 @@
         "properties": {
           "actor_user_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Local actor user ID. Omit or send the zero UUID for anonymous public-view checks."
           },
           "permission": {
             "$ref": "#/components/schemas/Permission"

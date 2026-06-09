@@ -45,13 +45,51 @@ func (tuple RelationTuple) Validate() error {
 	}
 	violations = append(violations, ValidateRelationTerm("relation", string(tuple.Relation))...)
 	violations = append(violations, ValidateRelationTerm("subject_type", string(tuple.SubjectType))...)
-	if tuple.SubjectID == uuid.Nil {
-		violations = AppendViolation(violations, "subject_id", "is required")
-	}
+	violations = append(violations, validateTupleSubject(tuple)...)
 	if tuple.SubjectRelation != "" {
 		violations = append(violations, ValidateRelationTerm("subject_relation", string(tuple.SubjectRelation))...)
 	}
 	return NewValidationError(violations)
+}
+
+// PublicSubjectID returns the stable subject identifier used by public grants.
+func PublicSubjectID() uuid.UUID {
+	return uuid.MustParse("00000000-0000-0000-0000-000000000001")
+}
+
+// AuthenticatedSubjectID returns the stable subject identifier used by authenticated grants.
+func AuthenticatedSubjectID() uuid.UUID {
+	return uuid.MustParse("00000000-0000-0000-0000-000000000002")
+}
+
+// validateTupleSubject validates subject-specific tuple invariants.
+func validateTupleSubject(tuple RelationTuple) []Violation {
+	switch tuple.SubjectType {
+	case SubjectPublic:
+		return validateSystemSubject(tuple, PublicSubjectID())
+	case SubjectAuthenticated:
+		return validateSystemSubject(tuple, AuthenticatedSubjectID())
+	default:
+		if tuple.SubjectID == uuid.Nil {
+			return []Violation{{Field: "subject_id", Message: "is required"}}
+		}
+		if tuple.SubjectRelation != "" && tuple.SubjectType != SubjectGroup {
+			return []Violation{{Field: "subject_relation", Message: "is only supported for group subjects"}}
+		}
+		return nil
+	}
+}
+
+// validateSystemSubject validates public and authenticated subject tuples.
+func validateSystemSubject(tuple RelationTuple, expectedID uuid.UUID) []Violation {
+	var violations []Violation
+	if tuple.SubjectID != expectedID {
+		violations = AppendViolation(violations, "subject_id", "must use the reserved subject identifier")
+	}
+	if tuple.SubjectRelation != "" {
+		violations = AppendViolation(violations, "subject_relation", "must be empty for this subject type")
+	}
+	return violations
 }
 
 // PolicyCondition describes one contextual condition for a permission rule.

@@ -22,14 +22,34 @@ type staticPermissionRule struct {
 
 // staticPermissionRules maps permissions to built-in fallback requirements.
 var staticPermissionRules = map[domain.Permission]staticPermissionRule{
-	"groups.read":          {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationViewer, domain.RelationManager, domain.RelationMember, domain.RelationOwner}},
-	"groups.update":        {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
-	"groups.delete":        {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationOwner}},
-	"groups.assign_member": {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
-	"groups.read_members":  {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationViewer, domain.RelationManager, domain.RelationMember, domain.RelationOwner}},
-	"assets.view":          {objectType: domain.ObjectAsset, relations: []domain.Relation{domain.RelationViewer, domain.RelationOwner}},
-	"assets.update":        {objectType: domain.ObjectAsset, relations: []domain.Relation{domain.RelationEditor, domain.RelationOwner}},
-	"metadata.write_user":  {objectType: domain.ObjectUser, relations: []domain.Relation{domain.RelationSelf, domain.RelationManager}},
+	"groups.read":                        {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationViewer, domain.RelationManager, domain.RelationMember, domain.RelationOwner}},
+	"groups.update":                      {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
+	"groups.delete":                      {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationOwner}},
+	"groups.assign_member":               {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
+	"groups.read_members":                {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationViewer, domain.RelationManager, domain.RelationMember, domain.RelationOwner}},
+	"assets.view":                        {objectType: domain.ObjectAsset, relations: []domain.Relation{domain.RelationViewer, domain.RelationOwner}},
+	"assets.update":                      {objectType: domain.ObjectAsset, relations: []domain.Relation{domain.RelationEditor, domain.RelationOwner}},
+	"metadata.write_user":                {objectType: domain.ObjectUser, relations: []domain.Relation{domain.RelationSelf, domain.RelationManager}},
+	domain.PermissionForumsView:          {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationViewer, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionForumsManageForum:   {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionForumsCreateThread:  {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationCreator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionForumsReply:         {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationReplyer, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionForumsLikePosts:     {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationLiker, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionForumsPinThreads:    {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionForumsManageThreads: {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionForumsManagePosts:   {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionThreadsView:         {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationViewer, domain.RelationAuthor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionThreadsUpdate:       {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationAuthor, domain.RelationEditor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionThreadsClose:        {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionThreadsOpen:         {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionThreadsDelete:       {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationAuthor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionThreadsPin:          {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionPostsView:           {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationViewer, domain.RelationAuthor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionPostsUpdate:         {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationAuthor, domain.RelationEditor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionPostsDelete:         {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationAuthor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionPostsLike:           {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationLiker, domain.RelationViewer, domain.RelationAuthor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionPostsViewHidden:     {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionPostsViewRevisions:  {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
 }
 
 // Check returns an authorization decision.
@@ -44,7 +64,7 @@ func (service Service) Check(ctx context.Context, request port.CheckRequest) (po
 	if objectType != request.ObjectType {
 		return port.Decision{Allowed: false, Reason: "object_type_mismatch"}, nil
 	}
-	if request.ActorUserID == uuid.Nil || request.ObjectID == uuid.Nil {
+	if request.ObjectID == uuid.Nil {
 		return port.Decision{Allowed: false, Reason: "missing_identifier"}, nil
 	}
 	return service.checkRelations(ctx, request, rules)
@@ -271,13 +291,21 @@ func isEmpty(value any) bool {
 
 // subjectMatches reports whether actor matches tuple subject.
 func (service Service) subjectMatches(ctx context.Context, actorUserID uuid.UUID, tuple domain.RelationTuple) (bool, error) {
-	if tuple.SubjectType == domain.SubjectUser {
-		return tuple.SubjectID == actorUserID, nil
-	}
-	if tuple.SubjectType == domain.SubjectGroup && tuple.SubjectRelation == domain.RelationMember {
+	switch tuple.SubjectType {
+	case domain.SubjectPublic:
+		return tuple.SubjectID == domain.PublicSubjectID(), nil
+	case domain.SubjectAuthenticated:
+		return actorUserID != uuid.Nil && tuple.SubjectID == domain.AuthenticatedSubjectID(), nil
+	case domain.SubjectUser:
+		return actorUserID != uuid.Nil && tuple.SubjectID == actorUserID, nil
+	case domain.SubjectGroup:
+		if actorUserID == uuid.Nil || tuple.SubjectRelation != domain.RelationMember {
+			return false, nil
+		}
 		return service.activeGroupMember(ctx, tuple.SubjectID, actorUserID)
+	default:
+		return false, nil
 	}
-	return false, nil
 }
 
 // activeGroupMember reports whether user is active in enabled group.

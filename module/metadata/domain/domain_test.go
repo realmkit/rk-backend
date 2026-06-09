@@ -42,6 +42,15 @@ func TestMetafieldDefinitionValidateRejectsUnsupportedOwner(t *testing.T) {
 	}
 }
 
+// TestAllowedOwnerTypesIncludeForumOwners verifies forum metadata ownership.
+func TestAllowedOwnerTypesIncludeForumOwners(t *testing.T) {
+	for _, ownerType := range []OwnerType{OwnerForumCategory, OwnerForum, OwnerForumThread} {
+		if violations := ValidateOwnerType("owner_type", ownerType); len(violations) != 0 {
+			t.Fatalf("ValidateOwnerType(%q) violations = %+v, want none", ownerType, violations)
+		}
+	}
+}
+
 // TestFieldDefinitionValidateRejectsInvalidRuleCombination verifies rule compatibility.
 func TestFieldDefinitionValidateRejectsInvalidRuleCombination(t *testing.T) {
 	precision := 10
