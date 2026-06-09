@@ -58,3 +58,38 @@ CREATE INDEX authorization_relation_tuples_object_idx ON authorization_relation_
 CREATE INDEX authorization_relation_tuples_subject_idx ON authorization_relation_tuples (subject_type, subject_id) WHERE deleted_at IS NULL;
 CREATE INDEX authorization_relation_tuples_subject_relation_idx ON authorization_relation_tuples (subject_type, subject_id, subject_relation) WHERE deleted_at IS NULL;
 CREATE INDEX authorization_relation_tuples_deleted_at_idx ON authorization_relation_tuples (deleted_at);
+
+CREATE TABLE authorization_permission_definitions (
+    id uuid PRIMARY KEY,
+    permission text NOT NULL,
+    object_type text NOT NULL,
+    description text NOT NULL DEFAULT '',
+    enabled boolean NOT NULL DEFAULT true,
+    version bigint NOT NULL DEFAULT 1,
+    created_at timestamptz NOT NULL,
+    updated_at timestamptz NOT NULL,
+    deleted_at timestamptz NULL
+);
+
+CREATE UNIQUE INDEX authorization_permission_definitions_permission_active_idx ON authorization_permission_definitions (permission) WHERE deleted_at IS NULL;
+CREATE INDEX authorization_permission_definitions_object_active_idx ON authorization_permission_definitions (object_type) WHERE deleted_at IS NULL;
+CREATE INDEX authorization_permission_definitions_enabled_active_idx ON authorization_permission_definitions (enabled) WHERE deleted_at IS NULL;
+CREATE INDEX authorization_permission_definitions_deleted_at_idx ON authorization_permission_definitions (deleted_at);
+
+CREATE TABLE authorization_policy_rules (
+    id uuid PRIMARY KEY,
+    permission text NOT NULL,
+    object_type text NOT NULL,
+    relation text NOT NULL,
+    conditions_json text NOT NULL DEFAULT '[]',
+    priority integer NOT NULL DEFAULT 0,
+    enabled boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL,
+    updated_at timestamptz NOT NULL,
+    deleted_at timestamptz NULL
+);
+
+CREATE INDEX authorization_policy_rules_permission_active_idx ON authorization_policy_rules (permission, priority) WHERE deleted_at IS NULL;
+CREATE INDEX authorization_policy_rules_object_active_idx ON authorization_policy_rules (object_type, relation) WHERE deleted_at IS NULL;
+CREATE INDEX authorization_policy_rules_enabled_active_idx ON authorization_policy_rules (enabled) WHERE deleted_at IS NULL;
+CREATE INDEX authorization_policy_rules_deleted_at_idx ON authorization_policy_rules (deleted_at);

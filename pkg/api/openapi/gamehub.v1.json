@@ -4474,6 +4474,11 @@
           "object_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "context": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Module-provided fields used by permission policy conditions."
           }
         }
       },
@@ -4492,6 +4497,18 @@
           },
           "matched_relation": {
             "$ref": "#/components/schemas/AuthorizationRelation"
+          },
+          "matched_conditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PolicyCondition"
+            }
+          },
+          "failed_conditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PolicyCondition"
+            }
           }
         }
       },
@@ -4660,6 +4677,46 @@
           "url": {
             "type": "string",
             "format": "uri"
+          }
+        }
+      },
+      "PolicyConditionType": {
+        "type": "string",
+        "enum": [
+          "equals",
+          "in",
+          "field_equals_actor",
+          "field_not_equals_actor",
+          "is_unset",
+          "assigned_to_actor",
+          "within_duration",
+          "older_than"
+        ]
+      },
+      "PolicyCondition": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/PolicyConditionType"
+          },
+          "field": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "duration": {
+            "type": "string",
+            "description": "Go duration string such as 10m, 30m, or 24h."
           }
         }
       }

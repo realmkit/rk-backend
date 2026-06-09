@@ -13,6 +13,7 @@ type checkRequest struct {
 	Permission  domain.Permission `json:"permission"`
 	ObjectType  domain.ObjectType `json:"object_type"`
 	ObjectID    uuid.UUID         `json:"object_id"`
+	Context     map[string]any    `json:"context,omitempty"`
 }
 
 // checkPermission checks a permission.
@@ -21,7 +22,7 @@ func (handler handler) checkPermission(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	decision, err := handler.services.Checker.Check(ctx.Context(), port.CheckRequest{ActorUserID: request.ActorUserID, Permission: request.Permission, ObjectType: request.ObjectType, ObjectID: request.ObjectID})
+	decision, err := handler.services.Checker.Check(ctx.Context(), port.CheckRequest{ActorUserID: request.ActorUserID, Permission: request.Permission, ObjectType: request.ObjectType, ObjectID: request.ObjectID, Context: request.Context})
 	if err != nil {
 		return handleError(ctx, err)
 	}

@@ -140,6 +140,57 @@ func TestServiceCheckDeniesObjectTypeMismatch(t *testing.T) {
 	}
 }
 
+// TestServiceCheckEvaluatesPolicyConditions verifies configured policy conditions.
+func TestServiceCheckEvaluatesPolicyConditions(t *testing.T) {
+	service, _, _, tuples, policies := newPolicyTestService()
+	now := time.Date(2026, 6, 9, 12, 0, 0, 0, time.UTC)
+	service.clock = func() time.Time { return now }
+	actorID := uuid.New()
+	postID := uuid.New()
+	policies.definitions["posts.update"] = domain.PermissionDefinition{ID: uuid.New(), Permission: "posts.update", ObjectType: "post", Enabled: true, Version: 1}
+	policies.rules["posts.update"] = []domain.PermissionRule{{
+		ID:         uuid.New(),
+		Permission: "posts.update",
+		ObjectType: "post",
+		Relation:   "author",
+		Conditions: []domain.PolicyCondition{{Type: domain.ConditionWithinDuration, Field: "post.created_at", Duration: "10m"}},
+		Enabled:    true,
+	}}
+	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: "post", ObjectID: postID, Relation: "author", SubjectType: domain.SubjectUser, SubjectID: actorID}
+
+	allowed, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: actorID, Permission: "posts.update", ObjectType: "post", ObjectID: postID, Context: map[string]any{"post.created_at": now.Add(-5 * time.Minute)}})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !allowed.Allowed || len(allowed.MatchedConditions) != 1 {
+		t.Fatalf("Decision = %+v, want allowed with matched condition", allowed)
+	}
+	denied, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: actorID, Permission: "posts.update", ObjectType: "post", ObjectID: postID, Context: map[string]any{"post.created_at": now.Add(-15 * time.Minute)}})
+	if err != nil {
+		t.Fatalf("Check() stale error = %v", err)
+	}
+	if denied.Allowed || denied.Reason != "conditions_failed" || len(denied.FailedConditions) != 1 {
+		t.Fatalf("Decision = %+v, want condition failure", denied)
+	}
+}
+
+// TestServiceCheckDisabledPolicyDoesNotFallback verifies configured disabled policies deny.
+func TestServiceCheckDisabledPolicyDoesNotFallback(t *testing.T) {
+	service, _, _, tuples, policies := newPolicyTestService()
+	actorID := uuid.New()
+	groupID := uuid.New()
+	policies.definitions["groups.update"] = domain.PermissionDefinition{ID: uuid.New(), Permission: "groups.update", ObjectType: domain.ObjectGroup, Enabled: false, Version: 1}
+	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectGroup, ObjectID: groupID, Relation: domain.RelationManager, SubjectType: domain.SubjectUser, SubjectID: actorID}
+
+	decision, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: actorID, Permission: "groups.update", ObjectType: domain.ObjectGroup, ObjectID: groupID})
+	if !errors.Is(err, port.ErrUnknownPermission) {
+		t.Fatalf("Check() error = %v, want %v", err, port.ErrUnknownPermission)
+	}
+	if decision.Allowed {
+		t.Fatalf("Decision = %+v, want denied", decision)
+	}
+}
+
 // TestServiceRemoveDeletesMembershipAndTuple verifies membership removal cleans tuples.
 func TestServiceRemoveDeletesMembershipAndTuple(t *testing.T) {
 	service, _, memberships, tuples := newTestService()
@@ -220,6 +271,16 @@ func newTestService() (Service, *memoryGroups, *memoryMemberships, *memoryTuples
 	tuples := &memoryTuples{items: map[uuid.UUID]domain.RelationTuple{}}
 	service := NewService(groups, memberships, tuples)
 	return service, groups, memberships, tuples
+}
+
+// newPolicyTestService returns a service with policy repositories.
+func newPolicyTestService() (Service, *memoryGroups, *memoryMemberships, *memoryTuples, *memoryPolicies) {
+	groups := &memoryGroups{items: map[uuid.UUID]domain.Group{}}
+	memberships := &memoryMemberships{items: map[string]domain.Membership{}}
+	tuples := &memoryTuples{items: map[uuid.UUID]domain.RelationTuple{}}
+	policies := &memoryPolicies{definitions: map[domain.Permission]domain.PermissionDefinition{}, rules: map[domain.Permission][]domain.PermissionRule{}}
+	service := NewService(groups, memberships, tuples, policies)
+	return service, groups, memberships, tuples, policies
 }
 
 // testGroup returns a test group.
@@ -408,6 +469,38 @@ func (repository *memoryTuples) Delete(_ context.Context, id uuid.UUID) error {
 // equivalentTuple reports whether tuples are equivalent.
 func equivalentTuple(left domain.RelationTuple, right domain.RelationTuple) bool {
 	return left.ObjectType == right.ObjectType && left.ObjectID == right.ObjectID && left.Relation == right.Relation && left.SubjectType == right.SubjectType && left.SubjectID == right.SubjectID && left.SubjectRelation == right.SubjectRelation
+}
+
+// memoryPolicies stores policy records in memory.
+type memoryPolicies struct {
+	definitions map[domain.Permission]domain.PermissionDefinition
+	rules       map[domain.Permission][]domain.PermissionRule
+}
+
+// UpsertDefinition stores a permission definition.
+func (repository *memoryPolicies) UpsertDefinition(_ context.Context, definition domain.PermissionDefinition) (domain.PermissionDefinition, error) {
+	repository.definitions[definition.Permission] = definition
+	return definition, nil
+}
+
+// FindDefinition returns a permission definition.
+func (repository *memoryPolicies) FindDefinition(_ context.Context, permission domain.Permission) (domain.PermissionDefinition, error) {
+	definition, ok := repository.definitions[permission]
+	if !ok {
+		return domain.PermissionDefinition{}, port.ErrNotFound
+	}
+	return definition, nil
+}
+
+// UpsertRule stores a permission rule.
+func (repository *memoryPolicies) UpsertRule(_ context.Context, rule domain.PermissionRule) (domain.PermissionRule, error) {
+	repository.rules[rule.Permission] = append(repository.rules[rule.Permission], rule)
+	return rule, nil
+}
+
+// ListRules returns permission rules.
+func (repository *memoryPolicies) ListRules(_ context.Context, permission domain.Permission) ([]domain.PermissionRule, error) {
+	return repository.rules[permission], nil
 }
 
 // TestServiceCheckUnknownPermission verifies unknown permission errors.

@@ -30,6 +30,9 @@ type SubjectType string
 // Permission identifies a domain action.
 type Permission string
 
+// ConditionType identifies a supported permission condition.
+type ConditionType string
+
 const (
 	// GroupStatusActive means the group grants permissions.
 	GroupStatusActive GroupStatus = "active"
@@ -97,6 +100,32 @@ const (
 	RelationSelf Relation = "self"
 )
 
+const (
+	// ConditionEquals requires a context field to equal one value.
+	ConditionEquals ConditionType = "equals"
+
+	// ConditionIn requires a context field to match one of many values.
+	ConditionIn ConditionType = "in"
+
+	// ConditionFieldEqualsActor requires a context field to equal the actor user ID.
+	ConditionFieldEqualsActor ConditionType = "field_equals_actor"
+
+	// ConditionFieldNotEqualsActor requires a context field to differ from the actor user ID.
+	ConditionFieldNotEqualsActor ConditionType = "field_not_equals_actor"
+
+	// ConditionIsUnset requires a context field to be missing or empty.
+	ConditionIsUnset ConditionType = "is_unset"
+
+	// ConditionAssignedToActor requires an assignment field to equal the actor user ID.
+	ConditionAssignedToActor ConditionType = "assigned_to_actor"
+
+	// ConditionWithinDuration requires a timestamp field to be within a duration from now.
+	ConditionWithinDuration ConditionType = "within_duration"
+
+	// ConditionOlderThan requires a timestamp field to be older than a duration from now.
+	ConditionOlderThan ConditionType = "older_than"
+)
+
 // keyPattern matches stable lower snake identifiers.
 var keyPattern = regexp.MustCompile(`^[a-z][a-z0-9_]{1,62}[a-z0-9]$`)
 
@@ -141,4 +170,27 @@ func ValidateRelationTerm(field string, value string) []Violation {
 		return []Violation{{Field: field, Message: "must be lower snake case and between 3 and 64 characters"}}
 	}
 	return nil
+}
+
+// ValidatePermission validates a dotted permission name.
+func ValidatePermission(field string, value Permission) []Violation {
+	permission := strings.TrimSpace(string(value))
+	if permission == "" || len(permission) > 120 {
+		return []Violation{{Field: field, Message: "must be a dotted permission between 1 and 120 characters"}}
+	}
+	parts := strings.Split(permission, ".")
+	for _, part := range parts {
+		if !keyPattern.MatchString(part) {
+			return []Violation{{Field: field, Message: "must use lower snake case segments separated by dots"}}
+		}
+	}
+	return nil
+}
+
+// ValidateConditionType validates condition type.
+func ValidateConditionType(field string, conditionType ConditionType) []Violation {
+	if slices.Contains([]ConditionType{ConditionEquals, ConditionIn, ConditionFieldEqualsActor, ConditionFieldNotEqualsActor, ConditionIsUnset, ConditionAssignedToActor, ConditionWithinDuration, ConditionOlderThan}, conditionType) {
+		return nil
+	}
+	return []Violation{{Field: field, Message: "is not supported"}}
 }

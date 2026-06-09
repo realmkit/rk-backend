@@ -16,15 +16,21 @@ type Service struct {
 	groups      port.GroupRepository
 	memberships port.MembershipRepository
 	tuples      port.TupleRepository
+	policies    port.PermissionRepository
 	clock       func() time.Time
 }
 
 // NewService creates a groups service.
-func NewService(groups port.GroupRepository, memberships port.MembershipRepository, tuples port.TupleRepository) Service {
+func NewService(groups port.GroupRepository, memberships port.MembershipRepository, tuples port.TupleRepository, policies ...port.PermissionRepository) Service {
+	var policyRepository port.PermissionRepository
+	if len(policies) > 0 {
+		policyRepository = policies[0]
+	}
 	return Service{
 		groups:      groups,
 		memberships: memberships,
 		tuples:      tuples,
+		policies:    policyRepository,
 		clock:       func() time.Time { return time.Now().UTC() },
 	}
 }

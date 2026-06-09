@@ -54,6 +54,168 @@ func (tuple RelationTuple) Validate() error {
 	return NewValidationError(violations)
 }
 
+// PolicyCondition describes one contextual condition for a permission rule.
+type PolicyCondition struct {
+	// Type is the condition evaluator.
+	Type ConditionType `json:"type"`
+
+	// Field is the context field read by the condition.
+	Field string `json:"field,omitempty"`
+
+	// Value is the expected scalar value.
+	Value string `json:"value,omitempty"`
+
+	// Values are the expected list values.
+	Values []string `json:"values,omitempty"`
+
+	// Duration is a Go duration string such as 10m or 24h.
+	Duration string `json:"duration,omitempty"`
+}
+
+// Validate validates policy condition fields.
+func (condition PolicyCondition) Validate(field string) []Violation {
+	var violations []Violation
+	violations = append(violations, ValidateConditionType(field+".type", condition.Type)...)
+	switch condition.Type {
+	case ConditionEquals:
+		violations = append(violations, requireField(field+".field", condition.Field)...)
+		violations = append(violations, requireValue(field+".value", condition.Value)...)
+	case ConditionIn:
+		violations = append(violations, requireField(field+".field", condition.Field)...)
+		if len(condition.Values) == 0 {
+			violations = AppendViolation(violations, field+".values", "must contain at least one value")
+		}
+	case ConditionFieldEqualsActor, ConditionFieldNotEqualsActor, ConditionIsUnset, ConditionAssignedToActor:
+		violations = append(violations, requireField(field+".field", condition.Field)...)
+	case ConditionWithinDuration, ConditionOlderThan:
+		violations = append(violations, requireField(field+".field", condition.Field)...)
+		violations = append(violations, requireValue(field+".duration", condition.Duration)...)
+		if condition.Duration != "" {
+			if _, err := time.ParseDuration(condition.Duration); err != nil {
+				violations = AppendViolation(violations, field+".duration", "must be a valid duration")
+			}
+		}
+	}
+	return violations
+}
+
+// PermissionDefinition describes one customizable permission.
+type PermissionDefinition struct {
+	// ID is the definition identifier.
+	ID uuid.UUID `json:"id"`
+
+	// Permission is the domain action.
+	Permission Permission `json:"permission"`
+
+	// ObjectType is the target object type.
+	ObjectType ObjectType `json:"object_type"`
+
+	// Description explains the permission to administrators.
+	Description string `json:"description"`
+
+	// Enabled reports whether the permission can grant access.
+	Enabled bool `json:"enabled"`
+
+	// Version is the optimistic version.
+	Version uint64 `json:"version"`
+
+	// CreatedAt is the creation timestamp.
+	CreatedAt time.Time `json:"created_at"`
+
+	// UpdatedAt is the last update timestamp.
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// Validate validates permission definition fields.
+func (definition PermissionDefinition) Validate() error {
+	var violations []Violation
+	violations = append(violations, ValidatePermission("permission", definition.Permission)...)
+	violations = append(violations, ValidateRelationTerm("object_type", string(definition.ObjectType))...)
+	if definition.ID == uuid.Nil {
+		violations = AppendViolation(violations, "id", "is required")
+	}
+	if definition.Version == 0 {
+		violations = AppendViolation(violations, "version", "is required")
+	}
+	return NewValidationError(violations)
+}
+
+// PermissionRule maps one relation to one permission with optional conditions.
+type PermissionRule struct {
+	// ID is the rule identifier.
+	ID uuid.UUID `json:"id"`
+
+	// Permission is the domain action.
+	Permission Permission `json:"permission"`
+
+	// ObjectType is the target object type.
+	ObjectType ObjectType `json:"object_type"`
+
+	// Relation is the object relation that can grant access.
+	Relation Relation `json:"relation"`
+
+	// Conditions must pass after the relation matches.
+	Conditions []PolicyCondition `json:"conditions,omitempty"`
+
+	// Priority orders rules from lowest number to highest.
+	Priority int `json:"priority"`
+
+	// Enabled reports whether the rule participates in checks.
+	Enabled bool `json:"enabled"`
+
+	// CreatedAt is the creation timestamp.
+	CreatedAt time.Time `json:"created_at"`
+
+	// UpdatedAt is the last update timestamp.
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// Validate validates permission rule fields.
+func (rule PermissionRule) Validate() error {
+	var violations []Violation
+	violations = append(violations, ValidatePermission("permission", rule.Permission)...)
+	violations = append(violations, ValidateRelationTerm("object_type", string(rule.ObjectType))...)
+	violations = append(violations, ValidateRelationTerm("relation", string(rule.Relation))...)
+	if rule.ID == uuid.Nil {
+		violations = AppendViolation(violations, "id", "is required")
+	}
+	for index, condition := range rule.Conditions {
+		violations = append(violations, condition.Validate("conditions["+itoa(index)+"]")...)
+	}
+	return NewValidationError(violations)
+}
+
+// requireField validates a condition field name.
+func requireField(field string, value string) []Violation {
+	if value == "" {
+		return []Violation{{Field: field, Message: "is required"}}
+	}
+	return nil
+}
+
+// requireValue validates a condition scalar value.
+func requireValue(field string, value string) []Violation {
+	if value == "" {
+		return []Violation{{Field: field, Message: "is required"}}
+	}
+	return nil
+}
+
+// itoa formats a small integer without importing strconv into callers.
+func itoa(value int) string {
+	if value == 0 {
+		return "0"
+	}
+	var buf [20]byte
+	index := len(buf)
+	for value > 0 {
+		index--
+		buf[index] = byte('0' + value%10)
+		value /= 10
+	}
+	return string(buf[index:])
+}
+
 // DisplayGroup returns the frontend display group from active memberships.
 func DisplayGroup(groups []Group, memberships []Membership, instant time.Time) (Group, bool) {
 	byID := map[uuid.UUID]Group{}

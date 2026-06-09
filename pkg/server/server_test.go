@@ -392,7 +392,7 @@ func newGroupsServices(t *testing.T) groupshttp.Services {
 		t.Fatalf("Migrate() error = %v", err)
 	}
 	store := orm.NewStore(db)
-	service := groupsapplication.NewService(groupspostgres.NewGroupRepository(store), groupspostgres.NewMembershipRepository(store), groupspostgres.NewTupleRepository(store))
+	service := groupsapplication.NewService(groupspostgres.NewGroupRepository(store), groupspostgres.NewMembershipRepository(store), groupspostgres.NewTupleRepository(store), groupspostgres.NewPermissionRepository(store))
 	return groupshttp.Services{Groups: service, Memberships: service, Tuples: service, Checker: service}
 }
 

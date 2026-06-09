@@ -99,6 +99,9 @@ type CheckRequest struct {
 
 	// ObjectID is the target object identifier.
 	ObjectID uuid.UUID `json:"object_id"`
+
+	// Context contains module-provided fields used by policy conditions.
+	Context map[string]any `json:"context,omitempty"`
 }
 
 // Decision contains an authorization result.
@@ -111,6 +114,12 @@ type Decision struct {
 
 	// MatchedRelation is the relation that allowed the action.
 	MatchedRelation domain.Relation `json:"matched_relation,omitempty"`
+
+	// MatchedConditions are the conditions that passed for the allowing rule.
+	MatchedConditions []domain.PolicyCondition `json:"matched_conditions,omitempty"`
+
+	// FailedConditions are conditions from matched relations that failed.
+	FailedConditions []domain.PolicyCondition `json:"failed_conditions,omitempty"`
 }
 
 // UserGroups contains a user's groups and display group.

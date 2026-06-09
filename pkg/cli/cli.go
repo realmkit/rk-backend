@@ -361,7 +361,7 @@ func usershttpServices(userService userapp.Service, groupService groupsapp.Servi
 // groupsService creates groups application service.
 func groupsService(db *gorm.DB) groupsapp.Service {
 	store := orm.NewStore(db)
-	return groupsapp.NewService(groupspostgres.NewGroupRepository(store), groupspostgres.NewMembershipRepository(store), groupspostgres.NewTupleRepository(store))
+	return groupsapp.NewService(groupspostgres.NewGroupRepository(store), groupspostgres.NewMembershipRepository(store), groupspostgres.NewTupleRepository(store), groupspostgres.NewPermissionRepository(store))
 }
 
 // groupshttpServices creates HTTP services for groups.

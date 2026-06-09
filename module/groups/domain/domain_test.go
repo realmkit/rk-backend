@@ -83,6 +83,32 @@ func TestRelationTupleValidateRejectsMissingIdentifiers(t *testing.T) {
 	}
 }
 
+// TestPermissionRuleValidateRejectsInvalidConditions verifies condition validation.
+func TestPermissionRuleValidateRejectsInvalidConditions(t *testing.T) {
+	err := PermissionRule{
+		ID:         uuid.New(),
+		Permission: "posts.update",
+		ObjectType: "post",
+		Relation:   RelationEditor,
+		Conditions: []PolicyCondition{{Type: ConditionWithinDuration, Field: "post.created_at", Duration: "soon"}},
+	}.Validate()
+	var validation ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("Validate() error = %v, want ValidationError", err)
+	}
+	if len(validation.Violations) == 0 {
+		t.Fatalf("Violations = 0, want duration violation")
+	}
+}
+
+// TestPermissionDefinitionValidateAcceptsDottedPermission verifies permission names.
+func TestPermissionDefinitionValidateAcceptsDottedPermission(t *testing.T) {
+	definition := PermissionDefinition{ID: uuid.New(), Permission: "posts.update", ObjectType: "post", Enabled: true, Version: 1}
+	if err := definition.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+}
+
 // validGroup returns a valid group.
 func validGroup(key Key, weight int) Group {
 	return Group{ID: uuid.New(), Key: key, Name: string(key), Color: "#ff00aa", Weight: weight, Status: GroupStatusActive, Version: 1}

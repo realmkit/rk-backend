@@ -61,3 +61,18 @@ type TupleRepository interface {
 	// Delete soft deletes one tuple.
 	Delete(ctx context.Context, id uuid.UUID) error
 }
+
+// PermissionRepository stores customizable permission definitions and rules.
+type PermissionRepository interface {
+	// UpsertDefinition stores or updates a permission definition.
+	UpsertDefinition(ctx context.Context, definition domain.PermissionDefinition) (domain.PermissionDefinition, error)
+
+	// FindDefinition returns one active permission definition.
+	FindDefinition(ctx context.Context, permission domain.Permission) (domain.PermissionDefinition, error)
+
+	// UpsertRule stores or updates a permission rule.
+	UpsertRule(ctx context.Context, rule domain.PermissionRule) (domain.PermissionRule, error)
+
+	// ListRules returns active rules for a permission.
+	ListRules(ctx context.Context, permission domain.Permission) ([]domain.PermissionRule, error)
+}
