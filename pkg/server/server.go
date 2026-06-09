@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	assetshttp "github.com/niflaot/gamehub-go/module/assets/adapter/http"
+	forumshttp "github.com/niflaot/gamehub-go/module/forums/adapter/http"
 	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
 	userhttp "github.com/niflaot/gamehub-go/module/user/adapter/http"
@@ -35,6 +36,7 @@ type options struct {
 	assets                *assetshttp.Services
 	auth                  *auth.Config
 	authProvisioner       auth.Provisioner
+	forums                *forumshttp.Services
 	groups                *groupshttp.Services
 	metadata              *metadatahttp.Services
 	rateLimitStore        ratelimit.Store
@@ -60,6 +62,13 @@ func WithIdempotencyStore(store idempotency.RedisStore) Option {
 func WithAssets(services assetshttp.Services) Option {
 	return func(options *options) {
 		options.assets = &services
+	}
+}
+
+// WithForums registers forum routes with services.
+func WithForums(services forumshttp.Services) Option {
+	return func(options *options) {
+		options.forums = &services
 	}
 }
 
@@ -130,6 +139,9 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	}
 	if options.groups != nil {
 		groupshttp.Register(v1, *options.groups)
+	}
+	if options.forums != nil {
+		forumshttp.Register(v1, *options.forums)
 	}
 	if options.users != nil && options.auth != nil && options.authProvisioner != nil {
 		userhttp.Register(v1, *options.users, auth.Middleware(*options.auth, nil, options.authProvisioner, auth.MiddlewareConfig{Development: development, Log: log}))

@@ -49,3 +49,29 @@ func TestOperationExistsNormalizesFiberParameters(t *testing.T) {
 		t.Fatalf("OperationExists() = false, want true")
 	}
 }
+
+// TestForumMilestoneOneOperationsExist verifies forum structure routes are documented.
+func TestForumMilestoneOneOperationsExist(t *testing.T) {
+	tests := []struct {
+		method string
+		path   string
+	}{
+		{method: "GET", path: "/api/v1/forums/tree"},
+		{method: "POST", path: "/api/v1/forum-categories"},
+		{method: "POST", path: "/api/v1/forum-categories/reorder"},
+		{method: "PATCH", path: "/api/v1/forum-categories/:category_id"},
+		{method: "POST", path: "/api/v1/forums"},
+		{method: "POST", path: "/api/v1/forums/reorder"},
+		{method: "POST", path: "/api/v1/forums/:forum_id/move"},
+	}
+
+	for _, tt := range tests {
+		ok, err := OperationExists(tt.method, tt.path)
+		if err != nil {
+			t.Fatalf("OperationExists(%q, %q) error = %v", tt.method, tt.path, err)
+		}
+		if !ok {
+			t.Fatalf("OperationExists(%q, %q) = false, want true", tt.method, tt.path)
+		}
+	}
+}

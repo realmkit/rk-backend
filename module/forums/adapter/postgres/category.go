@@ -1,0 +1,113 @@
+package postgres
+
+import (
+	"context"
+	"errors"
+
+	"github.com/google/uuid"
+	"github.com/niflaot/gamehub-go/module/forums/domain"
+	"github.com/niflaot/gamehub-go/module/forums/port"
+	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"gorm.io/gorm"
+)
+
+// CategoryRepository stores forum categories in PostgreSQL.
+type CategoryRepository struct {
+	store orm.Store
+}
+
+// NewCategoryRepository creates a category repository.
+func NewCategoryRepository(store orm.Store) CategoryRepository {
+	return CategoryRepository{store: store}
+}
+
+// Create stores a category.
+func (repository CategoryRepository) Create(ctx context.Context, category domain.ForumCategory) (domain.ForumCategory, error) {
+	model := categoryModelFromDomain(category)
+	if err := repository.store.DB(ctx).Create(&model).Error; err != nil {
+		return domain.ForumCategory{}, port.ErrConflict
+	}
+	return categoryFromModel(model), nil
+}
+
+// Update stores mutable category fields.
+func (repository CategoryRepository) Update(ctx context.Context, category domain.ForumCategory, expectedVersion uint64) (domain.ForumCategory, error) {
+	result := repository.store.DB(ctx).Model(&CategoryModel{}).Where("id = ? AND version = ?", category.ID, expectedVersion).Updates(map[string]any{"key": string(category.Key), "name": category.Name, "description": category.Description, "display_order": category.DisplayOrder, "status": string(category.Status), "version": expectedVersion + 1})
+	if result.Error != nil {
+		return domain.ForumCategory{}, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return domain.ForumCategory{}, port.ErrPreconditionFailed
+	}
+	return repository.FindByID(ctx, category.ID)
+}
+
+// FindByID returns one category.
+func (repository CategoryRepository) FindByID(ctx context.Context, id uuid.UUID) (domain.ForumCategory, error) {
+	var model CategoryModel
+	if err := repository.store.DB(ctx).First(&model, "id = ?", id).Error; err != nil {
+		return domain.ForumCategory{}, mapError(err)
+	}
+	return categoryFromModel(model), nil
+}
+
+// List returns matching categories.
+func (repository CategoryRepository) List(ctx context.Context, filter port.CategoryFilter, page pagination.Page) (pagination.Result[domain.ForumCategory], error) {
+	query := repository.store.DB(ctx).Model(&CategoryModel{}).Order("display_order asc, id asc").Limit(page.Limit + 1)
+	if filter.Status != "" {
+		query = query.Where("status = ?", filter.Status)
+	}
+	var models []CategoryModel
+	if err := query.Find(&models).Error; err != nil {
+		return pagination.Result[domain.ForumCategory]{}, err
+	}
+	return categoryPage(models, page.Limit), nil
+}
+
+// Delete soft deletes one category.
+func (repository CategoryRepository) Delete(ctx context.Context, id uuid.UUID, expectedVersion uint64) error {
+	result := repository.store.DB(ctx).Where("id = ? AND version = ?", id, expectedVersion).Delete(&CategoryModel{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return port.ErrPreconditionFailed
+	}
+	return nil
+}
+
+// Reorder updates category display order.
+func (repository CategoryRepository) Reorder(ctx context.Context, items []port.ReorderItem) error {
+	for _, item := range items {
+		if err := repository.store.DB(ctx).Model(&CategoryModel{}).Where("id = ?", item.ID).Update("display_order", item.DisplayOrder).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// categoryPage maps models into a page.
+func categoryPage(models []CategoryModel, limit int) pagination.Result[domain.ForumCategory] {
+	next := ""
+	if len(models) > limit {
+		next = models[limit-1].ID.ID.String()
+		models = models[:limit]
+	}
+	items := make([]domain.ForumCategory, 0, len(models))
+	for _, model := range models {
+		items = append(items, categoryFromModel(model))
+	}
+	return pagination.Result[domain.ForumCategory]{Items: items, NextCursor: next}
+}
+
+// mapError maps GORM errors into forum errors.
+func mapError(err error) error {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return port.ErrNotFound
+	}
+	return err
+}
+
+// Ensure CategoryRepository implements port.CategoryRepository.
+var _ port.CategoryRepository = CategoryRepository{}

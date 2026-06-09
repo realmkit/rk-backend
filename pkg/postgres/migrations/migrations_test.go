@@ -19,8 +19,8 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if len(migrations) != 4 {
-		t.Fatalf("len(migrations) = %d, want 4", len(migrations))
+	if len(migrations) != 5 {
+		t.Fatalf("len(migrations) = %d, want 5", len(migrations))
 	}
 	if migrations[0].Version != 1 || migrations[0].Name != "create_metadata_tables" {
 		t.Fatalf("migration[0] = %+v, want metadata version 1", migrations[0])
@@ -33,6 +33,9 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	}
 	if migrations[3].Version != 4 || migrations[3].Name != "create_user_tables" {
 		t.Fatalf("migration[3] = %+v, want users version 4", migrations[3])
+	}
+	if migrations[4].Version != 5 || migrations[4].Name != "create_forum_tables" {
+		t.Fatalf("migration[4] = %+v, want forums version 5", migrations[4])
 	}
 }
 
@@ -64,8 +67,8 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Up() error = %v", err)
 	}
-	if len(status.Applied) != 4 || len(status.Pending) != 0 {
-		t.Fatalf("Status = %+v, want four applied and no pending", status)
+	if len(status.Applied) != 5 || len(status.Pending) != 0 {
+		t.Fatalf("Status = %+v, want five applied and no pending", status)
 	}
 	if !db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table missing")
@@ -78,6 +81,15 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	}
 	if !db.Migrator().HasTable("users") {
 		t.Fatalf("users table missing")
+	}
+	if !db.Migrator().HasTable("forums") {
+		t.Fatalf("forums table missing")
+	}
+	if !db.Migrator().HasTable("forum_categories") {
+		t.Fatalf("forum_categories table missing")
+	}
+	if !db.Migrator().HasTable("forum_stats") {
+		t.Fatalf("forum_stats table missing")
 	}
 }
 
@@ -151,12 +163,12 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	status, err := runner.Down(context.Background(), 4)
+	status, err := runner.Down(context.Background(), 5)
 	if err != nil {
 		t.Fatalf("Down() error = %v", err)
 	}
-	if len(status.Applied) != 0 || len(status.Pending) != 4 {
-		t.Fatalf("Status = %+v, want no applied and four pending", status)
+	if len(status.Applied) != 0 || len(status.Pending) != 5 {
+		t.Fatalf("Status = %+v, want no applied and five pending", status)
 	}
 	if db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table exists after Down()")
@@ -169,6 +181,9 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 	}
 	if db.Migrator().HasTable("users") {
 		t.Fatalf("users table exists after Down()")
+	}
+	if db.Migrator().HasTable("forums") {
+		t.Fatalf("forums table exists after Down()")
 	}
 }
 

@@ -10,6 +10,10 @@ import (
 	assetshttp "github.com/niflaot/gamehub-go/module/assets/adapter/http"
 	assetspostgres "github.com/niflaot/gamehub-go/module/assets/adapter/postgres"
 	assetsapp "github.com/niflaot/gamehub-go/module/assets/application"
+	forumshttp "github.com/niflaot/gamehub-go/module/forums/adapter/http"
+	forumspostgres "github.com/niflaot/gamehub-go/module/forums/adapter/postgres"
+	forumsredis "github.com/niflaot/gamehub-go/module/forums/adapter/redis"
+	forumsapp "github.com/niflaot/gamehub-go/module/forums/application"
 	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
 	groupspostgres "github.com/niflaot/gamehub-go/module/groups/adapter/postgres"
 	groupsapp "github.com/niflaot/gamehub-go/module/groups/application"
@@ -324,6 +328,7 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 	assetRepository := assetspostgres.NewAssetRepository(orm.NewStore(db))
 	assetService := assetsapp.NewService(assetRepository, assetStorage, cfg.Storage.Bucket)
 	groupService := groupsService(db)
+	forumService := forumsService(db, client)
 	userService := usersService(db, cfg)
 	options = append(options,
 		server.WithIdempotencyStore(idempotency.NewRedisStore(client)),
@@ -331,6 +336,7 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 		server.WithAuth(cfg.Auth, userService),
 		server.WithAssets(assetshttpServices(assetService)),
 		server.WithGroups(groupshttpServices(groupService)),
+		server.WithForums(forumshttpServices(forumService)),
 		server.WithUsers(usershttpServices(userService, groupService)),
 	)
 	return options, func(log *zap.Logger) {
@@ -339,6 +345,23 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 			log.Error("close redis failed", zap.Error(err))
 		}
 	}, nil
+}
+
+// forumsService creates forums application service.
+func forumsService(db *gorm.DB, client *goredis.Client) forumsapp.Service {
+	store := orm.NewStore(db)
+	return forumsapp.NewService(forumsapp.Dependencies{
+		Categories:   forumspostgres.NewCategoryRepository(store),
+		Forums:       forumspostgres.NewForumRepository(store),
+		Authorizer:   forumspostgres.NewVisibilityAuthorizer(store),
+		Cache:        forumsredis.NewTreeCache(client),
+		Transactions: transaction.New(db),
+	})
+}
+
+// forumshttpServices creates HTTP services for forums.
+func forumshttpServices(forumService forumsapp.Service) forumshttp.Services {
+	return forumshttp.Services{Forums: forumService}
 }
 
 // usersService creates users application service.

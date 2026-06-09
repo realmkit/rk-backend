@@ -35,6 +35,10 @@
     {
       "name": "users",
       "description": "Local GameHub users and current-user profile routes."
+    },
+    {
+      "name": "forums",
+      "description": "Forum categories, forum tree, and forum structure administration."
     }
   ],
   "paths": {
@@ -2387,6 +2391,619 @@
           }
         }
       }
+    },
+    "/api/v1/forums/tree": {
+      "get": {
+        "operationId": "getForumTree",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Get visible forum tree",
+        "description": "Returns categories and forums visible to the optional current actor. Anonymous requests match public forum grants.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Visible forum tree",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumTree"
+                }
+              }
+            }
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/forum-categories": {
+      "get": {
+        "operationId": "listForumCategories",
+        "tags": [
+          "forums"
+        ],
+        "summary": "List forum categories",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forum categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ForumCategory"
+                      }
+                    },
+                    "next_page_token": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createForumCategory",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Create forum category",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForumCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created forum category",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumCategory"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/forum-categories/reorder": {
+      "post": {
+        "operationId": "reorderForumCategories",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Reorder forum categories",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/forum-categories/{category_id}": {
+      "get": {
+        "operationId": "getForumCategory",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Get forum category",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forum category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumCategory"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateForumCategory",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Update forum category",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForumCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated forum category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumCategory"
+                }
+              }
+            }
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteForumCategory",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Delete forum category",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        }
+      }
+    },
+    "/api/v1/forums": {
+      "get": {
+        "operationId": "listForums",
+        "tags": [
+          "forums"
+        ],
+        "summary": "List forums",
+        "responses": {
+          "200": {
+            "description": "Forums",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Forum"
+                      }
+                    },
+                    "next_page_token": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createForum",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Create forum",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForumRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created forum",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forum"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          }
+        }
+      }
+    },
+    "/api/v1/forums/reorder": {
+      "post": {
+        "operationId": "reorderForums",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Reorder forums",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          }
+        }
+      }
+    },
+    "/api/v1/forums/{forum_id}": {
+      "get": {
+        "operationId": "getForum",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Get forum",
+        "parameters": [
+          {
+            "name": "forum_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forum",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forum"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateForum",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Update forum",
+        "parameters": [
+          {
+            "name": "forum_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForumRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated forum",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forum"
+                }
+              }
+            }
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteForum",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Delete forum",
+        "parameters": [
+          {
+            "name": "forum_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          }
+        }
+      }
+    },
+    "/api/v1/forums/{forum_id}/move": {
+      "post": {
+        "operationId": "moveForum",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Move forum",
+        "parameters": [
+          {
+            "name": "forum_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForumMoveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Moved forum",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Forum"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4464,6 +5081,421 @@
           "evaluated_at": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "ForumCategoryStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "hidden",
+          "archived"
+        ]
+      },
+      "ForumKind": {
+        "type": "string",
+        "enum": [
+          "discussion",
+          "link",
+          "container"
+        ]
+      },
+      "ForumStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "hidden",
+          "archived"
+        ]
+      },
+      "ThreadVisibilityMode": {
+        "type": "string",
+        "enum": [
+          "all_threads",
+          "own_threads",
+          "own_or_sticky_threads"
+        ]
+      },
+      "ForumCategory": {
+        "type": "object",
+        "required": [
+          "id",
+          "key",
+          "name",
+          "description",
+          "display_order",
+          "status",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "$ref": "#/components/schemas/MachineKey"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "display_order": {
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ForumCategoryStatus"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ForumCategoryRequest": {
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "display_order"
+        ],
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/MachineKey"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/ForumCategoryStatus"
+          }
+        }
+      },
+      "Forum": {
+        "type": "object",
+        "required": [
+          "id",
+          "category_id",
+          "kind",
+          "key",
+          "slug",
+          "name",
+          "description",
+          "display_order",
+          "path",
+          "depth",
+          "external_url",
+          "thread_visibility_mode",
+          "max_sticky_threads",
+          "default_thread_status",
+          "status",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parent_forum_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ForumKind"
+          },
+          "key": {
+            "$ref": "#/components/schemas/MachineKey"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "display_order": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "depth": {
+            "type": "integer"
+          },
+          "external_url": {
+            "type": "string"
+          },
+          "icon_asset_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "thread_visibility_mode": {
+            "$ref": "#/components/schemas/ThreadVisibilityMode"
+          },
+          "max_sticky_threads": {
+            "type": "integer"
+          },
+          "default_thread_status": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ForumStatus"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ForumRequest": {
+        "type": "object",
+        "required": [
+          "category_id",
+          "kind",
+          "key",
+          "slug",
+          "name",
+          "display_order"
+        ],
+        "properties": {
+          "category_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parent_forum_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ForumKind"
+          },
+          "key": {
+            "$ref": "#/components/schemas/MachineKey"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "external_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "icon_asset_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "thread_visibility_mode": {
+            "$ref": "#/components/schemas/ThreadVisibilityMode"
+          },
+          "max_sticky_threads": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "default_thread_status": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ForumStatus"
+          }
+        }
+      },
+      "ForumMoveRequest": {
+        "type": "object",
+        "required": [
+          "category_id",
+          "display_order"
+        ],
+        "properties": {
+          "category_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parent_forum_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "display_order": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ForumStats": {
+        "type": "object",
+        "required": [
+          "forum_id",
+          "thread_count",
+          "visible_thread_count",
+          "post_count",
+          "visible_post_count",
+          "updated_at"
+        ],
+        "properties": {
+          "forum_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "thread_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "visible_thread_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "post_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "visible_post_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "latest_thread_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "latest_post_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "latest_post_author_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "latest_post_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ForumNode": {
+        "type": "object",
+        "required": [
+          "forum",
+          "stats",
+          "children"
+        ],
+        "properties": {
+          "forum": {
+            "$ref": "#/components/schemas/Forum"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/ForumStats"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumNode"
+            }
+          }
+        }
+      },
+      "ForumTree": {
+        "type": "object",
+        "required": [
+          "categories"
+        ],
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "category",
+                "forums"
+              ],
+              "properties": {
+                "category": {
+                  "$ref": "#/components/schemas/ForumCategory"
+                },
+                "forums": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ForumNode"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ReorderRequest": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "display_order"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "display_order": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
           }
         }
       },
