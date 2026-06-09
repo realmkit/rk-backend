@@ -3,6 +3,7 @@ package config
 import (
 	"strings"
 
+	"github.com/niflaot/gamehub-go/pkg/api/auth"
 	"github.com/niflaot/gamehub-go/pkg/api/cors"
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/postgres"
@@ -33,6 +34,9 @@ type Config struct {
 
 	// CORS contains browser cross-origin settings.
 	CORS cors.Config `mapstructure:"cors"`
+
+	// Auth contains OAuth and OIDC settings.
+	Auth auth.Config `mapstructure:"auth"`
 }
 
 // Runtime contains the essential runtime settings required to start GameHub.

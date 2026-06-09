@@ -27,6 +27,14 @@
     {
       "name": "permissions",
       "description": "Zanzibar-style permission checks."
+    },
+    {
+      "name": "auth",
+      "description": "Authentication configuration and identity provider integration."
+    },
+    {
+      "name": "users",
+      "description": "Local GameHub users and current-user profile routes."
     }
   ],
   "paths": {
@@ -1309,11 +1317,11 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
-          "406": {
-            "$ref": "#/components/responses/NotAcceptable"
-          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
@@ -2149,6 +2157,236 @@
           }
         }
       }
+    },
+    "/api/v1/auth/config": {
+      "get": {
+        "operationId": "getAuthConfig",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Get public auth configuration",
+        "description": "Returns frontend-safe OAuth and OIDC configuration for the single configured identity provider.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AuthConfig"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "tags": [
+          "users"
+        ],
+        "summary": "Get current user",
+        "description": "Requires bearer authentication. In development only, X-GameHub-Dev-User-ID can be used when development bypass is enabled.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AuthorizationHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CurrentUser"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateCurrentUser",
+        "tags": [
+          "users"
+        ],
+        "summary": "Update current user local settings",
+        "description": "Updates local GameHub user settings only. Provider-owned username, email, credentials, MFA, and login identifiers cannot be updated here.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AuthorizationHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCurrentUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/User"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/identity/account-url": {
+      "get": {
+        "operationId": "getCurrentUserIdentityAccountURL",
+        "tags": [
+          "users"
+        ],
+        "summary": "Get provider account URL",
+        "description": "Returns a provider account settings URL when supported by the configured provider. GameHub does not update provider-owned identity fields directly.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/AuthorizationHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProviderAccountURL"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2448,6 +2686,25 @@
           "type": "string",
           "format": "uuid"
         }
+      },
+      "AuthorizationHeader": {
+        "name": "Authorization",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Bearer access token."
+      },
+      "DevUserIDHeader": {
+        "name": "X-GameHub-Dev-User-ID",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "Development-only local user bypass header. Ignored outside development and not a production auth mechanism."
       }
     },
     "requestBodies": {
@@ -2978,6 +3235,66 @@
       },
       "Forbidden": {
         "description": "Permission was denied",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "AuthConfig": {
+        "description": "Public auth configuration",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AuthConfig"
+            }
+          }
+        }
+      },
+      "CurrentUser": {
+        "description": "Current user response",
+        "headers": {
+          "ETag": {
+            "$ref": "#/components/headers/ETag"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CurrentUser"
+            }
+          }
+        }
+      },
+      "User": {
+        "description": "User response",
+        "headers": {
+          "ETag": {
+            "$ref": "#/components/headers/ETag"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/User"
+            }
+          }
+        }
+      },
+      "ProviderAccountURL": {
+        "description": "Provider account URL response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProviderAccountURL"
+            }
+          }
+        }
+      },
+      "PreconditionRequired": {
+        "description": "A required precondition header is missing",
         "content": {
           "application/problem+json": {
             "schema": {
@@ -4177,6 +4494,181 @@
             "$ref": "#/components/schemas/AuthorizationRelation"
           }
         }
+      },
+      "UserStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "disabled",
+          "pending_profile"
+        ]
+      },
+      "AuthConfig": {
+        "type": "object",
+        "required": [
+          "provider",
+          "issuer_url",
+          "audience",
+          "client_id",
+          "scopes"
+        ],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "examples": [
+              "generic_oidc",
+              "logto",
+              "keycloak"
+            ]
+          },
+          "issuer_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "audience": {
+            "type": "string"
+          },
+          "client_id": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "first_seen_at",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UserStatus"
+          },
+          "avatar_asset_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "first_seen_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProviderClaimSummary": {
+        "type": "object",
+        "required": [
+          "username",
+          "email",
+          "email_verified",
+          "display_name",
+          "picture_url",
+          "preferred_locale",
+          "claims_hash",
+          "synced_at"
+        ],
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "email_verified": {
+            "type": "boolean"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "picture_url": {
+            "type": "string"
+          },
+          "preferred_locale": {
+            "type": "string"
+          },
+          "claims_hash": {
+            "type": "string"
+          },
+          "synced_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CurrentUser": {
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "provider_claims": {
+            "$ref": "#/components/schemas/ProviderClaimSummary"
+          },
+          "groups": {
+            "$ref": "#/components/schemas/UserGroups"
+          }
+        }
+      },
+      "UpdateCurrentUserRequest": {
+        "type": "object",
+        "properties": {
+          "avatar_asset_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProviderAccountURL": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }

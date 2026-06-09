@@ -47,6 +47,9 @@ func TestLoadUsesTaggedDefaults(t *testing.T) {
 	if !cfg.CORS.Enabled {
 		t.Fatalf("CORS.Enabled = false, want true")
 	}
+	if cfg.Auth.Provider != "generic_oidc" {
+		t.Fatalf("Auth.Provider = %q, want generic_oidc", cfg.Auth.Provider)
+	}
 }
 
 // TestLoadReadsGameHubEnvFile verifies GAMEHUB-prefixed values are loaded from .env files.
@@ -54,7 +57,7 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\nGAMEHUB_LOG_LEVEL=debug\nGAMEHUB_POSTGRES_HOST=db\nGAMEHUB_POSTGRES_PORT=5433\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_POSTGRES_SSL_MODE=require\nGAMEHUB_REDIS_ADDRESS=redis:6379\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\nGAMEHUB_CORS_ALLOW_ORIGINS=https://admin.gamehub.test\n")
+	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\nGAMEHUB_LOG_LEVEL=debug\nGAMEHUB_POSTGRES_HOST=db\nGAMEHUB_POSTGRES_PORT=5433\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_POSTGRES_SSL_MODE=require\nGAMEHUB_REDIS_ADDRESS=redis:6379\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\nGAMEHUB_CORS_ALLOW_ORIGINS=https://admin.gamehub.test\nGAMEHUB_AUTH_ISSUER_URL=https://auth.example.test\nGAMEHUB_AUTH_AUDIENCE=file-api\nGAMEHUB_AUTH_CLIENT_ID=file-frontend\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -94,6 +97,9 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 	if cfg.CORS.AllowOrigins != "https://admin.gamehub.test" {
 		t.Fatalf("CORS.AllowOrigins = %q, want configured origin", cfg.CORS.AllowOrigins)
 	}
+	if cfg.Auth.IssuerURL != "https://auth.example.test" {
+		t.Fatalf("Auth.IssuerURL = %q, want configured issuer", cfg.Auth.IssuerURL)
+	}
 }
 
 // TestLoadEnvironmentOverridesEnvFile verifies operating system environment values have highest precedence.
@@ -101,7 +107,7 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\nGAMEHUB_LOG_LEVEL=info\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\n")
+	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\nGAMEHUB_LOG_LEVEL=info\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\nGAMEHUB_AUTH_ISSUER_URL=https://file-auth.example.test\nGAMEHUB_AUTH_AUDIENCE=file-api\nGAMEHUB_AUTH_CLIENT_ID=file-frontend\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -115,6 +121,7 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "envpass")
 	t.Setenv("GAMEHUB_REDIS_DATABASE", "3")
 	t.Setenv("GAMEHUB_STORAGE_BUCKET", "env-bucket")
+	t.Setenv("GAMEHUB_AUTH_AUDIENCE", "env-api")
 
 	cfg, err := Load(WithEnvFile(path))
 	if err != nil {
@@ -142,6 +149,9 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	if cfg.Storage.Bucket != "env-bucket" {
 		t.Fatalf("Storage.Bucket = %q, want env-bucket", cfg.Storage.Bucket)
 	}
+	if cfg.Auth.Audience != "env-api" {
+		t.Fatalf("Auth.Audience = %q, want env-api", cfg.Auth.Audience)
+	}
 }
 
 // TestLoadWithDisabledEnvFile verifies the loader can run without reading any .env file.
@@ -164,7 +174,7 @@ func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("host=127.0.0.2\nport=6060\nenvironment=local\nlog.level=error\npostgres.database=keydb\npostgres.username=keyuser\npostgres.password=keypass\nstorage.bucket=key-bucket\nstorage.endpoint=http://storage:9000\nstorage.access_key_id=key-access\nstorage.secret_access_key=key-secret\n")
+	content := []byte("host=127.0.0.2\nport=6060\nenvironment=local\nlog.level=error\npostgres.database=keydb\npostgres.username=keyuser\npostgres.password=keypass\nstorage.bucket=key-bucket\nstorage.endpoint=http://storage:9000\nstorage.access_key_id=key-access\nstorage.secret_access_key=key-secret\nauth.issuer_url=https://key-auth.example.test\nauth.audience=key-api\nauth.client_id=key-frontend\n")
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -277,6 +287,12 @@ func clearGameHubEnv(t *testing.T) {
 	t.Setenv("GAMEHUB_STORAGE_PUBLIC_BASE_URL", "")
 	t.Setenv("GAMEHUB_CORS_ENABLED", "")
 	t.Setenv("GAMEHUB_CORS_ALLOW_ORIGINS", "")
+	t.Setenv("GAMEHUB_AUTH_PROVIDER", "")
+	t.Setenv("GAMEHUB_AUTH_ISSUER_URL", "")
+	t.Setenv("GAMEHUB_AUTH_AUDIENCE", "")
+	t.Setenv("GAMEHUB_AUTH_CLIENT_ID", "")
+	t.Setenv("GAMEHUB_AUTH_SCOPES", "")
+	t.Setenv("GAMEHUB_AUTH_DEVELOPMENT_BYPASS", "")
 }
 
 // setRequiredRootEnv sets required root variables for root config tests.
@@ -289,6 +305,9 @@ func setRequiredRootEnv(t *testing.T) {
 	t.Setenv("GAMEHUB_STORAGE_ENDPOINT", "http://localhost:9000")
 	t.Setenv("GAMEHUB_STORAGE_ACCESS_KEY_ID", "gamehub")
 	t.Setenv("GAMEHUB_STORAGE_SECRET_ACCESS_KEY", "gamehub")
+	t.Setenv("GAMEHUB_AUTH_ISSUER_URL", "http://localhost:3001")
+	t.Setenv("GAMEHUB_AUTH_AUDIENCE", "gamehub-api")
+	t.Setenv("GAMEHUB_AUTH_CLIENT_ID", "gamehub-frontend")
 }
 
 // TestSchemaCollectsSquashedFields verifies squashed structs expose root-level GAMEHUB variables.
@@ -303,7 +322,7 @@ func TestSchemaCollectsSquashedFields(t *testing.T) {
 		got = append(got, field.key)
 	}
 
-	want := []string{"host", "port", "environment", "log.level", "postgres.host", "postgres.port", "postgres.database", "postgres.username", "postgres.password", "postgres.ssl_mode", "redis.address", "redis.password", "redis.database", "storage.bucket", "storage.region", "storage.endpoint", "storage.access_key_id", "storage.secret_access_key", "storage.public_base_url", "cors.enabled", "cors.allow_origins"}
+	want := []string{"host", "port", "environment", "log.level", "postgres.host", "postgres.port", "postgres.database", "postgres.username", "postgres.password", "postgres.ssl_mode", "redis.address", "redis.password", "redis.database", "storage.bucket", "storage.region", "storage.endpoint", "storage.access_key_id", "storage.secret_access_key", "storage.public_base_url", "cors.enabled", "cors.allow_origins", "auth.provider", "auth.issuer_url", "auth.audience", "auth.client_id", "auth.scopes", "auth.development_bypass"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fields = %v, want %v", got, want)
 	}

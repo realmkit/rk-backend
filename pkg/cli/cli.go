@@ -13,6 +13,9 @@ import (
 	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
 	groupspostgres "github.com/niflaot/gamehub-go/module/groups/adapter/postgres"
 	groupsapp "github.com/niflaot/gamehub-go/module/groups/application"
+	userhttp "github.com/niflaot/gamehub-go/module/user/adapter/http"
+	userpostgres "github.com/niflaot/gamehub-go/module/user/adapter/postgres"
+	userapp "github.com/niflaot/gamehub-go/module/user/application"
 	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
 	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
 	"github.com/niflaot/gamehub-go/pkg/config"
@@ -23,6 +26,7 @@ import (
 	gamehubredis "github.com/niflaot/gamehub-go/pkg/redis"
 	"github.com/niflaot/gamehub-go/pkg/server"
 	"github.com/niflaot/gamehub-go/pkg/storage"
+	"github.com/niflaot/gamehub-go/pkg/transaction"
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -320,11 +324,14 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 	assetRepository := assetspostgres.NewAssetRepository(orm.NewStore(db))
 	assetService := assetsapp.NewService(assetRepository, assetStorage, cfg.Storage.Bucket)
 	groupService := groupsService(db)
+	userService := usersService(db, cfg)
 	options = append(options,
 		server.WithIdempotencyStore(idempotency.NewRedisStore(client)),
 		server.WithRateLimitStore(ratelimit.NewRedisStore(client)),
+		server.WithAuth(cfg.Auth, userService),
 		server.WithAssets(assetshttpServices(assetService)),
 		server.WithGroups(groupshttpServices(groupService)),
+		server.WithUsers(usershttpServices(userService, groupService)),
 	)
 	return options, func(log *zap.Logger) {
 		closeDatabase(log, deps.closePostgres, db)
@@ -332,6 +339,23 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 			log.Error("close redis failed", zap.Error(err))
 		}
 	}, nil
+}
+
+// usersService creates users application service.
+func usersService(db *gorm.DB, cfg config.Config) userapp.Service {
+	store := orm.NewStore(db)
+	return userapp.NewService(userapp.Dependencies{
+		Users:        userpostgres.NewUserRepository(store),
+		Links:        userpostgres.NewIdentityLinkRepository(store),
+		Claims:       userpostgres.NewClaimCacheRepository(store),
+		Transactions: transaction.New(db),
+		Provider:     cfg.Auth.Provider,
+	})
+}
+
+// usershttpServices creates HTTP services for users.
+func usershttpServices(userService userapp.Service, groupService groupsapp.Service) userhttp.Services {
+	return userhttp.Services{Users: userService, Groups: groupService}
 }
 
 // groupsService creates groups application service.

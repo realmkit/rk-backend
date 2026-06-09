@@ -16,6 +16,10 @@ import (
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
 	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
 	metadataapplication "github.com/niflaot/gamehub-go/module/metadata/application"
+	userhttp "github.com/niflaot/gamehub-go/module/user/adapter/http"
+	userpostgres "github.com/niflaot/gamehub-go/module/user/adapter/postgres"
+	userapplication "github.com/niflaot/gamehub-go/module/user/application"
+	"github.com/niflaot/gamehub-go/pkg/api/auth"
 	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
 	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
@@ -26,6 +30,7 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/orm"
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
+	"github.com/niflaot/gamehub-go/pkg/transaction"
 	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
@@ -42,6 +47,23 @@ func (store denyingRateLimitStore) Allow(context.Context, string, ratelimit.Poli
 		Limit:   1,
 		ResetAt: time.Now().Add(time.Minute),
 	}, nil
+}
+
+// TestNewServesAuthConfig verifies public auth config route wiring.
+func TestNewServesAuthConfig(t *testing.T) {
+	authConfig, userService, userServices := newUserServices(t)
+	app := newApp(t, nil, true, WithAuth(authConfig, userService), WithUsers(userServices))
+	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/auth/config", nil)
+
+	res, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != fiber.StatusOK {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusOK)
+	}
 }
 
 // TestNewRequiresIdempotencyStore verifies server construction requires Redis-backed idempotency.
@@ -278,6 +300,26 @@ func TestRegisteredGroupsRoutesExistInOpenAPI(t *testing.T) {
 	}
 }
 
+// TestRegisteredUserRoutesExistInOpenAPI verifies optional user routes are documented.
+func TestRegisteredUserRoutesExistInOpenAPI(t *testing.T) {
+	authConfig, userService, userServices := newUserServices(t)
+	app := newApp(t, nil, true, WithAuth(authConfig, userService), WithUsers(userServices))
+
+	for _, route := range app.GetRoutes() {
+		if !requiresContract(route) {
+			continue
+		}
+
+		ok, err := openapi.OperationExists(route.Method, route.Path)
+		if err != nil {
+			t.Fatalf("OperationExists() error = %v", err)
+		}
+		if !ok {
+			t.Fatalf("%s %s missing OpenAPI operation", route.Method, route.Path)
+		}
+	}
+}
+
 // requiresContract reports whether route must exist in OpenAPI.
 func requiresContract(route fiber.Route) bool {
 	if route.Method == fiber.MethodHead {
@@ -287,6 +329,9 @@ func requiresContract(route fiber.Route) bool {
 		return false
 	}
 	if route.Path == versioning.V1.Prefix {
+		return false
+	}
+	if route.Path == versioning.V1.Prefix+"/users" {
 		return false
 	}
 	if route.Path == swagger.DocsPath || route.Path == swagger.OpenAPIPath {
@@ -349,4 +394,26 @@ func newGroupsServices(t *testing.T) groupshttp.Services {
 	store := orm.NewStore(db)
 	service := groupsapplication.NewService(groupspostgres.NewGroupRepository(store), groupspostgres.NewMembershipRepository(store), groupspostgres.NewTupleRepository(store))
 	return groupshttp.Services{Groups: service, Memberships: service, Tuples: service, Checker: service}
+}
+
+// newUserServices creates auth config and user services for server tests.
+func newUserServices(t *testing.T) (auth.Config, userapplication.Service, userhttp.Services) {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("gorm.Open() error = %v", err)
+	}
+	if _, err := migrations.NewRunner(db, migrations.DefaultSource()).Up(context.Background()); err != nil {
+		t.Fatalf("Migrate() error = %v", err)
+	}
+	store := orm.NewStore(db)
+	service := userapplication.NewService(userapplication.Dependencies{
+		Users:        userpostgres.NewUserRepository(store),
+		Links:        userpostgres.NewIdentityLinkRepository(store),
+		Claims:       userpostgres.NewClaimCacheRepository(store),
+		Transactions: transaction.New(db),
+		Provider:     "generic_oidc",
+	})
+	config := auth.Config{Provider: "generic_oidc", IssuerURL: "http://localhost:3001", Audience: "gamehub-api", ClientID: "gamehub-frontend", Scopes: "openid profile email", DevelopmentBypass: true}
+	return config, service, userhttp.Services{Users: service}
 }

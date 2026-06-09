@@ -95,8 +95,8 @@ func TestMigrateStatusReportsPendingMigration(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if !strings.Contains(output.String(), "pending=3") {
-		t.Fatalf("output = %q, want pending=3", output.String())
+	if !strings.Contains(output.String(), "pending=4") {
+		t.Fatalf("output = %q, want pending=4", output.String())
 	}
 }
 
@@ -126,24 +126,24 @@ func TestMigrateCommandsApplyValidateAndReset(t *testing.T) {
 	if err != nil {
 		t.Fatalf("up Execute() error = %v", err)
 	}
-	if !strings.Contains(output, "applied=3 pending=0") {
-		t.Fatalf("up output = %q, want applied=3 pending=0", output)
+	if !strings.Contains(output, "applied=4 pending=0") {
+		t.Fatalf("up output = %q, want applied=4 pending=0", output)
 	}
 
 	output, err = executeCommand(t, []string{"migrate", "validate"}, deps)
 	if err != nil {
 		t.Fatalf("validate Execute() error = %v", err)
 	}
-	if !strings.Contains(output, "applied=3 pending=0") {
-		t.Fatalf("validate output = %q, want applied=3 pending=0", output)
+	if !strings.Contains(output, "applied=4 pending=0") {
+		t.Fatalf("validate output = %q, want applied=4 pending=0", output)
 	}
 
 	output, err = executeCommand(t, []string{"migrate", "reset", "--i-understand-this-can-destroy-data"}, deps)
 	if err != nil {
 		t.Fatalf("reset Execute() error = %v", err)
 	}
-	if !strings.Contains(output, "applied=0 pending=3") {
-		t.Fatalf("reset output = %q, want applied=0 pending=3", output)
+	if !strings.Contains(output, "applied=0 pending=4") {
+		t.Fatalf("reset output = %q, want applied=0 pending=4", output)
 	}
 }
 

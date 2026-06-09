@@ -9,6 +9,8 @@ import (
 	assetshttp "github.com/niflaot/gamehub-go/module/assets/adapter/http"
 	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
+	userhttp "github.com/niflaot/gamehub-go/module/user/adapter/http"
+	"github.com/niflaot/gamehub-go/pkg/api/auth"
 	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
 	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
@@ -31,9 +33,12 @@ type options struct {
 	idempotencyConfigured bool
 	idempotencyRedisStore idempotency.RedisStore
 	assets                *assetshttp.Services
+	auth                  *auth.Config
+	authProvisioner       auth.Provisioner
 	groups                *groupshttp.Services
 	metadata              *metadatahttp.Services
 	rateLimitStore        ratelimit.Store
+	users                 *userhttp.Services
 }
 
 // WithCORS configures browser cross-origin middleware.
@@ -58,10 +63,25 @@ func WithAssets(services assetshttp.Services) Option {
 	}
 }
 
+// WithAuth configures public auth routes and protected-route middleware.
+func WithAuth(config auth.Config, provisioner auth.Provisioner) Option {
+	return func(options *options) {
+		options.auth = &config
+		options.authProvisioner = provisioner
+	}
+}
+
 // WithGroups registers groups routes with services.
 func WithGroups(services groupshttp.Services) Option {
 	return func(options *options) {
 		options.groups = &services
+	}
+}
+
+// WithUsers registers user routes with services.
+func WithUsers(services userhttp.Services) Option {
+	return func(options *options) {
+		options.users = &services
 	}
 }
 
@@ -102,11 +122,17 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	v1 := versioning.V1.Group(app)
 	v1.Use(headers.RequireJSON())
 	v1.Get("/health", health)
+	if options.auth != nil {
+		auth.Register(v1, *options.auth)
+	}
 	if options.assets != nil {
 		assetshttp.Register(v1, *options.assets)
 	}
 	if options.groups != nil {
 		groupshttp.Register(v1, *options.groups)
+	}
+	if options.users != nil && options.auth != nil && options.authProvisioner != nil {
+		userhttp.Register(v1, *options.users, auth.Middleware(*options.auth, nil, options.authProvisioner, auth.MiddlewareConfig{Development: development, Log: log}))
 	}
 	if options.metadata != nil {
 		metadatahttp.Register(v1, *options.metadata)
