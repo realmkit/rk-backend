@@ -79,6 +79,12 @@ const (
 
 	// ObjectForumPost is a forum post authorization object.
 	ObjectForumPost ObjectType = "forum_post"
+
+	// ObjectEvent is an event administration authorization object.
+	ObjectEvent ObjectType = "event"
+
+	// ObjectCronJob is a cron job authorization object.
+	ObjectCronJob ObjectType = "cronjob"
 )
 
 const (
@@ -190,6 +196,24 @@ const (
 
 	// PermissionPostsViewRevisions allows reading post revisions.
 	PermissionPostsViewRevisions Permission = "posts.view_revisions"
+
+	// PermissionEventsView allows reading event outbox diagnostics.
+	PermissionEventsView Permission = "events.view"
+
+	// PermissionEventsReplay allows replaying or cancelling events.
+	PermissionEventsReplay Permission = "events.replay"
+
+	// PermissionCronJobsView allows reading cron job status and history.
+	PermissionCronJobsView Permission = "cronjobs.view"
+
+	// PermissionCronJobsManage allows changing cron job schedules.
+	PermissionCronJobsManage Permission = "cronjobs.manage"
+
+	// PermissionCronJobsRun allows manually running cron jobs.
+	PermissionCronJobsRun Permission = "cronjobs.run"
+
+	// PermissionCronJobsRepair allows repairing cron job locks.
+	PermissionCronJobsRepair Permission = "cronjobs.repair"
 )
 
 const (

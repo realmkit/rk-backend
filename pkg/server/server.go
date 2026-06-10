@@ -18,6 +18,8 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/api/problem"
 	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
 	"github.com/niflaot/gamehub-go/pkg/api/swagger"
+	cronhttp "github.com/niflaot/gamehub-go/pkg/cronjob/adapter/http"
+	eventshttp "github.com/niflaot/gamehub-go/pkg/events/adapter/http"
 	"go.uber.org/zap"
 )
 
@@ -35,11 +37,27 @@ type options struct {
 	assets                *assetshttp.Services
 	auth                  *auth.Config
 	authProvisioner       auth.Provisioner
+	cron                  *cronhttp.Services
+	events                *eventshttp.Services
 	forums                *forumshttp.Services
 	groups                *groupshttp.Services
 	metadata              *metadatahttp.Services
 	rateLimitStore        ratelimit.Store
 	users                 *userhttp.Services
+}
+
+// WithEvents registers event routes with services.
+func WithEvents(services eventshttp.Services) Option {
+	return func(options *options) {
+		options.events = &services
+	}
+}
+
+// WithCron registers cron job routes with services.
+func WithCron(services cronhttp.Services) Option {
+	return func(options *options) {
+		options.cron = &services
+	}
 }
 
 // WithCORS configures browser cross-origin middleware.
@@ -135,6 +153,12 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	}
 	if options.assets != nil {
 		assetshttp.Register(api, *options.assets)
+	}
+	if options.events != nil {
+		eventshttp.Register(api, *options.events)
+	}
+	if options.cron != nil {
+		cronhttp.Register(api, *options.cron)
 	}
 	if options.groups != nil {
 		groupshttp.Register(api, *options.groups)

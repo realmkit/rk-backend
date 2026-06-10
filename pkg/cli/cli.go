@@ -111,6 +111,8 @@ func newRootCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command 
 	}
 	cmd.AddCommand(newStartCommand(activeLogger, deps))
 	cmd.AddCommand(newMigrateCommand(activeLogger, deps))
+	cmd.AddCommand(newEventsCommand(activeLogger, deps))
+	cmd.AddCommand(newCronCommand(activeLogger, deps))
 	cmd.AddCommand(newForumsCommand(activeLogger, deps))
 	return cmd
 }
@@ -443,6 +445,12 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 	groupService := groupsService(db)
 	forumService := forumsService(db, client, assetService)
 	userService := usersService(db, cfg)
+	infraOptions, err := infrastructureOptions(ctx, db, client, forumService)
+	if err != nil {
+		closeDatabase(zap.NewNop(), deps.closePostgres, db)
+		deps.closeRedis(client)
+		return nil, nil, err
+	}
 	options = append(options,
 		server.WithIdempotencyStore(idempotency.NewRedisStore(client)),
 		server.WithRateLimitStore(ratelimit.NewRedisStore(client)),
@@ -452,6 +460,7 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 		server.WithForums(forumshttpServices(forumService)),
 		server.WithUsers(usershttpServices(userService, groupService)),
 	)
+	options = append(options, infraOptions...)
 	return options, func(log *zap.Logger) {
 		closeDatabase(log, deps.closePostgres, db)
 		if err := deps.closeRedis(client); err != nil {
