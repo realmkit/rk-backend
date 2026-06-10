@@ -1,2 +1,2 @@
-// Package versioning defines GameHub API versions and route groups.
+// Package versioning documents GameHub's gateway-owned API version boundary.
 package versioning

@@ -21,7 +21,7 @@ import (
 // TestCreateUploadIntentRequiresIdempotency verifies upload intent idempotency headers.
 func TestCreateUploadIntentRequiresIdempotency(t *testing.T) {
 	app := testApp(&httpService{})
-	req := httptestRequest(http.MethodPost, "/api/v1/assets/upload-intents", `{"namespace":"community"}`)
+	req := httptestRequest(http.MethodPost, "/assets/upload-intents", `{"namespace":"community"}`)
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -36,7 +36,7 @@ func TestCreateUploadIntentRequiresIdempotency(t *testing.T) {
 func TestCreateUploadIntentReturnsCreated(t *testing.T) {
 	service := &httpService{asset: testHTTPAsset()}
 	app := testApp(service)
-	req := httptestRequest(http.MethodPost, "/api/v1/assets/upload-intents", `{"namespace":"community","path":"brand","filename":"logo.png","visibility":"public","content_type":"image/png","size_bytes":512}`)
+	req := httptestRequest(http.MethodPost, "/assets/upload-intents", `{"namespace":"community","path":"brand","filename":"logo.png","visibility":"public","content_type":"image/png","size_bytes":512}`)
 	req.Header.Set(headers.IdempotencyKey, "intent-key")
 
 	resp, err := app.Test(req)
@@ -54,7 +54,7 @@ func TestCreateUploadIntentReturnsCreated(t *testing.T) {
 // TestUpdateAssetRequiresIfMatch verifies optimistic concurrency header is required.
 func TestUpdateAssetRequiresIfMatch(t *testing.T) {
 	app := testApp(&httpService{asset: testHTTPAsset()})
-	req := httptestRequest(http.MethodPatch, "/api/v1/assets/"+testHTTPAsset().ID.String(), `{"display_name":"Logo","path":"brand","visibility":"public"}`)
+	req := httptestRequest(http.MethodPatch, "/assets/"+testHTTPAsset().ID.String(), `{"display_name":"Logo","path":"brand","visibility":"public"}`)
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -68,7 +68,7 @@ func TestUpdateAssetRequiresIfMatch(t *testing.T) {
 // TestGetAssetMapsNotFound verifies service not found errors become problem responses.
 func TestGetAssetMapsNotFound(t *testing.T) {
 	app := testApp(&httpService{err: port.ErrNotFound})
-	req := httptestRequest(http.MethodGet, "/api/v1/assets/"+uuid.NewString(), "")
+	req := httptestRequest(http.MethodGet, "/assets/"+uuid.NewString(), "")
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -82,7 +82,7 @@ func TestGetAssetMapsNotFound(t *testing.T) {
 // TestListFoldersReturnsFolders verifies virtual folder responses.
 func TestListFoldersReturnsFolders(t *testing.T) {
 	app := testApp(&httpService{folders: []string{"brand"}})
-	req := httptestRequest(http.MethodGet, "/api/v1/assets/folders?namespace=community", "")
+	req := httptestRequest(http.MethodGet, "/assets/folders?namespace=community", "")
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -109,12 +109,12 @@ func TestAssetRoutesExerciseReadAndMutationPaths(t *testing.T) {
 		status int
 		header map[string]string
 	}{
-		{name: "complete", method: http.MethodPost, path: "/api/v1/assets/" + asset.ID.String() + "/complete", status: fiber.StatusOK, header: map[string]string{headers.IdempotencyKey: "complete-key"}},
-		{name: "get", method: http.MethodGet, path: "/api/v1/assets/" + asset.ID.String(), status: fiber.StatusOK},
-		{name: "url", method: http.MethodGet, path: "/api/v1/assets/" + asset.ID.String() + "/url", status: fiber.StatusOK},
-		{name: "list", method: http.MethodGet, path: "/api/v1/assets?namespace=community&path=brand&path_prefix=brand&status=available&page_size=10", status: fiber.StatusOK},
-		{name: "update", method: http.MethodPatch, path: "/api/v1/assets/" + asset.ID.String(), body: `{"display_name":"Logo","path":"brand","visibility":"public"}`, status: fiber.StatusOK, header: map[string]string{headers.IfMatch: `"1"`}},
-		{name: "delete", method: http.MethodDelete, path: "/api/v1/assets/" + asset.ID.String(), status: fiber.StatusNoContent, header: map[string]string{headers.IfMatch: `"1"`}},
+		{name: "complete", method: http.MethodPost, path: "/assets/" + asset.ID.String() + "/complete", status: fiber.StatusOK, header: map[string]string{headers.IdempotencyKey: "complete-key"}},
+		{name: "get", method: http.MethodGet, path: "/assets/" + asset.ID.String(), status: fiber.StatusOK},
+		{name: "url", method: http.MethodGet, path: "/assets/" + asset.ID.String() + "/url", status: fiber.StatusOK},
+		{name: "list", method: http.MethodGet, path: "/assets?namespace=community&path=brand&path_prefix=brand&status=available&page_size=10", status: fiber.StatusOK},
+		{name: "update", method: http.MethodPatch, path: "/assets/" + asset.ID.String(), body: `{"display_name":"Logo","path":"brand","visibility":"public"}`, status: fiber.StatusOK, header: map[string]string{headers.IfMatch: `"1"`}},
+		{name: "delete", method: http.MethodDelete, path: "/assets/" + asset.ID.String(), status: fiber.StatusNoContent, header: map[string]string{headers.IfMatch: `"1"`}},
 	}
 	for _, tt := range cases {
 		req := httptestRequest(tt.method, tt.path, tt.body)
@@ -134,7 +134,7 @@ func TestAssetRoutesExerciseReadAndMutationPaths(t *testing.T) {
 // testApp creates an assets HTTP test app.
 func testApp(service port.Service) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
-	Register(app.Group("/api/v1"), Services{Assets: service})
+	Register(app, Services{Assets: service})
 	return app
 }
 

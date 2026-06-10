@@ -18,7 +18,6 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/api/problem"
 	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
 	"github.com/niflaot/gamehub-go/pkg/api/swagger"
-	"github.com/niflaot/gamehub-go/pkg/api/versioning"
 	"go.uber.org/zap"
 )
 
@@ -128,28 +127,39 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	app.Use(ratelimit.Middleware(options.rateLimitStore, DefaultRateLimit))
 	app.Use(idempotency.Middleware(options.idempotencyRedisStore, idempotency.WithLogger(log)))
 	app.Get("/health", health)
-	v1 := versioning.V1.Group(app)
-	v1.Use(headers.RequireJSON())
-	v1.Get("/health", health)
+	swagger.Register(app, development)
+
+	api := app.Group("", headers.RequireJSON())
 	if options.auth != nil {
-		auth.Register(v1, *options.auth)
+		auth.Register(api, *options.auth)
 	}
 	if options.assets != nil {
-		assetshttp.Register(v1, *options.assets)
+		assetshttp.Register(api, *options.assets)
 	}
 	if options.groups != nil {
-		groupshttp.Register(v1, *options.groups)
+		groupshttp.Register(api, *options.groups)
 	}
 	if options.forums != nil {
-		forumshttp.Register(v1, *options.forums)
+		forumshttp.Register(api, *options.forums)
 	}
 	if options.users != nil && options.auth != nil && options.authProvisioner != nil {
-		userhttp.Register(v1, *options.users, auth.Middleware(*options.auth, nil, options.authProvisioner, auth.MiddlewareConfig{Development: development, Log: log}))
+		userhttp.Register(
+			api,
+			*options.users,
+			auth.Middleware(
+				*options.auth,
+				nil,
+				options.authProvisioner,
+				auth.MiddlewareConfig{
+					Development: development,
+					Log:         log,
+				},
+			),
+		)
 	}
 	if options.metadata != nil {
-		metadatahttp.Register(v1, *options.metadata)
+		metadatahttp.Register(api, *options.metadata)
 	}
-	swagger.Register(app, development)
 	return app
 }
 

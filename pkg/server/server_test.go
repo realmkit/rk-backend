@@ -26,7 +26,6 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/api/openapi"
 	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
 	"github.com/niflaot/gamehub-go/pkg/api/swagger"
-	"github.com/niflaot/gamehub-go/pkg/api/versioning"
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/orm"
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
@@ -53,7 +52,7 @@ func (store denyingRateLimitStore) Allow(context.Context, string, ratelimit.Poli
 func TestNewServesAuthConfig(t *testing.T) {
 	authConfig, userService, userServices := newUserServices(t)
 	app := newApp(t, nil, true, WithAuth(authConfig, userService), WithUsers(userServices))
-	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/auth/config", nil)
+	req := httptest.NewRequest(fiber.MethodGet, "/auth/config", nil)
 
 	res, err := app.Test(req, -1)
 	if err != nil {
@@ -102,8 +101,8 @@ func TestNewServesHealth(t *testing.T) {
 	}
 }
 
-// TestNewServesVersionedHealth verifies v1 routes are registered centrally.
-func TestNewServesVersionedHealth(t *testing.T) {
+// TestNewRejectsGatewayVersionPrefix verifies GameHub does not own public version prefixes.
+func TestNewRejectsGatewayVersionPrefix(t *testing.T) {
 	app := newApp(t, nil, false)
 	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/health", nil)
 
@@ -113,15 +112,15 @@ func TestNewServesVersionedHealth(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != fiber.StatusNoContent {
-		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusNoContent)
+	if res.StatusCode != fiber.StatusNotFound {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusNotFound)
 	}
 }
 
 // TestNewWritesRequestHeaders verifies common response headers are applied.
 func TestNewWritesRequestHeaders(t *testing.T) {
 	app := newApp(t, nil, false)
-	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/health", nil)
+	req := httptest.NewRequest(fiber.MethodGet, "/health", nil)
 
 	res, err := app.Test(req, -1)
 	if err != nil {
@@ -143,7 +142,7 @@ func TestNewWritesRequestHeaders(t *testing.T) {
 // TestNewAppliesCORS verifies configured browser origins are allowed.
 func TestNewAppliesCORS(t *testing.T) {
 	app := newApp(t, nil, false, WithCORS(gamehubcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000"}))
-	req := httptest.NewRequest(fiber.MethodOptions, "/api/v1/health", nil)
+	req := httptest.NewRequest(fiber.MethodOptions, "/health", nil)
 	req.Header.Set("Origin", "http://localhost:3000")
 	req.Header.Set("Access-Control-Request-Method", fiber.MethodGet)
 
@@ -161,7 +160,7 @@ func TestNewAppliesCORS(t *testing.T) {
 // TestNewUsesInjectedRateLimitStore verifies server options wire custom rate limit stores.
 func TestNewUsesInjectedRateLimitStore(t *testing.T) {
 	app := newApp(t, nil, false, WithRateLimitStore(denyingRateLimitStore{}))
-	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/health", nil)
+	req := httptest.NewRequest(fiber.MethodGet, "/health", nil)
 
 	res, err := app.Test(req, -1)
 	if err != nil {
@@ -328,10 +327,7 @@ func requiresContract(route fiber.Route) bool {
 	if route.Path == "/" {
 		return false
 	}
-	if route.Path == versioning.V1.Prefix {
-		return false
-	}
-	if route.Path == versioning.V1.Prefix+"/users" {
+	if route.Path == "/users" {
 		return false
 	}
 	if route.Path == swagger.DocsPath || route.Path == swagger.OpenAPIPath {

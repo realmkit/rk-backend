@@ -138,8 +138,8 @@ func TestValidatorValidatesRS256Token(t *testing.T) {
 // TestRegisterServesPublicConfig verifies auth config route.
 func TestRegisterServesPublicConfig(t *testing.T) {
 	app := fiber.New()
-	Register(app.Group("/api/v1"), Config{Provider: "logto", IssuerURL: "https://auth.example", Audience: "api", ClientID: "client", Scopes: "openid"})
-	res, err := app.Test(httptest.NewRequest(http.MethodGet, "/api/v1/auth/config", nil))
+	Register(app, Config{Provider: "logto", IssuerURL: "https://auth.example", Audience: "api", ClientID: "client", Scopes: "openid"})
+	res, err := app.Test(httptest.NewRequest(http.MethodGet, "/auth/config", nil))
 	if err != nil {
 		t.Fatalf("Test() error = %v", err)
 	}

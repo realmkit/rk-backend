@@ -22,7 +22,7 @@ import (
 func TestCurrentUserRouteReturnsUser(t *testing.T) {
 	userID := uuid.New()
 	app := testApp(userID, &userService{current: testCurrentUser(userID)})
-	res, err := app.Test(testRequest(http.MethodGet, "/api/v1/users/me", ""))
+	res, err := app.Test(testRequest(http.MethodGet, "/users/me", ""))
 	if err != nil {
 		t.Fatalf("Test() error = %v", err)
 	}
@@ -35,7 +35,7 @@ func TestCurrentUserRouteReturnsUser(t *testing.T) {
 func TestUpdateCurrentUserRequiresIdempotency(t *testing.T) {
 	userID := uuid.New()
 	app := testApp(userID, &userService{user: domain.User{ID: userID, Status: domain.StatusActive, FirstSeenAt: time.Now().UTC(), Version: 1}})
-	res, err := app.Test(testRequest(http.MethodPatch, "/api/v1/users/me", `{}`))
+	res, err := app.Test(testRequest(http.MethodPatch, "/users/me", `{}`))
 	if err != nil {
 		t.Fatalf("Test() error = %v", err)
 	}
@@ -49,7 +49,7 @@ func TestUpdateCurrentUserReturnsUpdatedUser(t *testing.T) {
 	userID := uuid.New()
 	avatarID := uuid.New()
 	app := testApp(userID, &userService{user: domain.User{ID: userID, Status: domain.StatusActive, AvatarAssetID: &avatarID, FirstSeenAt: time.Now().UTC(), Version: 2}})
-	req := testRequest(http.MethodPatch, "/api/v1/users/me", `{"avatar_asset_id":"`+avatarID.String()+`"}`)
+	req := testRequest(http.MethodPatch, "/users/me", `{"avatar_asset_id":"`+avatarID.String()+`"}`)
 	req.Header.Set(headers.IdempotencyKey, "update")
 	req.Header.Set(headers.IfMatch, `"1"`)
 	res, err := app.Test(req)
@@ -66,7 +66,7 @@ func TestUpdateCurrentUserReturnsUpdatedUser(t *testing.T) {
 func TestAccountURLUnavailableMapsProblem(t *testing.T) {
 	userID := uuid.New()
 	app := testApp(userID, &userService{current: testCurrentUser(userID)})
-	res, err := app.Test(testRequest(http.MethodGet, "/api/v1/users/me/identity/account-url", ""))
+	res, err := app.Test(testRequest(http.MethodGet, "/users/me/identity/account-url", ""))
 	if err != nil {
 		t.Fatalf("Test() error = %v", err)
 	}
@@ -79,7 +79,7 @@ func TestAccountURLUnavailableMapsProblem(t *testing.T) {
 func TestCurrentUserMapsNotFound(t *testing.T) {
 	userID := uuid.New()
 	app := testApp(userID, &userService{err: userport.ErrNotFound})
-	res, err := app.Test(testRequest(http.MethodGet, "/api/v1/users/me", ""))
+	res, err := app.Test(testRequest(http.MethodGet, "/users/me", ""))
 	if err != nil {
 		t.Fatalf("Test() error = %v", err)
 	}
@@ -92,7 +92,7 @@ func TestCurrentUserMapsNotFound(t *testing.T) {
 func TestUpdateCurrentUserRejectsInvalidJSON(t *testing.T) {
 	userID := uuid.New()
 	app := testApp(userID, &userService{user: domain.User{ID: userID, Status: domain.StatusActive, FirstSeenAt: time.Now().UTC(), Version: 1}})
-	req := testRequest(http.MethodPatch, "/api/v1/users/me", `{"avatar_asset_id":`)
+	req := testRequest(http.MethodPatch, "/users/me", `{"avatar_asset_id":`)
 	req.Header.Set(headers.IdempotencyKey, "update")
 	req.Header.Set(headers.IfMatch, `"1"`)
 	res, err := app.Test(req)
@@ -111,7 +111,7 @@ func testApp(userID uuid.UUID, service *userService) *fiber.App {
 		principal.Set(ctx, principal.Principal{UserID: userID, Issuer: "test", SubjectHash: "hash"})
 		return ctx.Next()
 	}
-	Register(app.Group("/api/v1"), Services{Users: service}, authenticate)
+	Register(app, Services{Users: service}, authenticate)
 	return app
 }
 

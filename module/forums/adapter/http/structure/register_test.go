@@ -18,7 +18,7 @@ import (
 // TestStructureRoutesExerciseHandlers verifies structure route wiring.
 func TestStructureRoutesExerciseHandlers(t *testing.T) {
 	app := fiber.New()
-	Register(app.Group("/api/v1"), Services{
+	Register(app, Services{
 		Structure: structureService{},
 		Admin:     adminService{},
 	})
@@ -63,25 +63,25 @@ func structureRoutes() []structureRoute {
 	settingsBody := `{"thread_visibility_mode":"all_threads","max_sticky_threads":3,"default_thread_status":"open"}`
 	permissionsBody := `{"viewers":[{"subject_type":"public"}]}`
 	return []structureRoute{
-		{method: http.MethodGet, path: "/api/v1/forums/tree", status: fiber.StatusOK},
-		{method: http.MethodPost, path: "/api/v1/forum-categories", body: categoryBody, status: fiber.StatusCreated, idempotent: true},
-		{method: http.MethodGet, path: "/api/v1/forum-categories", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forum-categories/" + categoryID, status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/api/v1/forum-categories/" + categoryID, body: categoryBody, status: fiber.StatusOK, idempotent: true, versioned: true},
-		{method: http.MethodDelete, path: "/api/v1/forum-categories/" + categoryID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
-		{method: http.MethodPost, path: "/api/v1/forum-categories/reorder", body: `{"items":[]}`, status: fiber.StatusNoContent, idempotent: true},
-		{method: http.MethodPost, path: "/api/v1/forums", body: forumBody, status: fiber.StatusCreated, idempotent: true},
-		{method: http.MethodGet, path: "/api/v1/forums", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums/" + forumID + "/settings", status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/api/v1/forums/" + forumID + "/settings", body: settingsBody, status: fiber.StatusOK, idempotent: true, versioned: true},
-		{method: http.MethodGet, path: "/api/v1/forums/" + forumID + "/permissions", status: fiber.StatusOK},
-		{method: http.MethodPut, path: "/api/v1/forums/" + forumID + "/permissions", body: permissionsBody, status: fiber.StatusNoContent, idempotent: true},
-		{method: http.MethodPost, path: "/api/v1/forums/" + forumID + "/permissions/simulate", body: `{"permission":"forums.view","object_type":"forum"}`, status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums/" + forumID, status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/api/v1/forums/" + forumID, body: forumBody, status: fiber.StatusOK, idempotent: true, versioned: true},
-		{method: http.MethodDelete, path: "/api/v1/forums/" + forumID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
-		{method: http.MethodPost, path: "/api/v1/forums/" + forumID + "/move", body: `{"category_id":"` + uuid.NewString() + `"}`, status: fiber.StatusOK, idempotent: true, versioned: true},
-		{method: http.MethodPost, path: "/api/v1/forums/reorder", body: `{"items":[]}`, status: fiber.StatusNoContent, idempotent: true},
+		{method: http.MethodGet, path: "/forums/tree", status: fiber.StatusOK},
+		{method: http.MethodPost, path: "/forum-categories", body: categoryBody, status: fiber.StatusCreated, idempotent: true},
+		{method: http.MethodGet, path: "/forum-categories", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forum-categories/" + categoryID, status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/forum-categories/" + categoryID, body: categoryBody, status: fiber.StatusOK, idempotent: true, versioned: true},
+		{method: http.MethodDelete, path: "/forum-categories/" + categoryID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
+		{method: http.MethodPost, path: "/forum-categories/reorder", body: `{"items":[]}`, status: fiber.StatusNoContent, idempotent: true},
+		{method: http.MethodPost, path: "/forums", body: forumBody, status: fiber.StatusCreated, idempotent: true},
+		{method: http.MethodGet, path: "/forums", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/" + forumID + "/settings", status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/forums/" + forumID + "/settings", body: settingsBody, status: fiber.StatusOK, idempotent: true, versioned: true},
+		{method: http.MethodGet, path: "/forums/" + forumID + "/permissions", status: fiber.StatusOK},
+		{method: http.MethodPut, path: "/forums/" + forumID + "/permissions", body: permissionsBody, status: fiber.StatusNoContent, idempotent: true},
+		{method: http.MethodPost, path: "/forums/" + forumID + "/permissions/simulate", body: `{"permission":"forums.view","object_type":"forum"}`, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/" + forumID, status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/forums/" + forumID, body: forumBody, status: fiber.StatusOK, idempotent: true, versioned: true},
+		{method: http.MethodDelete, path: "/forums/" + forumID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
+		{method: http.MethodPost, path: "/forums/" + forumID + "/move", body: `{"category_id":"` + uuid.NewString() + `"}`, status: fiber.StatusOK, idempotent: true, versioned: true},
+		{method: http.MethodPost, path: "/forums/reorder", body: `{"items":[]}`, status: fiber.StatusNoContent, idempotent: true},
 	}
 }
 

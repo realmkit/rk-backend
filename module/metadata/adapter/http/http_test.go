@@ -26,7 +26,7 @@ import (
 func TestCreateDefinitionReturnsCreated(t *testing.T) {
 	app := newTestApp(t)
 	body := []byte(`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text","rules":{"max_length":80}}`)
-	req := httptest.NewRequest(fiber.MethodPost, "/api/v1/metadata/metafield-definitions", bytes.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPost, "/metadata/metafield-definitions", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "create-definition")
 
@@ -48,7 +48,7 @@ func TestCreateDefinitionReturnsCreated(t *testing.T) {
 func TestCreateDefinitionRequiresIdempotencyKey(t *testing.T) {
 	app := newTestApp(t)
 	body := []byte(`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text"}`)
-	req := httptest.NewRequest(fiber.MethodPost, "/api/v1/metadata/metafield-definitions", bytes.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPost, "/metadata/metafield-definitions", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 
 	res, err := app.Test(req, -1)
@@ -143,7 +143,7 @@ func TestSetValueReturnsCanonicalValue(t *testing.T) {
 	createDefinition(t, app)
 	ownerID := "4d8decb9-2e4a-4cc7-9d76-5ee74a2dbad8"
 	body := []byte(`{"value":"Ready"}`)
-	req := httptest.NewRequest(fiber.MethodPut, "/api/v1/metadata/owners/user/"+ownerID+"/metafields/profile/motto", bytes.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPut, "/metadata/owners/user/"+ownerID+"/metafields/profile/motto", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "set-value")
 
@@ -174,7 +174,7 @@ func TestValueLifecycleExercisesReadListAndDelete(t *testing.T) {
 	value := setOwnerValue(t, app, ownerID, "Ready")
 	version := uint64(value["version"].(float64))
 
-	listReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/owners/user/"+ownerID+"/metafields?namespace=profile&include_empty=false", nil)
+	listReq := httptest.NewRequest(fiber.MethodGet, "/metadata/owners/user/"+ownerID+"/metafields?namespace=profile&include_empty=false", nil)
 	listRes, err := app.Test(listReq, -1)
 	if err != nil {
 		t.Fatalf("list values Test() error = %v", err)
@@ -184,7 +184,7 @@ func TestValueLifecycleExercisesReadListAndDelete(t *testing.T) {
 		t.Fatalf("list values StatusCode = %d, want %d", listRes.StatusCode, fiber.StatusOK)
 	}
 
-	getReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/owners/user/"+ownerID+"/metafields/profile/motto", nil)
+	getReq := httptest.NewRequest(fiber.MethodGet, "/metadata/owners/user/"+ownerID+"/metafields/profile/motto", nil)
 	getRes, err := app.Test(getReq, -1)
 	if err != nil {
 		t.Fatalf("get value Test() error = %v", err)
@@ -194,7 +194,7 @@ func TestValueLifecycleExercisesReadListAndDelete(t *testing.T) {
 		t.Fatalf("get value StatusCode = %d, want %d", getRes.StatusCode, fiber.StatusOK)
 	}
 
-	deleteReq := httptest.NewRequest(fiber.MethodDelete, "/api/v1/metadata/owners/user/"+ownerID+"/metafields/profile/motto", nil)
+	deleteReq := httptest.NewRequest(fiber.MethodDelete, "/metadata/owners/user/"+ownerID+"/metafields/profile/motto", nil)
 	deleteReq.Header.Set(headers.IfMatch, quoteVersion(version))
 	deleteRes, err := app.Test(deleteReq, -1)
 	if err != nil {
@@ -212,7 +212,7 @@ func TestSetValueValidationFailureReturnsProblem(t *testing.T) {
 	createDefinition(t, app)
 	ownerID := "4d8decb9-2e4a-4cc7-9d76-5ee74a2dbad8"
 	body := []byte("{\"value\":\"line\\nbreak\"}")
-	req := httptest.NewRequest(fiber.MethodPut, "/api/v1/metadata/owners/user/"+ownerID+"/metafields/profile/motto", bytes.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPut, "/metadata/owners/user/"+ownerID+"/metafields/profile/motto", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "set-invalid-value")
 
@@ -237,7 +237,7 @@ func TestDefinitionLifecycleExercisesReadUpdateDelete(t *testing.T) {
 	id := created["id"].(string)
 	version := uint64(created["version"].(float64))
 
-	listReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/metafield-definitions?owner_type=user", nil)
+	listReq := httptest.NewRequest(fiber.MethodGet, "/metadata/metafield-definitions?owner_type=user", nil)
 	listRes, err := app.Test(listReq, -1)
 	if err != nil {
 		t.Fatalf("list Test() error = %v", err)
@@ -247,7 +247,7 @@ func TestDefinitionLifecycleExercisesReadUpdateDelete(t *testing.T) {
 		t.Fatalf("list StatusCode = %d, want %d", listRes.StatusCode, fiber.StatusOK)
 	}
 
-	getReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/metafield-definitions/"+id, nil)
+	getReq := httptest.NewRequest(fiber.MethodGet, "/metadata/metafield-definitions/"+id, nil)
 	getRes, err := app.Test(getReq, -1)
 	if err != nil {
 		t.Fatalf("get Test() error = %v", err)
@@ -257,7 +257,7 @@ func TestDefinitionLifecycleExercisesReadUpdateDelete(t *testing.T) {
 		t.Fatalf("get StatusCode = %d, want %d", getRes.StatusCode, fiber.StatusOK)
 	}
 
-	patchReq := httptest.NewRequest(fiber.MethodPatch, "/api/v1/metadata/metafield-definitions/"+id, bytes.NewReader([]byte(`{"name":"Public Motto"}`)))
+	patchReq := httptest.NewRequest(fiber.MethodPatch, "/metadata/metafield-definitions/"+id, bytes.NewReader([]byte(`{"name":"Public Motto"}`)))
 	patchReq.Header.Set(headers.ContentType, "application/json")
 	patchReq.Header.Set(headers.IfMatch, quoteVersion(version))
 	patchRes, err := app.Test(patchReq, -1)
@@ -269,7 +269,7 @@ func TestDefinitionLifecycleExercisesReadUpdateDelete(t *testing.T) {
 		t.Fatalf("patch StatusCode = %d, want %d", patchRes.StatusCode, fiber.StatusOK)
 	}
 
-	deleteReq := httptest.NewRequest(fiber.MethodDelete, "/api/v1/metadata/metafield-definitions/"+id, nil)
+	deleteReq := httptest.NewRequest(fiber.MethodDelete, "/metadata/metafield-definitions/"+id, nil)
 	deleteReq.Header.Set(headers.IfMatch, quoteVersion(version+1))
 	deleteRes, err := app.Test(deleteReq, -1)
 	if err != nil {
@@ -285,7 +285,7 @@ func TestDefinitionLifecycleExercisesReadUpdateDelete(t *testing.T) {
 func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	app := newTestApp(t)
 	body := []byte(`{"type":"profile_card","name":"Profile Card","fields":[{"key":"motto","name":"Motto","value_type":"single_line_text","required":true}]}`)
-	req := httptest.NewRequest(fiber.MethodPost, "/api/v1/metadata/metaobject-definitions", bytes.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPost, "/metadata/metaobject-definitions", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "create-metaobject-definition")
 	res, err := app.Test(req, -1)
@@ -300,7 +300,7 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	definitionID := definition["id"].(string)
 	definitionVersion := uint64(definition["version"].(float64))
 
-	definitionListReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/metaobject-definitions?type=profile_card&active=true", nil)
+	definitionListReq := httptest.NewRequest(fiber.MethodGet, "/metadata/metaobject-definitions?type=profile_card&active=true", nil)
 	definitionListRes, err := app.Test(definitionListReq, -1)
 	if err != nil {
 		t.Fatalf("list definitions Test() error = %v", err)
@@ -310,7 +310,7 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 		t.Fatalf("list definitions StatusCode = %d, want %d", definitionListRes.StatusCode, fiber.StatusOK)
 	}
 
-	definitionGetReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/metaobject-definitions/"+definitionID, nil)
+	definitionGetReq := httptest.NewRequest(fiber.MethodGet, "/metadata/metaobject-definitions/"+definitionID, nil)
 	definitionGetRes, err := app.Test(definitionGetReq, -1)
 	if err != nil {
 		t.Fatalf("get definition Test() error = %v", err)
@@ -321,7 +321,7 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	}
 
 	definitionPatchBody := []byte(`{"name":"Profile Card Updated","description":"Shown on profiles","active":true}`)
-	definitionPatchReq := httptest.NewRequest(fiber.MethodPatch, "/api/v1/metadata/metaobject-definitions/"+definitionID, bytes.NewReader(definitionPatchBody))
+	definitionPatchReq := httptest.NewRequest(fiber.MethodPatch, "/metadata/metaobject-definitions/"+definitionID, bytes.NewReader(definitionPatchBody))
 	definitionPatchReq.Header.Set(headers.ContentType, "application/json")
 	definitionPatchReq.Header.Set(headers.IfMatch, quoteVersion(definitionVersion))
 	definitionPatchRes, err := app.Test(definitionPatchReq, -1)
@@ -336,7 +336,7 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	definitionVersion = uint64(patchedDefinition["version"].(float64))
 
 	entryBody := []byte(`{"handle":"first_card","display_name":"First Card","fields":{"motto":"Ready"}}`)
-	entryReq := httptest.NewRequest(fiber.MethodPost, "/api/v1/metadata/metaobject-definitions/"+definitionID+"/entries", bytes.NewReader(entryBody))
+	entryReq := httptest.NewRequest(fiber.MethodPost, "/metadata/metaobject-definitions/"+definitionID+"/entries", bytes.NewReader(entryBody))
 	entryReq.Header.Set(headers.ContentType, "application/json")
 	entryReq.Header.Set(headers.IdempotencyKey, "create-metaobject-entry")
 	entryRes, err := app.Test(entryReq, -1)
@@ -351,7 +351,7 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	entryID := entry["id"].(string)
 	entryVersion := uint64(entry["version"].(float64))
 
-	listReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/metaobject-definitions/"+definitionID+"/entries", nil)
+	listReq := httptest.NewRequest(fiber.MethodGet, "/metadata/metaobject-definitions/"+definitionID+"/entries", nil)
 	listRes, err := app.Test(listReq, -1)
 	if err != nil {
 		t.Fatalf("list entries Test() error = %v", err)
@@ -361,7 +361,7 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 		t.Fatalf("list entries StatusCode = %d, want %d", listRes.StatusCode, fiber.StatusOK)
 	}
 
-	getEntryReq := httptest.NewRequest(fiber.MethodGet, "/api/v1/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID, nil)
+	getEntryReq := httptest.NewRequest(fiber.MethodGet, "/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID, nil)
 	getEntryRes, err := app.Test(getEntryReq, -1)
 	if err != nil {
 		t.Fatalf("get entry Test() error = %v", err)
@@ -371,7 +371,7 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 		t.Fatalf("get entry StatusCode = %d, want %d", getEntryRes.StatusCode, fiber.StatusOK)
 	}
 
-	patchReq := httptest.NewRequest(fiber.MethodPatch, "/api/v1/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID, bytes.NewReader([]byte(`{"display_name":"Updated Card","fields":{"motto":"Still ready"}}`)))
+	patchReq := httptest.NewRequest(fiber.MethodPatch, "/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID, bytes.NewReader([]byte(`{"display_name":"Updated Card","fields":{"motto":"Still ready"}}`)))
 	patchReq.Header.Set(headers.ContentType, "application/json")
 	patchReq.Header.Set(headers.IfMatch, quoteVersion(entryVersion))
 	patchRes, err := app.Test(patchReq, -1)
@@ -385,7 +385,7 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	patchedEntry := decodeObject(t, patchRes)
 	entryVersion = uint64(patchedEntry["version"].(float64))
 
-	deleteEntryReq := httptest.NewRequest(fiber.MethodDelete, "/api/v1/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID, nil)
+	deleteEntryReq := httptest.NewRequest(fiber.MethodDelete, "/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID, nil)
 	deleteEntryReq.Header.Set(headers.IfMatch, quoteVersion(entryVersion))
 	deleteEntryRes, err := app.Test(deleteEntryReq, -1)
 	if err != nil {
@@ -396,7 +396,7 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 		t.Fatalf("delete entry StatusCode = %d, want %d", deleteEntryRes.StatusCode, fiber.StatusNoContent)
 	}
 
-	deleteDefinitionReq := httptest.NewRequest(fiber.MethodDelete, "/api/v1/metadata/metaobject-definitions/"+definitionID, nil)
+	deleteDefinitionReq := httptest.NewRequest(fiber.MethodDelete, "/metadata/metaobject-definitions/"+definitionID, nil)
 	deleteDefinitionReq.Header.Set(headers.IfMatch, quoteVersion(definitionVersion))
 	deleteDefinitionRes, err := app.Test(deleteDefinitionReq, -1)
 	if err != nil {
@@ -427,7 +427,7 @@ func newTestApp(t *testing.T) *fiber.App {
 	})
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	app.Use(headers.Middleware())
-	v1 := app.Group("/api/v1")
+	v1 := app
 	v1.Use(headers.RequireJSON())
 	Register(v1, Services{Definitions: service, Values: service, Metaobjects: service})
 	return app
@@ -458,7 +458,7 @@ func createDefinitionPayload(t *testing.T, app *fiber.App) map[string]any {
 func createDefinitionResponse(t *testing.T, app *fiber.App) *http.Response {
 	t.Helper()
 	body := []byte(`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text"}`)
-	req := httptest.NewRequest(fiber.MethodPost, "/api/v1/metadata/metafield-definitions", bytes.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPost, "/metadata/metafield-definitions", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "create-definition")
 	res, err := app.Test(req, -1)
@@ -475,7 +475,7 @@ func setOwnerValue(t *testing.T, app *fiber.App, ownerID string, value string) m
 	if err != nil {
 		t.Fatalf("Marshal() error = %v", err)
 	}
-	req := httptest.NewRequest(fiber.MethodPut, "/api/v1/metadata/owners/user/"+ownerID+"/metafields/profile/motto", bytes.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPut, "/metadata/owners/user/"+ownerID+"/metafields/profile/motto", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "set-value-"+ownerID)
 	res, err := app.Test(req, -1)

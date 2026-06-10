@@ -7,24 +7,24 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// TestV1DefinesVersionPrefix verifies v1 is centrally defined.
-func TestV1DefinesVersionPrefix(t *testing.T) {
-	if V1.Name != "v1" {
-		t.Fatalf("Name = %q, want %q", V1.Name, "v1")
+// TestServiceDefinesUnversionedPrefix verifies GameHub does not own public version prefixes.
+func TestServiceDefinesUnversionedPrefix(t *testing.T) {
+	if Service.Name != "gateway-owned" {
+		t.Fatalf("Name = %q, want %q", Service.Name, "gateway-owned")
 	}
-	if V1.Prefix != "/api/v1" {
-		t.Fatalf("Prefix = %q, want %q", V1.Prefix, "/api/v1")
+	if Service.Prefix != "" {
+		t.Fatalf("Prefix = %q, want empty", Service.Prefix)
 	}
 }
 
-// TestGroupScopesRoutes verifies routes are registered under the version prefix.
+// TestGroupScopesRoutes verifies routes are registered without a service prefix.
 func TestGroupScopesRoutes(t *testing.T) {
 	app := fiber.New()
-	V1.Group(app).Get("/test", func(ctx *fiber.Ctx) error {
+	Service.Group(app).Get("/test", func(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusNoContent)
 	})
 
-	res, err := app.Test(httptest.NewRequest(fiber.MethodGet, "/api/v1/test", nil), -1)
+	res, err := app.Test(httptest.NewRequest(fiber.MethodGet, "/test", nil), -1)
 	if err != nil {
 		t.Fatalf("Test() error = %v", err)
 	}

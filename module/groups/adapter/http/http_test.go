@@ -19,7 +19,7 @@ import (
 // TestCreateGroupRequiresIdempotency verifies mutating routes require idempotency.
 func TestCreateGroupRequiresIdempotency(t *testing.T) {
 	app := testApp(&httpService{})
-	req := testRequest(http.MethodPost, "/api/v1/groups", `{"key":"admin"}`)
+	req := testRequest(http.MethodPost, "/groups", `{"key":"admin"}`)
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -41,11 +41,11 @@ func TestGroupRoutesExerciseLifecycle(t *testing.T) {
 		status int
 		header map[string]string
 	}{
-		{method: http.MethodPost, path: "/api/v1/groups", body: `{"key":"admin","name":"Admin","color":"#ff0000","weight":100,"status":"active"}`, status: fiber.StatusCreated, header: map[string]string{headers.IdempotencyKey: "create"}},
-		{method: http.MethodGet, path: "/api/v1/groups", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/groups/" + group.ID.String(), status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/api/v1/groups/" + group.ID.String(), body: `{"name":"Admin","color":"#ff0000","weight":100,"status":"active"}`, status: fiber.StatusOK, header: map[string]string{headers.IdempotencyKey: "update", headers.IfMatch: `"1"`}},
-		{method: http.MethodDelete, path: "/api/v1/groups/" + group.ID.String(), status: fiber.StatusNoContent, header: map[string]string{headers.IdempotencyKey: "delete", headers.IfMatch: `"1"`}},
+		{method: http.MethodPost, path: "/groups", body: `{"key":"admin","name":"Admin","color":"#ff0000","weight":100,"status":"active"}`, status: fiber.StatusCreated, header: map[string]string{headers.IdempotencyKey: "create"}},
+		{method: http.MethodGet, path: "/groups", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/groups/" + group.ID.String(), status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/groups/" + group.ID.String(), body: `{"name":"Admin","color":"#ff0000","weight":100,"status":"active"}`, status: fiber.StatusOK, header: map[string]string{headers.IdempotencyKey: "update", headers.IfMatch: `"1"`}},
+		{method: http.MethodDelete, path: "/groups/" + group.ID.String(), status: fiber.StatusNoContent, header: map[string]string{headers.IdempotencyKey: "delete", headers.IfMatch: `"1"`}},
 	}
 	for _, tt := range cases {
 		req := testRequest(tt.method, tt.path, tt.body)
@@ -75,12 +75,12 @@ func TestMembershipAndPermissionRoutes(t *testing.T) {
 		status int
 		header map[string]string
 	}{
-		{method: http.MethodGet, path: "/api/v1/groups/" + group.ID.String() + "/members", status: fiber.StatusOK},
-		{method: http.MethodPut, path: "/api/v1/groups/" + group.ID.String() + "/members/" + userID.String(), body: `{"status":"active"}`, status: fiber.StatusOK, header: map[string]string{headers.IdempotencyKey: "assign"}},
-		{method: http.MethodDelete, path: "/api/v1/groups/" + group.ID.String() + "/members/" + userID.String(), status: fiber.StatusNoContent, header: map[string]string{headers.IdempotencyKey: "remove", headers.IfMatch: `"1"`}},
-		{method: http.MethodGet, path: "/api/v1/users/" + userID.String() + "/groups", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/users/me/groups", status: fiber.StatusOK, header: map[string]string{currentUserIDHeader: userID.String()}},
-		{method: http.MethodPost, path: "/api/v1/permissions/check", body: `{"actor_user_id":"` + userID.String() + `","permission":"groups.read","object_type":"group","object_id":"` + group.ID.String() + `"}`, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/groups/" + group.ID.String() + "/members", status: fiber.StatusOK},
+		{method: http.MethodPut, path: "/groups/" + group.ID.String() + "/members/" + userID.String(), body: `{"status":"active"}`, status: fiber.StatusOK, header: map[string]string{headers.IdempotencyKey: "assign"}},
+		{method: http.MethodDelete, path: "/groups/" + group.ID.String() + "/members/" + userID.String(), status: fiber.StatusNoContent, header: map[string]string{headers.IdempotencyKey: "remove", headers.IfMatch: `"1"`}},
+		{method: http.MethodGet, path: "/users/" + userID.String() + "/groups", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/users/me/groups", status: fiber.StatusOK, header: map[string]string{currentUserIDHeader: userID.String()}},
+		{method: http.MethodPost, path: "/permissions/check", body: `{"actor_user_id":"` + userID.String() + `","permission":"groups.read","object_type":"group","object_id":"` + group.ID.String() + `"}`, status: fiber.StatusOK},
 	}
 	for _, tt := range cases {
 		req := testRequest(tt.method, tt.path, tt.body)
@@ -101,7 +101,7 @@ func TestMembershipAndPermissionRoutes(t *testing.T) {
 // TestGetGroupMapsNotFound verifies problem mapping.
 func TestGetGroupMapsNotFound(t *testing.T) {
 	app := testApp(&httpService{err: port.ErrNotFound})
-	resp, err := app.Test(testRequest(http.MethodGet, "/api/v1/groups/"+uuid.NewString(), ""))
+	resp, err := app.Test(testRequest(http.MethodGet, "/groups/"+uuid.NewString(), ""))
 	if err != nil {
 		t.Fatalf("Test() error = %v", err)
 	}
@@ -113,7 +113,7 @@ func TestGetGroupMapsNotFound(t *testing.T) {
 // testApp creates a groups HTTP app.
 func testApp(service *httpService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
-	Register(app.Group("/api/v1"), Services{Groups: service, Memberships: service, Tuples: service, Checker: service})
+	Register(app, Services{Groups: service, Memberships: service, Tuples: service, Checker: service})
 	return app
 }
 

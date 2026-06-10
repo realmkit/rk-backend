@@ -18,7 +18,7 @@ import (
 // TestContentRoutesExerciseHandlers verifies content route wiring and response codes.
 func TestContentRoutesExerciseHandlers(t *testing.T) {
 	app := fiber.New()
-	Register(app.Group("/api/v1"), Services{
+	Register(app, Services{
 		Content:     contentService{},
 		Interaction: interactionService{},
 		Operations:  operationsService{},
@@ -61,27 +61,27 @@ func contentRoutes() []contentRoute {
 	threadID := uuid.NewString()
 	postID := uuid.NewString()
 	return []contentRoute{
-		{method: http.MethodGet, path: "/api/v1/forums/latest-posts", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums/search?query=hello", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums/unread-summary", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums/" + forumID + "/threads", status: fiber.StatusOK},
-		{method: http.MethodPost, path: "/api/v1/forums/" + forumID + "/threads", body: `{"title":"Hello","content_document_json":{"type":"doc"}}`, status: fiber.StatusCreated, idempotent: true},
-		{method: http.MethodGet, path: "/api/v1/forums/" + forumID + "/latest-posts", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums/" + forumID + "/posts/most-liked", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums/" + forumID + "/search?query=hello", status: fiber.StatusOK},
-		{method: http.MethodPost, path: "/api/v1/forums/" + forumID + "/read", status: fiber.StatusNoContent, idempotent: true},
-		{method: http.MethodGet, path: "/api/v1/threads/" + threadID, status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/api/v1/threads/" + threadID, body: `{"title":"Next"}`, status: fiber.StatusOK, idempotent: true, versioned: true},
-		{method: http.MethodDelete, path: "/api/v1/threads/" + threadID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
-		{method: http.MethodGet, path: "/api/v1/threads/" + threadID + "/posts", status: fiber.StatusOK},
-		{method: http.MethodPost, path: "/api/v1/threads/" + threadID + "/posts", body: `{"content_document_json":{"type":"doc"}}`, status: fiber.StatusCreated, idempotent: true},
-		{method: http.MethodPost, path: "/api/v1/threads/" + threadID + "/read", body: `{}`, status: fiber.StatusOK, idempotent: true},
-		{method: http.MethodGet, path: "/api/v1/posts/" + postID, status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/api/v1/posts/" + postID, body: `{"content_document_json":{"type":"doc"}}`, status: fiber.StatusOK, idempotent: true, versioned: true},
-		{method: http.MethodDelete, path: "/api/v1/posts/" + postID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
-		{method: http.MethodPut, path: "/api/v1/posts/" + postID + "/like", status: fiber.StatusOK, idempotent: true},
-		{method: http.MethodDelete, path: "/api/v1/posts/" + postID + "/like", status: fiber.StatusOK, idempotent: true},
-		{method: http.MethodGet, path: "/api/v1/posts/" + postID + "/revisions", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/latest-posts", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/search?query=hello", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/unread-summary", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/" + forumID + "/threads", status: fiber.StatusOK},
+		{method: http.MethodPost, path: "/forums/" + forumID + "/threads", body: `{"title":"Hello","content_document_json":{"type":"doc"}}`, status: fiber.StatusCreated, idempotent: true},
+		{method: http.MethodGet, path: "/forums/" + forumID + "/latest-posts", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/" + forumID + "/posts/most-liked", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/" + forumID + "/search?query=hello", status: fiber.StatusOK},
+		{method: http.MethodPost, path: "/forums/" + forumID + "/read", status: fiber.StatusNoContent, idempotent: true},
+		{method: http.MethodGet, path: "/threads/" + threadID, status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/threads/" + threadID, body: `{"title":"Next"}`, status: fiber.StatusOK, idempotent: true, versioned: true},
+		{method: http.MethodDelete, path: "/threads/" + threadID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
+		{method: http.MethodGet, path: "/threads/" + threadID + "/posts", status: fiber.StatusOK},
+		{method: http.MethodPost, path: "/threads/" + threadID + "/posts", body: `{"content_document_json":{"type":"doc"}}`, status: fiber.StatusCreated, idempotent: true},
+		{method: http.MethodPost, path: "/threads/" + threadID + "/read", body: `{}`, status: fiber.StatusOK, idempotent: true},
+		{method: http.MethodGet, path: "/posts/" + postID, status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/posts/" + postID, body: `{"content_document_json":{"type":"doc"}}`, status: fiber.StatusOK, idempotent: true, versioned: true},
+		{method: http.MethodDelete, path: "/posts/" + postID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
+		{method: http.MethodPut, path: "/posts/" + postID + "/like", status: fiber.StatusOK, idempotent: true},
+		{method: http.MethodDelete, path: "/posts/" + postID + "/like", status: fiber.StatusOK, idempotent: true},
+		{method: http.MethodGet, path: "/posts/" + postID + "/revisions", status: fiber.StatusOK},
 	}
 }
 

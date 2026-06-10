@@ -62,6 +62,6 @@ go run ./pkg/cmd
 
 ## API
 
-API versions are defined in `pkg/api/versioning`. The current public version is `versioning.V1`, which owns the `/api/v1` route prefix.
+GameHub exposes unversioned service routes such as `/forums/tree`, `/assets`, and `/users/me`. Public API versioning is owned by the API gateway, which should publish versioned external paths and rewrite them to the service routes.
 
 OpenAPI is embedded from `pkg/api/openapi/gamehub.v1.json`. In development, Swagger UI is served at `/docs` and the raw OpenAPI contract is served at `/docs/openapi.json`.

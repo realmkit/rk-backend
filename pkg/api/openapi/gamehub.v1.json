@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "/api/v1"
+      "url": "/"
     }
   ],
   "tags": [
@@ -37,8 +37,32 @@
       "description": "Local GameHub users and current-user profile routes."
     },
     {
+      "name": "forum-categories",
+      "description": "Forum category structure and ordering."
+    },
+    {
       "name": "forums",
-      "description": "Forum categories, forum tree, and forum structure administration."
+      "description": "Forum tree and forum node management."
+    },
+    {
+      "name": "forum-threads",
+      "description": "Forum thread creation, listing, and lifecycle."
+    },
+    {
+      "name": "forum-posts",
+      "description": "Thread post timelines, replies, revisions, and post lifecycle."
+    },
+    {
+      "name": "forum-interactions",
+      "description": "Forum likes, latest posts, most-liked posts, and read state."
+    },
+    {
+      "name": "forum-search",
+      "description": "Forum-scoped and global forum search."
+    },
+    {
+      "name": "forum-admin",
+      "description": "Forum settings, permissions, and permission simulation."
     }
   ],
   "paths": {
@@ -77,42 +101,7 @@
         }
       }
     },
-    "/api/v1/health": {
-      "get": {
-        "operationId": "getV1Health",
-        "tags": [
-          "health"
-        ],
-        "summary": "Check versioned backend health",
-        "security": [],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/AcceptHeader"
-          },
-          {
-            "$ref": "#/components/parameters/RequestIdHeader"
-          },
-          {
-            "$ref": "#/components/parameters/CorrelationIdHeader"
-          }
-        ],
-        "responses": {
-          "204": {
-            "$ref": "#/components/responses/NoContent"
-          },
-          "406": {
-            "$ref": "#/components/responses/NotAcceptable"
-          },
-          "429": {
-            "$ref": "#/components/responses/RateLimited"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          }
-        }
-      }
-    },
-    "/api/v1/metadata/metafield-definitions": {
+    "/metadata/metafield-definitions": {
       "post": {
         "operationId": "createMetafieldDefinition",
         "tags": [
@@ -227,7 +216,7 @@
         }
       }
     },
-    "/api/v1/metadata/metafield-definitions/{definition_id}": {
+    "/metadata/metafield-definitions/{definition_id}": {
       "get": {
         "operationId": "getMetafieldDefinition",
         "tags": [
@@ -380,7 +369,7 @@
         }
       }
     },
-    "/api/v1/metadata/owners/{owner_type}/{owner_id}/metafields": {
+    "/metadata/owners/{owner_type}/{owner_id}/metafields": {
       "get": {
         "operationId": "listOwnerMetafields",
         "tags": [
@@ -433,7 +422,7 @@
         }
       }
     },
-    "/api/v1/metadata/owners/{owner_type}/{owner_id}/metafields/{namespace}/{key}": {
+    "/metadata/owners/{owner_type}/{owner_id}/metafields/{namespace}/{key}": {
       "put": {
         "operationId": "setOwnerMetafield",
         "tags": [
@@ -616,7 +605,7 @@
         }
       }
     },
-    "/api/v1/metadata/metaobject-definitions": {
+    "/metadata/metaobject-definitions": {
       "post": {
         "operationId": "createMetaobjectDefinition",
         "tags": [
@@ -720,7 +709,7 @@
         }
       }
     },
-    "/api/v1/metadata/metaobject-definitions/{definition_id}": {
+    "/metadata/metaobject-definitions/{definition_id}": {
       "get": {
         "operationId": "getMetaobjectDefinition",
         "tags": [
@@ -869,7 +858,7 @@
         }
       }
     },
-    "/api/v1/metadata/metaobject-definitions/{definition_id}/entries": {
+    "/metadata/metaobject-definitions/{definition_id}/entries": {
       "post": {
         "operationId": "createMetaobjectEntry",
         "tags": [
@@ -973,7 +962,7 @@
         }
       }
     },
-    "/api/v1/metadata/metaobject-definitions/{definition_id}/entries/{entry_id}": {
+    "/metadata/metaobject-definitions/{definition_id}/entries/{entry_id}": {
       "get": {
         "operationId": "getMetaobjectEntry",
         "tags": [
@@ -1128,7 +1117,7 @@
         }
       }
     },
-    "/api/v1/assets/upload-intents": {
+    "/assets/upload-intents": {
       "post": {
         "operationId": "createAssetUploadIntent",
         "tags": [
@@ -1192,7 +1181,7 @@
         }
       }
     },
-    "/api/v1/assets": {
+    "/assets": {
       "get": {
         "operationId": "listAssets",
         "tags": [
@@ -1248,7 +1237,7 @@
         }
       }
     },
-    "/api/v1/assets/folders": {
+    "/assets/folders": {
       "get": {
         "operationId": "listAssetFolders",
         "tags": [
@@ -1292,7 +1281,7 @@
         }
       }
     },
-    "/api/v1/assets/{asset_id}": {
+    "/assets/{asset_id}": {
       "get": {
         "operationId": "getAsset",
         "tags": [
@@ -1454,7 +1443,7 @@
         }
       }
     },
-    "/api/v1/assets/{asset_id}/url": {
+    "/assets/{asset_id}/url": {
       "get": {
         "operationId": "getAssetURL",
         "tags": [
@@ -1501,7 +1490,7 @@
         }
       }
     },
-    "/api/v1/assets/{asset_id}/complete": {
+    "/assets/{asset_id}/complete": {
       "post": {
         "operationId": "completeAssetUpload",
         "tags": [
@@ -1555,7 +1544,7 @@
         }
       }
     },
-    "/api/v1/groups": {
+    "/groups": {
       "post": {
         "operationId": "createGroup",
         "tags": [
@@ -1664,7 +1653,7 @@
         }
       }
     },
-    "/api/v1/groups/{group_id}": {
+    "/groups/{group_id}": {
       "get": {
         "operationId": "getGroup",
         "tags": [
@@ -1834,7 +1823,7 @@
         }
       }
     },
-    "/api/v1/groups/{group_id}/members": {
+    "/groups/{group_id}/members": {
       "get": {
         "operationId": "listGroupMembers",
         "tags": [
@@ -1884,7 +1873,7 @@
         }
       }
     },
-    "/api/v1/groups/{group_id}/members/{user_id}": {
+    "/groups/{group_id}/members/{user_id}": {
       "put": {
         "operationId": "assignGroupMember",
         "tags": [
@@ -2012,7 +2001,7 @@
         }
       }
     },
-    "/api/v1/users/{user_id}/groups": {
+    "/users/{user_id}/groups": {
       "get": {
         "operationId": "listUserGroups",
         "tags": [
@@ -2056,7 +2045,7 @@
         }
       }
     },
-    "/api/v1/users/me/groups": {
+    "/users/me/groups": {
       "get": {
         "operationId": "listCurrentUserGroups",
         "tags": [
@@ -2101,7 +2090,7 @@
         }
       }
     },
-    "/api/v1/permissions/check": {
+    "/permissions/check": {
       "post": {
         "operationId": "checkPermission",
         "tags": [
@@ -2162,7 +2151,7 @@
         }
       }
     },
-    "/api/v1/auth/config": {
+    "/auth/config": {
       "get": {
         "operationId": "getAuthConfig",
         "tags": [
@@ -2198,7 +2187,7 @@
         }
       }
     },
-    "/api/v1/users/me": {
+    "/users/me": {
       "get": {
         "operationId": "getCurrentUser",
         "tags": [
@@ -2337,7 +2326,7 @@
         }
       }
     },
-    "/api/v1/users/me/identity/account-url": {
+    "/users/me/identity/account-url": {
       "get": {
         "operationId": "getCurrentUserIdentityAccountURL",
         "tags": [
@@ -2392,7 +2381,7 @@
         }
       }
     },
-    "/api/v1/forums/tree": {
+    "/forums/tree": {
       "get": {
         "operationId": "getForumTree",
         "tags": [
@@ -2438,11 +2427,11 @@
         }
       }
     },
-    "/api/v1/forum-categories": {
+    "/forum-categories": {
       "get": {
         "operationId": "listForumCategories",
         "tags": [
-          "forums"
+          "forum-categories"
         ],
         "summary": "List forum categories",
         "parameters": [
@@ -2486,7 +2475,7 @@
       "post": {
         "operationId": "createForumCategory",
         "tags": [
-          "forums"
+          "forum-categories"
         ],
         "summary": "Create forum category",
         "parameters": [
@@ -2544,11 +2533,11 @@
         }
       }
     },
-    "/api/v1/forum-categories/reorder": {
+    "/forum-categories/reorder": {
       "post": {
         "operationId": "reorderForumCategories",
         "tags": [
-          "forums"
+          "forum-categories"
         ],
         "summary": "Reorder forum categories",
         "parameters": [
@@ -2591,11 +2580,11 @@
         }
       }
     },
-    "/api/v1/forum-categories/{category_id}": {
+    "/forum-categories/{category_id}": {
       "get": {
         "operationId": "getForumCategory",
         "tags": [
-          "forums"
+          "forum-categories"
         ],
         "summary": "Get forum category",
         "parameters": [
@@ -2631,7 +2620,7 @@
       "patch": {
         "operationId": "updateForumCategory",
         "tags": [
-          "forums"
+          "forum-categories"
         ],
         "summary": "Update forum category",
         "parameters": [
@@ -2686,7 +2675,7 @@
       "delete": {
         "operationId": "deleteForumCategory",
         "tags": [
-          "forums"
+          "forum-categories"
         ],
         "summary": "Delete forum category",
         "parameters": [
@@ -2722,7 +2711,7 @@
         }
       }
     },
-    "/api/v1/forums": {
+    "/forums": {
       "get": {
         "operationId": "listForums",
         "tags": [
@@ -2797,7 +2786,7 @@
         }
       }
     },
-    "/api/v1/forums/reorder": {
+    "/forums/reorder": {
       "post": {
         "operationId": "reorderForums",
         "tags": [
@@ -2829,7 +2818,7 @@
         }
       }
     },
-    "/api/v1/forums/{forum_id}": {
+    "/forums/{forum_id}": {
       "get": {
         "operationId": "getForum",
         "tags": [
@@ -2948,7 +2937,7 @@
         }
       }
     },
-    "/api/v1/forums/{forum_id}/move": {
+    "/forums/{forum_id}/move": {
       "post": {
         "operationId": "moveForum",
         "tags": [
@@ -3005,11 +2994,11 @@
         }
       }
     },
-    "/api/v1/forums/{forum_id}/threads": {
+    "/forums/{forum_id}/threads": {
       "get": {
         "operationId": "listForumThreads",
         "tags": [
-          "forums"
+          "forum-threads"
         ],
         "summary": "List forum threads",
         "parameters": [
@@ -3070,7 +3059,7 @@
       "post": {
         "operationId": "createForumThread",
         "tags": [
-          "forums"
+          "forum-threads"
         ],
         "summary": "Create forum thread",
         "parameters": [
@@ -3129,11 +3118,11 @@
         }
       }
     },
-    "/api/v1/threads/{thread_id}": {
+    "/threads/{thread_id}": {
       "get": {
         "operationId": "getThread",
         "tags": [
-          "forums"
+          "forum-threads"
         ],
         "summary": "Get thread",
         "parameters": [
@@ -3169,7 +3158,7 @@
       "patch": {
         "operationId": "updateThread",
         "tags": [
-          "forums"
+          "forum-threads"
         ],
         "summary": "Update thread",
         "parameters": [
@@ -3236,7 +3225,7 @@
       "delete": {
         "operationId": "deleteThread",
         "tags": [
-          "forums"
+          "forum-threads"
         ],
         "summary": "Delete thread",
         "parameters": [
@@ -3281,11 +3270,11 @@
         }
       }
     },
-    "/api/v1/threads/{thread_id}/posts": {
+    "/threads/{thread_id}/posts": {
       "get": {
         "operationId": "listThreadPosts",
         "tags": [
-          "forums"
+          "forum-posts"
         ],
         "summary": "List thread posts",
         "parameters": [
@@ -3335,7 +3324,7 @@
       "post": {
         "operationId": "createThreadReply",
         "tags": [
-          "forums"
+          "forum-posts"
         ],
         "summary": "Create thread reply",
         "parameters": [
@@ -3394,11 +3383,11 @@
         }
       }
     },
-    "/api/v1/posts/{post_id}": {
+    "/posts/{post_id}": {
       "get": {
         "operationId": "getPost",
         "tags": [
-          "forums"
+          "forum-posts"
         ],
         "summary": "Get post",
         "parameters": [
@@ -3434,7 +3423,7 @@
       "patch": {
         "operationId": "updatePost",
         "tags": [
-          "forums"
+          "forum-posts"
         ],
         "summary": "Update post",
         "parameters": [
@@ -3501,7 +3490,7 @@
       "delete": {
         "operationId": "deletePost",
         "tags": [
-          "forums"
+          "forum-posts"
         ],
         "summary": "Delete post",
         "parameters": [
@@ -3546,11 +3535,11 @@
         }
       }
     },
-    "/api/v1/posts/{post_id}/revisions": {
+    "/posts/{post_id}/revisions": {
       "get": {
         "operationId": "listPostRevisions",
         "tags": [
-          "forums"
+          "forum-posts"
         ],
         "summary": "List post revisions",
         "parameters": [
@@ -3596,11 +3585,11 @@
         }
       }
     },
-    "/api/v1/posts/{post_id}/like": {
+    "/posts/{post_id}/like": {
       "put": {
         "operationId": "likePost",
         "tags": [
-          "forums"
+          "forum-interactions"
         ],
         "summary": "Like a post",
         "description": "Auth: required. Idempotency-Key: required.",
@@ -3658,7 +3647,7 @@
       "delete": {
         "operationId": "unlikePost",
         "tags": [
-          "forums"
+          "forum-interactions"
         ],
         "summary": "Unlike a post",
         "description": "Auth: required. Idempotency-Key: required.",
@@ -3714,11 +3703,11 @@
         }
       }
     },
-    "/api/v1/forums/latest-posts": {
+    "/forums/latest-posts": {
       "get": {
         "operationId": "listLatestPosts",
         "tags": [
-          "forums"
+          "forum-interactions"
         ],
         "summary": "List latest forum posts",
         "description": "Auth: optional.",
@@ -3774,11 +3763,11 @@
         }
       }
     },
-    "/api/v1/forums/{forum_id}/latest-posts": {
+    "/forums/{forum_id}/latest-posts": {
       "get": {
         "operationId": "listForumLatestPosts",
         "tags": [
-          "forums"
+          "forum-interactions"
         ],
         "summary": "List latest posts in one forum",
         "description": "Auth: optional.",
@@ -3837,11 +3826,11 @@
         }
       }
     },
-    "/api/v1/forums/{forum_id}/posts/most-liked": {
+    "/forums/{forum_id}/posts/most-liked": {
       "get": {
         "operationId": "listMostLikedPosts",
         "tags": [
-          "forums"
+          "forum-interactions"
         ],
         "summary": "List most-liked posts in one forum",
         "description": "Auth: optional.",
@@ -3900,11 +3889,11 @@
         }
       }
     },
-    "/api/v1/threads/{thread_id}/read": {
+    "/threads/{thread_id}/read": {
       "post": {
         "operationId": "markThreadRead",
         "tags": [
-          "forums"
+          "forum-interactions"
         ],
         "summary": "Mark a thread read",
         "description": "Auth: required. Idempotency-Key: required.",
@@ -3970,11 +3959,11 @@
         }
       }
     },
-    "/api/v1/forums/{forum_id}/read": {
+    "/forums/{forum_id}/read": {
       "post": {
         "operationId": "markForumRead",
         "tags": [
-          "forums"
+          "forum-interactions"
         ],
         "summary": "Mark a forum read",
         "description": "Auth: required. Idempotency-Key: required.",
@@ -4023,11 +4012,11 @@
         }
       }
     },
-    "/api/v1/forums/unread-summary": {
+    "/forums/unread-summary": {
       "get": {
         "operationId": "getForumUnreadSummary",
         "tags": [
-          "forums"
+          "forum-interactions"
         ],
         "summary": "Get forum unread summary",
         "description": "Auth: required.",
@@ -4077,11 +4066,11 @@
         }
       }
     },
-    "/api/v1/forums/search": {
+    "/forums/search": {
       "get": {
         "operationId": "searchForums",
         "tags": [
-          "forums"
+          "forum-search"
         ],
         "summary": "Search visible forum content",
         "description": "Auth: optional. Results are filtered to forums visible to the actor.",
@@ -4140,11 +4129,11 @@
         }
       }
     },
-    "/api/v1/forums/{forum_id}/search": {
+    "/forums/{forum_id}/search": {
       "get": {
         "operationId": "searchForum",
         "tags": [
-          "forums"
+          "forum-search"
         ],
         "summary": "Search visible content in one forum",
         "description": "Auth: optional. Results are returned only when the forum is visible to the actor.",
@@ -4206,11 +4195,11 @@
         }
       }
     },
-    "/api/v1/forums/{forum_id}/settings": {
+    "/forums/{forum_id}/settings": {
       "get": {
         "operationId": "getForumSettings",
         "tags": [
-          "forums"
+          "forum-admin"
         ],
         "summary": "Get forum settings",
         "description": "Requires forums.manage_forum for the target forum. Returns behavior settings used by backend enforcement.",
@@ -4268,7 +4257,7 @@
       "patch": {
         "operationId": "updateForumSettings",
         "tags": [
-          "forums"
+          "forum-admin"
         ],
         "summary": "Update forum settings",
         "description": "Requires forums.manage_forum, Idempotency-Key, and If-Match. Changing visibility or policy settings clears forum read caches.",
@@ -4349,11 +4338,11 @@
         }
       }
     },
-    "/api/v1/forums/{forum_id}/permissions": {
+    "/forums/{forum_id}/permissions": {
       "get": {
         "operationId": "getForumPermissions",
         "tags": [
-          "forums"
+          "forum-admin"
         ],
         "summary": "Get forum permission settings",
         "description": "Requires forums.manage_forum. Returns relation grants that power forum visibility and actions.",
@@ -4411,7 +4400,7 @@
       "put": {
         "operationId": "updateForumPermissions",
         "tags": [
-          "forums"
+          "forum-admin"
         ],
         "summary": "Replace forum permission settings",
         "description": "Requires forums.manage_forum and Idempotency-Key. Empty grant arrays disable that relation. User and group grants are validated before storage.",
@@ -4476,11 +4465,11 @@
         }
       }
     },
-    "/api/v1/forums/{forum_id}/permissions/simulate": {
+    "/forums/{forum_id}/permissions/simulate": {
       "post": {
         "operationId": "simulateForumPermission",
         "tags": [
-          "forums"
+          "forum-admin"
         ],
         "summary": "Simulate forum permission",
         "description": "Requires forums.manage_forum. Explains whether the selected actor would be allowed by current forum relation grants.",

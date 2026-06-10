@@ -19,7 +19,7 @@ import (
 // TestTreeAllowsAnonymous verifies the tree route accepts anonymous callers.
 func TestTreeAllowsAnonymous(t *testing.T) {
 	app := newTestApp(httpService{tree: domain.ForumTree{Categories: []domain.CategoryNode{}}})
-	req, _ := http.NewRequest(http.MethodGet, "/api/v1/forums/tree", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/forums/tree", nil)
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -33,7 +33,7 @@ func TestTreeAllowsAnonymous(t *testing.T) {
 // TestCreateCategoryRequiresIdempotency verifies create command headers.
 func TestCreateCategoryRequiresIdempotency(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPost, "/api/v1/forum-categories", bytes.NewBufferString(`{}`))
+	req, _ := http.NewRequest(http.MethodPost, "/forum-categories", bytes.NewBufferString(`{}`))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.Accept, "application/json")
 	req.Header.Set(currentUserIDHeader, uuid.NewString())
@@ -50,7 +50,7 @@ func TestCreateCategoryRequiresIdempotency(t *testing.T) {
 // TestCreateCategoryReturnsCreatedETag verifies successful category creation response metadata.
 func TestCreateCategoryReturnsCreatedETag(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPost, "/api/v1/forum-categories", bytes.NewBufferString(`{"key":"official","name":"Official"}`))
+	req, _ := http.NewRequest(http.MethodPost, "/forum-categories", bytes.NewBufferString(`{"key":"official","name":"Official"}`))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.Accept, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "create-category")
@@ -78,7 +78,7 @@ func TestCreateCategoryReturnsCreatedETag(t *testing.T) {
 // TestCreateCategoryMapsForbidden verifies permission errors become problem responses.
 func TestCreateCategoryMapsForbidden(t *testing.T) {
 	app := newTestApp(httpService{err: port.ErrForbidden})
-	req, _ := http.NewRequest(http.MethodPost, "/api/v1/forum-categories", bytes.NewBufferString(`{"key":"official","name":"Official"}`))
+	req, _ := http.NewRequest(http.MethodPost, "/forum-categories", bytes.NewBufferString(`{"key":"official","name":"Official"}`))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.Accept, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "create-category")
@@ -96,7 +96,7 @@ func TestCreateCategoryMapsForbidden(t *testing.T) {
 // TestTreeRejectsInvalidOptionalUser verifies optional anonymous auth parsing.
 func TestTreeRejectsInvalidOptionalUser(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodGet, "/api/v1/forums/tree", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/forums/tree", nil)
 	req.Header.Set(currentUserIDHeader, "not-a-uuid")
 
 	resp, err := app.Test(req)
@@ -111,7 +111,7 @@ func TestTreeRejectsInvalidOptionalUser(t *testing.T) {
 // TestUpdateForumRequiresIfMatch verifies optimistic concurrency headers.
 func TestUpdateForumRequiresIfMatch(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPatch, "/api/v1/forums/"+uuid.NewString(), bytes.NewBufferString(`{}`))
+	req, _ := http.NewRequest(http.MethodPatch, "/forums/"+uuid.NewString(), bytes.NewBufferString(`{}`))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.Accept, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "key")
@@ -129,7 +129,7 @@ func TestUpdateForumRequiresIfMatch(t *testing.T) {
 // TestCreateThreadReturnsCreated verifies thread creation route response shape.
 func TestCreateThreadReturnsCreated(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPost, "/api/v1/forums/"+uuid.NewString()+"/threads", bytes.NewBufferString(`{"title":"Hello world","slug":"hello-world","content_document_json":{"type":"doc"},"content_text":"Hello"}`))
+	req, _ := http.NewRequest(http.MethodPost, "/forums/"+uuid.NewString()+"/threads", bytes.NewBufferString(`{"title":"Hello world","slug":"hello-world","content_document_json":{"type":"doc"},"content_text":"Hello"}`))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.Accept, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "create-thread")
@@ -150,7 +150,7 @@ func TestCreateThreadReturnsCreated(t *testing.T) {
 // TestCreateReplyRequiresIdempotency verifies reply command headers.
 func TestCreateReplyRequiresIdempotency(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPost, "/api/v1/threads/"+uuid.NewString()+"/posts", bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"Reply"}`))
+	req, _ := http.NewRequest(http.MethodPost, "/threads/"+uuid.NewString()+"/posts", bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"Reply"}`))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.Accept, "application/json")
 	req.Header.Set(currentUserIDHeader, uuid.NewString())
@@ -167,7 +167,7 @@ func TestCreateReplyRequiresIdempotency(t *testing.T) {
 // TestUpdatePostRequiresIfMatch verifies post edit concurrency headers.
 func TestUpdatePostRequiresIfMatch(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPatch, "/api/v1/posts/"+uuid.NewString(), bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"Edit"}`))
+	req, _ := http.NewRequest(http.MethodPatch, "/posts/"+uuid.NewString(), bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"Edit"}`))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.Accept, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "edit-post")
@@ -185,7 +185,7 @@ func TestUpdatePostRequiresIfMatch(t *testing.T) {
 // TestListThreadsReturnsOK verifies thread list route.
 func TestListThreadsReturnsOK(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodGet, "/api/v1/forums/"+uuid.NewString()+"/threads", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/forums/"+uuid.NewString()+"/threads", nil)
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -199,7 +199,7 @@ func TestListThreadsReturnsOK(t *testing.T) {
 // TestListPostsReturnsOK verifies post page route.
 func TestListPostsReturnsOK(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodGet, "/api/v1/threads/"+uuid.NewString()+"/posts", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/threads/"+uuid.NewString()+"/posts", nil)
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -213,7 +213,7 @@ func TestListPostsReturnsOK(t *testing.T) {
 // TestGetPostSetsETag verifies direct post response metadata.
 func TestGetPostSetsETag(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodGet, "/api/v1/posts/"+uuid.NewString(), nil)
+	req, _ := http.NewRequest(http.MethodGet, "/posts/"+uuid.NewString(), nil)
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -230,7 +230,7 @@ func TestGetPostSetsETag(t *testing.T) {
 // TestListPostRevisionsRequiresUser verifies revision route requires authentication.
 func TestListPostRevisionsRequiresUser(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodGet, "/api/v1/posts/"+uuid.NewString()+"/revisions", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/posts/"+uuid.NewString()+"/revisions", nil)
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -244,7 +244,7 @@ func TestListPostRevisionsRequiresUser(t *testing.T) {
 // TestLikePostRequiresIdempotency verifies like command headers.
 func TestLikePostRequiresIdempotency(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPut, "/api/v1/posts/"+uuid.NewString()+"/like", nil)
+	req, _ := http.NewRequest(http.MethodPut, "/posts/"+uuid.NewString()+"/like", nil)
 	req.Header.Set(currentUserIDHeader, uuid.NewString())
 
 	resp, err := app.Test(req)
@@ -260,7 +260,7 @@ func TestLikePostRequiresIdempotency(t *testing.T) {
 func TestLikePostReturnsSummary(t *testing.T) {
 	app := newTestApp(httpService{})
 	postID := uuid.New()
-	req, _ := http.NewRequest(http.MethodPut, "/api/v1/posts/"+postID.String()+"/like", nil)
+	req, _ := http.NewRequest(http.MethodPut, "/posts/"+postID.String()+"/like", nil)
 	req.Header.Set(headers.IdempotencyKey, "like")
 	req.Header.Set(currentUserIDHeader, uuid.NewString())
 
@@ -283,7 +283,7 @@ func TestLikePostReturnsSummary(t *testing.T) {
 // TestUnlikePostReturnsSummary verifies successful unlike route.
 func TestUnlikePostReturnsSummary(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodDelete, "/api/v1/posts/"+uuid.NewString()+"/like", nil)
+	req, _ := http.NewRequest(http.MethodDelete, "/posts/"+uuid.NewString()+"/like", nil)
 	req.Header.Set(headers.IdempotencyKey, "unlike")
 	req.Header.Set(currentUserIDHeader, uuid.NewString())
 
@@ -299,7 +299,7 @@ func TestUnlikePostReturnsSummary(t *testing.T) {
 // TestLatestPostsRoutesReturnOK verifies latest widget routes.
 func TestLatestPostsRoutesReturnOK(t *testing.T) {
 	app := newTestApp(httpService{})
-	for _, path := range []string{"/api/v1/forums/latest-posts", "/api/v1/forums/" + uuid.NewString() + "/latest-posts"} {
+	for _, path := range []string{"/forums/latest-posts", "/forums/" + uuid.NewString() + "/latest-posts"} {
 		req, _ := http.NewRequest(http.MethodGet, path, nil)
 		resp, err := app.Test(req)
 		if err != nil {
@@ -314,7 +314,7 @@ func TestLatestPostsRoutesReturnOK(t *testing.T) {
 // TestMostLikedPostsRouteReturnsOK verifies most-liked widget route.
 func TestMostLikedPostsRouteReturnsOK(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodGet, "/api/v1/forums/"+uuid.NewString()+"/posts/most-liked", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/forums/"+uuid.NewString()+"/posts/most-liked", nil)
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -328,7 +328,7 @@ func TestMostLikedPostsRouteReturnsOK(t *testing.T) {
 // TestSearchRoutesReturnOK verifies global and forum-scoped search routes.
 func TestSearchRoutesReturnOK(t *testing.T) {
 	app := newTestApp(httpService{})
-	for _, path := range []string{"/api/v1/forums/search?query=thread", "/api/v1/forums/" + uuid.NewString() + "/search?q=thread"} {
+	for _, path := range []string{"/forums/search?query=thread", "/forums/" + uuid.NewString() + "/search?q=thread"} {
 		req, _ := http.NewRequest(http.MethodGet, path, nil)
 		resp, err := app.Test(req)
 		if err != nil {
@@ -343,7 +343,7 @@ func TestSearchRoutesReturnOK(t *testing.T) {
 // TestMarkThreadReadRequiresUser verifies read state auth.
 func TestMarkThreadReadRequiresUser(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPost, "/api/v1/threads/"+uuid.NewString()+"/read", nil)
+	req, _ := http.NewRequest(http.MethodPost, "/threads/"+uuid.NewString()+"/read", nil)
 	req.Header.Set(headers.IdempotencyKey, "read")
 
 	resp, err := app.Test(req)
@@ -358,7 +358,7 @@ func TestMarkThreadReadRequiresUser(t *testing.T) {
 // TestMarkForumReadReturnsNoContent verifies forum read route.
 func TestMarkForumReadReturnsNoContent(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPost, "/api/v1/forums/"+uuid.NewString()+"/read", nil)
+	req, _ := http.NewRequest(http.MethodPost, "/forums/"+uuid.NewString()+"/read", nil)
 	req.Header.Set(headers.IdempotencyKey, "read-forum")
 	req.Header.Set(currentUserIDHeader, uuid.NewString())
 
@@ -374,7 +374,7 @@ func TestMarkForumReadReturnsNoContent(t *testing.T) {
 // TestUnreadSummaryReturnsOK verifies unread summary route.
 func TestUnreadSummaryReturnsOK(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodGet, "/api/v1/forums/unread-summary", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/forums/unread-summary", nil)
 	req.Header.Set(currentUserIDHeader, uuid.NewString())
 
 	resp, err := app.Test(req)
@@ -401,32 +401,32 @@ func TestForumHTTPWriteAndReadLifecycleRoutesExerciseHandlers(t *testing.T) {
 		body   string
 		status int
 	}{
-		{method: http.MethodGet, path: "/api/v1/forum-categories/" + id, status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forum-categories", status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/api/v1/forum-categories/" + id, body: categoryBody, status: fiber.StatusOK},
-		{method: http.MethodDelete, path: "/api/v1/forum-categories/" + id, status: fiber.StatusNoContent},
-		{method: http.MethodPost, path: "/api/v1/forum-categories/reorder", body: reorderBody, status: fiber.StatusNoContent},
-		{method: http.MethodPost, path: "/api/v1/forums", body: forumBody, status: fiber.StatusCreated},
-		{method: http.MethodGet, path: "/api/v1/forums/" + id, status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums?category_id=" + uuid.NewString() + "&parent_forum_id=" + uuid.NewString() + "&status=active", status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/api/v1/forums/" + id, body: forumBody, status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums/" + id + "/settings", status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/api/v1/forums/" + id + "/settings", body: `{"kind":"discussion","thread_visibility_mode":"own_threads","max_sticky_threads":3,"default_thread_status":"open","author_post_edit_window_seconds":120,"author_post_delete_window_seconds":60}`, status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums/" + id + "/permissions", status: fiber.StatusOK},
-		{method: http.MethodPut, path: "/api/v1/forums/" + id + "/permissions", body: `{"viewers":[{"subject_type":"public"}]}`, status: fiber.StatusNoContent},
-		{method: http.MethodPost, path: "/api/v1/forums/" + id + "/permissions/simulate", body: `{"permission":"forums.view","object_type":"forum"}`, status: fiber.StatusOK},
-		{method: http.MethodPost, path: "/api/v1/forums/" + id + "/move", body: moveBody, status: fiber.StatusOK},
-		{method: http.MethodDelete, path: "/api/v1/forums/" + id, status: fiber.StatusNoContent},
-		{method: http.MethodPost, path: "/api/v1/forums/reorder", body: reorderBody, status: fiber.StatusNoContent},
-		{method: http.MethodGet, path: "/api/v1/forums/search?query=thread", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/forums/" + id + "/search?query=thread", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/api/v1/threads/" + id, status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/api/v1/threads/" + id, body: `{"title":"Updated","slug":"updated"}`, status: fiber.StatusOK},
-		{method: http.MethodDelete, path: "/api/v1/threads/" + id, status: fiber.StatusNoContent},
-		{method: http.MethodPost, path: "/api/v1/threads/" + id + "/posts", body: postBody, status: fiber.StatusCreated},
-		{method: http.MethodDelete, path: "/api/v1/posts/" + id, status: fiber.StatusNoContent},
-		{method: http.MethodGet, path: "/api/v1/posts/" + id + "/revisions", status: fiber.StatusOK},
-		{method: http.MethodPost, path: "/api/v1/threads/" + id + "/read", body: `{"last_read_post_sequence":1}`, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forum-categories/" + id, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forum-categories", status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/forum-categories/" + id, body: categoryBody, status: fiber.StatusOK},
+		{method: http.MethodDelete, path: "/forum-categories/" + id, status: fiber.StatusNoContent},
+		{method: http.MethodPost, path: "/forum-categories/reorder", body: reorderBody, status: fiber.StatusNoContent},
+		{method: http.MethodPost, path: "/forums", body: forumBody, status: fiber.StatusCreated},
+		{method: http.MethodGet, path: "/forums/" + id, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums?category_id=" + uuid.NewString() + "&parent_forum_id=" + uuid.NewString() + "&status=active", status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/forums/" + id, body: forumBody, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/" + id + "/settings", status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/forums/" + id + "/settings", body: `{"kind":"discussion","thread_visibility_mode":"own_threads","max_sticky_threads":3,"default_thread_status":"open","author_post_edit_window_seconds":120,"author_post_delete_window_seconds":60}`, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/" + id + "/permissions", status: fiber.StatusOK},
+		{method: http.MethodPut, path: "/forums/" + id + "/permissions", body: `{"viewers":[{"subject_type":"public"}]}`, status: fiber.StatusNoContent},
+		{method: http.MethodPost, path: "/forums/" + id + "/permissions/simulate", body: `{"permission":"forums.view","object_type":"forum"}`, status: fiber.StatusOK},
+		{method: http.MethodPost, path: "/forums/" + id + "/move", body: moveBody, status: fiber.StatusOK},
+		{method: http.MethodDelete, path: "/forums/" + id, status: fiber.StatusNoContent},
+		{method: http.MethodPost, path: "/forums/reorder", body: reorderBody, status: fiber.StatusNoContent},
+		{method: http.MethodGet, path: "/forums/search?query=thread", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/forums/" + id + "/search?query=thread", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/threads/" + id, status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/threads/" + id, body: `{"title":"Updated","slug":"updated"}`, status: fiber.StatusOK},
+		{method: http.MethodDelete, path: "/threads/" + id, status: fiber.StatusNoContent},
+		{method: http.MethodPost, path: "/threads/" + id + "/posts", body: postBody, status: fiber.StatusCreated},
+		{method: http.MethodDelete, path: "/posts/" + id, status: fiber.StatusNoContent},
+		{method: http.MethodGet, path: "/posts/" + id + "/revisions", status: fiber.StatusOK},
+		{method: http.MethodPost, path: "/threads/" + id + "/read", body: `{"last_read_post_sequence":1}`, status: fiber.StatusOK},
 	}
 	for _, tt := range tests {
 		req, _ := http.NewRequest(tt.method, tt.path, bytes.NewBufferString(tt.body))
@@ -458,7 +458,7 @@ func TestForumHTTPProblemMappingsExerciseSupport(t *testing.T) {
 	}
 	for _, tt := range tests {
 		app := newTestApp(httpService{err: tt.err})
-		req, _ := http.NewRequest(http.MethodGet, "/api/v1/forums/"+uuid.NewString(), nil)
+		req, _ := http.NewRequest(http.MethodGet, "/forums/"+uuid.NewString(), nil)
 		resp, err := app.Test(req)
 		if err != nil {
 			t.Fatalf("Test() error = %v", err)
@@ -473,7 +473,7 @@ func TestForumHTTPProblemMappingsExerciseSupport(t *testing.T) {
 func newTestApp(service httpService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	app.Use(headers.Middleware())
-	v1 := app.Group("/api/v1")
+	v1 := app
 	Register(v1, Services{
 		Structure:   service,
 		Content:     service,

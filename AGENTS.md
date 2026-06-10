@@ -61,7 +61,7 @@ The Next.js frontend lives in the separate `gamehub-frontend` repository.
 - Entrypoints must return errors explicitly from setup steps instead of repeating fatal logging at each dependency initialization site.
 - Define HTTP contracts through OpenAPI before or alongside handlers.
 - Use OpenAPI 3.1 for HTTP contracts.
-- Every public API URL must be versioned under `/api/v{n}`.
+- GameHub service routes must not include public version prefixes such as `/api/v1`; public API versioning belongs at the API gateway, which rewrites versioned external URLs to unversioned service routes.
 - Every Fiber route must have a corresponding OpenAPI operation before it is considered complete.
 - Every OpenAPI operation must document request headers, path/query parameters, request bodies, response headers, success responses, and all expected error responses.
 - Every OpenAPI operation must document authentication, authorization, idempotency behavior, rate limit behavior, pagination behavior, and concurrency headers when applicable.

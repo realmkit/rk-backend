@@ -30,7 +30,7 @@ func TestDocumentIsOpenAPI31(t *testing.T) {
 
 // TestOperationExistsFindsDocumentedOperations verifies operation lookup.
 func TestOperationExistsFindsDocumentedOperations(t *testing.T) {
-	ok, err := OperationExists("GET", "/api/v1/health")
+	ok, err := OperationExists("GET", "/health")
 	if err != nil {
 		t.Fatalf("OperationExists() error = %v", err)
 	}
@@ -41,7 +41,7 @@ func TestOperationExistsFindsDocumentedOperations(t *testing.T) {
 
 // TestOperationExistsNormalizesFiberParameters verifies Fiber paths match OpenAPI paths.
 func TestOperationExistsNormalizesFiberParameters(t *testing.T) {
-	ok, err := OperationExists("GET", "/api/v1/metadata/metafield-definitions/:definition_id")
+	ok, err := OperationExists("GET", "/metadata/metafield-definitions/:definition_id")
 	if err != nil {
 		t.Fatalf("OperationExists() error = %v", err)
 	}
@@ -56,35 +56,35 @@ func TestForumMilestoneOneOperationsExist(t *testing.T) {
 		method string
 		path   string
 	}{
-		{method: "GET", path: "/api/v1/forums/tree"},
-		{method: "POST", path: "/api/v1/forum-categories"},
-		{method: "POST", path: "/api/v1/forum-categories/reorder"},
-		{method: "PATCH", path: "/api/v1/forum-categories/:category_id"},
-		{method: "POST", path: "/api/v1/forums"},
-		{method: "POST", path: "/api/v1/forums/reorder"},
-		{method: "POST", path: "/api/v1/forums/:forum_id/move"},
-		{method: "GET", path: "/api/v1/forums/:forum_id/threads"},
-		{method: "POST", path: "/api/v1/forums/:forum_id/threads"},
-		{method: "PATCH", path: "/api/v1/threads/:thread_id"},
-		{method: "GET", path: "/api/v1/threads/:thread_id/posts"},
-		{method: "POST", path: "/api/v1/threads/:thread_id/posts"},
-		{method: "POST", path: "/api/v1/threads/:thread_id/read"},
-		{method: "PATCH", path: "/api/v1/posts/:post_id"},
-		{method: "PUT", path: "/api/v1/posts/:post_id/like"},
-		{method: "DELETE", path: "/api/v1/posts/:post_id/like"},
-		{method: "GET", path: "/api/v1/posts/:post_id/revisions"},
-		{method: "GET", path: "/api/v1/forums/latest-posts"},
-		{method: "GET", path: "/api/v1/forums/search"},
-		{method: "GET", path: "/api/v1/forums/unread-summary"},
-		{method: "POST", path: "/api/v1/forums/:forum_id/read"},
-		{method: "GET", path: "/api/v1/forums/:forum_id/settings"},
-		{method: "PATCH", path: "/api/v1/forums/:forum_id/settings"},
-		{method: "GET", path: "/api/v1/forums/:forum_id/permissions"},
-		{method: "PUT", path: "/api/v1/forums/:forum_id/permissions"},
-		{method: "POST", path: "/api/v1/forums/:forum_id/permissions/simulate"},
-		{method: "GET", path: "/api/v1/forums/:forum_id/latest-posts"},
-		{method: "GET", path: "/api/v1/forums/:forum_id/posts/most-liked"},
-		{method: "GET", path: "/api/v1/forums/:forum_id/search"},
+		{method: "GET", path: "/forums/tree"},
+		{method: "POST", path: "/forum-categories"},
+		{method: "POST", path: "/forum-categories/reorder"},
+		{method: "PATCH", path: "/forum-categories/:category_id"},
+		{method: "POST", path: "/forums"},
+		{method: "POST", path: "/forums/reorder"},
+		{method: "POST", path: "/forums/:forum_id/move"},
+		{method: "GET", path: "/forums/:forum_id/threads"},
+		{method: "POST", path: "/forums/:forum_id/threads"},
+		{method: "PATCH", path: "/threads/:thread_id"},
+		{method: "GET", path: "/threads/:thread_id/posts"},
+		{method: "POST", path: "/threads/:thread_id/posts"},
+		{method: "POST", path: "/threads/:thread_id/read"},
+		{method: "PATCH", path: "/posts/:post_id"},
+		{method: "PUT", path: "/posts/:post_id/like"},
+		{method: "DELETE", path: "/posts/:post_id/like"},
+		{method: "GET", path: "/posts/:post_id/revisions"},
+		{method: "GET", path: "/forums/latest-posts"},
+		{method: "GET", path: "/forums/search"},
+		{method: "GET", path: "/forums/unread-summary"},
+		{method: "POST", path: "/forums/:forum_id/read"},
+		{method: "GET", path: "/forums/:forum_id/settings"},
+		{method: "PATCH", path: "/forums/:forum_id/settings"},
+		{method: "GET", path: "/forums/:forum_id/permissions"},
+		{method: "PUT", path: "/forums/:forum_id/permissions"},
+		{method: "POST", path: "/forums/:forum_id/permissions/simulate"},
+		{method: "GET", path: "/forums/:forum_id/latest-posts"},
+		{method: "GET", path: "/forums/:forum_id/posts/most-liked"},
+		{method: "GET", path: "/forums/:forum_id/search"},
 	}
 
 	for _, tt := range tests {
@@ -94,6 +94,109 @@ func TestForumMilestoneOneOperationsExist(t *testing.T) {
 		}
 		if !ok {
 			t.Fatalf("OperationExists(%q, %q) = false, want true", tt.method, tt.path)
+		}
+	}
+}
+
+// TestForumOperationsUseConcernTags verifies forum routes stay grouped by concern.
+func TestForumOperationsUseConcernTags(t *testing.T) {
+	expected := map[string]string{
+		"createForum":             "forums",
+		"createForumCategory":     "forum-categories",
+		"createForumThread":       "forum-threads",
+		"createThreadReply":       "forum-posts",
+		"deleteForum":             "forums",
+		"deleteForumCategory":     "forum-categories",
+		"deletePost":              "forum-posts",
+		"deleteThread":            "forum-threads",
+		"getForum":                "forums",
+		"getForumCategory":        "forum-categories",
+		"getForumPermissions":     "forum-admin",
+		"getForumSettings":        "forum-admin",
+		"getForumTree":            "forums",
+		"getForumUnreadSummary":   "forum-interactions",
+		"getPost":                 "forum-posts",
+		"getThread":               "forum-threads",
+		"likePost":                "forum-interactions",
+		"listForumCategories":     "forum-categories",
+		"listForumLatestPosts":    "forum-interactions",
+		"listForumThreads":        "forum-threads",
+		"listForums":              "forums",
+		"listLatestPosts":         "forum-interactions",
+		"listMostLikedPosts":      "forum-interactions",
+		"listPostRevisions":       "forum-posts",
+		"listThreadPosts":         "forum-posts",
+		"markForumRead":           "forum-interactions",
+		"markThreadRead":          "forum-interactions",
+		"moveForum":               "forums",
+		"reorderForumCategories":  "forum-categories",
+		"reorderForums":           "forums",
+		"searchForum":             "forum-search",
+		"searchForums":            "forum-search",
+		"simulateForumPermission": "forum-admin",
+		"unlikePost":              "forum-interactions",
+		"updateForum":             "forums",
+		"updateForumCategory":     "forum-categories",
+		"updateForumPermissions":  "forum-admin",
+		"updateForumSettings":     "forum-admin",
+		"updatePost":              "forum-posts",
+		"updateThread":            "forum-threads",
+	}
+	requiredTags := map[string]bool{
+		"forum-admin":        false,
+		"forum-categories":   false,
+		"forum-interactions": false,
+		"forum-posts":        false,
+		"forum-search":       false,
+		"forum-threads":      false,
+		"forums":             false,
+	}
+
+	var contract struct {
+		Tags []struct {
+			Name string `json:"name"`
+		} `json:"tags"`
+		Paths map[string]map[string]struct {
+			OperationID string   `json:"operationId"`
+			Tags        []string `json:"tags"`
+		} `json:"paths"`
+	}
+	if err := json.Unmarshal(Document(), &contract); err != nil {
+		t.Fatalf("Unmarshal() error = %v", err)
+	}
+
+	for _, tag := range contract.Tags {
+		if _, ok := requiredTags[tag.Name]; ok {
+			requiredTags[tag.Name] = true
+		}
+	}
+	for tag, found := range requiredTags {
+		if !found {
+			t.Fatalf("forum tag %q is not declared", tag)
+		}
+	}
+
+	seen := map[string]bool{}
+	for _, methods := range contract.Paths {
+		for _, operation := range methods {
+			want, ok := expected[operation.OperationID]
+			if !ok {
+				continue
+			}
+			seen[operation.OperationID] = true
+			if len(operation.Tags) != 1 || operation.Tags[0] != want {
+				t.Fatalf(
+					"%s tags = %v, want [%s]",
+					operation.OperationID,
+					operation.Tags,
+					want,
+				)
+			}
+		}
+	}
+	for operationID := range expected {
+		if !seen[operationID] {
+			t.Fatalf("forum operation %q was not found", operationID)
 		}
 	}
 }
