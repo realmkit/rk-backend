@@ -160,6 +160,18 @@ type MarkForumReadCommand struct {
 	ForumID uuid.UUID
 }
 
+// SearchCommand searches forum content.
+type SearchCommand struct {
+	// ActorUserID is the searching actor.
+	ActorUserID uuid.UUID
+
+	// ForumID optionally scopes search to one forum.
+	ForumID uuid.UUID
+
+	// Query is the search text.
+	Query string
+}
+
 // ThreadFilter filters thread lists.
 type ThreadFilter struct {
 	// ForumID filters by forum.
@@ -191,6 +203,15 @@ type LatestPostFilter struct {
 type MostLikedFilter struct {
 	// ForumID filters by forum.
 	ForumID uuid.UUID
+}
+
+// SearchFilter filters forum search.
+type SearchFilter struct {
+	// ForumIDs limits search to visible forums.
+	ForumIDs []uuid.UUID
+
+	// Query is the normalized search text.
+	Query string
 }
 
 // ThreadRepository stores threads.
@@ -269,4 +290,25 @@ type InteractionRepository interface {
 type AssetResolver interface {
 	// AssetExists reports whether an attachment asset exists.
 	AssetExists(ctx context.Context, id uuid.UUID) (bool, error)
+}
+
+// OperationsRepository runs forum search, repairs, and counter flushes.
+type OperationsRepository interface {
+	// Search returns visible search results from PostgreSQL.
+	Search(ctx context.Context, filter SearchFilter, page pagination.Page) (pagination.Result[domain.SearchResult], error)
+
+	// VerifyStats reports counter drift without mutating rows.
+	VerifyStats(ctx context.Context) (domain.CounterDriftReport, error)
+
+	// RebuildStats repairs stats and post/thread counters from source rows.
+	RebuildStats(ctx context.Context) (domain.CounterDriftReport, error)
+
+	// VerifyLikes reports like counter drift without mutating rows.
+	VerifyLikes(ctx context.Context) (domain.CounterDriftReport, error)
+
+	// RebuildLikes repairs like counters from active like rows.
+	RebuildLikes(ctx context.Context) (domain.CounterDriftReport, error)
+
+	// ApplyThreadViews flushes buffered view increments into threads.
+	ApplyThreadViews(ctx context.Context, increments map[uuid.UUID]int64) error
 }

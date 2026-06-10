@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/niflaot/gamehub-go/module/forums/domain"
@@ -10,6 +11,9 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 	goredis "github.com/redis/go-redis/v9"
 )
+
+// threadViewsKey stores buffered thread view increments.
+const threadViewsKey = "forums:views:v1:threads"
 
 // TreeCache stores visible forum trees in Redis.
 type TreeCache struct {
@@ -83,6 +87,47 @@ func (cache TreeCache) SetMostLikedPosts(ctx context.Context, key string, result
 // ClearMostLikedPosts removes most-liked cache entries.
 func (cache TreeCache) ClearMostLikedPosts(ctx context.Context) error {
 	return cache.clearPattern(ctx, "forums:most-liked:v1:*")
+}
+
+// IncrementThreadView buffers one thread view.
+func (cache TreeCache) IncrementThreadView(ctx context.Context, threadID string) error {
+	return cache.client.HIncrBy(ctx, threadViewsKey, threadID, 1).Err()
+}
+
+// DrainThreadViews atomically returns and clears buffered thread views.
+func (cache TreeCache) DrainThreadViews(ctx context.Context) (map[string]int64, error) {
+	values, err := cache.client.HGetAll(ctx, threadViewsKey).Result()
+	if err != nil {
+		return nil, err
+	}
+	if len(values) == 0 {
+		return map[string]int64{}, nil
+	}
+	pipe := cache.client.TxPipeline()
+	pipe.Del(ctx, threadViewsKey)
+	if _, err := pipe.Exec(ctx); err != nil {
+		return nil, err
+	}
+	result := make(map[string]int64, len(values))
+	for key, value := range values {
+		parsed, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			continue
+		}
+		result[key] = parsed
+	}
+	return result, nil
+}
+
+// ClearAll removes all forum read-cache keys.
+func (cache TreeCache) ClearAll(ctx context.Context) error {
+	if err := cache.ClearTree(ctx); err != nil {
+		return err
+	}
+	if err := cache.ClearLatestPosts(ctx); err != nil {
+		return err
+	}
+	return cache.ClearMostLikedPosts(ctx)
 }
 
 // getJSON reads a JSON cache item.

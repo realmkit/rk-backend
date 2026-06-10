@@ -325,6 +325,21 @@ func TestMostLikedPostsRouteReturnsOK(t *testing.T) {
 	}
 }
 
+// TestSearchRoutesReturnOK verifies global and forum-scoped search routes.
+func TestSearchRoutesReturnOK(t *testing.T) {
+	app := newTestApp(httpService{})
+	for _, path := range []string{"/api/v1/forums/search?query=thread", "/api/v1/forums/" + uuid.NewString() + "/search?q=thread"} {
+		req, _ := http.NewRequest(http.MethodGet, path, nil)
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("Test(%s) error = %v", path, err)
+		}
+		if resp.StatusCode != fiber.StatusOK {
+			t.Fatalf("status for %s = %d, want %d", path, resp.StatusCode, fiber.StatusOK)
+		}
+	}
+}
+
 // TestMarkThreadReadRequiresUser verifies read state auth.
 func TestMarkThreadReadRequiresUser(t *testing.T) {
 	app := newTestApp(httpService{})
@@ -398,6 +413,8 @@ func TestForumHTTPWriteAndReadLifecycleRoutesExerciseHandlers(t *testing.T) {
 		{method: http.MethodPost, path: "/api/v1/forums/" + id + "/move", body: moveBody, status: fiber.StatusOK},
 		{method: http.MethodDelete, path: "/api/v1/forums/" + id, status: fiber.StatusNoContent},
 		{method: http.MethodPost, path: "/api/v1/forums/reorder", body: reorderBody, status: fiber.StatusNoContent},
+		{method: http.MethodGet, path: "/api/v1/forums/search?query=thread", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/api/v1/forums/" + id + "/search?query=thread", status: fiber.StatusOK},
 		{method: http.MethodGet, path: "/api/v1/threads/" + id, status: fiber.StatusOK},
 		{method: http.MethodPatch, path: "/api/v1/threads/" + id, body: `{"title":"Updated","slug":"updated"}`, status: fiber.StatusOK},
 		{method: http.MethodDelete, path: "/api/v1/threads/" + id, status: fiber.StatusNoContent},
@@ -620,4 +637,39 @@ func (service httpService) MarkForumRead(context.Context, port.MarkForumReadComm
 // GetUnreadSummary returns unread counts.
 func (service httpService) GetUnreadSummary(context.Context, uuid.UUID) (domain.UnreadSummary, error) {
 	return domain.UnreadSummary{UserID: uuid.New(), UnreadThreadCount: 1}, service.err
+}
+
+// Search searches forum content.
+func (service httpService) Search(context.Context, port.SearchCommand, pagination.Page) (pagination.Result[domain.SearchResult], error) {
+	return pagination.Result[domain.SearchResult]{Items: []domain.SearchResult{{Type: "thread", ForumID: uuid.New(), ThreadID: uuid.New(), Title: "Thread"}}}, service.err
+}
+
+// VerifyStats reports stats drift.
+func (service httpService) VerifyStats(context.Context) (domain.CounterDriftReport, error) {
+	return domain.CounterDriftReport{}, service.err
+}
+
+// RebuildStats repairs stats drift.
+func (service httpService) RebuildStats(context.Context) (domain.CounterDriftReport, error) {
+	return domain.CounterDriftReport{Repaired: true}, service.err
+}
+
+// VerifyLikes reports like drift.
+func (service httpService) VerifyLikes(context.Context) (domain.CounterDriftReport, error) {
+	return domain.CounterDriftReport{}, service.err
+}
+
+// RebuildLikes repairs like drift.
+func (service httpService) RebuildLikes(context.Context) (domain.CounterDriftReport, error) {
+	return domain.CounterDriftReport{Repaired: true}, service.err
+}
+
+// FlushThreadViews flushes buffered thread views.
+func (service httpService) FlushThreadViews(context.Context) (int64, error) {
+	return 0, service.err
+}
+
+// ClearReadCache clears forum read caches.
+func (service httpService) ClearReadCache(context.Context) error {
+	return service.err
 }

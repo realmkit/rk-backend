@@ -4,6 +4,8 @@ package postgres
 import (
 	"context"
 	"errors"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -376,6 +378,290 @@ func (repository InteractionRepository) updateLikeCounts(ctx context.Context, po
 	return repository.store.DB(ctx).Model(&ThreadModel{}).Where("id = ?", threadID).Update("like_count", expr).Error
 }
 
+// OperationsRepository runs forum search, repair, and counter flushes in PostgreSQL.
+type OperationsRepository struct {
+	store orm.Store
+}
+
+// NewOperationsRepository creates an operations repository.
+func NewOperationsRepository(store orm.Store) OperationsRepository {
+	return OperationsRepository{store: store}
+}
+
+// Search returns visible search results from PostgreSQL.
+func (repository OperationsRepository) Search(ctx context.Context, filter port.SearchFilter, page pagination.Page) (pagination.Result[domain.SearchResult], error) {
+	if len(filter.ForumIDs) == 0 {
+		return pagination.Result[domain.SearchResult]{Items: []domain.SearchResult{}}, nil
+	}
+	db := repository.store.DB(ctx)
+	queryText := strings.TrimSpace(filter.Query)
+	threadCondition := "LOWER(title) LIKE ?"
+	postCondition := "LOWER(p.content_text) LIKE ?"
+	searchArgument := "%" + strings.ToLower(queryText) + "%"
+	if db.Dialector.Name() == "postgres" {
+		threadCondition = "to_tsvector('simple', title) @@ plainto_tsquery('simple', ?)"
+		postCondition = "to_tsvector('simple', p.content_text) @@ plainto_tsquery('simple', ?)"
+		searchArgument = queryText
+	}
+	var threads []ThreadModel
+	err := db.Where("forum_id IN ? AND deleted_at IS NULL AND status IN ?", filter.ForumIDs, visibleThreadStatuses()).Where(threadCondition, searchArgument).Limit(page.Limit + 1).Find(&threads).Error
+	if err != nil {
+		return pagination.Result[domain.SearchResult]{}, err
+	}
+	var posts []searchPostRow
+	err = db.Table("forum_posts AS p").Select("p.id AS post_id, p.thread_id, p.forum_id, p.author_user_id, p.content_text AS excerpt, p.created_at, t.title, t.slug").Joins("JOIN forum_threads AS t ON t.id = p.thread_id AND t.deleted_at IS NULL").Where("p.forum_id IN ? AND p.deleted_at IS NULL AND p.status IN ? AND t.status IN ?", filter.ForumIDs, visiblePostStatuses(), visibleThreadStatuses()).Where(postCondition, searchArgument).Limit(page.Limit + 1).Find(&posts).Error
+	if err != nil {
+		return pagination.Result[domain.SearchResult]{}, err
+	}
+	results := make([]domain.SearchResult, 0, len(threads)+len(posts))
+	for _, thread := range threads {
+		results = append(results, domain.SearchResult{Type: "thread", ForumID: thread.ForumID, ThreadID: thread.ID.ID, Title: thread.Title, Slug: domain.Slug(thread.Slug), Excerpt: thread.Title, AuthorUserID: thread.AuthorUserID, CreatedAt: thread.CreatedAt})
+	}
+	for _, post := range posts {
+		postID := post.PostID
+		results = append(results, domain.SearchResult{Type: "post", ForumID: post.ForumID, ThreadID: post.ThreadID, PostID: &postID, Title: post.Title, Slug: domain.Slug(post.Slug), Excerpt: post.Excerpt, AuthorUserID: post.AuthorUserID, CreatedAt: post.CreatedAt})
+	}
+	sort.Slice(results, func(i int, j int) bool {
+		if results[i].CreatedAt.Equal(results[j].CreatedAt) {
+			return results[i].ThreadID.String() < results[j].ThreadID.String()
+		}
+		return results[i].CreatedAt.After(results[j].CreatedAt)
+	})
+	next := ""
+	if len(results) > page.Limit {
+		next = results[page.Limit-1].ThreadID.String()
+		results = results[:page.Limit]
+	}
+	return pagination.Result[domain.SearchResult]{Items: results, NextCursor: next}, nil
+}
+
+// VerifyStats reports counter drift without mutating rows.
+func (repository OperationsRepository) VerifyStats(ctx context.Context) (domain.CounterDriftReport, error) {
+	threadExpected, err := repository.expectedThreadStats(ctx)
+	if err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	forumExpected, err := repository.expectedForumStats(ctx)
+	if err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	report := domain.CounterDriftReport{Mismatches: []domain.CounterDrift{}}
+	var threads []ThreadModel
+	if err := repository.store.DB(ctx).Find(&threads).Error; err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	for _, thread := range threads {
+		expected := threadExpected[thread.ID.ID]
+		report.Mismatches = appendDrift(report.Mismatches, "forum_thread", thread.ID.ID, "post_count", expected.PostCount, thread.PostCount)
+		report.Mismatches = appendDrift(report.Mismatches, "forum_thread", thread.ID.ID, "visible_post_count", expected.VisiblePostCount, thread.VisiblePostCount)
+		report.Mismatches = appendDrift(report.Mismatches, "forum_thread", thread.ID.ID, "reply_count", expected.ReplyCount, thread.ReplyCount)
+		report.Mismatches = appendDrift(report.Mismatches, "forum_thread", thread.ID.ID, "visible_reply_count", expected.VisibleReplyCount, thread.VisibleReplyCount)
+	}
+	var stats []StatsModel
+	if err := repository.store.DB(ctx).Find(&stats).Error; err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	for _, stat := range stats {
+		expected := forumExpected[stat.ForumID]
+		report.Mismatches = appendDrift(report.Mismatches, "forum_stats", stat.ForumID, "thread_count", expected.ThreadCount, stat.ThreadCount)
+		report.Mismatches = appendDrift(report.Mismatches, "forum_stats", stat.ForumID, "visible_thread_count", expected.VisibleThreadCount, stat.VisibleThreadCount)
+		report.Mismatches = appendDrift(report.Mismatches, "forum_stats", stat.ForumID, "post_count", expected.PostCount, stat.PostCount)
+		report.Mismatches = appendDrift(report.Mismatches, "forum_stats", stat.ForumID, "visible_post_count", expected.VisiblePostCount, stat.VisiblePostCount)
+	}
+	return report, nil
+}
+
+// RebuildStats repairs stats and post/thread counters from source rows.
+func (repository OperationsRepository) RebuildStats(ctx context.Context) (domain.CounterDriftReport, error) {
+	report, err := repository.VerifyStats(ctx)
+	if err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	threadExpected, err := repository.expectedThreadStats(ctx)
+	if err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	for threadID, expected := range threadExpected {
+		if err := repository.store.DB(ctx).Model(&ThreadModel{}).Where("id = ?", threadID).Updates(map[string]any{"post_count": expected.PostCount, "visible_post_count": expected.VisiblePostCount, "reply_count": expected.ReplyCount, "visible_reply_count": expected.VisibleReplyCount}).Error; err != nil {
+			return domain.CounterDriftReport{}, err
+		}
+	}
+	forumExpected, err := repository.expectedForumStats(ctx)
+	if err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	for forumID, expected := range forumExpected {
+		if err := repository.store.DB(ctx).Model(&StatsModel{}).Where("forum_id = ?", forumID).Updates(map[string]any{"thread_count": expected.ThreadCount, "visible_thread_count": expected.VisibleThreadCount, "post_count": expected.PostCount, "visible_post_count": expected.VisiblePostCount, "updated_at": time.Now().UTC()}).Error; err != nil {
+			return domain.CounterDriftReport{}, err
+		}
+	}
+	report.Repaired = true
+	return report, nil
+}
+
+// VerifyLikes reports like counter drift without mutating rows.
+func (repository OperationsRepository) VerifyLikes(ctx context.Context) (domain.CounterDriftReport, error) {
+	postLikes, threadLikes, err := repository.expectedLikeStats(ctx)
+	if err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	report := domain.CounterDriftReport{Mismatches: []domain.CounterDrift{}}
+	var posts []PostModel
+	if err := repository.store.DB(ctx).Find(&posts).Error; err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	for _, post := range posts {
+		report.Mismatches = appendDrift(report.Mismatches, "forum_post", post.ID.ID, "like_count", postLikes[post.ID.ID], post.LikeCount)
+	}
+	var threads []ThreadModel
+	if err := repository.store.DB(ctx).Find(&threads).Error; err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	for _, thread := range threads {
+		report.Mismatches = appendDrift(report.Mismatches, "forum_thread", thread.ID.ID, "like_count", threadLikes[thread.ID.ID], thread.LikeCount)
+	}
+	return report, nil
+}
+
+// RebuildLikes repairs like counters from active like rows.
+func (repository OperationsRepository) RebuildLikes(ctx context.Context) (domain.CounterDriftReport, error) {
+	report, err := repository.VerifyLikes(ctx)
+	if err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	postLikes, threadLikes, err := repository.expectedLikeStats(ctx)
+	if err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	if err := repository.store.DB(ctx).Model(&PostModel{}).Where("1 = 1").Update("like_count", 0).Error; err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	for postID, count := range postLikes {
+		if err := repository.store.DB(ctx).Model(&PostModel{}).Where("id = ?", postID).Update("like_count", count).Error; err != nil {
+			return domain.CounterDriftReport{}, err
+		}
+	}
+	if err := repository.store.DB(ctx).Model(&ThreadModel{}).Where("1 = 1").Update("like_count", 0).Error; err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	for threadID, count := range threadLikes {
+		if err := repository.store.DB(ctx).Model(&ThreadModel{}).Where("id = ?", threadID).Update("like_count", count).Error; err != nil {
+			return domain.CounterDriftReport{}, err
+		}
+	}
+	report.Repaired = true
+	return report, nil
+}
+
+// ApplyThreadViews flushes buffered view increments into threads.
+func (repository OperationsRepository) ApplyThreadViews(ctx context.Context, increments map[uuid.UUID]int64) error {
+	for threadID, increment := range increments {
+		if increment <= 0 {
+			continue
+		}
+		if err := repository.store.DB(ctx).Model(&ThreadModel{}).Where("id = ?", threadID).Update("view_count", gorm.Expr("view_count + ?", increment)).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// expectedThreadStats calculates thread counters from posts.
+func (repository OperationsRepository) expectedThreadStats(ctx context.Context) (map[uuid.UUID]threadCounterExpectation, error) {
+	var threads []ThreadModel
+	if err := repository.store.DB(ctx).Find(&threads).Error; err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID]threadCounterExpectation, len(threads))
+	for _, thread := range threads {
+		result[thread.ID.ID] = threadCounterExpectation{}
+	}
+	var rows []threadPostCounterRow
+	err := repository.store.DB(ctx).Table("forum_posts").Select("thread_id, COUNT(*) AS post_count, SUM(CASE WHEN status IN ? THEN 1 ELSE 0 END) AS visible_post_count", visiblePostStatuses()).Where("deleted_at IS NULL").Group("thread_id").Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		expected := result[row.ThreadID]
+		expected.PostCount = row.PostCount
+		expected.VisiblePostCount = row.VisiblePostCount
+		if row.PostCount > 0 {
+			expected.ReplyCount = row.PostCount - 1
+		}
+		if row.VisiblePostCount > 0 {
+			expected.VisibleReplyCount = row.VisiblePostCount - 1
+		}
+		result[row.ThreadID] = expected
+	}
+	return result, nil
+}
+
+// expectedForumStats calculates forum counters from threads and posts.
+func (repository OperationsRepository) expectedForumStats(ctx context.Context) (map[uuid.UUID]forumCounterExpectation, error) {
+	var stats []StatsModel
+	if err := repository.store.DB(ctx).Find(&stats).Error; err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID]forumCounterExpectation, len(stats))
+	for _, stat := range stats {
+		result[stat.ForumID] = forumCounterExpectation{}
+	}
+	var threadRows []forumThreadCounterRow
+	err := repository.store.DB(ctx).Table("forum_threads").Select("forum_id, COUNT(*) AS thread_count, SUM(CASE WHEN status IN ? THEN 1 ELSE 0 END) AS visible_thread_count", visibleThreadStatuses()).Where("deleted_at IS NULL").Group("forum_id").Find(&threadRows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range threadRows {
+		expected := result[row.ForumID]
+		expected.ThreadCount = row.ThreadCount
+		expected.VisibleThreadCount = row.VisibleThreadCount
+		result[row.ForumID] = expected
+	}
+	var postRows []forumPostCounterRow
+	err = repository.store.DB(ctx).Table("forum_posts").Select("forum_id, COUNT(*) AS post_count, SUM(CASE WHEN status IN ? THEN 1 ELSE 0 END) AS visible_post_count", visiblePostStatuses()).Where("deleted_at IS NULL").Group("forum_id").Find(&postRows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range postRows {
+		expected := result[row.ForumID]
+		expected.PostCount = row.PostCount
+		expected.VisiblePostCount = row.VisiblePostCount
+		result[row.ForumID] = expected
+	}
+	return result, nil
+}
+
+// expectedLikeStats calculates like counters from active likes.
+func (repository OperationsRepository) expectedLikeStats(ctx context.Context) (map[uuid.UUID]int64, map[uuid.UUID]int64, error) {
+	var postRows []likeCounterRow
+	err := repository.store.DB(ctx).Table("forum_post_likes").Select("post_id AS id, COUNT(*) AS count").Where("deleted_at IS NULL").Group("post_id").Find(&postRows).Error
+	if err != nil {
+		return nil, nil, err
+	}
+	var threadRows []likeCounterRow
+	err = repository.store.DB(ctx).Table("forum_post_likes").Select("thread_id AS id, COUNT(*) AS count").Where("deleted_at IS NULL").Group("thread_id").Find(&threadRows).Error
+	if err != nil {
+		return nil, nil, err
+	}
+	postLikes := map[uuid.UUID]int64{}
+	threadLikes := map[uuid.UUID]int64{}
+	for _, row := range postRows {
+		postLikes[row.ID] = row.Count
+	}
+	for _, row := range threadRows {
+		threadLikes[row.ID] = row.Count
+	}
+	return postLikes, threadLikes, nil
+}
+
+// appendDrift appends one mismatch when expected and actual differ.
+func appendDrift(items []domain.CounterDrift, objectType string, objectID uuid.UUID, field string, expected int64, actual int64) []domain.CounterDrift {
+	if expected == actual {
+		return items
+	}
+	return append(items, domain.CounterDrift{ObjectType: objectType, ObjectID: objectID, Field: field, Expected: expected, Actual: actual})
+}
+
 // visiblePostStatuses returns statuses normal widget readers may see.
 func visiblePostStatuses() []domain.PostStatus {
 	return []domain.PostStatus{domain.PostStatusVisible, domain.PostStatusSystem}
@@ -468,6 +754,61 @@ type unreadForumRow struct {
 	UnreadThreadCount int64
 }
 
+// searchPostRow is a compact post search row.
+type searchPostRow struct {
+	PostID       uuid.UUID
+	ThreadID     uuid.UUID
+	ForumID      uuid.UUID
+	AuthorUserID uuid.UUID
+	Title        string
+	Slug         string
+	Excerpt      string
+	CreatedAt    time.Time
+}
+
+// threadCounterExpectation contains source-of-truth thread counters.
+type threadCounterExpectation struct {
+	PostCount         int64
+	VisiblePostCount  int64
+	ReplyCount        int64
+	VisibleReplyCount int64
+}
+
+// forumCounterExpectation contains source-of-truth forum counters.
+type forumCounterExpectation struct {
+	ThreadCount        int64
+	VisibleThreadCount int64
+	PostCount          int64
+	VisiblePostCount   int64
+}
+
+// threadPostCounterRow is a grouped thread post count.
+type threadPostCounterRow struct {
+	ThreadID         uuid.UUID
+	PostCount        int64
+	VisiblePostCount int64
+}
+
+// forumThreadCounterRow is a grouped forum thread count.
+type forumThreadCounterRow struct {
+	ForumID            uuid.UUID
+	ThreadCount        int64
+	VisibleThreadCount int64
+}
+
+// forumPostCounterRow is a grouped forum post count.
+type forumPostCounterRow struct {
+	ForumID          uuid.UUID
+	PostCount        int64
+	VisiblePostCount int64
+}
+
+// likeCounterRow is a grouped like count.
+type likeCounterRow struct {
+	ID    uuid.UUID
+	Count int64
+}
+
 // latestPostPage maps latest-post rows into a page.
 func latestPostPage(rows []latestPostRow, limit int) pagination.Result[domain.LatestPostSummary] {
 	next := ""
@@ -504,3 +845,6 @@ var _ port.PostRepository = PostRepository{}
 
 // Ensure InteractionRepository implements port.InteractionRepository.
 var _ port.InteractionRepository = InteractionRepository{}
+
+// Ensure OperationsRepository implements port.OperationsRepository.
+var _ port.OperationsRepository = OperationsRepository{}

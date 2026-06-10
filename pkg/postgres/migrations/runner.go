@@ -258,7 +258,20 @@ func migrationSQL(dialect string, script string) string {
 	script = strings.ReplaceAll(script, "timestamptz", "datetime")
 	script = strings.ReplaceAll(script, "uuid", "text")
 	script = strings.ReplaceAll(script, "jsonb", "text")
-	return script
+	return stripPostgresOnlyLines(script)
+}
+
+// stripPostgresOnlyLines removes clauses unsupported by SQLite test databases.
+func stripPostgresOnlyLines(script string) string {
+	lines := strings.Split(script, "\n")
+	filtered := make([]string, 0, len(lines))
+	for _, line := range lines {
+		if strings.Contains(line, "USING gin") || strings.Contains(line, "to_tsvector") {
+			continue
+		}
+		filtered = append(filtered, line)
+	}
+	return strings.Join(filtered, "\n")
 }
 
 // validateRecords validates applied records against migration files.

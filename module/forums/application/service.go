@@ -25,6 +25,7 @@ type Service struct {
 	threads      port.ThreadRepository
 	posts        port.PostRepository
 	interactions port.InteractionRepository
+	operations   port.OperationsRepository
 	assets       port.AssetResolver
 	authorizer   port.VisibilityAuthorizer
 	cache        port.ReadCache
@@ -48,6 +49,9 @@ type Dependencies struct {
 	// Interactions stores likes, widgets, and read state.
 	Interactions port.InteractionRepository
 
+	// Operations runs search, repair, and counter flushes.
+	Operations port.OperationsRepository
+
 	// Assets resolves attachment assets.
 	Assets port.AssetResolver
 
@@ -69,6 +73,7 @@ func NewService(deps Dependencies) Service {
 		threads:      deps.Threads,
 		posts:        deps.Posts,
 		interactions: deps.Interactions,
+		operations:   deps.Operations,
 		assets:       deps.Assets,
 		authorizer:   deps.Authorizer,
 		cache:        deps.Cache,

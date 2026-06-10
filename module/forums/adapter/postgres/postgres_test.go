@@ -433,6 +433,108 @@ func TestInteractionRepositoryReadStateAndUnreadSummary(t *testing.T) {
 	}
 }
 
+// TestOperationsRepositorySearchReturnsThreadsAndPosts verifies forum search reads source tables.
+func TestOperationsRepositorySearchReturnsThreadsAndPosts(t *testing.T) {
+	categories, forums, db := newRepositories(t)
+	threads := NewThreadRepository(orm.NewStore(db))
+	posts := NewPostRepository(orm.NewStore(db))
+	operations := NewOperationsRepository(orm.NewStore(db))
+	_, forum, thread, post := createContentFixture(t, categories, forums, threads, posts, "search")
+	thread.Title = "Alpha launch notes"
+	if _, err := threads.UpdateTitle(context.Background(), thread, thread.Version); err != nil {
+		t.Fatalf("UpdateTitle error = %v", err)
+	}
+	post.ContentText = "Alpha reply body"
+	if _, err := posts.UpdateWithRevision(context.Background(), post, domain.PostRevision{ID: uuid.New(), PostID: post.ID, EditedByUserID: post.AuthorUserID, PreviousContentDocumentJSON: post.ContentDocumentJSON, PreviousContentText: "Original"}, post.Version); err != nil {
+		t.Fatalf("UpdateWithRevision error = %v", err)
+	}
+
+	result, err := operations.Search(context.Background(), port.SearchFilter{ForumIDs: []uuid.UUID{forum.ID}, Query: "alpha"}, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("Search() error = %v", err)
+	}
+	if len(result.Items) != 2 {
+		t.Fatalf("items = %+v, want thread and post match", result.Items)
+	}
+}
+
+// TestOperationsRepositoryStatsVerifyAndRebuild verifies counter reconciliation.
+func TestOperationsRepositoryStatsVerifyAndRebuild(t *testing.T) {
+	categories, forums, db := newRepositories(t)
+	threads := NewThreadRepository(orm.NewStore(db))
+	posts := NewPostRepository(orm.NewStore(db))
+	operations := NewOperationsRepository(orm.NewStore(db))
+	_, forum, thread, _ := createContentFixture(t, categories, forums, threads, posts, "stats")
+	if err := db.Model(&ThreadModel{}).Where("id = ?", thread.ID).Updates(map[string]any{"post_count": 99, "visible_post_count": 99, "reply_count": 99, "visible_reply_count": 99}).Error; err != nil {
+		t.Fatalf("corrupt thread counters error = %v", err)
+	}
+	if err := db.Model(&StatsModel{}).Where("forum_id = ?", forum.ID).Updates(map[string]any{"thread_count": 99, "visible_thread_count": 99, "post_count": 99, "visible_post_count": 99}).Error; err != nil {
+		t.Fatalf("corrupt forum stats error = %v", err)
+	}
+
+	drift, err := operations.VerifyStats(context.Background())
+	if err != nil {
+		t.Fatalf("VerifyStats() error = %v", err)
+	}
+	if len(drift.Mismatches) == 0 {
+		t.Fatalf("VerifyStats() mismatches = empty, want drift")
+	}
+	rebuilt, err := operations.RebuildStats(context.Background())
+	if err != nil {
+		t.Fatalf("RebuildStats() error = %v", err)
+	}
+	if !rebuilt.Repaired {
+		t.Fatalf("rebuilt = %+v, want repaired report", rebuilt)
+	}
+	clean, err := operations.VerifyStats(context.Background())
+	if err != nil {
+		t.Fatalf("VerifyStats clean error = %v", err)
+	}
+	if len(clean.Mismatches) != 0 {
+		t.Fatalf("clean mismatches = %+v, want none", clean.Mismatches)
+	}
+}
+
+// TestOperationsRepositoryLikesVerifyRebuildAndViews verifies like and view reconciliation.
+func TestOperationsRepositoryLikesVerifyRebuildAndViews(t *testing.T) {
+	categories, forums, db := newRepositories(t)
+	threads := NewThreadRepository(orm.NewStore(db))
+	posts := NewPostRepository(orm.NewStore(db))
+	interactions := NewInteractionRepository(orm.NewStore(db))
+	operations := NewOperationsRepository(orm.NewStore(db))
+	_, _, thread, post := createContentFixture(t, categories, forums, threads, posts, "ops")
+	if _, err := interactions.LikePost(context.Background(), domain.PostLike{ID: uuid.New(), PostID: post.ID, ThreadID: thread.ID, ForumID: post.ForumID, UserID: uuid.New(), CreatedAt: time.Now().UTC()}); err != nil {
+		t.Fatalf("LikePost error = %v", err)
+	}
+	if err := db.Model(&PostModel{}).Where("id = ?", post.ID).Update("like_count", 0).Error; err != nil {
+		t.Fatalf("corrupt post like error = %v", err)
+	}
+	if err := db.Model(&ThreadModel{}).Where("id = ?", thread.ID).Updates(map[string]any{"like_count": 0, "view_count": 0}).Error; err != nil {
+		t.Fatalf("corrupt thread like error = %v", err)
+	}
+
+	drift, err := operations.VerifyLikes(context.Background())
+	if err != nil {
+		t.Fatalf("VerifyLikes() error = %v", err)
+	}
+	if len(drift.Mismatches) != 2 {
+		t.Fatalf("like drift = %+v, want post and thread mismatches", drift.Mismatches)
+	}
+	if _, err := operations.RebuildLikes(context.Background()); err != nil {
+		t.Fatalf("RebuildLikes() error = %v", err)
+	}
+	if err := operations.ApplyThreadViews(context.Background(), map[uuid.UUID]int64{thread.ID: 4}); err != nil {
+		t.Fatalf("ApplyThreadViews() error = %v", err)
+	}
+	found, err := threads.FindByID(context.Background(), thread.ID)
+	if err != nil {
+		t.Fatalf("FindByID() error = %v", err)
+	}
+	if found.LikeCount != 1 || found.ViewCount != 4 {
+		t.Fatalf("thread counters = %+v, want repaired like and flushed views", found)
+	}
+}
+
 // newRepositories creates migrated forum repositories.
 func newRepositories(t *testing.T) (CategoryRepository, ForumRepository, *gorm.DB) {
 	t.Helper()

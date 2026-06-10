@@ -16,6 +16,8 @@ import (
 	forumspostgres "github.com/niflaot/gamehub-go/module/forums/adapter/postgres"
 	forumsredis "github.com/niflaot/gamehub-go/module/forums/adapter/redis"
 	forumsapp "github.com/niflaot/gamehub-go/module/forums/application"
+	forumsdomain "github.com/niflaot/gamehub-go/module/forums/domain"
+	forumsport "github.com/niflaot/gamehub-go/module/forums/port"
 	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
 	groupspostgres "github.com/niflaot/gamehub-go/module/groups/adapter/postgres"
 	groupsapp "github.com/niflaot/gamehub-go/module/groups/application"
@@ -109,6 +111,7 @@ func newRootCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command 
 	}
 	cmd.AddCommand(newStartCommand(activeLogger, deps))
 	cmd.AddCommand(newMigrateCommand(activeLogger, deps))
+	cmd.AddCommand(newForumsCommand(activeLogger, deps))
 	return cmd
 }
 
@@ -280,6 +283,114 @@ func newMigrateResetCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.
 	return cmd
 }
 
+// newForumsCommand creates the forums operational command group.
+func newForumsCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "forums",
+		Short:         "Operate forum caches and counters",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+	cmd.AddCommand(newForumsStatsCommand(activeLogger, deps))
+	cmd.AddCommand(newForumsLikesCommand(activeLogger, deps))
+	cmd.AddCommand(newForumsCacheCommand(activeLogger, deps))
+	cmd.AddCommand(newForumsViewsCommand(activeLogger, deps))
+	return cmd
+}
+
+// newForumsStatsCommand creates the forum stats command group.
+func newForumsStatsCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
+	cmd := &cobra.Command{Use: "stats", Short: "Verify or rebuild forum stats", SilenceUsage: true, SilenceErrors: true}
+	cmd.AddCommand(&cobra.Command{Use: "verify", Short: "Verify forum stats counters", SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, _ []string) error {
+		report, err := runForumReport(cmd.Context(), activeLogger, deps, false, func(ctx context.Context, service forumsapp.Service) (forumsdomain.CounterDriftReport, error) {
+			return service.VerifyStats(ctx)
+		})
+		if err != nil {
+			return err
+		}
+		writeForumReport(cmd.OutOrStdout(), report)
+		if len(report.Mismatches) > 0 {
+			return fmt.Errorf("forum stats drift detected")
+		}
+		return nil
+	}})
+	cmd.AddCommand(&cobra.Command{Use: "rebuild", Short: "Rebuild forum stats counters", SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, _ []string) error {
+		report, err := runForumReport(cmd.Context(), activeLogger, deps, false, func(ctx context.Context, service forumsapp.Service) (forumsdomain.CounterDriftReport, error) {
+			return service.RebuildStats(ctx)
+		})
+		if err != nil {
+			return err
+		}
+		writeForumReport(cmd.OutOrStdout(), report)
+		return nil
+	}})
+	return cmd
+}
+
+// newForumsLikesCommand creates the forum likes command group.
+func newForumsLikesCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
+	cmd := &cobra.Command{Use: "likes", Short: "Verify or rebuild forum like counters", SilenceUsage: true, SilenceErrors: true}
+	cmd.AddCommand(&cobra.Command{Use: "verify", Short: "Verify forum like counters", SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, _ []string) error {
+		report, err := runForumReport(cmd.Context(), activeLogger, deps, false, func(ctx context.Context, service forumsapp.Service) (forumsdomain.CounterDriftReport, error) {
+			return service.VerifyLikes(ctx)
+		})
+		if err != nil {
+			return err
+		}
+		writeForumReport(cmd.OutOrStdout(), report)
+		if len(report.Mismatches) > 0 {
+			return fmt.Errorf("forum like drift detected")
+		}
+		return nil
+	}})
+	cmd.AddCommand(&cobra.Command{Use: "rebuild", Short: "Rebuild forum like counters", SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, _ []string) error {
+		report, err := runForumReport(cmd.Context(), activeLogger, deps, false, func(ctx context.Context, service forumsapp.Service) (forumsdomain.CounterDriftReport, error) {
+			return service.RebuildLikes(ctx)
+		})
+		if err != nil {
+			return err
+		}
+		writeForumReport(cmd.OutOrStdout(), report)
+		return nil
+	}})
+	return cmd
+}
+
+// newForumsCacheCommand creates the forum cache command group.
+func newForumsCacheCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
+	cmd := &cobra.Command{Use: "cache", Short: "Operate forum read caches", SilenceUsage: true, SilenceErrors: true}
+	cmd.AddCommand(&cobra.Command{Use: "clear", Short: "Clear forum read caches", SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, _ []string) error {
+		err := runForumAction(cmd.Context(), activeLogger, deps, true, func(ctx context.Context, service forumsapp.Service) error {
+			return service.ClearReadCache(ctx)
+		})
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "forum caches cleared")
+		return nil
+	}})
+	return cmd
+}
+
+// newForumsViewsCommand creates the forum view-counter command group.
+func newForumsViewsCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
+	cmd := &cobra.Command{Use: "views", Short: "Operate forum view counters", SilenceUsage: true, SilenceErrors: true}
+	cmd.AddCommand(&cobra.Command{Use: "flush", Short: "Flush buffered forum thread views", SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, _ []string) error {
+		var flushed int64
+		err := runForumAction(cmd.Context(), activeLogger, deps, true, func(ctx context.Context, service forumsapp.Service) error {
+			count, err := service.FlushThreadViews(ctx)
+			flushed = count
+			return err
+		})
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "flushed_thread_views=%d\n", flushed)
+		return nil
+	}})
+	return cmd
+}
+
 // runStart starts the HTTP API server.
 func runStart(ctx context.Context, activeLogger **zap.Logger, deps commandDeps) error {
 	cfg, log, err := runtime(ctx, activeLogger, deps)
@@ -352,15 +463,20 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 // forumsService creates forums application service.
 func forumsService(db *gorm.DB, client *goredis.Client, assetService assetsport.Service) forumsapp.Service {
 	store := orm.NewStore(db)
+	var readCache forumsport.ReadCache
+	if client != nil {
+		readCache = forumsredis.NewTreeCache(client)
+	}
 	return forumsapp.NewService(forumsapp.Dependencies{
 		Categories:   forumspostgres.NewCategoryRepository(store),
 		Forums:       forumspostgres.NewForumRepository(store),
 		Threads:      forumspostgres.NewThreadRepository(store),
 		Posts:        forumspostgres.NewPostRepository(store),
 		Interactions: forumspostgres.NewInteractionRepository(store),
+		Operations:   forumspostgres.NewOperationsRepository(store),
 		Assets:       forumsassets.NewResolver(assetService),
 		Authorizer:   forumspostgres.NewVisibilityAuthorizer(store),
-		Cache:        forumsredis.NewTreeCache(client),
+		Cache:        readCache,
 		Transactions: transaction.New(db),
 	})
 }
@@ -438,6 +554,43 @@ func runMigrationRepair(ctx context.Context, activeLogger **zap.Logger, deps com
 	return deps.newRunner(db, log).Repair(ctx, version, checksum, reason)
 }
 
+// runForumReport runs a forum operation returning a drift report.
+func runForumReport(ctx context.Context, activeLogger **zap.Logger, deps commandDeps, needsRedis bool, action func(context.Context, forumsapp.Service) (forumsdomain.CounterDriftReport, error)) (forumsdomain.CounterDriftReport, error) {
+	var report forumsdomain.CounterDriftReport
+	err := runForumAction(ctx, activeLogger, deps, needsRedis, func(ctx context.Context, service forumsapp.Service) error {
+		var err error
+		report, err = action(ctx, service)
+		return err
+	})
+	return report, err
+}
+
+// runForumAction runs a forum operational action.
+func runForumAction(ctx context.Context, activeLogger **zap.Logger, deps commandDeps, needsRedis bool, action func(context.Context, forumsapp.Service) error) error {
+	cfg, log, err := runtime(ctx, activeLogger, deps)
+	if err != nil {
+		return err
+	}
+	db, err := deps.openPostgres(ctx, cfg.Postgres)
+	if err != nil {
+		return err
+	}
+	defer closeDatabase(log, deps.closePostgres, db)
+	var client *goredis.Client
+	if needsRedis {
+		client, err = deps.openRedis(ctx, cfg.Redis)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := deps.closeRedis(client); err != nil {
+				log.Error("close redis failed", zap.Error(err))
+			}
+		}()
+	}
+	return action(ctx, forumsService(db, client, nil))
+}
+
 // runtime loads configuration and creates the active logger.
 func runtime(_ context.Context, activeLogger **zap.Logger, deps commandDeps) (config.Config, *zap.Logger, error) {
 	cfg, err := deps.loadConfig()
@@ -456,6 +609,14 @@ func runtime(_ context.Context, activeLogger **zap.Logger, deps commandDeps) (co
 func closeDatabase(log *zap.Logger, closePostgres func(*gorm.DB) error, db *gorm.DB) {
 	if err := closePostgres(db); err != nil {
 		log.Error("close postgres failed", zap.Error(err))
+	}
+}
+
+// writeForumReport writes a counter drift report.
+func writeForumReport(output io.Writer, report forumsdomain.CounterDriftReport) {
+	fmt.Fprintf(output, "mismatches=%d repaired=%s\n", len(report.Mismatches), strconv.FormatBool(report.Repaired))
+	for _, mismatch := range report.Mismatches {
+		fmt.Fprintf(output, "drift object_type=%s object_id=%s field=%s expected=%d actual=%d\n", mismatch.ObjectType, mismatch.ObjectID, mismatch.Field, mismatch.Expected, mismatch.Actual)
 	}
 }
 

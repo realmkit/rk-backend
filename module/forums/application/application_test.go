@@ -163,7 +163,7 @@ func TestServiceCreateThreadCreatesOpenerPost(t *testing.T) {
 	}
 }
 
-// TestServiceCreateReplyRequiresOpenThread verifies reply state rules.
+// TestServiceCreateReplyRequiresOpenThread verifies closed reply state rules.
 func TestServiceCreateReplyRequiresOpenThread(t *testing.T) {
 	service, categories, forums, threads, _, auth, _ := newContentTestService()
 	actorID := uuid.New()
@@ -171,6 +171,25 @@ func TestServiceCreateReplyRequiresOpenThread(t *testing.T) {
 	forum := testForum(category.ID, nil, 0, "support")
 	thread := testThread(forum.ID, actorID)
 	thread.Status = domain.ThreadStatusClosed
+	categories.items[category.ID] = category
+	forums.items[forum.ID] = forum
+	threads.items[thread.ID] = thread
+	auth.reply[forum.ID] = true
+
+	_, err := service.CreateReply(context.Background(), port.CreateReplyCommand{ActorUserID: actorID, ThreadID: thread.ID, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "Reply"})
+	if !errors.Is(err, port.ErrConflict) {
+		t.Fatalf("CreateReply() error = %v, want %v", err, port.ErrConflict)
+	}
+}
+
+// TestServiceCreateReplyRejectsLockedThread verifies locked threads cannot receive replies.
+func TestServiceCreateReplyRejectsLockedThread(t *testing.T) {
+	service, categories, forums, threads, _, auth, _ := newContentTestService()
+	actorID := uuid.New()
+	category := testCategory()
+	forum := testForum(category.ID, nil, 0, "locked")
+	thread := testThread(forum.ID, actorID)
+	thread.Status = domain.ThreadStatusLocked
 	categories.items[category.ID] = category
 	forums.items[forum.ID] = forum
 	threads.items[thread.ID] = thread
@@ -462,6 +481,83 @@ func TestServiceUnreadSummaryUsesVisibleForums(t *testing.T) {
 	}
 }
 
+// TestServiceSearchUsesVisibleForums verifies search is visibility-scoped.
+func TestServiceSearchUsesVisibleForums(t *testing.T) {
+	service, _, forums, _, _, auth, _ := newContentTestService()
+	visibleForum := testForum(uuid.New(), nil, 0, "visible-search")
+	hiddenForum := testForum(uuid.New(), nil, 0, "hidden-search")
+	forums.items[visibleForum.ID] = visibleForum
+	forums.items[hiddenForum.ID] = hiddenForum
+	auth.visible[visibleForum.ID] = true
+	service.operations.(*memoryOperations).search = []domain.SearchResult{{Type: "thread", ForumID: visibleForum.ID, ThreadID: uuid.New(), Title: "Visible"}}
+
+	result, err := service.Search(context.Background(), port.SearchCommand{ActorUserID: uuid.New(), Query: "visible"}, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("Search() error = %v", err)
+	}
+	operations := service.operations.(*memoryOperations)
+	if len(result.Items) != 1 || len(operations.searchFilters) != 1 || len(operations.searchFilters[0].ForumIDs) != 1 || operations.searchFilters[0].ForumIDs[0] != visibleForum.ID {
+		t.Fatalf("result=%+v filters=%+v, want only visible forum searched", result, operations.searchFilters)
+	}
+}
+
+// TestServiceSearchRejectsInvalidQuery verifies search input validation.
+func TestServiceSearchRejectsInvalidQuery(t *testing.T) {
+	service, _, _, _, _, _, _ := newContentTestService()
+
+	_, err := service.Search(context.Background(), port.SearchCommand{Query: "x"}, pagination.Page{Limit: 10})
+	var validation domain.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("Search() error = %v, want validation", err)
+	}
+}
+
+// TestServiceFlushThreadViewsAppliesValidBufferedViews verifies view buffers are sanitized before flush.
+func TestServiceFlushThreadViewsAppliesValidBufferedViews(t *testing.T) {
+	service, _, _, _, _, _, _ := newContentTestService()
+	cache := service.cache.(*memoryCache)
+	operations := service.operations.(*memoryOperations)
+	validID := uuid.New()
+	cache.threadViews[validID.String()] = 3
+	cache.threadViews["invalid"] = 5
+	cache.threadViews[uuid.NewString()] = -1
+
+	flushed, err := service.FlushThreadViews(context.Background())
+	if err != nil {
+		t.Fatalf("FlushThreadViews() error = %v", err)
+	}
+	if flushed != 3 || operations.viewIncrements[validID] != 3 || len(cache.threadViews) != 0 {
+		t.Fatalf("flushed=%d increments=%+v cache=%+v, want only valid positive views", flushed, operations.viewIncrements, cache.threadViews)
+	}
+}
+
+// TestServiceRepairMethodsDelegateToOperations verifies operational use cases remain testable.
+func TestServiceRepairMethodsDelegateToOperations(t *testing.T) {
+	service, _, _, _, _, _, _ := newContentTestService()
+	operations := service.operations.(*memoryOperations)
+	operations.report = domain.CounterDriftReport{Mismatches: []domain.CounterDrift{{ObjectType: "forum_thread", ObjectID: uuid.New(), Field: "post_count", Expected: 2, Actual: 1}}}
+
+	stats, err := service.VerifyStats(context.Background())
+	if err != nil {
+		t.Fatalf("VerifyStats() error = %v", err)
+	}
+	if len(stats.Mismatches) != 1 || operations.verifyStatsCalls != 1 {
+		t.Fatalf("stats=%+v calls=%d, want delegated report", stats, operations.verifyStatsCalls)
+	}
+	if _, err := service.RebuildStats(context.Background()); err != nil {
+		t.Fatalf("RebuildStats() error = %v", err)
+	}
+	if _, err := service.VerifyLikes(context.Background()); err != nil {
+		t.Fatalf("VerifyLikes() error = %v", err)
+	}
+	if _, err := service.RebuildLikes(context.Background()); err != nil {
+		t.Fatalf("RebuildLikes() error = %v", err)
+	}
+	if operations.rebuildStatsCalls != 1 || operations.verifyLikesCalls != 1 || operations.rebuildLikesCalls != 1 {
+		t.Fatalf("operations calls = %+v, want all repair hooks delegated", operations)
+	}
+}
+
 // newContentTestService creates a forum service with exposed content stores.
 func newContentTestService() (Service, *memoryCategories, *memoryForums, *memoryThreads, *memoryPosts, *memoryAuthorizer, *memoryInteractions) {
 	categories := &memoryCategories{items: map[uuid.UUID]domain.ForumCategory{}}
@@ -469,8 +565,9 @@ func newContentTestService() (Service, *memoryCategories, *memoryForums, *memory
 	threads := &memoryThreads{items: map[uuid.UUID]domain.Thread{}}
 	posts := &memoryPosts{items: map[uuid.UUID]domain.Post{}, revisions: map[uuid.UUID][]domain.PostRevision{}}
 	interactions := &memoryInteractions{posts: posts, threads: threads, likes: map[string]domain.PostLike{}, readStates: map[string]domain.ThreadReadState{}}
+	operations := &memoryOperations{viewIncrements: map[uuid.UUID]int64{}}
 	auth := &memoryAuthorizer{visible: map[uuid.UUID]bool{}, manage: map[uuid.UUID]bool{}, create: map[uuid.UUID]bool{}, reply: map[uuid.UUID]bool{}, like: map[uuid.UUID]bool{}, manageThreads: map[uuid.UUID]bool{}, managePosts: map[uuid.UUID]bool{}}
-	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Interactions: interactions, Assets: &memoryAssets{existing: map[uuid.UUID]bool{}}, Authorizer: auth, Cache: newMemoryCache(), Transactions: noopTx{}})
+	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Interactions: interactions, Operations: operations, Assets: &memoryAssets{existing: map[uuid.UUID]bool{}}, Authorizer: auth, Cache: newMemoryCache(), Transactions: noopTx{}})
 	return service, categories, forums, threads, posts, auth, interactions
 }
 
@@ -481,9 +578,10 @@ func newTestService() (Service, *memoryCategories, *memoryForums, *memoryAuthori
 	threads := &memoryThreads{items: map[uuid.UUID]domain.Thread{}}
 	posts := &memoryPosts{items: map[uuid.UUID]domain.Post{}, revisions: map[uuid.UUID][]domain.PostRevision{}}
 	interactions := &memoryInteractions{posts: posts, threads: threads, likes: map[string]domain.PostLike{}, readStates: map[string]domain.ThreadReadState{}}
+	operations := &memoryOperations{viewIncrements: map[uuid.UUID]int64{}}
 	auth := &memoryAuthorizer{visible: map[uuid.UUID]bool{}, manage: map[uuid.UUID]bool{}, create: map[uuid.UUID]bool{}, reply: map[uuid.UUID]bool{}, like: map[uuid.UUID]bool{}, manageThreads: map[uuid.UUID]bool{}, managePosts: map[uuid.UUID]bool{}}
 	cache := newMemoryCache()
-	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Interactions: interactions, Assets: &memoryAssets{existing: map[uuid.UUID]bool{}}, Authorizer: auth, Cache: cache, Transactions: noopTx{}})
+	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Interactions: interactions, Operations: operations, Assets: &memoryAssets{existing: map[uuid.UUID]bool{}}, Authorizer: auth, Cache: cache, Transactions: noopTx{}})
 	return service, categories, forums, auth, cache
 }
 
@@ -879,6 +977,62 @@ func (repository *memoryInteractions) UnreadSummary(_ context.Context, _ uuid.UU
 	return repository.unread, nil
 }
 
+// memoryOperations stores operational calls in memory.
+type memoryOperations struct {
+	search             []domain.SearchResult
+	searchFilters      []port.SearchFilter
+	report             domain.CounterDriftReport
+	viewIncrements     map[uuid.UUID]int64
+	verifyStatsCalls   int
+	rebuildStatsCalls  int
+	verifyLikesCalls   int
+	rebuildLikesCalls  int
+	applyViewsCallSeen bool
+}
+
+// Search returns configured search rows.
+func (repository *memoryOperations) Search(_ context.Context, filter port.SearchFilter, _ pagination.Page) (pagination.Result[domain.SearchResult], error) {
+	repository.searchFilters = append(repository.searchFilters, filter)
+	return pagination.Result[domain.SearchResult]{Items: repository.search}, nil
+}
+
+// VerifyStats reports configured stats drift.
+func (repository *memoryOperations) VerifyStats(context.Context) (domain.CounterDriftReport, error) {
+	repository.verifyStatsCalls++
+	return repository.report, nil
+}
+
+// RebuildStats reports configured stats drift as repaired.
+func (repository *memoryOperations) RebuildStats(context.Context) (domain.CounterDriftReport, error) {
+	repository.rebuildStatsCalls++
+	report := repository.report
+	report.Repaired = true
+	return report, nil
+}
+
+// VerifyLikes reports configured like drift.
+func (repository *memoryOperations) VerifyLikes(context.Context) (domain.CounterDriftReport, error) {
+	repository.verifyLikesCalls++
+	return repository.report, nil
+}
+
+// RebuildLikes reports configured like drift as repaired.
+func (repository *memoryOperations) RebuildLikes(context.Context) (domain.CounterDriftReport, error) {
+	repository.rebuildLikesCalls++
+	report := repository.report
+	report.Repaired = true
+	return report, nil
+}
+
+// ApplyThreadViews stores flushed view increments.
+func (repository *memoryOperations) ApplyThreadViews(_ context.Context, increments map[uuid.UUID]int64) error {
+	repository.applyViewsCallSeen = true
+	for threadID, increment := range increments {
+		repository.viewIncrements[threadID] += increment
+	}
+	return nil
+}
+
 // likeKey returns an in-memory like key.
 func likeKey(postID uuid.UUID, userID uuid.UUID) string {
 	return postID.String() + ":" + userID.String()
@@ -896,15 +1050,16 @@ func (resolver *memoryAssets) AssetExists(_ context.Context, id uuid.UUID) (bool
 
 // memoryCache stores trees in memory.
 type memoryCache struct {
-	items     map[string]domain.ForumTree
-	latest    map[string]pagination.Result[domain.LatestPostSummary]
-	mostLiked map[string]pagination.Result[domain.MostLikedPost]
-	sets      int
+	items       map[string]domain.ForumTree
+	latest      map[string]pagination.Result[domain.LatestPostSummary]
+	mostLiked   map[string]pagination.Result[domain.MostLikedPost]
+	threadViews map[string]int64
+	sets        int
 }
 
 // newMemoryCache creates a memory read cache.
 func newMemoryCache() *memoryCache {
-	return &memoryCache{items: map[string]domain.ForumTree{}, latest: map[string]pagination.Result[domain.LatestPostSummary]{}, mostLiked: map[string]pagination.Result[domain.MostLikedPost]{}}
+	return &memoryCache{items: map[string]domain.ForumTree{}, latest: map[string]pagination.Result[domain.LatestPostSummary]{}, mostLiked: map[string]pagination.Result[domain.MostLikedPost]{}, threadViews: map[string]int64{}}
 }
 
 // GetTree returns a cached tree.
@@ -958,6 +1113,27 @@ func (cache *memoryCache) SetMostLikedPosts(_ context.Context, key string, resul
 
 // ClearMostLikedPosts clears most-liked posts.
 func (cache *memoryCache) ClearMostLikedPosts(context.Context) error {
+	cache.mostLiked = map[string]pagination.Result[domain.MostLikedPost]{}
+	return nil
+}
+
+// IncrementThreadView buffers a thread view.
+func (cache *memoryCache) IncrementThreadView(_ context.Context, threadID string) error {
+	cache.threadViews[threadID]++
+	return nil
+}
+
+// DrainThreadViews returns and clears buffered thread views.
+func (cache *memoryCache) DrainThreadViews(context.Context) (map[string]int64, error) {
+	views := cache.threadViews
+	cache.threadViews = map[string]int64{}
+	return views, nil
+}
+
+// ClearAll clears read caches.
+func (cache *memoryCache) ClearAll(context.Context) error {
+	cache.items = map[string]domain.ForumTree{}
+	cache.latest = map[string]pagination.Result[domain.LatestPostSummary]{}
 	cache.mostLiked = map[string]pagination.Result[domain.MostLikedPost]{}
 	return nil
 }

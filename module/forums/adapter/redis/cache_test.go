@@ -77,3 +77,66 @@ func TestTreeCacheStoresWidgetPages(t *testing.T) {
 		t.Fatalf("GetMostLikedPosts() after clear ok=%v err=%v, want miss", ok, err)
 	}
 }
+
+// TestTreeCacheBuffersAndDrainsThreadViews verifies view counters are buffered separately from read caches.
+func TestTreeCacheBuffersAndDrainsThreadViews(t *testing.T) {
+	server := miniredis.RunT(t)
+	client := goredis.NewClient(&goredis.Options{Addr: server.Addr()})
+	defer client.Close()
+	cache := NewTreeCache(client)
+	threadID := uuid.NewString()
+
+	if err := cache.IncrementThreadView(context.Background(), threadID); err != nil {
+		t.Fatalf("IncrementThreadView first error = %v", err)
+	}
+	if err := cache.IncrementThreadView(context.Background(), threadID); err != nil {
+		t.Fatalf("IncrementThreadView second error = %v", err)
+	}
+	views, err := cache.DrainThreadViews(context.Background())
+	if err != nil {
+		t.Fatalf("DrainThreadViews() error = %v", err)
+	}
+	if views[threadID] != 2 {
+		t.Fatalf("views = %+v, want two buffered views", views)
+	}
+	empty, err := cache.DrainThreadViews(context.Background())
+	if err != nil {
+		t.Fatalf("DrainThreadViews empty error = %v", err)
+	}
+	if len(empty) != 0 {
+		t.Fatalf("empty = %+v, want drained buffer", empty)
+	}
+}
+
+// TestTreeCacheClearAllClearsReadCaches verifies broad read-cache clearing.
+func TestTreeCacheClearAllClearsReadCaches(t *testing.T) {
+	server := miniredis.RunT(t)
+	client := goredis.NewClient(&goredis.Options{Addr: server.Addr()})
+	defer client.Close()
+	cache := NewTreeCache(client)
+	treeKey := "forums:tree:v1:anonymous"
+	latestKey := "forums:latest:v1:global:all:anonymous::20"
+	mostLikedKey := "forums:most-liked:v1:" + uuid.NewString() + ":all:anonymous::20"
+
+	if err := cache.SetTree(context.Background(), treeKey, domain.ForumTree{}, time.Minute); err != nil {
+		t.Fatalf("SetTree() error = %v", err)
+	}
+	if err := cache.SetLatestPosts(context.Background(), latestKey, pagination.Result[domain.LatestPostSummary]{}, time.Minute); err != nil {
+		t.Fatalf("SetLatestPosts() error = %v", err)
+	}
+	if err := cache.SetMostLikedPosts(context.Background(), mostLikedKey, pagination.Result[domain.MostLikedPost]{}, time.Minute); err != nil {
+		t.Fatalf("SetMostLikedPosts() error = %v", err)
+	}
+	if err := cache.ClearAll(context.Background()); err != nil {
+		t.Fatalf("ClearAll() error = %v", err)
+	}
+	if _, ok, err := cache.GetTree(context.Background(), treeKey); err != nil || ok {
+		t.Fatalf("GetTree after ClearAll ok=%v err=%v, want miss", ok, err)
+	}
+	if _, ok, err := cache.GetLatestPosts(context.Background(), latestKey); err != nil || ok {
+		t.Fatalf("GetLatestPosts after ClearAll ok=%v err=%v, want miss", ok, err)
+	}
+	if _, ok, err := cache.GetMostLikedPosts(context.Background(), mostLikedKey); err != nil || ok {
+		t.Fatalf("GetMostLikedPosts after ClearAll ok=%v err=%v, want miss", ok, err)
+	}
+}

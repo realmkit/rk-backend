@@ -96,6 +96,8 @@ CREATE INDEX forum_threads_forum_author_latest_active_idx ON forum_threads (foru
 CREATE INDEX forum_threads_forum_status_latest_active_idx ON forum_threads (forum_id, status, latest_post_at DESC) WHERE deleted_at IS NULL;
 CREATE INDEX forum_threads_slug_active_idx ON forum_threads (slug) WHERE deleted_at IS NULL;
 CREATE INDEX forum_threads_like_latest_active_idx ON forum_threads (like_count DESC, latest_post_at DESC) WHERE deleted_at IS NULL;
+CREATE INDEX forum_threads_title_active_idx ON forum_threads (title) WHERE deleted_at IS NULL;
+CREATE INDEX forum_threads_title_fts_idx ON forum_threads USING gin (to_tsvector('simple', title)) WHERE deleted_at IS NULL;
 CREATE INDEX forum_threads_deleted_at_idx ON forum_threads (deleted_at);
 
 CREATE TABLE forum_posts (
@@ -125,6 +127,8 @@ CREATE INDEX forum_posts_thread_status_sequence_active_idx ON forum_posts (threa
 CREATE INDEX forum_posts_forum_created_active_idx ON forum_posts (forum_id, created_at DESC, id) WHERE deleted_at IS NULL;
 CREATE INDEX forum_posts_forum_liked_active_idx ON forum_posts (forum_id, like_count DESC, created_at DESC) WHERE deleted_at IS NULL;
 CREATE INDEX forum_posts_author_created_active_idx ON forum_posts (author_user_id, created_at DESC) WHERE deleted_at IS NULL;
+CREATE INDEX forum_posts_content_text_active_idx ON forum_posts (content_text) WHERE deleted_at IS NULL;
+CREATE INDEX forum_posts_content_text_fts_idx ON forum_posts USING gin (to_tsvector('simple', content_text)) WHERE deleted_at IS NULL;
 CREATE INDEX forum_posts_deleted_at_idx ON forum_posts (deleted_at);
 
 CREATE TABLE forum_post_revisions (

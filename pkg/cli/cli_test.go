@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/gamehub-go/pkg/config"
 	"github.com/niflaot/gamehub-go/pkg/logger"
@@ -36,8 +37,8 @@ func TestRootCommandShowsHelpByDefault(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if !strings.Contains(output.String(), "start") || !strings.Contains(output.String(), "migrate") {
-		t.Fatalf("output = %q, want start and migrate commands", output.String())
+	if !strings.Contains(output.String(), "start") || !strings.Contains(output.String(), "migrate") || !strings.Contains(output.String(), "forums") {
+		t.Fatalf("output = %q, want start, migrate, and forums commands", output.String())
 	}
 }
 
@@ -170,6 +171,44 @@ func TestMigrateRepairRunsWithFlags(t *testing.T) {
 	_, err = executeCommand(t, []string{"migrate", "repair", "--version", "1", "--checksum", loaded[0].Checksum, "--reason", "manual"}, deps)
 	if err != nil {
 		t.Fatalf("repair Execute() error = %v", err)
+	}
+}
+
+// TestForumStatsVerifyCommandReportsCleanCounters verifies operational stats command wiring.
+func TestForumStatsVerifyCommandReportsCleanCounters(t *testing.T) {
+	db := newCommandDB(t)
+	deps := testCommandDepsWithDB(t, db)
+	if _, err := executeCommand(t, []string{"migrate", "up"}, deps); err != nil {
+		t.Fatalf("migrate up error = %v", err)
+	}
+
+	output, err := executeCommand(t, []string{"forums", "stats", "verify"}, deps)
+	if err != nil {
+		t.Fatalf("forums stats verify error = %v", err)
+	}
+	if !strings.Contains(output, "mismatches=0 repaired=false") {
+		t.Fatalf("output = %q, want clean stats report", output)
+	}
+}
+
+// TestForumCacheClearCommandUsesRedis verifies Redis-backed cache clearing command wiring.
+func TestForumCacheClearCommandUsesRedis(t *testing.T) {
+	server := miniredis.RunT(t)
+	db := newCommandDB(t)
+	deps := testCommandDepsWithDB(t, db)
+	deps.openRedis = func(context.Context, gamehubredis.Config) (*goredis.Client, error) {
+		return goredis.NewClient(&goredis.Options{Addr: server.Addr()}), nil
+	}
+	if _, err := executeCommand(t, []string{"migrate", "up"}, deps); err != nil {
+		t.Fatalf("migrate up error = %v", err)
+	}
+
+	output, err := executeCommand(t, []string{"forums", "cache", "clear"}, deps)
+	if err != nil {
+		t.Fatalf("forums cache clear error = %v", err)
+	}
+	if !strings.Contains(output, "forum caches cleared") {
+		t.Fatalf("output = %q, want cache clear message", output)
 	}
 }
 

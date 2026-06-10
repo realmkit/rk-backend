@@ -105,4 +105,25 @@ type Service interface {
 
 	// GetUnreadSummary returns unread counts for the actor.
 	GetUnreadSummary(ctx context.Context, actorUserID uuid.UUID) (domain.UnreadSummary, error)
+
+	// Search searches visible forum content.
+	Search(ctx context.Context, command SearchCommand, page pagination.Page) (pagination.Result[domain.SearchResult], error)
+
+	// VerifyStats reports stats counter drift.
+	VerifyStats(ctx context.Context) (domain.CounterDriftReport, error)
+
+	// RebuildStats repairs stats counters.
+	RebuildStats(ctx context.Context) (domain.CounterDriftReport, error)
+
+	// VerifyLikes reports like counter drift.
+	VerifyLikes(ctx context.Context) (domain.CounterDriftReport, error)
+
+	// RebuildLikes repairs like counters.
+	RebuildLikes(ctx context.Context) (domain.CounterDriftReport, error)
+
+	// FlushThreadViews persists buffered view counters.
+	FlushThreadViews(ctx context.Context) (int64, error)
+
+	// ClearReadCache clears forum read caches.
+	ClearReadCache(ctx context.Context) error
 }

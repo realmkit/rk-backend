@@ -70,6 +70,12 @@ type mostLikedPostListResponse struct {
 	NextPageToken string                 `json:"next_page_token,omitempty"`
 }
 
+// searchListResponse contains forum search rows.
+type searchListResponse struct {
+	Items         []domain.SearchResult `json:"items"`
+	NextPageToken string                `json:"next_page_token,omitempty"`
+}
+
 // readThreadRequest marks a thread read through a sequence.
 type readThreadRequest struct {
 	LastReadPostSequence int64 `json:"last_read_post_sequence"`
@@ -119,6 +125,41 @@ func (handler handler) listThreads(ctx *fiber.Ctx) error {
 		return handleError(ctx, err)
 	}
 	return writeJSON(ctx, fiber.StatusOK, threadListResponse{Items: result.Items, NextPageToken: result.NextCursor})
+}
+
+// searchForums searches all visible forums.
+func (handler handler) searchForums(ctx *fiber.Ctx) error {
+	return handler.search(ctx, uuid.Nil)
+}
+
+// searchForum searches one visible forum.
+func (handler handler) searchForum(ctx *fiber.Ctx) error {
+	forumID, err := idFromParam(ctx, "forum_id")
+	if err != nil {
+		return err
+	}
+	return handler.search(ctx, forumID)
+}
+
+// search searches forum content.
+func (handler handler) search(ctx *fiber.Ctx, forumID uuid.UUID) error {
+	actor, err := optionalUserID(ctx)
+	if err != nil {
+		return err
+	}
+	page, err := pageFromQuery(ctx)
+	if err != nil {
+		return err
+	}
+	query := ctx.Query("query")
+	if query == "" {
+		query = ctx.Query("q")
+	}
+	result, err := handler.services.Forums.Search(ctx.Context(), port.SearchCommand{ActorUserID: actor, ForumID: forumID, Query: query}, page)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, searchListResponse{Items: result.Items, NextPageToken: result.NextCursor})
 }
 
 // getThread returns one thread.

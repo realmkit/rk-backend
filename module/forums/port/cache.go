@@ -36,4 +36,13 @@ type ReadCache interface {
 
 	// ClearMostLikedPosts removes most-liked cache entries.
 	ClearMostLikedPosts(ctx context.Context) error
+
+	// IncrementThreadView buffers one thread view.
+	IncrementThreadView(ctx context.Context, threadID string) error
+
+	// DrainThreadViews atomically returns and clears buffered thread views.
+	DrainThreadViews(ctx context.Context) (map[string]int64, error)
+
+	// ClearAll removes all forum read-cache keys.
+	ClearAll(ctx context.Context) error
 }

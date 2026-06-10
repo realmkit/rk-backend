@@ -4076,6 +4076,135 @@
           }
         }
       }
+    },
+    "/api/v1/forums/search": {
+      "get": {
+        "operationId": "searchForums",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Search visible forum content",
+        "description": "Auth: optional. Results are filtered to forums visible to the actor.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ForumSearchQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search visible forum content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumSearchResultList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/forums/{forum_id}/search": {
+      "get": {
+        "operationId": "searchForum",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Search visible content in one forum",
+        "description": "Auth: optional. Results are returned only when the forum is visible to the actor.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ForumIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/ForumSearchQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search visible forum content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumSearchResultList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4421,6 +4550,17 @@
           "type": "string",
           "format": "uuid"
         }
+      },
+      "ForumSearchQuery": {
+        "name": "query",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "description": "Search text. The q alias is also accepted by the HTTP adapter."
       }
     },
     "requestBodies": {
@@ -7619,6 +7759,75 @@
             "items": {
               "$ref": "#/components/schemas/ForumUnreadSummary"
             }
+          }
+        }
+      },
+      "ForumSearchResult": {
+        "type": "object",
+        "required": [
+          "type",
+          "forum_id",
+          "thread_id",
+          "title",
+          "slug",
+          "excerpt",
+          "author_user_id",
+          "created_at"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "thread",
+              "post"
+            ]
+          },
+          "forum_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "thread_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "post_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "excerpt": {
+            "type": "string"
+          },
+          "author_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ForumSearchResultList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumSearchResult"
+            }
+          },
+          "next_page_token": {
+            "type": "string"
           }
         }
       }
