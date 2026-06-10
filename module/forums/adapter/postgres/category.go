@@ -101,6 +101,34 @@ func categoryPage(models []CategoryModel, limit int) pagination.Result[domain.Fo
 	return pagination.Result[domain.ForumCategory]{Items: items, NextCursor: next}
 }
 
+// categoryModelFromDomain maps category to persistence.
+func categoryModelFromDomain(category domain.ForumCategory) CategoryModel {
+	return CategoryModel{
+		ID:           orm.ID{ID: category.ID},
+		Key:          string(category.Key),
+		Name:         category.Name,
+		Description:  category.Description,
+		DisplayOrder: category.DisplayOrder,
+		Status:       string(category.Status),
+		Version:      category.Version,
+	}
+}
+
+// categoryFromModel maps persistence category to domain.
+func categoryFromModel(model CategoryModel) domain.ForumCategory {
+	return domain.ForumCategory{
+		ID:           model.ID.ID,
+		Key:          domain.Key(model.Key),
+		Name:         model.Name,
+		Description:  model.Description,
+		DisplayOrder: model.DisplayOrder,
+		Status:       domain.CategoryStatus(model.Status),
+		Version:      model.Version,
+		CreatedAt:    model.CreatedAt,
+		UpdatedAt:    model.UpdatedAt,
+	}
+}
+
 // mapError maps GORM errors into forum errors.
 func mapError(err error) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {

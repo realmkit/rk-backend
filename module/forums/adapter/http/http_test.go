@@ -474,7 +474,13 @@ func newTestApp(service httpService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	app.Use(headers.Middleware())
 	v1 := app.Group("/api/v1")
-	Register(v1, Services{Forums: service})
+	Register(v1, Services{
+		Structure:   service,
+		Content:     service,
+		Interaction: service,
+		Operations:  service,
+		Admin:       service,
+	})
 	return app
 }
 

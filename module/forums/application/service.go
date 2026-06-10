@@ -1,36 +1,48 @@
+// Package application composes forum use-case services.
 package application
 
 import (
-	"context"
-	"strconv"
-	"time"
-
-	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/forums/domain"
+	adminapp "github.com/niflaot/gamehub-go/module/forums/application/admin"
+	contentapp "github.com/niflaot/gamehub-go/module/forums/application/content"
+	interactionapp "github.com/niflaot/gamehub-go/module/forums/application/interaction"
+	operationsapp "github.com/niflaot/gamehub-go/module/forums/application/operations"
+	structureapp "github.com/niflaot/gamehub-go/module/forums/application/structure"
 	"github.com/niflaot/gamehub-go/module/forums/port"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
 	"github.com/niflaot/gamehub-go/pkg/transaction"
 )
 
-// treeCacheTTL is the visible forum tree cache lifetime.
-const treeCacheTTL = 30 * time.Second
+// Structure exposes structure use cases through the facade.
+type Structure struct {
+	structureapp.Service
+}
 
-// widgetCacheTTL is the forum widget cache lifetime.
-const widgetCacheTTL = 20 * time.Second
+// Content exposes content use cases through the facade.
+type Content struct {
+	contentapp.Service
+}
 
-// Service manages forum structure use cases.
+// Interaction exposes interaction use cases through the facade.
+type Interaction struct {
+	interactionapp.Service
+}
+
+// Operations exposes operations use cases through the facade.
+type Operations struct {
+	operationsapp.Service
+}
+
+// Admin exposes admin use cases through the facade.
+type Admin struct {
+	adminapp.Service
+}
+
+// Service composes concern-owned forum use-case services.
 type Service struct {
-	categories   port.CategoryRepository
-	forums       port.ForumRepository
-	threads      port.ThreadRepository
-	posts        port.PostRepository
-	interactions port.InteractionRepository
-	operations   port.OperationsRepository
-	assets       port.AssetResolver
-	authorizer   port.VisibilityAuthorizer
-	permissions  port.PermissionAdmin
-	cache        port.ReadCache
-	transactions transaction.Runner
+	Structure
+	Content
+	Interaction
+	Operations
+	Admin
 }
 
 // Dependencies contains forum service dependencies.
@@ -69,359 +81,86 @@ type Dependencies struct {
 	Transactions transaction.Runner
 }
 
-// NewService creates a forum service.
+// NewService creates a forum service facade.
 func NewService(deps Dependencies) Service {
-	permissions := deps.Permissions
-	if permissions == nil {
-		if admin, ok := deps.Authorizer.(port.PermissionAdmin); ok {
-			permissions = admin
-		}
-	}
+	permissions := permissionAdmin(deps)
 	return Service{
-		categories:   deps.Categories,
-		forums:       deps.Forums,
-		threads:      deps.Threads,
-		posts:        deps.Posts,
-		interactions: deps.Interactions,
-		operations:   deps.Operations,
-		assets:       deps.Assets,
-		authorizer:   deps.Authorizer,
-		permissions:  permissions,
-		cache:        deps.Cache,
-		transactions: deps.Transactions,
+		Structure: Structure{Service: structureapp.NewService(structureDeps(deps))},
+		Content:   Content{Service: contentapp.NewService(contentDeps(deps))},
+		Interaction: Interaction{
+			Service: interactionapp.NewService(interactionDeps(deps)),
+		},
+		Operations: Operations{Service: operationsapp.NewService(operationsDeps(deps))},
+		Admin: Admin{
+			Service: adminapp.NewService(adminDeps(deps, permissions)),
+		},
 	}
 }
 
-// CreateCategory creates a category.
-func (service Service) CreateCategory(ctx context.Context, command port.CreateCategoryCommand) (domain.ForumCategory, error) {
-	if err := service.requireManage(ctx, command.ActorUserID, domain.RootForumObjectID()); err != nil {
-		return domain.ForumCategory{}, err
+// permissionAdmin resolves explicit or authorizer-backed permission administration.
+func permissionAdmin(deps Dependencies) port.PermissionAdmin {
+	if deps.Permissions != nil {
+		return deps.Permissions
 	}
-	category := command.Category.Normalize()
-	if category.ID == uuid.Nil {
-		category.ID = uuid.New()
-	}
-	if err := category.Validate(); err != nil {
-		return domain.ForumCategory{}, err
-	}
-	created, err := service.categories.Create(ctx, category)
-	if err != nil {
-		return domain.ForumCategory{}, err
-	}
-	return created, service.clearTree(ctx)
+	admin, _ := deps.Authorizer.(port.PermissionAdmin)
+	return admin
 }
 
-// UpdateCategory updates a category.
-func (service Service) UpdateCategory(ctx context.Context, command port.UpdateCategoryCommand) (domain.ForumCategory, error) {
-	if err := service.requireManage(ctx, command.ActorUserID, domain.RootForumObjectID()); err != nil {
-		return domain.ForumCategory{}, err
+// structureDeps adapts facade dependencies to the structure service.
+func structureDeps(deps Dependencies) structureapp.Dependencies {
+	return structureapp.Dependencies{
+		Categories:   deps.Categories,
+		Forums:       deps.Forums,
+		Authorizer:   deps.Authorizer,
+		Cache:        deps.Cache,
+		Transactions: deps.Transactions,
 	}
-	category := command.Category.Normalize()
-	if err := category.Validate(); err != nil {
-		return domain.ForumCategory{}, err
-	}
-	updated, err := service.categories.Update(ctx, category, command.ExpectedVersion)
-	if err != nil {
-		return domain.ForumCategory{}, err
-	}
-	return updated, service.clearTree(ctx)
 }
 
-// GetCategory returns one category.
-func (service Service) GetCategory(ctx context.Context, id uuid.UUID) (domain.ForumCategory, error) {
-	return service.categories.FindByID(ctx, id)
+// contentDeps adapts facade dependencies to the content service.
+func contentDeps(deps Dependencies) contentapp.Dependencies {
+	return contentapp.Dependencies{
+		Forums:       deps.Forums,
+		Threads:      deps.Threads,
+		Posts:        deps.Posts,
+		Assets:       deps.Assets,
+		Authorizer:   deps.Authorizer,
+		Cache:        deps.Cache,
+		Transactions: deps.Transactions,
+	}
 }
 
-// ListCategories lists categories.
-func (service Service) ListCategories(ctx context.Context, filter port.CategoryFilter, page pagination.Page) (pagination.Result[domain.ForumCategory], error) {
-	return service.categories.List(ctx, filter, page)
+// interactionDeps adapts facade dependencies to the interaction service.
+func interactionDeps(deps Dependencies) interactionapp.Dependencies {
+	return interactionapp.Dependencies{
+		Forums:       deps.Forums,
+		Threads:      deps.Threads,
+		Posts:        deps.Posts,
+		Interactions: deps.Interactions,
+		Authorizer:   deps.Authorizer,
+		Cache:        deps.Cache,
+	}
 }
 
-// DeleteCategory deletes a category.
-func (service Service) DeleteCategory(ctx context.Context, command port.DeleteCategoryCommand) error {
-	if err := service.requireManage(ctx, command.ActorUserID, domain.RootForumObjectID()); err != nil {
-		return err
+// operationsDeps adapts facade dependencies to the operations service.
+func operationsDeps(deps Dependencies) operationsapp.Dependencies {
+	return operationsapp.Dependencies{
+		Forums:     deps.Forums,
+		Operations: deps.Operations,
+		Authorizer: deps.Authorizer,
+		Cache:      deps.Cache,
 	}
-	if err := service.categories.Delete(ctx, command.ID, command.ExpectedVersion); err != nil {
-		return err
-	}
-	return service.clearTree(ctx)
 }
 
-// ReorderCategories reorders categories.
-func (service Service) ReorderCategories(ctx context.Context, command port.ReorderCategoriesCommand) error {
-	if err := service.requireManage(ctx, command.ActorUserID, domain.RootForumObjectID()); err != nil {
-		return err
+// adminDeps adapts facade dependencies to the admin service.
+func adminDeps(deps Dependencies, permissions port.PermissionAdmin) adminapp.Dependencies {
+	return adminapp.Dependencies{
+		Forums:       deps.Forums,
+		Authorizer:   deps.Authorizer,
+		Permissions:  permissions,
+		Cache:        deps.Cache,
+		Transactions: deps.Transactions,
 	}
-	if err := service.validateReorder(command.Items); err != nil {
-		return err
-	}
-	if err := service.categories.Reorder(ctx, command.Items); err != nil {
-		return err
-	}
-	return service.clearTree(ctx)
-}
-
-// CreateForum creates a forum.
-func (service Service) CreateForum(ctx context.Context, command port.CreateForumCommand) (domain.Forum, error) {
-	if err := service.requireManage(ctx, command.ActorUserID, domain.RootForumObjectID()); err != nil {
-		return domain.Forum{}, err
-	}
-	var created domain.Forum
-	err := service.transactions.WithinTx(ctx, func(ctx context.Context) error {
-		forum, err := service.prepareForum(ctx, command.Forum.Normalize())
-		if err != nil {
-			return err
-		}
-		stored, err := service.forums.Create(ctx, forum)
-		if err != nil {
-			return err
-		}
-		created = stored
-		return service.clearTree(ctx)
-	})
-	return created, err
-}
-
-// UpdateForum updates a forum.
-func (service Service) UpdateForum(ctx context.Context, command port.UpdateForumCommand) (domain.Forum, error) {
-	if err := service.requireManage(ctx, command.ActorUserID, command.Forum.ID); err != nil {
-		return domain.Forum{}, err
-	}
-	current, err := service.forums.FindByID(ctx, command.Forum.ID)
-	if err != nil {
-		return domain.Forum{}, err
-	}
-	forum := command.Forum.Normalize()
-	forum.CategoryID = current.CategoryID
-	forum.ParentForumID = current.ParentForumID
-	forum.Path = current.Path
-	forum.Depth = current.Depth
-	if err := forum.Validate(); err != nil {
-		return domain.Forum{}, err
-	}
-	updated, err := service.forums.Update(ctx, forum, command.ExpectedVersion)
-	if err != nil {
-		return domain.Forum{}, err
-	}
-	return updated, service.clearTree(ctx)
-}
-
-// GetForumSettings returns admin forum settings.
-func (service Service) GetForumSettings(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (domain.ForumSettings, error) {
-	if err := service.requireManage(ctx, actorUserID, forumID); err != nil {
-		return domain.ForumSettings{}, err
-	}
-	forum, err := service.forums.FindByID(ctx, forumID)
-	if err != nil {
-		return domain.ForumSettings{}, err
-	}
-	return forum.Settings(), nil
-}
-
-// UpdateForumSettings updates admin forum settings.
-func (service Service) UpdateForumSettings(ctx context.Context, command port.UpdateForumSettingsCommand) (domain.ForumSettings, error) {
-	if err := service.requireManage(ctx, command.ActorUserID, command.Settings.ForumID); err != nil {
-		return domain.ForumSettings{}, err
-	}
-	current, err := service.forums.FindByID(ctx, command.Settings.ForumID)
-	if err != nil {
-		return domain.ForumSettings{}, err
-	}
-	settings := command.Settings.Normalize()
-	if err := settings.Validate(); err != nil {
-		return domain.ForumSettings{}, err
-	}
-	updatedForum := current
-	updatedForum.Kind = settings.Kind
-	updatedForum.ExternalURL = settings.ExternalURL
-	updatedForum.ThreadVisibilityMode = settings.ThreadVisibilityMode
-	updatedForum.MaxStickyThreads = settings.MaxStickyThreads
-	updatedForum.DefaultThreadStatus = settings.DefaultThreadStatus
-	updatedForum.AuthorPostEditWindowSeconds = settings.AuthorPostEditWindowSeconds
-	updatedForum.AuthorPostDeleteWindowSeconds = settings.AuthorPostDeleteWindowSeconds
-	if err := updatedForum.Validate(); err != nil {
-		return domain.ForumSettings{}, err
-	}
-	updated, err := service.forums.Update(ctx, updatedForum, command.ExpectedVersion)
-	if err != nil {
-		return domain.ForumSettings{}, err
-	}
-	return updated.Settings(), service.ClearReadCache(ctx)
-}
-
-// GetForumPermissionSettings returns forum permission grants.
-func (service Service) GetForumPermissionSettings(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (domain.ForumPermissionSettings, error) {
-	if err := service.requireManage(ctx, actorUserID, forumID); err != nil {
-		return domain.ForumPermissionSettings{}, err
-	}
-	if _, err := service.forums.FindByID(ctx, forumID); err != nil {
-		return domain.ForumPermissionSettings{}, err
-	}
-	if service.permissions == nil {
-		return domain.ForumPermissionSettings{}, port.ErrForbidden
-	}
-	return service.permissions.ForumPermissionSettings(ctx, forumID)
-}
-
-// UpdateForumPermissionSettings replaces forum permission grants.
-func (service Service) UpdateForumPermissionSettings(ctx context.Context, command port.UpdateForumPermissionSettingsCommand) error {
-	settings := command.Settings.Normalize()
-	if err := service.requireManage(ctx, command.ActorUserID, settings.ForumID); err != nil {
-		return err
-	}
-	if _, err := service.forums.FindByID(ctx, settings.ForumID); err != nil {
-		return err
-	}
-	if err := settings.Validate(); err != nil {
-		return err
-	}
-	if service.permissions == nil {
-		return port.ErrForbidden
-	}
-	err := service.transactions.WithinTx(ctx, func(ctx context.Context) error {
-		if err := service.permissions.UpdateForumPermissionSettings(ctx, command.ActorUserID, settings); err != nil {
-			return err
-		}
-		return service.ClearReadCache(ctx)
-	})
-	return err
-}
-
-// SimulateForumPermission simulates one forum permission.
-func (service Service) SimulateForumPermission(ctx context.Context, command port.SimulateForumPermissionCommand) (domain.ForumPermissionSimulationResult, error) {
-	if err := service.requireManage(ctx, command.ActorUserID, command.ForumID); err != nil {
-		return domain.ForumPermissionSimulationResult{}, err
-	}
-	if _, err := service.forums.FindByID(ctx, command.ForumID); err != nil {
-		return domain.ForumPermissionSimulationResult{}, err
-	}
-	request := command.Request.Normalize(command.ForumID)
-	if err := request.Validate(); err != nil {
-		return domain.ForumPermissionSimulationResult{}, err
-	}
-	if service.permissions == nil {
-		return domain.ForumPermissionSimulationResult{}, port.ErrForbidden
-	}
-	return service.permissions.SimulateForumPermission(ctx, command.ForumID, request)
-}
-
-// MoveForum moves a forum.
-func (service Service) MoveForum(ctx context.Context, command port.MoveForumCommand) (domain.Forum, error) {
-	if err := service.requireManage(ctx, command.ActorUserID, command.ID); err != nil {
-		return domain.Forum{}, err
-	}
-	var moved domain.Forum
-	err := service.transactions.WithinTx(ctx, func(ctx context.Context) error {
-		current, err := service.forums.FindByID(ctx, command.ID)
-		if err != nil {
-			return err
-		}
-		target, err := service.moveTarget(ctx, current, command)
-		if err != nil {
-			return err
-		}
-		stored, err := service.forums.Move(ctx, target, current.Path, command.ExpectedVersion)
-		if err != nil {
-			return err
-		}
-		moved = stored
-		return service.clearTree(ctx)
-	})
-	return moved, err
-}
-
-// GetForum returns one forum.
-func (service Service) GetForum(ctx context.Context, id uuid.UUID) (domain.Forum, error) {
-	return service.forums.FindByID(ctx, id)
-}
-
-// ListForums lists forums.
-func (service Service) ListForums(ctx context.Context, filter port.ForumFilter, page pagination.Page) (pagination.Result[domain.Forum], error) {
-	return service.forums.List(ctx, filter, page)
-}
-
-// DeleteForum deletes a forum.
-func (service Service) DeleteForum(ctx context.Context, command port.DeleteForumCommand) error {
-	if err := service.requireManage(ctx, command.ActorUserID, command.ID); err != nil {
-		return err
-	}
-	if err := service.forums.Delete(ctx, command.ID, command.ExpectedVersion); err != nil {
-		return err
-	}
-	return service.clearTree(ctx)
-}
-
-// ReorderForums reorders forums.
-func (service Service) ReorderForums(ctx context.Context, command port.ReorderForumsCommand) error {
-	if err := service.requireManage(ctx, command.ActorUserID, domain.RootForumObjectID()); err != nil {
-		return err
-	}
-	if err := service.validateReorder(command.Items); err != nil {
-		return err
-	}
-	if err := service.forums.Reorder(ctx, command.Items); err != nil {
-		return err
-	}
-	return service.clearTree(ctx)
-}
-
-// Tree returns the visible forum tree.
-func (service Service) Tree(ctx context.Context, actorUserID uuid.UUID) (domain.ForumTree, error) {
-	key := treeCacheKey(actorUserID)
-	if service.cache != nil {
-		if cached, ok, err := service.cache.GetTree(ctx, key); err == nil && ok {
-			return cached, nil
-		}
-	}
-	tree, err := service.loadTree(ctx, actorUserID)
-	if err != nil {
-		return domain.ForumTree{}, err
-	}
-	if service.cache != nil {
-		if err := service.cache.SetTree(ctx, key, tree, treeCacheTTL); err != nil {
-			return tree, nil
-		}
-	}
-	return tree, nil
-}
-
-// requireManage verifies structure-management permission.
-func (service Service) requireManage(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) error {
-	if service.authorizer == nil {
-		return nil
-	}
-	allowed, err := service.authorizer.CanManageForum(ctx, actorUserID, forumID)
-	if err != nil {
-		return err
-	}
-	if !allowed {
-		return port.ErrForbidden
-	}
-	return nil
-}
-
-// clearTree clears cached trees when a cache is configured.
-func (service Service) clearTree(ctx context.Context) error {
-	if service.cache == nil {
-		return nil
-	}
-	return service.cache.ClearTree(ctx)
-}
-
-// validateReorder validates reorder items.
-func (service Service) validateReorder(items []port.ReorderItem) error {
-	var violations []domain.Violation
-	if len(items) == 0 {
-		violations = domain.AppendViolation(violations, "items", "must contain at least one item")
-	}
-	for index, item := range items {
-		if item.ID == uuid.Nil {
-			violations = domain.AppendViolation(violations, "items["+strconv.Itoa(index)+"].id", "is required")
-		}
-		violations = append(violations, domain.ValidateDisplayOrder("items["+strconv.Itoa(index)+"].display_order", item.DisplayOrder)...)
-	}
-	return domain.NewValidationError(violations)
 }
 
 // Ensure Service implements port.Service.

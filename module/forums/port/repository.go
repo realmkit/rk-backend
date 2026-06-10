@@ -2,6 +2,7 @@ package port
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/module/forums/domain"
@@ -92,5 +93,48 @@ type PermissionAdmin interface {
 	UpdateForumPermissionSettings(ctx context.Context, actorUserID uuid.UUID, settings domain.ForumPermissionSettings) error
 
 	// SimulateForumPermission explains a forum permission decision.
-	SimulateForumPermission(ctx context.Context, forumID uuid.UUID, request domain.ForumPermissionSimulationRequest) (domain.ForumPermissionSimulationResult, error)
+	SimulateForumPermission(
+		ctx context.Context,
+		forumID uuid.UUID,
+		request domain.ForumPermissionSimulationRequest,
+	) (domain.ForumPermissionSimulationResult, error)
+}
+
+// ReadCache caches visible forum read paths.
+type ReadCache interface {
+	// GetTree returns a cached tree when present.
+	GetTree(ctx context.Context, key string) (domain.ForumTree, bool, error)
+
+	// SetTree stores a tree for ttl.
+	SetTree(ctx context.Context, key string, tree domain.ForumTree, ttl time.Duration) error
+
+	// ClearTree removes forum tree cache entries.
+	ClearTree(ctx context.Context) error
+
+	// GetLatestPosts returns a cached latest-post page when present.
+	GetLatestPosts(ctx context.Context, key string) (pagination.Result[domain.LatestPostSummary], bool, error)
+
+	// SetLatestPosts stores a latest-post page for ttl.
+	SetLatestPosts(ctx context.Context, key string, result pagination.Result[domain.LatestPostSummary], ttl time.Duration) error
+
+	// ClearLatestPosts removes latest-post cache entries.
+	ClearLatestPosts(ctx context.Context) error
+
+	// GetMostLikedPosts returns a cached most-liked page when present.
+	GetMostLikedPosts(ctx context.Context, key string) (pagination.Result[domain.MostLikedPost], bool, error)
+
+	// SetMostLikedPosts stores a most-liked page for ttl.
+	SetMostLikedPosts(ctx context.Context, key string, result pagination.Result[domain.MostLikedPost], ttl time.Duration) error
+
+	// ClearMostLikedPosts removes most-liked cache entries.
+	ClearMostLikedPosts(ctx context.Context) error
+
+	// IncrementThreadView buffers one thread view.
+	IncrementThreadView(ctx context.Context, threadID string) error
+
+	// DrainThreadViews atomically returns and clears buffered thread views.
+	DrainThreadViews(ctx context.Context) (map[string]int64, error)
+
+	// ClearAll removes all forum read-cache keys.
+	ClearAll(ctx context.Context) error
 }

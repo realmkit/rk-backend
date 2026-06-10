@@ -483,7 +483,13 @@ func forumsService(db *gorm.DB, client *goredis.Client, assetService assetsport.
 
 // forumshttpServices creates HTTP services for forums.
 func forumshttpServices(forumService forumsapp.Service) forumshttp.Services {
-	return forumshttp.Services{Forums: forumService}
+	return forumshttp.Services{
+		Structure:   forumService,
+		Content:     forumService,
+		Interaction: forumService,
+		Operations:  forumService,
+		Admin:       forumService,
+	}
 }
 
 // usersService creates users application service.

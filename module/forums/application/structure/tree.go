@@ -1,4 +1,4 @@
-package application
+package structure
 
 import (
 	"context"
@@ -104,7 +104,12 @@ func (service Service) loadTree(ctx context.Context, actorUserID uuid.UUID) (dom
 }
 
 // treeFrom nests visible forums under visible categories.
-func treeFrom(categories []domain.ForumCategory, forums []domain.Forum, stats map[uuid.UUID]domain.ForumStats, visible map[uuid.UUID]bool) domain.ForumTree {
+func treeFrom(
+	categories []domain.ForumCategory,
+	forums []domain.Forum,
+	stats map[uuid.UUID]domain.ForumStats,
+	visible map[uuid.UUID]bool,
+) domain.ForumTree {
 	nodes := map[uuid.UUID]domain.ForumNode{}
 	byParent := map[uuid.UUID][]uuid.UUID{}
 	rootsByCategory := map[uuid.UUID][]uuid.UUID{}

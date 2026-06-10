@@ -20,6 +20,10 @@ The Next.js frontend lives in the separate `gamehub-frontend` repository.
 - Keep code easy to read, professional, reusable, and focused on single responsibility.
 - Avoid registry-style types or global service containers unless they are clearly necessary.
 - Prefer small, explicit interfaces owned by the consumer package.
+- Keep interfaces, services, and files focused on one concern. Do not create god interfaces or god services that mix unrelated workflows such as structure admin, content, interactions, operations, and configuration.
+- Keep production Go files at or below 250 lines whenever practical. If a package needs more than 6 production files or cannot stay readable within that limit, split it into smaller concern-owned packages.
+- Keep struct literals, function calls, and return values readable. Use multi-line composite literals with one field per line when a literal has several fields or would create an excessively long line.
+- Keep line length humane. Prefer extracting small helpers or using multi-line formatting over horizontal scrolling.
 - Keep behavior idempotent wherever a command, job, migration, or integration can be retried.
 - Build for fault tolerance, resilience, and traceability from the start.
 - Do not add implementation code until the relevant package/module boundaries are clear.

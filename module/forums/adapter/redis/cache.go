@@ -63,7 +63,12 @@ func (cache TreeCache) GetLatestPosts(ctx context.Context, key string) (paginati
 }
 
 // SetLatestPosts stores a latest-post page for ttl.
-func (cache TreeCache) SetLatestPosts(ctx context.Context, key string, result pagination.Result[domain.LatestPostSummary], ttl time.Duration) error {
+func (cache TreeCache) SetLatestPosts(
+	ctx context.Context,
+	key string,
+	result pagination.Result[domain.LatestPostSummary],
+	ttl time.Duration,
+) error {
 	return cache.setJSON(ctx, key, result, ttl)
 }
 
@@ -80,7 +85,12 @@ func (cache TreeCache) GetMostLikedPosts(ctx context.Context, key string) (pagin
 }
 
 // SetMostLikedPosts stores a most-liked page for ttl.
-func (cache TreeCache) SetMostLikedPosts(ctx context.Context, key string, result pagination.Result[domain.MostLikedPost], ttl time.Duration) error {
+func (cache TreeCache) SetMostLikedPosts(
+	ctx context.Context,
+	key string,
+	result pagination.Result[domain.MostLikedPost],
+	ttl time.Duration,
+) error {
 	return cache.setJSON(ctx, key, result, ttl)
 }
 

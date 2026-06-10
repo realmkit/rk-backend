@@ -1,366 +1,183 @@
 package domain
 
 import (
-	"encoding/json"
-	"net/url"
-	"regexp"
-	"slices"
-	"strings"
-
 	"github.com/google/uuid"
+	shared "github.com/niflaot/gamehub-go/module/forums/domain/shared"
 )
 
 // Key is a stable forum machine key.
-type Key string
+type Key = shared.Key
 
 // Slug is a URL-friendly forum slug.
-type Slug string
+type Slug = shared.Slug
 
 // CategoryStatus is the category lifecycle state.
-type CategoryStatus string
+type CategoryStatus = shared.CategoryStatus
 
 // ForumKind is the forum structural kind.
-type ForumKind string
+type ForumKind = shared.ForumKind
 
 // ForumStatus is the forum lifecycle state.
-type ForumStatus string
+type ForumStatus = shared.ForumStatus
 
 // ThreadVisibilityMode controls user-facing thread list filtering.
-type ThreadVisibilityMode string
+type ThreadVisibilityMode = shared.ThreadVisibilityMode
 
 // ThreadStatus is the default thread lifecycle state.
-type ThreadStatus string
+type ThreadStatus = shared.ThreadStatus
 
 // StickyState is the thread sticky/display state.
-type StickyState string
+type StickyState = shared.StickyState
 
 // PostStatus is the post lifecycle state.
-type PostStatus string
+type PostStatus = shared.PostStatus
 
 // ContentFormat is the stored rich-content document format.
-type ContentFormat string
+type ContentFormat = shared.ContentFormat
 
 // ReferenceType is a structured post reference kind.
-type ReferenceType string
+type ReferenceType = shared.ReferenceType
 
 // PermissionSubjectType identifies an admin-configurable forum grant subject.
-type PermissionSubjectType string
+type PermissionSubjectType = shared.PermissionSubjectType
 
 const (
 	// CategoryStatusActive means the category can be displayed.
-	CategoryStatusActive CategoryStatus = "active"
+	CategoryStatusActive = shared.CategoryStatusActive
 
 	// CategoryStatusHidden means the category is hidden.
-	CategoryStatusHidden CategoryStatus = "hidden"
+	CategoryStatusHidden = shared.CategoryStatusHidden
 
 	// CategoryStatusArchived means the category is archived.
-	CategoryStatusArchived CategoryStatus = "archived"
+	CategoryStatusArchived = shared.CategoryStatusArchived
 )
 
 const (
 	// ForumKindDiscussion means the forum can contain threads.
-	ForumKindDiscussion ForumKind = "discussion"
+	ForumKindDiscussion = shared.ForumKindDiscussion
 
 	// ForumKindLink means the forum points to an external URL.
-	ForumKindLink ForumKind = "link"
+	ForumKindLink = shared.ForumKindLink
 
 	// ForumKindContainer means the forum groups child forums.
-	ForumKindContainer ForumKind = "container"
+	ForumKindContainer = shared.ForumKindContainer
 )
 
 const (
 	// ForumStatusActive means the forum can be displayed and used.
-	ForumStatusActive ForumStatus = "active"
+	ForumStatusActive = shared.ForumStatusActive
 
 	// ForumStatusHidden means the forum is hidden.
-	ForumStatusHidden ForumStatus = "hidden"
+	ForumStatusHidden = shared.ForumStatusHidden
 
 	// ForumStatusArchived means the forum is archived.
-	ForumStatusArchived ForumStatus = "archived"
+	ForumStatusArchived = shared.ForumStatusArchived
 )
 
 const (
 	// ThreadVisibilityAllThreads allows visible users to see all visible threads.
-	ThreadVisibilityAllThreads ThreadVisibilityMode = "all_threads"
+	ThreadVisibilityAllThreads = shared.ThreadVisibilityAllThreads
 
-	// ThreadVisibilityOwnThreads allows visible users to see only their authored threads.
-	ThreadVisibilityOwnThreads ThreadVisibilityMode = "own_threads"
+	// ThreadVisibilityOwnThreads allows visible users to see only authored threads.
+	ThreadVisibilityOwnThreads = shared.ThreadVisibilityOwnThreads
 
 	// ThreadVisibilityOwnOrStickyThreads allows visible users to see authored or sticky threads.
-	ThreadVisibilityOwnOrStickyThreads ThreadVisibilityMode = "own_or_sticky_threads"
+	ThreadVisibilityOwnOrStickyThreads = shared.ThreadVisibilityOwnOrStickyThreads
 )
 
 const (
 	// ThreadStatusOpen is the default open thread state.
-	ThreadStatusOpen ThreadStatus = "open"
+	ThreadStatusOpen = shared.ThreadStatusOpen
 
 	// ThreadStatusClosed is the default closed thread state.
-	ThreadStatusClosed ThreadStatus = "closed"
+	ThreadStatusClosed = shared.ThreadStatusClosed
 
 	// ThreadStatusLocked is the default locked thread state.
-	ThreadStatusLocked ThreadStatus = "locked"
+	ThreadStatusLocked = shared.ThreadStatusLocked
 
 	// ThreadStatusHidden means the thread is hidden from normal readers.
-	ThreadStatusHidden ThreadStatus = "hidden"
+	ThreadStatusHidden = shared.ThreadStatusHidden
 
 	// ThreadStatusArchived means the thread is archived.
-	ThreadStatusArchived ThreadStatus = "archived"
+	ThreadStatusArchived = shared.ThreadStatusArchived
 
 	// ThreadStatusDeleted means the thread is soft deleted.
-	ThreadStatusDeleted ThreadStatus = "deleted"
+	ThreadStatusDeleted = shared.ThreadStatusDeleted
 )
 
 const (
 	// StickyStateNormal means normal thread ordering.
-	StickyStateNormal StickyState = "normal"
+	StickyStateNormal = shared.StickyStateNormal
 
 	// StickyStateSticky means pinned above normal threads.
-	StickyStateSticky StickyState = "sticky"
+	StickyStateSticky = shared.StickyStateSticky
 
 	// StickyStateAnnouncement means official staff-controlled sticky presentation.
-	StickyStateAnnouncement StickyState = "announcement"
+	StickyStateAnnouncement = shared.StickyStateAnnouncement
 )
 
 const (
 	// PostStatusVisible means the post is visible to normal readers.
-	PostStatusVisible PostStatus = "visible"
+	PostStatusVisible = shared.PostStatusVisible
 
 	// PostStatusHidden means the post is hidden from normal readers.
-	PostStatusHidden PostStatus = "hidden"
+	PostStatusHidden = shared.PostStatusHidden
 
 	// PostStatusPendingReview means the post awaits moderation.
-	PostStatusPendingReview PostStatus = "pending_review"
+	PostStatusPendingReview = shared.PostStatusPendingReview
 
 	// PostStatusDeleted means the post is soft deleted.
-	PostStatusDeleted PostStatus = "deleted"
+	PostStatusDeleted = shared.PostStatusDeleted
 
 	// PostStatusSystem means the post was generated by the system.
-	PostStatusSystem PostStatus = "system"
+	PostStatusSystem = shared.PostStatusSystem
 )
 
 const (
 	// ContentFormatProseMirror stores ProseMirror-compatible JSON.
-	ContentFormatProseMirror ContentFormat = "prosemirror_json"
+	ContentFormatProseMirror = shared.ContentFormatProseMirror
 )
 
 const (
 	// PermissionSubjectPublic grants anonymous and authenticated users.
-	PermissionSubjectPublic PermissionSubjectType = "public"
+	PermissionSubjectPublic = shared.PermissionSubjectPublic
 
 	// PermissionSubjectAuthenticated grants any authenticated local user.
-	PermissionSubjectAuthenticated PermissionSubjectType = "authenticated"
+	PermissionSubjectAuthenticated = shared.PermissionSubjectAuthenticated
 
 	// PermissionSubjectUser grants one user.
-	PermissionSubjectUser PermissionSubjectType = "user"
+	PermissionSubjectUser = shared.PermissionSubjectUser
 
 	// PermissionSubjectGroup grants active members of one group.
-	PermissionSubjectGroup PermissionSubjectType = "group"
+	PermissionSubjectGroup = shared.PermissionSubjectGroup
 )
 
 const (
 	// ReferenceReplyTo points to posts this post replies to.
-	ReferenceReplyTo ReferenceType = "reply_to"
+	ReferenceReplyTo = shared.ReferenceReplyTo
 
 	// ReferenceQuote points to quoted posts.
-	ReferenceQuote ReferenceType = "quote"
+	ReferenceQuote = shared.ReferenceQuote
 
 	// ReferenceMention points to mentioned users.
-	ReferenceMention ReferenceType = "mention"
+	ReferenceMention = shared.ReferenceMention
 
 	// ReferenceAttachment points to asset attachments.
-	ReferenceAttachment ReferenceType = "attachment"
+	ReferenceAttachment = shared.ReferenceAttachment
 
 	// ReferenceLink records extracted links.
-	ReferenceLink ReferenceType = "link"
+	ReferenceLink = shared.ReferenceLink
 )
 
 const (
 	// DefaultAuthorPostEditWindowSeconds is the default author self-edit window.
-	DefaultAuthorPostEditWindowSeconds = 600
+	DefaultAuthorPostEditWindowSeconds = shared.DefaultAuthorPostEditWindowSeconds
 
 	// DefaultAuthorPostDeleteWindowSeconds is the default author self-delete window.
-	DefaultAuthorPostDeleteWindowSeconds = 300
+	DefaultAuthorPostDeleteWindowSeconds = shared.DefaultAuthorPostDeleteWindowSeconds
 )
-
-// rootForumObjectID is the reserved permission object for category and root forum administration.
-const rootForumObjectID = "00000000-0000-0000-0000-000000000101"
 
 // RootForumObjectID returns the reserved forum permission target for structure administration.
 func RootForumObjectID() uuid.UUID {
-	return uuid.MustParse(rootForumObjectID)
-}
-
-// keyPattern matches stable lower snake identifiers.
-var keyPattern = regexp.MustCompile(`^[a-z][a-z0-9_]{1,62}[a-z0-9]$`)
-
-// slugPattern matches URL slugs.
-var slugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{1,118}[a-z0-9]$`)
-
-// ValidateKey validates key.
-func ValidateKey(field string, key Key) []Violation {
-	if !keyPattern.MatchString(strings.TrimSpace(string(key))) {
-		return []Violation{{Field: field, Message: "must be lower snake case and between 3 and 64 characters"}}
-	}
-	return nil
-}
-
-// ValidateSlug validates slug.
-func ValidateSlug(field string, slug Slug) []Violation {
-	if !slugPattern.MatchString(strings.TrimSpace(string(slug))) {
-		return []Violation{{Field: field, Message: "must be lower kebab case and between 3 and 120 characters"}}
-	}
-	return nil
-}
-
-// ValidateName validates display names.
-func ValidateName(field string, value string) []Violation {
-	length := len(strings.TrimSpace(value))
-	if length < 1 || length > 120 {
-		return []Violation{{Field: field, Message: "must be between 1 and 120 characters"}}
-	}
-	return nil
-}
-
-// ValidateDescription validates descriptions.
-func ValidateDescription(field string, value string) []Violation {
-	if len(strings.TrimSpace(value)) > 1000 {
-		return []Violation{{Field: field, Message: "must be at most 1000 characters"}}
-	}
-	return nil
-}
-
-// ValidateDisplayOrder validates display order.
-func ValidateDisplayOrder(field string, value int) []Violation {
-	if value < 0 {
-		return []Violation{{Field: field, Message: "must be zero or greater"}}
-	}
-	return nil
-}
-
-// ValidateCategoryStatus validates category status.
-func ValidateCategoryStatus(field string, status CategoryStatus) []Violation {
-	if slices.Contains([]CategoryStatus{CategoryStatusActive, CategoryStatusHidden, CategoryStatusArchived}, status) {
-		return nil
-	}
-	return []Violation{{Field: field, Message: "is not supported"}}
-}
-
-// ValidateForumKind validates forum kind.
-func ValidateForumKind(field string, kind ForumKind) []Violation {
-	if slices.Contains([]ForumKind{ForumKindDiscussion, ForumKindLink, ForumKindContainer}, kind) {
-		return nil
-	}
-	return []Violation{{Field: field, Message: "is not supported"}}
-}
-
-// ValidateForumStatus validates forum status.
-func ValidateForumStatus(field string, status ForumStatus) []Violation {
-	if slices.Contains([]ForumStatus{ForumStatusActive, ForumStatusHidden, ForumStatusArchived}, status) {
-		return nil
-	}
-	return []Violation{{Field: field, Message: "is not supported"}}
-}
-
-// ValidateThreadVisibilityMode validates thread visibility mode.
-func ValidateThreadVisibilityMode(field string, mode ThreadVisibilityMode) []Violation {
-	if slices.Contains([]ThreadVisibilityMode{ThreadVisibilityAllThreads, ThreadVisibilityOwnThreads, ThreadVisibilityOwnOrStickyThreads}, mode) {
-		return nil
-	}
-	return []Violation{{Field: field, Message: "is not supported"}}
-}
-
-// ValidateThreadStatus validates thread status.
-func ValidateThreadStatus(field string, status ThreadStatus) []Violation {
-	if slices.Contains([]ThreadStatus{ThreadStatusOpen, ThreadStatusClosed, ThreadStatusLocked, ThreadStatusHidden, ThreadStatusArchived, ThreadStatusDeleted}, status) {
-		return nil
-	}
-	return []Violation{{Field: field, Message: "is not supported"}}
-}
-
-// ValidateStickyState validates sticky state.
-func ValidateStickyState(field string, state StickyState) []Violation {
-	if slices.Contains([]StickyState{StickyStateNormal, StickyStateSticky, StickyStateAnnouncement}, state) {
-		return nil
-	}
-	return []Violation{{Field: field, Message: "is not supported"}}
-}
-
-// ValidatePostStatus validates post status.
-func ValidatePostStatus(field string, status PostStatus) []Violation {
-	if slices.Contains([]PostStatus{PostStatusVisible, PostStatusHidden, PostStatusPendingReview, PostStatusDeleted, PostStatusSystem}, status) {
-		return nil
-	}
-	return []Violation{{Field: field, Message: "is not supported"}}
-}
-
-// ValidateContentFormat validates content format.
-func ValidateContentFormat(field string, format ContentFormat) []Violation {
-	if format == ContentFormatProseMirror {
-		return nil
-	}
-	return []Violation{{Field: field, Message: "is not supported"}}
-}
-
-// ValidateReferenceType validates reference type.
-func ValidateReferenceType(field string, referenceType ReferenceType) []Violation {
-	if slices.Contains([]ReferenceType{ReferenceReplyTo, ReferenceQuote, ReferenceMention, ReferenceAttachment, ReferenceLink}, referenceType) {
-		return nil
-	}
-	return []Violation{{Field: field, Message: "is not supported"}}
-}
-
-// ValidatePermissionSubjectType validates forum permission grant subjects.
-func ValidatePermissionSubjectType(field string, subjectType PermissionSubjectType) []Violation {
-	if slices.Contains([]PermissionSubjectType{PermissionSubjectPublic, PermissionSubjectAuthenticated, PermissionSubjectUser, PermissionSubjectGroup}, subjectType) {
-		return nil
-	}
-	return []Violation{{Field: field, Message: "is not supported"}}
-}
-
-// ValidateExternalURL validates optional external URL.
-func ValidateExternalURL(field string, value string) []Violation {
-	if strings.TrimSpace(value) == "" {
-		return []Violation{{Field: field, Message: "is required"}}
-	}
-	parsed, err := url.ParseRequestURI(strings.TrimSpace(value))
-	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
-		return []Violation{{Field: field, Message: "must be an absolute URL"}}
-	}
-	return nil
-}
-
-// ValidateTitle validates thread titles.
-func ValidateTitle(field string, value string) []Violation {
-	length := len(strings.TrimSpace(value))
-	if length < 3 || length > 160 {
-		return []Violation{{Field: field, Message: "must be between 3 and 160 characters"}}
-	}
-	return nil
-}
-
-// ValidateContentDocument validates stored rich-content JSON.
-func ValidateContentDocument(field string, document json.RawMessage) []Violation {
-	if len(document) == 0 {
-		return []Violation{{Field: field, Message: "is required"}}
-	}
-	if len(document) > 65536 {
-		return []Violation{{Field: field, Message: "must be at most 65536 bytes"}}
-	}
-	var payload any
-	if err := json.Unmarshal(document, &payload); err != nil {
-		return []Violation{{Field: field, Message: "must be valid JSON"}}
-	}
-	if _, ok := payload.(map[string]any); !ok {
-		return []Violation{{Field: field, Message: "must be a JSON object"}}
-	}
-	return nil
-}
-
-// ValidateContentText validates extracted text.
-func ValidateContentText(field string, value string) []Violation {
-	length := len(strings.TrimSpace(value))
-	if length < 1 || length > 200000 {
-		return []Violation{{Field: field, Message: "must be between 1 and 200000 characters"}}
-	}
-	return nil
+	return shared.RootForumObjectID()
 }

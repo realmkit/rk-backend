@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	forumsauthz "github.com/niflaot/gamehub-go/module/forums/adapter/postgres/authz"
+	forumsinteraction "github.com/niflaot/gamehub-go/module/forums/adapter/postgres/interaction"
+	forumsoperations "github.com/niflaot/gamehub-go/module/forums/adapter/postgres/operations"
 	"github.com/niflaot/gamehub-go/module/forums/domain"
 	"github.com/niflaot/gamehub-go/module/forums/port"
 	"github.com/niflaot/gamehub-go/pkg/orm"
@@ -177,5 +180,45 @@ func forumPage(models []ForumModel, limit int) pagination.Result[domain.Forum] {
 	return pagination.Result[domain.Forum]{Items: items, NextCursor: next}
 }
 
+// statsFromModel maps persistence stats to domain.
+func statsFromModel(model StatsModel) domain.ForumStats {
+	return domain.ForumStats{
+		ForumID:                model.ForumID,
+		ThreadCount:            model.ThreadCount,
+		VisibleThreadCount:     model.VisibleThreadCount,
+		PostCount:              model.PostCount,
+		VisiblePostCount:       model.VisiblePostCount,
+		LatestThreadID:         model.LatestThreadID,
+		LatestPostID:           model.LatestPostID,
+		LatestPostAuthorUserID: model.LatestPostAuthorUserID,
+		LatestPostAt:           model.LatestPostAt,
+		UpdatedAt:              model.UpdatedAt,
+	}
+}
+
 // Ensure ForumRepository implements port.ForumRepository.
 var _ port.ForumRepository = ForumRepository{}
+
+// VisibilityAuthorizer resolves forum permissions from authorization tuples.
+type VisibilityAuthorizer = forumsauthz.VisibilityAuthorizer
+
+// NewVisibilityAuthorizer creates a visibility authorizer.
+func NewVisibilityAuthorizer(store orm.Store) VisibilityAuthorizer {
+	return forumsauthz.NewVisibilityAuthorizer(store)
+}
+
+// InteractionRepository stores forum interactions in PostgreSQL.
+type InteractionRepository = forumsinteraction.Repository
+
+// NewInteractionRepository creates an interaction repository.
+func NewInteractionRepository(store orm.Store) InteractionRepository {
+	return forumsinteraction.NewRepository(store)
+}
+
+// OperationsRepository runs forum search, repair, and counter flushes in PostgreSQL.
+type OperationsRepository = forumsoperations.Repository
+
+// NewOperationsRepository creates an operations repository.
+func NewOperationsRepository(store orm.Store) OperationsRepository {
+	return forumsoperations.NewRepository(store)
+}

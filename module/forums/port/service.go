@@ -8,8 +8,8 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 )
 
-// Service manages forum structure.
-type Service interface {
+// StructureService manages categories, forums, and visible trees.
+type StructureService interface {
 	// CreateCategory creates a category.
 	CreateCategory(ctx context.Context, command CreateCategoryCommand) (domain.ForumCategory, error)
 
@@ -34,21 +34,6 @@ type Service interface {
 	// UpdateForum updates a forum.
 	UpdateForum(ctx context.Context, command UpdateForumCommand) (domain.Forum, error)
 
-	// GetForumSettings returns admin forum settings.
-	GetForumSettings(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (domain.ForumSettings, error)
-
-	// UpdateForumSettings updates admin forum settings.
-	UpdateForumSettings(ctx context.Context, command UpdateForumSettingsCommand) (domain.ForumSettings, error)
-
-	// GetForumPermissionSettings returns forum permission grants.
-	GetForumPermissionSettings(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (domain.ForumPermissionSettings, error)
-
-	// UpdateForumPermissionSettings replaces forum permission grants.
-	UpdateForumPermissionSettings(ctx context.Context, command UpdateForumPermissionSettingsCommand) error
-
-	// SimulateForumPermission simulates one forum permission.
-	SimulateForumPermission(ctx context.Context, command SimulateForumPermissionCommand) (domain.ForumPermissionSimulationResult, error)
-
 	// MoveForum moves a forum.
 	MoveForum(ctx context.Context, command MoveForumCommand) (domain.Forum, error)
 
@@ -66,7 +51,10 @@ type Service interface {
 
 	// Tree returns the visible forum tree.
 	Tree(ctx context.Context, actorUserID uuid.UUID) (domain.ForumTree, error)
+}
 
+// ContentService manages threads, posts, and revisions.
+type ContentService interface {
 	// CreateThread creates a thread with its opener post.
 	CreateThread(ctx context.Context, command CreateThreadCommand) (domain.Thread, domain.Post, error)
 
@@ -74,7 +62,12 @@ type Service interface {
 	GetThread(ctx context.Context, actorUserID uuid.UUID, id uuid.UUID) (domain.Thread, error)
 
 	// ListThreads lists threads.
-	ListThreads(ctx context.Context, actorUserID uuid.UUID, filter ThreadFilter, page pagination.Page) (pagination.Result[domain.Thread], error)
+	ListThreads(
+		ctx context.Context,
+		actorUserID uuid.UUID,
+		filter ThreadFilter,
+		page pagination.Page,
+	) (pagination.Result[domain.Thread], error)
 
 	// UpdateThreadTitle updates thread title fields.
 	UpdateThreadTitle(ctx context.Context, command UpdateThreadTitleCommand) (domain.Thread, error)
@@ -98,8 +91,16 @@ type Service interface {
 	DeletePost(ctx context.Context, command DeletePostCommand) error
 
 	// ListPostRevisions lists post revisions.
-	ListPostRevisions(ctx context.Context, actorUserID uuid.UUID, postID uuid.UUID, page pagination.Page) (pagination.Result[domain.PostRevision], error)
+	ListPostRevisions(
+		ctx context.Context,
+		actorUserID uuid.UUID,
+		postID uuid.UUID,
+		page pagination.Page,
+	) (pagination.Result[domain.PostRevision], error)
+}
 
+// InteractionService manages likes, widgets, and read state.
+type InteractionService interface {
 	// LikePost likes one post.
 	LikePost(ctx context.Context, command LikePostCommand) (domain.PostLikeSummary, error)
 
@@ -107,10 +108,20 @@ type Service interface {
 	UnlikePost(ctx context.Context, command UnlikePostCommand) (domain.PostLikeSummary, error)
 
 	// ListLatestPosts lists latest posts for visible forums.
-	ListLatestPosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID, page pagination.Page) (pagination.Result[domain.LatestPostSummary], error)
+	ListLatestPosts(
+		ctx context.Context,
+		actorUserID uuid.UUID,
+		forumID uuid.UUID,
+		page pagination.Page,
+	) (pagination.Result[domain.LatestPostSummary], error)
 
 	// ListMostLikedPosts lists most-liked posts for one forum.
-	ListMostLikedPosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID, page pagination.Page) (pagination.Result[domain.MostLikedPost], error)
+	ListMostLikedPosts(
+		ctx context.Context,
+		actorUserID uuid.UUID,
+		forumID uuid.UUID,
+		page pagination.Page,
+	) (pagination.Result[domain.MostLikedPost], error)
 
 	// MarkThreadRead marks one thread read.
 	MarkThreadRead(ctx context.Context, command MarkThreadReadCommand) (domain.ThreadReadState, error)
@@ -120,7 +131,10 @@ type Service interface {
 
 	// GetUnreadSummary returns unread counts for the actor.
 	GetUnreadSummary(ctx context.Context, actorUserID uuid.UUID) (domain.UnreadSummary, error)
+}
 
+// OperationsService manages search, cache, and repair operations.
+type OperationsService interface {
 	// Search searches visible forum content.
 	Search(ctx context.Context, command SearchCommand, page pagination.Page) (pagination.Result[domain.SearchResult], error)
 
@@ -141,4 +155,31 @@ type Service interface {
 
 	// ClearReadCache clears forum read caches.
 	ClearReadCache(ctx context.Context) error
+}
+
+// AdminService manages forum settings and permission configuration.
+type AdminService interface {
+	// GetForumSettings returns admin forum settings.
+	GetForumSettings(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (domain.ForumSettings, error)
+
+	// UpdateForumSettings updates admin forum settings.
+	UpdateForumSettings(ctx context.Context, command UpdateForumSettingsCommand) (domain.ForumSettings, error)
+
+	// GetForumPermissionSettings returns forum permission grants.
+	GetForumPermissionSettings(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (domain.ForumPermissionSettings, error)
+
+	// UpdateForumPermissionSettings replaces forum permission grants.
+	UpdateForumPermissionSettings(ctx context.Context, command UpdateForumPermissionSettingsCommand) error
+
+	// SimulateForumPermission simulates one forum permission.
+	SimulateForumPermission(ctx context.Context, command SimulateForumPermissionCommand) (domain.ForumPermissionSimulationResult, error)
+}
+
+// Service composes all forum use-case contracts for runtime wiring.
+type Service interface {
+	StructureService
+	ContentService
+	InteractionService
+	OperationsService
+	AdminService
 }

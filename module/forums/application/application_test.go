@@ -266,7 +266,7 @@ func TestServiceUpdatePostRejectsExpiredAuthorWindow(t *testing.T) {
 	actorID := uuid.New()
 	thread := testThread(uuid.New(), actorID)
 	post := testPost(thread.ID, thread.ForumID, actorID, 1)
-	post.CreatedAt = time.Now().UTC().Add(-authorPostEditWindow - time.Minute)
+	post.CreatedAt = time.Now().UTC().Add(-11 * time.Minute)
 	forum := testForum(uuid.New(), nil, 0, "expired")
 	forum.ID = thread.ForumID
 	forums.items[thread.ForumID] = forum
@@ -554,19 +554,18 @@ func TestServiceUnreadSummaryUsesVisibleForums(t *testing.T) {
 
 // TestServiceSearchUsesVisibleForums verifies search is visibility-scoped.
 func TestServiceSearchUsesVisibleForums(t *testing.T) {
-	service, _, forums, _, _, auth, _ := newContentTestService()
+	service, _, forums, _, _, auth, _, operations, _ := newContentTestServiceWithOps()
 	visibleForum := testForum(uuid.New(), nil, 0, "visible-search")
 	hiddenForum := testForum(uuid.New(), nil, 0, "hidden-search")
 	forums.items[visibleForum.ID] = visibleForum
 	forums.items[hiddenForum.ID] = hiddenForum
 	auth.visible[visibleForum.ID] = true
-	service.operations.(*memoryOperations).search = []domain.SearchResult{{Type: "thread", ForumID: visibleForum.ID, ThreadID: uuid.New(), Title: "Visible"}}
+	operations.search = []domain.SearchResult{{Type: "thread", ForumID: visibleForum.ID, ThreadID: uuid.New(), Title: "Visible"}}
 
 	result, err := service.Search(context.Background(), port.SearchCommand{ActorUserID: uuid.New(), Query: "visible"}, pagination.Page{Limit: 10})
 	if err != nil {
 		t.Fatalf("Search() error = %v", err)
 	}
-	operations := service.operations.(*memoryOperations)
 	if len(result.Items) != 1 || len(operations.searchFilters) != 1 || len(operations.searchFilters[0].ForumIDs) != 1 || operations.searchFilters[0].ForumIDs[0] != visibleForum.ID {
 		t.Fatalf("result=%+v filters=%+v, want only visible forum searched", result, operations.searchFilters)
 	}
@@ -585,9 +584,7 @@ func TestServiceSearchRejectsInvalidQuery(t *testing.T) {
 
 // TestServiceFlushThreadViewsAppliesValidBufferedViews verifies view buffers are sanitized before flush.
 func TestServiceFlushThreadViewsAppliesValidBufferedViews(t *testing.T) {
-	service, _, _, _, _, _, _ := newContentTestService()
-	cache := service.cache.(*memoryCache)
-	operations := service.operations.(*memoryOperations)
+	service, _, _, _, _, _, _, operations, cache := newContentTestServiceWithOps()
 	validID := uuid.New()
 	cache.threadViews[validID.String()] = 3
 	cache.threadViews["invalid"] = 5
@@ -604,8 +601,7 @@ func TestServiceFlushThreadViewsAppliesValidBufferedViews(t *testing.T) {
 
 // TestServiceRepairMethodsDelegateToOperations verifies operational use cases remain testable.
 func TestServiceRepairMethodsDelegateToOperations(t *testing.T) {
-	service, _, _, _, _, _, _ := newContentTestService()
-	operations := service.operations.(*memoryOperations)
+	service, _, _, _, _, _, _, operations, _ := newContentTestServiceWithOps()
 	operations.report = domain.CounterDriftReport{Mismatches: []domain.CounterDrift{{ObjectType: "forum_thread", ObjectID: uuid.New(), Field: "post_count", Expected: 2, Actual: 1}}}
 
 	stats, err := service.VerifyStats(context.Background())
@@ -722,6 +718,12 @@ func TestServiceAuthorDeleteWindowCanBeDisabled(t *testing.T) {
 
 // newContentTestService creates a forum service with exposed content stores.
 func newContentTestService() (Service, *memoryCategories, *memoryForums, *memoryThreads, *memoryPosts, *memoryAuthorizer, *memoryInteractions) {
+	service, categories, forums, threads, posts, auth, interactions, _, _ := newContentTestServiceWithOps()
+	return service, categories, forums, threads, posts, auth, interactions
+}
+
+// newContentTestServiceWithOps creates a forum service with operation fakes.
+func newContentTestServiceWithOps() (Service, *memoryCategories, *memoryForums, *memoryThreads, *memoryPosts, *memoryAuthorizer, *memoryInteractions, *memoryOperations, *memoryCache) {
 	categories := &memoryCategories{items: map[uuid.UUID]domain.ForumCategory{}}
 	forums := &memoryForums{items: map[uuid.UUID]domain.Forum{}, stats: map[uuid.UUID]domain.ForumStats{}}
 	threads := &memoryThreads{items: map[uuid.UUID]domain.Thread{}}
@@ -729,8 +731,9 @@ func newContentTestService() (Service, *memoryCategories, *memoryForums, *memory
 	interactions := &memoryInteractions{posts: posts, threads: threads, likes: map[string]domain.PostLike{}, readStates: map[string]domain.ThreadReadState{}}
 	operations := &memoryOperations{viewIncrements: map[uuid.UUID]int64{}}
 	auth := &memoryAuthorizer{visible: map[uuid.UUID]bool{}, manage: map[uuid.UUID]bool{}, create: map[uuid.UUID]bool{}, reply: map[uuid.UUID]bool{}, like: map[uuid.UUID]bool{}, manageThreads: map[uuid.UUID]bool{}, managePosts: map[uuid.UUID]bool{}}
-	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Interactions: interactions, Operations: operations, Assets: &memoryAssets{existing: map[uuid.UUID]bool{}}, Authorizer: auth, Cache: newMemoryCache(), Transactions: noopTx{}})
-	return service, categories, forums, threads, posts, auth, interactions
+	cache := newMemoryCache()
+	service := NewService(Dependencies{Categories: categories, Forums: forums, Threads: threads, Posts: posts, Interactions: interactions, Operations: operations, Assets: &memoryAssets{existing: map[uuid.UUID]bool{}}, Authorizer: auth, Cache: cache, Transactions: noopTx{}})
+	return service, categories, forums, threads, posts, auth, interactions, operations, cache
 }
 
 // newTestService creates a forum service with in-memory fakes.
