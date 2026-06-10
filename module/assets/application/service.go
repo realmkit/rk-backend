@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/module/assets/domain"
 	"github.com/niflaot/gamehub-go/module/assets/port"
+	"github.com/niflaot/gamehub-go/pkg/events/emitter"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 	"github.com/niflaot/gamehub-go/pkg/storage"
 )
@@ -25,6 +26,7 @@ type Service struct {
 	store      storage.Store
 	bucket     string
 	clock      func() time.Time
+	events     emitter.Publisher
 }
 
 // NewService creates an assets service.
@@ -35,6 +37,12 @@ func NewService(repository port.AssetRepository, store storage.Store, bucket str
 		bucket:     bucket,
 		clock:      func() time.Time { return time.Now().UTC() },
 	}
+}
+
+// WithEvents returns a copy of service that publishes asset events.
+func (service Service) WithEvents(events emitter.Publisher) Service {
+	service.events = events
+	return service
 }
 
 // CreateUploadIntent creates an asset and presigned upload URL.
@@ -51,7 +59,16 @@ func (service Service) CreateUploadIntent(ctx context.Context, command port.Crea
 	if err != nil {
 		return port.UploadIntent{}, err
 	}
-	return port.UploadIntent{Asset: created, Method: signed.Method, URL: signed.URL, Headers: signed.Headers, ExpiresAt: signed.ExpiresAt}, nil
+	if err := service.publishAssetEvent(ctx, assetCreatedEvent, created); err != nil {
+		return port.UploadIntent{}, err
+	}
+	return port.UploadIntent{
+		Asset:     created,
+		Method:    signed.Method,
+		URL:       signed.URL,
+		Headers:   signed.Headers,
+		ExpiresAt: signed.ExpiresAt,
+	}, nil
 }
 
 // CompleteUpload confirms the upload object exists.
@@ -75,7 +92,11 @@ func (service Service) CompleteUpload(ctx context.Context, command port.Complete
 	}
 	asset.Status = domain.StatusAvailable
 	asset.ETag = info.ETag
-	return service.repository.Update(ctx, asset, asset.Version)
+	updated, err := service.repository.Update(ctx, asset, asset.Version)
+	if err != nil {
+		return domain.Asset{}, err
+	}
+	return updated, service.publishAssetEvent(ctx, assetUploadCompletedEvent, updated)
 }
 
 // Get returns one asset.
@@ -122,12 +143,23 @@ func (service Service) Update(ctx context.Context, command port.UpdateAssetComma
 	if err := asset.Validate(); err != nil {
 		return domain.Asset{}, err
 	}
-	return service.repository.Update(ctx, asset, command.ExpectedVersion)
+	updated, err := service.repository.Update(ctx, asset, command.ExpectedVersion)
+	if err != nil {
+		return domain.Asset{}, err
+	}
+	return updated, service.publishAssetEvent(ctx, assetUpdatedEvent, updated)
 }
 
 // Delete soft deletes one asset.
 func (service Service) Delete(ctx context.Context, command port.DeleteAssetCommand) error {
-	return service.repository.Delete(ctx, command.ID, command.ExpectedVersion)
+	asset, err := service.repository.FindByID(ctx, command.ID)
+	if err != nil {
+		return err
+	}
+	if err := service.repository.Delete(ctx, command.ID, command.ExpectedVersion); err != nil {
+		return err
+	}
+	return service.publishAssetEvent(ctx, assetDeletedEvent, asset)
 }
 
 // assetFromCommand creates an asset from command.

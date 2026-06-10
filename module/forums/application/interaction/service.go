@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/niflaot/gamehub-go/module/forums/port"
+	"github.com/niflaot/gamehub-go/pkg/events/emitter"
 )
 
 // widgetCacheTTL is the forum widget cache lifetime.
@@ -18,6 +19,7 @@ type Service struct {
 	interactions port.InteractionRepository
 	authorizer   port.VisibilityAuthorizer
 	cache        port.ReadCache
+	events       emitter.Publisher
 }
 
 // Dependencies contains interaction service dependencies.
@@ -39,6 +41,9 @@ type Dependencies struct {
 
 	// Cache caches widget reads.
 	Cache port.ReadCache
+
+	// Events publishes forum interaction events.
+	Events emitter.Publisher
 }
 
 // NewService creates an interaction service.
@@ -50,5 +55,6 @@ func NewService(deps Dependencies) Service {
 		interactions: deps.Interactions,
 		authorizer:   deps.Authorizer,
 		cache:        deps.Cache,
+		events:       deps.Events,
 	}
 }

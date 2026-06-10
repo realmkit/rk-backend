@@ -45,7 +45,23 @@ func (service Service) CreateThread(
 		}
 		createdThread = storedThread
 		createdPost = storedPost
-		return service.clearTree(ctx)
+		if err := service.clearTree(ctx); err != nil {
+			return err
+		}
+		if err := service.publishThreadEvent(
+			ctx,
+			"forums.thread.created",
+			storedThread,
+			command.ActorUserID,
+		); err != nil {
+			return err
+		}
+		return service.publishPostEvent(
+			ctx,
+			"forums.post.created",
+			storedPost,
+			command.ActorUserID,
+		)
 	})
 	return createdThread, createdPost, err
 }
@@ -110,7 +126,16 @@ func (service Service) UpdateThreadTitle(
 	if err := thread.Validate(); err != nil {
 		return domain.Thread{}, err
 	}
-	return service.threads.UpdateTitle(ctx, thread, command.ExpectedVersion)
+	updated, err := service.threads.UpdateTitle(ctx, thread, command.ExpectedVersion)
+	if err != nil {
+		return domain.Thread{}, err
+	}
+	return updated, service.publishThreadEvent(
+		ctx,
+		"forums.thread.updated",
+		updated,
+		command.ActorUserID,
+	)
 }
 
 // DeleteThread deletes one thread.
@@ -130,7 +155,15 @@ func (service Service) DeleteThread(
 	if err := service.threads.Delete(ctx, command.ThreadID, command.ExpectedVersion); err != nil {
 		return err
 	}
-	return service.clearTree(ctx)
+	if err := service.clearTree(ctx); err != nil {
+		return err
+	}
+	return service.publishThreadEvent(
+		ctx,
+		"forums.thread.deleted",
+		thread,
+		command.ActorUserID,
+	)
 }
 
 func openerThreadAndPost(

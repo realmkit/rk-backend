@@ -10,6 +10,8 @@ import (
 	"github.com/niflaot/gamehub-go/module/user/domain"
 	"github.com/niflaot/gamehub-go/module/user/port"
 	"github.com/niflaot/gamehub-go/pkg/api/auth"
+	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
 	"github.com/niflaot/gamehub-go/pkg/identity"
 )
 
@@ -23,6 +25,52 @@ func TestServiceProvisionCreatesUserLinkAndClaims(t *testing.T) {
 	}
 	if principal.UserID == uuid.Nil || len(users.items) != 1 || len(links.items) != 1 || len(claims.items) != 1 {
 		t.Fatalf("principal=%+v users=%d links=%d claims=%d, want provisioned", principal, len(users.items), len(links.items), len(claims.items))
+	}
+}
+
+// TestServicePublishesUserEvents verifies provisioning and updates emit events.
+func TestServicePublishesUserEvents(t *testing.T) {
+	events := &eventtesting.PublisherRecorder{}
+	users := &memoryUsers{items: map[uuid.UUID]domain.User{}}
+	links := &memoryLinks{items: map[string]domain.IdentityLink{}}
+	claims := &memoryClaims{items: map[uuid.UUID]domain.ClaimCache{}}
+	service := NewService(Dependencies{
+		Users:        users,
+		Links:        links,
+		Claims:       claims,
+		Transactions: fakeTx{},
+		Provider:     "generic_oidc",
+		Events:       events,
+	})
+	external := testIdentity()
+	principal, err := service.Provision(context.Background(), external, auth.Token{Identity: external})
+	if err != nil {
+		t.Fatalf("Provision() error = %v", err)
+	}
+	if _, err := service.UpdateCurrent(context.Background(), port.UpdateCurrentCommand{
+		UserID:          principal.UserID,
+		ExpectedVersion: 1,
+	}); err != nil {
+		t.Fatalf("UpdateCurrent() error = %v", err)
+	}
+	assertUserEventKeys(t, events.Drafts(), []string{
+		"users.user.provisioned",
+		"users.identity.linked",
+		"users.identity.claim_refreshed",
+		"users.user.updated",
+	})
+}
+
+// assertUserEventKeys verifies event draft key order.
+func assertUserEventKeys(t *testing.T, drafts []eventdomain.Draft, want []string) {
+	t.Helper()
+	if len(drafts) != len(want) {
+		t.Fatalf("event count = %d, want %d", len(drafts), len(want))
+	}
+	for index, key := range want {
+		if string(drafts[index].Key) != key {
+			t.Fatalf("event[%d] = %s, want %s", index, drafts[index].Key, key)
+		}
 	}
 }
 

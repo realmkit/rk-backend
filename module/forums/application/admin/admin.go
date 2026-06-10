@@ -48,7 +48,17 @@ func (service Service) UpdateForumSettings(
 	if err != nil {
 		return domain.ForumSettings{}, err
 	}
-	return updated.Settings(), service.clearReadCache(ctx)
+	settings = updated.Settings()
+	if err := service.clearReadCache(ctx); err != nil {
+		return domain.ForumSettings{}, err
+	}
+	return settings, service.publishForumAdminEvent(
+		ctx,
+		"forums.forum.settings_updated",
+		settings.ForumID,
+		command.ActorUserID,
+		settingsPayload(settings),
+	)
 }
 
 // GetForumPermissionSettings returns forum permission grants.
@@ -95,7 +105,19 @@ func (service Service) UpdateForumPermissionSettings(
 		); err != nil {
 			return err
 		}
-		return service.clearReadCache(ctx)
+		if err := service.clearReadCache(ctx); err != nil {
+			return err
+		}
+		return service.publishForumAdminEvent(
+			ctx,
+			"forums.forum.permissions_updated",
+			settings.ForumID,
+			command.ActorUserID,
+			map[string]any{
+				"forum_id":    settings.ForumID,
+				"grant_count": permissionGrantCount(settings),
+			},
+		)
 	})
 }
 

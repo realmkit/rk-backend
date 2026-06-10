@@ -28,7 +28,10 @@ func (service Service) CreateForum(
 			return err
 		}
 		created = stored
-		return service.clearTree(ctx)
+		if err := service.clearTree(ctx); err != nil {
+			return err
+		}
+		return service.publishForumEvent(ctx, "forums.forum.created", stored, command.ActorUserID)
 	})
 	return created, err
 }
@@ -57,7 +60,10 @@ func (service Service) UpdateForum(
 	if err != nil {
 		return domain.Forum{}, err
 	}
-	return updated, service.clearTree(ctx)
+	if err := service.clearTree(ctx); err != nil {
+		return domain.Forum{}, err
+	}
+	return updated, service.publishForumEvent(ctx, "forums.forum.updated", updated, command.ActorUserID)
 }
 
 // MoveForum moves a forum.
@@ -83,7 +89,10 @@ func (service Service) MoveForum(
 			return err
 		}
 		moved = stored
-		return service.clearTree(ctx)
+		if err := service.clearTree(ctx); err != nil {
+			return err
+		}
+		return service.publishForumEvent(ctx, "forums.forum.moved", stored, command.ActorUserID)
 	})
 	return moved, err
 }
@@ -113,7 +122,15 @@ func (service Service) DeleteForum(
 	if err := service.forums.Delete(ctx, command.ID, command.ExpectedVersion); err != nil {
 		return err
 	}
-	return service.clearTree(ctx)
+	if err := service.clearTree(ctx); err != nil {
+		return err
+	}
+	return service.publishForumEvent(
+		ctx,
+		"forums.forum.deleted",
+		domain.Forum{ID: command.ID},
+		command.ActorUserID,
+	)
 }
 
 // ReorderForums reorders forums.

@@ -21,7 +21,19 @@ func (service Service) CreateDefinition(ctx context.Context, command port.Create
 	if command.Definition.Version == 0 {
 		command.Definition.Version = 1
 	}
-	return service.definitions.Create(ctx, command.Definition)
+	created, err := service.definitions.Create(ctx, command.Definition)
+	if err != nil {
+		return port.DefinitionView{}, err
+	}
+	return created, service.publishMetadataEvent(
+		ctx,
+		"metadata.definition.created",
+		"metadata_definition",
+		created.ID,
+		command.Actor,
+		metadataDefinitionPayload(created),
+		nil,
+	)
 }
 
 // UpdateDefinition updates a metafield definition.
@@ -44,7 +56,19 @@ func (service Service) UpdateDefinition(ctx context.Context, command port.Update
 	if err := command.Definition.Validate(); err != nil {
 		return port.DefinitionView{}, err
 	}
-	return service.definitions.Update(ctx, command.Definition, command.ExpectedVersion)
+	updated, err := service.definitions.Update(ctx, command.Definition, command.ExpectedVersion)
+	if err != nil {
+		return port.DefinitionView{}, err
+	}
+	return updated, service.publishMetadataEvent(
+		ctx,
+		"metadata.definition.updated",
+		"metadata_definition",
+		updated.ID,
+		command.Actor,
+		metadataDefinitionPayload(updated),
+		nil,
+	)
 }
 
 // ArchiveDefinition archives a metafield definition.
@@ -62,7 +86,22 @@ func (service Service) ArchiveDefinition(ctx context.Context, command port.Archi
 	if count > 0 {
 		return port.ErrReferenced
 	}
-	return service.definitions.Archive(ctx, command.ID, command.ExpectedVersion)
+	definition, err := service.definitions.FindByID(ctx, command.ID)
+	if err != nil {
+		return err
+	}
+	if err := service.definitions.Archive(ctx, command.ID, command.ExpectedVersion); err != nil {
+		return err
+	}
+	return service.publishMetadataEvent(
+		ctx,
+		"metadata.definition.deleted",
+		"metadata_definition",
+		definition.ID,
+		command.Actor,
+		metadataDefinitionPayload(definition),
+		nil,
+	)
 }
 
 // GetDefinition returns a metafield definition.

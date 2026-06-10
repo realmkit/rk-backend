@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/module/assets/domain"
 	"github.com/niflaot/gamehub-go/module/assets/port"
+	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 	"github.com/niflaot/gamehub-go/pkg/storage"
 )
@@ -145,6 +147,61 @@ func TestServiceMutableOperationsUseRepository(t *testing.T) {
 	}
 	if err := service.Delete(context.Background(), port.DeleteAssetCommand{ID: updated.ID, ExpectedVersion: updated.Version}); err != nil {
 		t.Fatalf("Delete() error = %v", err)
+	}
+}
+
+// TestServicePublishesAssetLifecycleEvents verifies asset mutations emit events.
+func TestServicePublishesAssetLifecycleEvents(t *testing.T) {
+	events := &eventtesting.PublisherRecorder{}
+	repository := newMemoryRepository()
+	store := &memoryStore{}
+	service := NewService(repository, store, "gamehub-assets").WithEvents(events)
+	intent, err := service.CreateUploadIntent(context.Background(), validCommand())
+	if err != nil {
+		t.Fatalf("CreateUploadIntent() error = %v", err)
+	}
+	store.info = storage.ObjectInfo{
+		Key:         intent.Asset.StorageKey,
+		ETag:        "etag",
+		ContentType: "image/png",
+		SizeBytes:   512,
+	}
+	uploaded, err := service.CompleteUpload(context.Background(), port.CompleteUploadCommand{ID: intent.Asset.ID})
+	if err != nil {
+		t.Fatalf("CompleteUpload() error = %v", err)
+	}
+	updated, err := service.Update(context.Background(), port.UpdateAssetCommand{
+		ID:              uploaded.ID,
+		DisplayName:     "Updated",
+		Path:            "brand/updated",
+		Visibility:      domain.VisibilityAuthenticated,
+		ExpectedVersion: uploaded.Version,
+	})
+	if err != nil {
+		t.Fatalf("Update() error = %v", err)
+	}
+	if err := service.Delete(context.Background(), port.DeleteAssetCommand{ID: updated.ID, ExpectedVersion: updated.Version}); err != nil {
+		t.Fatalf("Delete() error = %v", err)
+	}
+	want := []string{
+		"assets.asset.created",
+		"assets.asset.upload_completed",
+		"assets.asset.updated",
+		"assets.asset.deleted",
+	}
+	assertEventKeys(t, events.Drafts(), want)
+}
+
+// assertEventKeys verifies event draft key order.
+func assertEventKeys(t *testing.T, drafts []eventdomain.Draft, want []string) {
+	t.Helper()
+	if len(drafts) != len(want) {
+		t.Fatalf("event count = %d, want %d", len(drafts), len(want))
+	}
+	for index, key := range want {
+		if string(drafts[index].Key) != key {
+			t.Fatalf("event[%d] = %s, want %s", index, drafts[index].Key, key)
+		}
 	}
 }
 

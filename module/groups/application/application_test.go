@@ -9,6 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/module/groups/domain"
 	"github.com/niflaot/gamehub-go/module/groups/port"
+	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 )
 
@@ -61,6 +63,78 @@ func TestServiceGroupLifecycle(t *testing.T) {
 	}
 	if len(groups.items) != 0 {
 		t.Fatalf("groups = %d, want deleted", len(groups.items))
+	}
+}
+
+// TestServicePublishesGroupEvents verifies group writes emit event facts.
+func TestServicePublishesGroupEvents(t *testing.T) {
+	events := &eventtesting.PublisherRecorder{}
+	service, _, _, _ := newTestService()
+	service = service.WithEvents(events)
+	group, err := service.Create(context.Background(), port.CreateGroupCommand{
+		Group: domain.Group{Key: "admin", Name: "Admin", Color: "#ff0000", Weight: 100},
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	group.Name = "Admins"
+	group, err = service.Update(context.Background(), port.UpdateGroupCommand{
+		Group:           group,
+		ExpectedVersion: group.Version,
+	})
+	if err != nil {
+		t.Fatalf("Update() error = %v", err)
+	}
+	userID := uuid.New()
+	membership, err := service.Assign(context.Background(), port.AssignMembershipCommand{
+		Membership: domain.Membership{GroupID: group.ID, UserID: userID},
+	})
+	if err != nil {
+		t.Fatalf("Assign() error = %v", err)
+	}
+	tuple, err := service.CreateTuple(context.Background(), port.CreateTupleCommand{
+		Tuple: domain.RelationTuple{
+			ID:          uuid.New(),
+			ObjectType:  domain.ObjectGroup,
+			ObjectID:    group.ID,
+			Relation:    domain.RelationViewer,
+			SubjectType: domain.SubjectUser,
+			SubjectID:   membership.UserID,
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateTuple() error = %v", err)
+	}
+	if err := service.DeleteTuple(context.Background(), port.DeleteTupleCommand{ID: tuple.ID}); err != nil {
+		t.Fatalf("DeleteTuple() error = %v", err)
+	}
+	if err := service.Remove(context.Background(), port.RemoveMembershipCommand{GroupID: group.ID, UserID: userID}); err != nil {
+		t.Fatalf("Remove() error = %v", err)
+	}
+	if err := service.Delete(context.Background(), port.DeleteGroupCommand{ID: group.ID, ExpectedVersion: group.Version}); err != nil {
+		t.Fatalf("Delete() error = %v", err)
+	}
+	assertEventKeys(t, events.Drafts(), []string{
+		"groups.group.created",
+		"groups.group.updated",
+		"groups.membership.added",
+		"groups.relation_tuple.created",
+		"groups.relation_tuple.deleted",
+		"groups.membership.removed",
+		"groups.group.deleted",
+	})
+}
+
+// assertEventKeys verifies event draft key order.
+func assertEventKeys(t *testing.T, drafts []eventdomain.Draft, want []string) {
+	t.Helper()
+	if len(drafts) != len(want) {
+		t.Fatalf("event count = %d, want %d", len(drafts), len(want))
+	}
+	for index, key := range want {
+		if string(drafts[index].Key) != key {
+			t.Fatalf("event[%d] = %s, want %s", index, drafts[index].Key, key)
+		}
 	}
 }
 

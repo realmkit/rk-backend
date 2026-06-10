@@ -43,7 +43,11 @@ func (service Service) VerifyStats(ctx context.Context) (domain.CounterDriftRepo
 
 // RebuildStats repairs stats counters.
 func (service Service) RebuildStats(ctx context.Context) (domain.CounterDriftReport, error) {
-	return service.operations.RebuildStats(ctx)
+	report, err := service.operations.RebuildStats(ctx)
+	if err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	return report, service.publishOperationEvent(ctx, "forums.stats.rebuilt", driftPayload(report))
 }
 
 // VerifyLikes reports like counter drift.
@@ -53,7 +57,11 @@ func (service Service) VerifyLikes(ctx context.Context) (domain.CounterDriftRepo
 
 // RebuildLikes repairs like counters.
 func (service Service) RebuildLikes(ctx context.Context) (domain.CounterDriftReport, error) {
-	return service.operations.RebuildLikes(ctx)
+	report, err := service.operations.RebuildLikes(ctx)
+	if err != nil {
+		return domain.CounterDriftReport{}, err
+	}
+	return report, service.publishOperationEvent(ctx, "forums.likes.rebuilt", driftPayload(report))
 }
 
 // FlushThreadViews persists buffered view counters.
@@ -69,7 +77,14 @@ func (service Service) FlushThreadViews(ctx context.Context) (int64, error) {
 	if len(increments) == 0 {
 		return 0, nil
 	}
-	return total, service.operations.ApplyThreadViews(ctx, increments)
+	if err := service.operations.ApplyThreadViews(ctx, increments); err != nil {
+		return 0, err
+	}
+	return total, service.publishOperationEvent(
+		ctx,
+		"forums.views.flushed",
+		map[string]any{"thread_count": len(increments), "view_count": total},
+	)
 }
 
 // ClearReadCache clears forum read caches.

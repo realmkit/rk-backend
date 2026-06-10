@@ -41,7 +41,15 @@ func (service Service) CreateReply(
 			return err
 		}
 		created = stored
-		return service.clearTree(ctx)
+		if err := service.clearTree(ctx); err != nil {
+			return err
+		}
+		return service.publishPostEvent(
+			ctx,
+			"forums.post.created",
+			stored,
+			command.ActorUserID,
+		)
 	})
 	return created, err
 }
@@ -117,7 +125,16 @@ func (service Service) UpdatePost(
 		PreviousContentText:         current.ContentText,
 		EditReason:                  strings.TrimSpace(command.EditReason),
 	}
-	return service.posts.UpdateWithRevision(ctx, updated, revision, command.ExpectedVersion)
+	stored, err := service.posts.UpdateWithRevision(ctx, updated, revision, command.ExpectedVersion)
+	if err != nil {
+		return domain.Post{}, err
+	}
+	return stored, service.publishPostEvent(
+		ctx,
+		"forums.post.updated",
+		stored,
+		command.ActorUserID,
+	)
 }
 
 // DeletePost deletes one post.
@@ -135,7 +152,15 @@ func (service Service) DeletePost(
 	if err := service.posts.Delete(ctx, command.PostID, command.ExpectedVersion); err != nil {
 		return err
 	}
-	return service.clearTree(ctx)
+	if err := service.clearTree(ctx); err != nil {
+		return err
+	}
+	return service.publishPostEvent(
+		ctx,
+		"forums.post.deleted",
+		post,
+		command.ActorUserID,
+	)
 }
 
 // ListPostRevisions lists post revisions for moderators.

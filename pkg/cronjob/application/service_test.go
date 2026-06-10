@@ -9,6 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
 	"github.com/niflaot/gamehub-go/pkg/cronjob/port"
+	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 )
 
@@ -27,6 +29,46 @@ func TestRunOnceExecutesDueHandler(t *testing.T) {
 	}
 	if summary.ProcessedCount != 3 || repo.runs[0].Status != domain.RunSucceeded {
 		t.Fatalf("summary=%+v run=%+v, want successful run", summary, repo.runs[0])
+	}
+}
+
+// TestServicePublishesCronLifecycleEvents verifies scheduler events are emitted.
+func TestServicePublishesCronLifecycleEvents(t *testing.T) {
+	events := &eventtesting.PublisherRecorder{}
+	repo := newMemoryCron(testCronDefinition())
+	service := NewService(Dependencies{
+		Repository: repo,
+		Clock:      cronClock{now: testCronNow()},
+		Events:     events,
+	}, map[string]port.Handler{
+		domain.JobEventsDispatchPending: port.HandlerFunc(func(context.Context, port.RunContext) (domain.Result, error) {
+			return domain.Result{ProcessedCount: 3}, nil
+		}),
+	})
+
+	if err := service.EnsureDefinitions(context.Background(), []domain.Definition{testCronDefinition()}); err != nil {
+		t.Fatalf("EnsureDefinitions() error = %v", err)
+	}
+	if _, err := service.RunOnce(context.Background()); err != nil {
+		t.Fatalf("RunOnce() error = %v", err)
+	}
+	assertCronEventKeys(t, events.Drafts(), []string{
+		"cronjob.definition.updated",
+		"cronjob.run.started",
+		"cronjob.run.completed",
+	})
+}
+
+// assertCronEventKeys verifies event draft key order.
+func assertCronEventKeys(t *testing.T, drafts []eventdomain.Draft, want []string) {
+	t.Helper()
+	if len(drafts) != len(want) {
+		t.Fatalf("event count = %d, want %d", len(drafts), len(want))
+	}
+	for index, key := range want {
+		if string(drafts[index].Key) != key {
+			t.Fatalf("event[%d] = %s, want %s", index, drafts[index].Key, key)
+		}
 	}
 }
 

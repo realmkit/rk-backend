@@ -11,6 +11,7 @@ import (
 	"github.com/niflaot/gamehub-go/module/user/port"
 	"github.com/niflaot/gamehub-go/pkg/api/auth"
 	"github.com/niflaot/gamehub-go/pkg/api/principal"
+	"github.com/niflaot/gamehub-go/pkg/events/emitter"
 	"github.com/niflaot/gamehub-go/pkg/transaction"
 )
 
@@ -30,6 +31,9 @@ type Dependencies struct {
 
 	// Provider is the configured identity provider preset.
 	Provider string
+
+	// Events publishes user lifecycle events.
+	Events emitter.Publisher
 }
 
 // Service manages users and identity provisioning.
@@ -40,6 +44,7 @@ type Service struct {
 	transactions transaction.Runner
 	provider     string
 	clock        func() time.Time
+	events       emitter.Publisher
 }
 
 // NewService creates a user service.
@@ -51,6 +56,7 @@ func NewService(dependencies Dependencies) Service {
 		transactions: dependencies.Transactions,
 		provider:     dependencies.Provider,
 		clock:        func() time.Time { return time.Now().UTC() },
+		events:       dependencies.Events,
 	}
 }
 
@@ -86,7 +92,11 @@ func (service Service) UpdateCurrent(ctx context.Context, command port.UpdateCur
 	if err := user.Validate(); err != nil {
 		return domain.User{}, err
 	}
-	return service.users.Update(ctx, user, command.ExpectedVersion)
+	updated, err := service.users.Update(ctx, user, command.ExpectedVersion)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return updated, service.publishUserEvent(ctx, userUpdatedEvent, updated, command.UserID)
 }
 
 // principalFor returns an authenticated principal for user and identity.

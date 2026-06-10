@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
 	"github.com/niflaot/gamehub-go/pkg/cronjob/port"
+	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/niflaot/gamehub-go/pkg/events/emitter"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 )
 
@@ -24,6 +26,9 @@ type Dependencies struct {
 
 	// LockDuration controls lease duration.
 	LockDuration time.Duration
+
+	// Events publishes cron lifecycle events.
+	Events emitter.Publisher
 }
 
 // Service coordinates cron jobs.
@@ -33,6 +38,7 @@ type Service struct {
 	handlers     map[string]port.Handler
 	workerID     string
 	lockDuration time.Duration
+	events       emitter.Publisher
 }
 
 // NewService creates a cron service.
@@ -43,6 +49,7 @@ func NewService(deps Dependencies, handlers map[string]port.Handler) Service {
 		handlers:     handlers,
 		workerID:     deps.WorkerID,
 		lockDuration: deps.LockDuration,
+		events:       deps.Events,
 	}
 	if service.clock == nil {
 		service.clock = systemClock{}
@@ -62,7 +69,11 @@ func (service Service) EnsureDefinitions(ctx context.Context, definitions []doma
 		if err := definition.Validate(); err != nil {
 			return err
 		}
-		if _, err := service.repository.UpsertDefinition(ctx, definition); err != nil {
+		stored, err := service.repository.UpsertDefinition(ctx, definition)
+		if err != nil {
+			return err
+		}
+		if err := service.publishDefinitionEvent(ctx, stored); err != nil {
 			return err
 		}
 	}
@@ -103,12 +114,26 @@ func (service Service) GetDefinition(ctx context.Context, key string) (domain.De
 
 // Pause disables one cron definition.
 func (service Service) Pause(ctx context.Context, key string, expectedVersion uint64) error {
-	return service.repository.Pause(ctx, key, expectedVersion)
+	if err := service.repository.Pause(ctx, key, expectedVersion); err != nil {
+		return err
+	}
+	definition, err := service.repository.GetDefinition(ctx, key)
+	if err != nil {
+		return err
+	}
+	return service.publishDefinitionEvent(ctx, definition)
 }
 
 // Resume enables one cron definition.
 func (service Service) Resume(ctx context.Context, key string, expectedVersion uint64) error {
-	return service.repository.Resume(ctx, key, expectedVersion)
+	if err := service.repository.Resume(ctx, key, expectedVersion); err != nil {
+		return err
+	}
+	definition, err := service.repository.GetDefinition(ctx, key)
+	if err != nil {
+		return err
+	}
+	return service.publishDefinitionEvent(ctx, definition)
 }
 
 // ListRuns returns run history.
@@ -132,6 +157,9 @@ func (service Service) run(ctx context.Context, definition domain.Definition, tr
 	if err != nil {
 		return RunSummary{}, err
 	}
+	if err := service.publishRunEvent(ctx, "cronjob.run.started", run, domain.Result{}); err != nil {
+		return RunSummary{}, err
+	}
 	result, err := handler.Run(ctx, port.RunContext{
 		RunID:        run.ID,
 		JobKey:       run.JobKey,
@@ -141,9 +169,17 @@ func (service Service) run(ctx context.Context, definition domain.Definition, tr
 	next := definition.NextAfter(service.clock.Now())
 	if err != nil {
 		failErr := service.repository.FailRun(ctx, run, err.Error(), service.clock.Now(), next)
-		return RunSummary{RunID: run.ID, JobKey: run.JobKey, Failed: true}, join(err, failErr)
+		eventErr := service.publishRunEvent(ctx, "cronjob.run.failed", run, domain.Result{})
+		return RunSummary{RunID: run.ID, JobKey: run.JobKey, Failed: true}, join(err, join(failErr, eventErr))
 	}
 	if err := service.repository.CompleteRun(ctx, run, result, service.clock.Now(), next); err != nil {
+		return RunSummary{}, err
+	}
+	eventKey := eventdomain.EventKey("cronjob.run.completed")
+	if result.SkippedCount > 0 && result.ProcessedCount == 0 && result.ChangedCount == 0 {
+		eventKey = "cronjob.run.skipped"
+	}
+	if err := service.publishRunEvent(ctx, eventKey, run, result); err != nil {
 		return RunSummary{}, err
 	}
 	return RunSummary{RunID: run.ID, JobKey: run.JobKey, ProcessedCount: result.ProcessedCount}, nil

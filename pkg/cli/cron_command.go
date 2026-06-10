@@ -122,7 +122,7 @@ func runCronAction(ctx context.Context, activeLogger **zap.Logger, deps commandD
 		}
 	}()
 	events := eventsService(db, client)
-	forums := forumsService(db, client, nil)
+	forums := forumsService(db, client, nil, events)
 	service := cronService(db, events, forums)
 	if err := service.EnsureDefinitions(ctx, cronDomain.DefaultDefinitions(time.Now().UTC())); err != nil {
 		return err

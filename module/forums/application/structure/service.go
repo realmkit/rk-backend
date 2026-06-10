@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/niflaot/gamehub-go/module/forums/port"
+	"github.com/niflaot/gamehub-go/pkg/events/emitter"
 	"github.com/niflaot/gamehub-go/pkg/transaction"
 )
 
@@ -18,6 +19,7 @@ type Service struct {
 	authorizer   port.VisibilityAuthorizer
 	cache        port.ReadCache
 	transactions transaction.Runner
+	events       emitter.Publisher
 }
 
 // Dependencies contains structure service dependencies.
@@ -36,6 +38,9 @@ type Dependencies struct {
 
 	// Transactions runs transactional use cases.
 	Transactions transaction.Runner
+
+	// Events publishes forum structure events.
+	Events emitter.Publisher
 }
 
 // NewService creates a structure service.
@@ -46,5 +51,6 @@ func NewService(deps Dependencies) Service {
 		authorizer:   deps.Authorizer,
 		cache:        deps.Cache,
 		transactions: deps.Transactions,
+		events:       deps.Events,
 	}
 }

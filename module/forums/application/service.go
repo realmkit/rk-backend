@@ -8,6 +8,7 @@ import (
 	operationsapp "github.com/niflaot/gamehub-go/module/forums/application/operations"
 	structureapp "github.com/niflaot/gamehub-go/module/forums/application/structure"
 	"github.com/niflaot/gamehub-go/module/forums/port"
+	"github.com/niflaot/gamehub-go/pkg/events/emitter"
 	"github.com/niflaot/gamehub-go/pkg/transaction"
 )
 
@@ -79,6 +80,9 @@ type Dependencies struct {
 
 	// Transactions runs transactional use cases.
 	Transactions transaction.Runner
+
+	// Events publishes forum lifecycle events.
+	Events emitter.Publisher
 }
 
 // NewService creates a forum service facade.
@@ -114,6 +118,7 @@ func structureDeps(deps Dependencies) structureapp.Dependencies {
 		Authorizer:   deps.Authorizer,
 		Cache:        deps.Cache,
 		Transactions: deps.Transactions,
+		Events:       deps.Events,
 	}
 }
 
@@ -127,6 +132,7 @@ func contentDeps(deps Dependencies) contentapp.Dependencies {
 		Authorizer:   deps.Authorizer,
 		Cache:        deps.Cache,
 		Transactions: deps.Transactions,
+		Events:       deps.Events,
 	}
 }
 
@@ -139,6 +145,7 @@ func interactionDeps(deps Dependencies) interactionapp.Dependencies {
 		Interactions: deps.Interactions,
 		Authorizer:   deps.Authorizer,
 		Cache:        deps.Cache,
+		Events:       deps.Events,
 	}
 }
 
@@ -149,6 +156,7 @@ func operationsDeps(deps Dependencies) operationsapp.Dependencies {
 		Operations: deps.Operations,
 		Authorizer: deps.Authorizer,
 		Cache:      deps.Cache,
+		Events:     deps.Events,
 	}
 }
 
@@ -160,6 +168,7 @@ func adminDeps(deps Dependencies, permissions port.PermissionAdmin) adminapp.Dep
 		Permissions:  permissions,
 		Cache:        deps.Cache,
 		Transactions: deps.Transactions,
+		Events:       deps.Events,
 	}
 }
 

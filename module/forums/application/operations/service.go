@@ -1,7 +1,10 @@
 // Package operations implements forum search, repair, cache, and view flush use cases.
 package operations
 
-import "github.com/niflaot/gamehub-go/module/forums/port"
+import (
+	"github.com/niflaot/gamehub-go/module/forums/port"
+	"github.com/niflaot/gamehub-go/pkg/events/emitter"
+)
 
 // Service manages forum operational use cases.
 type Service struct {
@@ -9,6 +12,7 @@ type Service struct {
 	operations port.OperationsRepository
 	authorizer port.VisibilityAuthorizer
 	cache      port.ReadCache
+	events     emitter.Publisher
 }
 
 // Dependencies contains operations service dependencies.
@@ -24,6 +28,9 @@ type Dependencies struct {
 
 	// Cache stores operational read buffers and caches.
 	Cache port.ReadCache
+
+	// Events publishes forum operations events.
+	Events emitter.Publisher
 }
 
 // NewService creates an operations service.
@@ -33,5 +40,6 @@ func NewService(deps Dependencies) Service {
 		operations: deps.Operations,
 		authorizer: deps.Authorizer,
 		cache:      deps.Cache,
+		events:     deps.Events,
 	}
 }

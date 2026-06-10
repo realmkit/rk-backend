@@ -22,8 +22,17 @@ func (service Service) Provision(ctx context.Context, external identity.External
 	if !errors.Is(err, port.ErrNotFound) {
 		return principal.Principal{}, err
 	}
-	if err := service.createProvisionedUser(ctx, external); err != nil && !errors.Is(err, port.ErrConflict) {
+	user, link, created, err := service.createProvisionedUser(ctx, external)
+	if err != nil && !errors.Is(err, port.ErrConflict) {
 		return principal.Principal{}, err
+	}
+	if created {
+		if err := service.publishUserEvent(ctx, userProvisionedEvent, user, user.ID); err != nil {
+			return principal.Principal{}, err
+		}
+		if err := service.publishIdentityEvent(ctx, identityLinkedEvent, link); err != nil {
+			return principal.Principal{}, err
+		}
 	}
 	link, err = service.links.FindByIssuerSubject(ctx, external.Issuer, external.Subject)
 	if err != nil {
@@ -66,12 +75,18 @@ func (service Service) provisionExisting(ctx context.Context, link domain.Identi
 	if _, err := service.claims.Upsert(ctx, claimCacheFromExternal(user.ID, external, now)); err != nil {
 		return principal.Principal{}, err
 	}
-	return service.principalFor(user, link, token, false), nil
+	principal := service.principalFor(user, link, token, false)
+	return principal, service.publishIdentityEvent(ctx, identityClaimRefreshedEvent, link)
 }
 
 // createProvisionedUser creates user, link, and claim cache in one transaction.
-func (service Service) createProvisionedUser(ctx context.Context, external identity.ExternalIdentity) error {
-	return service.transactions.WithinTx(ctx, func(ctx context.Context) error {
+func (service Service) createProvisionedUser(
+	ctx context.Context,
+	external identity.ExternalIdentity,
+) (domain.User, domain.IdentityLink, bool, error) {
+	var createdUser domain.User
+	var createdLink domain.IdentityLink
+	err := service.transactions.WithinTx(ctx, func(ctx context.Context) error {
 		now := service.clock()
 		user, err := service.users.Create(ctx, domain.User{ID: uuid.New(), Status: domain.StatusActive, FirstSeenAt: now, LastSeenAt: &now, Version: 1})
 		if err != nil {
@@ -84,9 +99,14 @@ func (service Service) createProvisionedUser(ctx context.Context, external ident
 		if _, err := service.links.Create(ctx, link); err != nil {
 			return err
 		}
-		_, err = service.claims.Upsert(ctx, claimCacheFromExternal(user.ID, external, now))
-		return err
+		if _, err := service.claims.Upsert(ctx, claimCacheFromExternal(user.ID, external, now)); err != nil {
+			return err
+		}
+		createdUser = user
+		createdLink = link
+		return nil
 	})
+	return createdUser, createdLink, err == nil, err
 }
 
 // claimCacheFromExternal maps external identity to claim cache.

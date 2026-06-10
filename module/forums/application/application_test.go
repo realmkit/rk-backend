@@ -9,6 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/module/forums/domain"
 	"github.com/niflaot/gamehub-go/module/forums/port"
+	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 )
 
@@ -713,6 +715,96 @@ func TestServiceAuthorDeleteWindowCanBeDisabled(t *testing.T) {
 	err := service.DeletePost(context.Background(), port.DeletePostCommand{ActorUserID: actorID, PostID: post.ID, ExpectedVersion: post.Version})
 	if !errors.Is(err, port.ErrForbidden) {
 		t.Fatalf("DeletePost() error = %v, want %v", err, port.ErrForbidden)
+	}
+}
+
+// TestServicePublishesForumContentEvents verifies forum content emits event facts.
+func TestServicePublishesForumContentEvents(t *testing.T) {
+	events := &eventtesting.PublisherRecorder{}
+	categories := &memoryCategories{items: map[uuid.UUID]domain.ForumCategory{}}
+	forums := &memoryForums{items: map[uuid.UUID]domain.Forum{}, stats: map[uuid.UUID]domain.ForumStats{}}
+	threads := &memoryThreads{items: map[uuid.UUID]domain.Thread{}}
+	posts := &memoryPosts{items: map[uuid.UUID]domain.Post{}, revisions: map[uuid.UUID][]domain.PostRevision{}}
+	interactions := &memoryInteractions{
+		posts:      posts,
+		threads:    threads,
+		likes:      map[string]domain.PostLike{},
+		readStates: map[string]domain.ThreadReadState{},
+	}
+	auth := &memoryAuthorizer{
+		visible: map[uuid.UUID]bool{},
+		create:  map[uuid.UUID]bool{},
+		reply:   map[uuid.UUID]bool{},
+		like:    map[uuid.UUID]bool{},
+	}
+	service := NewService(Dependencies{
+		Categories:   categories,
+		Forums:       forums,
+		Threads:      threads,
+		Posts:        posts,
+		Interactions: interactions,
+		Operations:   &memoryOperations{viewIncrements: map[uuid.UUID]int64{}},
+		Assets:       &memoryAssets{existing: map[uuid.UUID]bool{}},
+		Authorizer:   auth,
+		Cache:        newMemoryCache(),
+		Transactions: noopTx{},
+		Events:       events,
+	})
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "events")
+	forums.items[forum.ID] = forum
+	auth.visible[forum.ID] = true
+	auth.create[forum.ID] = true
+	auth.reply[forum.ID] = true
+	auth.like[forum.ID] = true
+
+	thread, _, err := service.CreateThread(context.Background(), port.CreateThreadCommand{
+		ActorUserID:         actorID,
+		ForumID:             forum.ID,
+		Title:               "Event Thread",
+		Slug:                "event-thread",
+		ContentDocumentJSON: []byte(`{"type":"doc","content":[{"type":"text","text":"hello"}]}`),
+	})
+	if err != nil {
+		t.Fatalf("CreateThread() error = %v", err)
+	}
+	reply, err := service.CreateReply(context.Background(), port.CreateReplyCommand{
+		ActorUserID:         actorID,
+		ThreadID:            thread.ID,
+		ContentDocumentJSON: []byte(`{"type":"doc","content":[{"type":"text","text":"reply"}]}`),
+	})
+	if err != nil {
+		t.Fatalf("CreateReply() error = %v", err)
+	}
+	if _, err := service.LikePost(context.Background(), port.LikePostCommand{ActorUserID: actorID, PostID: reply.ID}); err != nil {
+		t.Fatalf("LikePost() error = %v", err)
+	}
+	if _, err := service.MarkThreadRead(context.Background(), port.MarkThreadReadCommand{
+		ActorUserID:          actorID,
+		ThreadID:             thread.ID,
+		LastReadPostSequence: reply.Sequence,
+	}); err != nil {
+		t.Fatalf("MarkThreadRead() error = %v", err)
+	}
+	assertForumEventKeys(t, events.Drafts(), []string{
+		"forums.thread.created",
+		"forums.post.created",
+		"forums.post.created",
+		"forums.post.liked",
+		"forums.thread.read",
+	})
+}
+
+// assertForumEventKeys verifies event draft key order.
+func assertForumEventKeys(t *testing.T, drafts []eventdomain.Draft, want []string) {
+	t.Helper()
+	if len(drafts) != len(want) {
+		t.Fatalf("event count = %d, want %d", len(drafts), len(want))
+	}
+	for index, key := range want {
+		if string(drafts[index].Key) != key {
+			t.Fatalf("event[%d] = %s, want %s", index, drafts[index].Key, key)
+		}
 	}
 }
 

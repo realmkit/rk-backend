@@ -22,7 +22,19 @@ func (service Service) CreateMetaobjectDefinition(ctx context.Context, command p
 	if command.Definition.Version == 0 {
 		command.Definition.Version = 1
 	}
-	return service.metaobjectDefinitions.Create(ctx, command.Definition)
+	created, err := service.metaobjectDefinitions.Create(ctx, command.Definition)
+	if err != nil {
+		return port.MetaobjectDefinitionView{}, err
+	}
+	return created, service.publishMetadataEvent(
+		ctx,
+		"metadata.definition.created",
+		"metadata_definition",
+		created.ID,
+		command.Actor,
+		metaobjectDefinitionPayload(created),
+		nil,
+	)
 }
 
 // UpdateMetaobjectDefinition updates a metaobject definition.
@@ -44,7 +56,19 @@ func (service Service) UpdateMetaobjectDefinition(ctx context.Context, command p
 	if incompatibleMetaobjectChange(current, command.Definition) {
 		return port.MetaobjectDefinitionView{}, port.ErrConflict
 	}
-	return service.metaobjectDefinitions.Update(ctx, command.Definition, command.ExpectedVersion)
+	updated, err := service.metaobjectDefinitions.Update(ctx, command.Definition, command.ExpectedVersion)
+	if err != nil {
+		return port.MetaobjectDefinitionView{}, err
+	}
+	return updated, service.publishMetadataEvent(
+		ctx,
+		"metadata.definition.updated",
+		"metadata_definition",
+		updated.ID,
+		command.Actor,
+		metaobjectDefinitionPayload(updated),
+		nil,
+	)
 }
 
 // ArchiveMetaobjectDefinition archives a metaobject definition.
@@ -62,7 +86,22 @@ func (service Service) ArchiveMetaobjectDefinition(ctx context.Context, command 
 	if count > 0 {
 		return port.ErrReferenced
 	}
-	return service.metaobjectDefinitions.Archive(ctx, command.ID, command.ExpectedVersion)
+	definition, err := service.metaobjectDefinitions.FindByID(ctx, command.ID)
+	if err != nil {
+		return err
+	}
+	if err := service.metaobjectDefinitions.Archive(ctx, command.ID, command.ExpectedVersion); err != nil {
+		return err
+	}
+	return service.publishMetadataEvent(
+		ctx,
+		"metadata.definition.deleted",
+		"metadata_definition",
+		definition.ID,
+		command.Actor,
+		metaobjectDefinitionPayload(definition),
+		nil,
+	)
 }
 
 // ListMetaobjectDefinitions returns metaobject definitions.
@@ -113,7 +152,19 @@ func (service Service) CreateMetaobjectEntry(ctx context.Context, command port.C
 	if command.Entry.Version == 0 {
 		command.Entry.Version = 1
 	}
-	return service.metaobjectEntries.Create(ctx, command.Entry)
+	created, err := service.metaobjectEntries.Create(ctx, command.Entry)
+	if err != nil {
+		return port.MetaobjectEntryView{}, err
+	}
+	return created, service.publishMetadataEvent(
+		ctx,
+		"metadata.entry.created",
+		"metadata_entry",
+		created.ID,
+		command.Actor,
+		metaobjectEntryPayload(created),
+		nil,
+	)
 }
 
 // UpdateMetaobjectEntry updates a metaobject entry.
@@ -142,7 +193,19 @@ func (service Service) UpdateMetaobjectEntry(ctx context.Context, command port.U
 	command.Entry.DefinitionID = current.DefinitionID
 	command.Entry.Handle = current.Handle
 	command.Entry.Fields = fields
-	return service.metaobjectEntries.Update(ctx, command.Entry, command.ExpectedVersion)
+	updated, err := service.metaobjectEntries.Update(ctx, command.Entry, command.ExpectedVersion)
+	if err != nil {
+		return port.MetaobjectEntryView{}, err
+	}
+	return updated, service.publishMetadataEvent(
+		ctx,
+		"metadata.entry.updated",
+		"metadata_entry",
+		updated.ID,
+		command.Actor,
+		metaobjectEntryPayload(updated),
+		nil,
+	)
 }
 
 // GetMetaobjectEntry returns one metaobject entry.
@@ -165,33 +228,4 @@ func (service Service) ListMetaobjectEntries(ctx context.Context, query port.Lis
 		return pagination.Result[port.MetaobjectEntryView]{}, err
 	}
 	return service.metaobjectEntries.List(ctx, query.DefinitionID, query.Page)
-}
-
-// DeleteMetaobjectEntry deletes one metaobject entry.
-func (service Service) DeleteMetaobjectEntry(ctx context.Context, command port.DeleteMetaobjectEntryCommand) error {
-	if err := service.ensureDependencies(); err != nil {
-		return err
-	}
-	if err := service.policy.CanManageMetaobjects(ctx, command.Actor); err != nil {
-		return err
-	}
-	return service.metaobjectEntries.Delete(ctx, command.ID, command.ExpectedVersion)
-}
-
-// incompatibleMetaobjectChange reports whether update changes existing field contracts.
-func incompatibleMetaobjectChange(current domain.MetaobjectDefinition, next domain.MetaobjectDefinition) bool {
-	fields := make(map[domain.Key]domain.FieldDefinition, len(current.Fields))
-	for _, field := range current.Fields {
-		fields[field.Key] = field
-	}
-	for _, field := range next.Fields {
-		currentField, ok := fields[field.Key]
-		if !ok {
-			continue
-		}
-		if currentField.ValueType != field.ValueType || currentField.List != field.List {
-			return true
-		}
-	}
-	return false
 }

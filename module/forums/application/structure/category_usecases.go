@@ -28,7 +28,15 @@ func (service Service) CreateCategory(
 	if err != nil {
 		return domain.ForumCategory{}, err
 	}
-	return created, service.clearTree(ctx)
+	if err := service.clearTree(ctx); err != nil {
+		return domain.ForumCategory{}, err
+	}
+	return created, service.publishCategoryEvent(
+		ctx,
+		"forums.category.created",
+		created,
+		command.ActorUserID,
+	)
 }
 
 // UpdateCategory updates a category.
@@ -47,7 +55,15 @@ func (service Service) UpdateCategory(
 	if err != nil {
 		return domain.ForumCategory{}, err
 	}
-	return updated, service.clearTree(ctx)
+	if err := service.clearTree(ctx); err != nil {
+		return domain.ForumCategory{}, err
+	}
+	return updated, service.publishCategoryEvent(
+		ctx,
+		"forums.category.updated",
+		updated,
+		command.ActorUserID,
+	)
 }
 
 // GetCategory returns one category.
@@ -78,7 +94,15 @@ func (service Service) DeleteCategory(
 	if err := service.categories.Delete(ctx, command.ID, command.ExpectedVersion); err != nil {
 		return err
 	}
-	return service.clearTree(ctx)
+	if err := service.clearTree(ctx); err != nil {
+		return err
+	}
+	return service.publishCategoryEvent(
+		ctx,
+		"forums.category.deleted",
+		domain.ForumCategory{ID: command.ID},
+		command.ActorUserID,
+	)
 }
 
 // ReorderCategories reorders categories.

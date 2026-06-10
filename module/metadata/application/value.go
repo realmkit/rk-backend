@@ -34,12 +34,39 @@ func (service Service) SetValue(ctx context.Context, command port.SetValueComman
 	if err != nil {
 		return port.ValueView{}, false, err
 	}
-	return service.values.Upsert(ctx, domain.MetafieldValue{
+	value, created, err := service.values.Upsert(ctx, domain.MetafieldValue{
 		DefinitionID: definition.ID,
 		OwnerType:    command.Owner.Type,
 		OwnerID:      command.Owner.ID,
 		Value:        canonical,
 	}, command.ExpectedVersion)
+	if err != nil {
+		return port.ValueView{}, false, err
+	}
+	key := "metadata.entry.updated"
+	if created {
+		key = "metadata.entry.created"
+	}
+	if err := service.publishMetadataEvent(
+		ctx,
+		"metadata.metafield.set",
+		"metafield",
+		value.ID,
+		command.Actor,
+		metadataValuePayload(value),
+		metadataOwnerScopes(value.OwnerType, value.OwnerID),
+	); err != nil {
+		return port.ValueView{}, false, err
+	}
+	return value, created, service.publishMetadataEvent(
+		ctx,
+		eventKey(key),
+		"metadata_entry",
+		value.ID,
+		command.Actor,
+		metadataValuePayload(value),
+		metadataOwnerScopes(value.OwnerType, value.OwnerID),
+	)
 }
 
 // GetValue returns one owner value.
@@ -96,7 +123,33 @@ func (service Service) DeleteValue(ctx context.Context, command port.DeleteValue
 	if err != nil {
 		return err
 	}
-	return service.values.Delete(ctx, definition.ID, command.Owner.Type, command.Owner.ID, command.ExpectedVersion)
+	value, err := service.values.Find(ctx, definition.ID, command.Owner.Type, command.Owner.ID)
+	if err != nil {
+		return err
+	}
+	if err := service.values.Delete(ctx, definition.ID, command.Owner.Type, command.Owner.ID, command.ExpectedVersion); err != nil {
+		return err
+	}
+	if err := service.publishMetadataEvent(
+		ctx,
+		"metadata.metafield.deleted",
+		"metafield",
+		value.ID,
+		command.Actor,
+		metadataValuePayload(value),
+		metadataOwnerScopes(value.OwnerType, value.OwnerID),
+	); err != nil {
+		return err
+	}
+	return service.publishMetadataEvent(
+		ctx,
+		"metadata.entry.deleted",
+		"metadata_entry",
+		value.ID,
+		command.Actor,
+		metadataValuePayload(value),
+		metadataOwnerScopes(value.OwnerType, value.OwnerID),
+	)
 }
 
 // ensureOwner verifies owner syntax and existence.

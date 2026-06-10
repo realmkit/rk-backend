@@ -10,6 +10,8 @@ import (
 	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
 	"github.com/niflaot/gamehub-go/module/metadata/domain"
 	"github.com/niflaot/gamehub-go/module/metadata/port"
+	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
 	"github.com/niflaot/gamehub-go/pkg/orm"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
@@ -121,6 +123,60 @@ func TestServiceGetAndDeleteValue(t *testing.T) {
 	}
 	if _, err := service.GetValue(context.Background(), port.GetValueQuery{Owner: port.OwnerRef{Type: definition.OwnerType, ID: ownerID}, Namespace: definition.Namespace, Key: definition.Key}); !errors.Is(err, port.ErrNotFound) {
 		t.Fatalf("GetValue() deleted error = %v, want %v", err, port.ErrNotFound)
+	}
+}
+
+// TestServicePublishesMetadataEvents verifies metadata writes emit event facts.
+func TestServicePublishesMetadataEvents(t *testing.T) {
+	events := &eventtesting.PublisherRecorder{}
+	service := newServiceWithEvents(t, events)
+	actor := port.Actor{ID: uuid.New()}
+	definition, err := service.CreateDefinition(context.Background(), port.CreateDefinitionCommand{
+		Actor:      actor,
+		Definition: testDefinition(),
+	})
+	if err != nil {
+		t.Fatalf("CreateDefinition() error = %v", err)
+	}
+	ownerID := uuid.New()
+	value, _, err := service.SetValue(context.Background(), port.SetValueCommand{
+		Actor:     actor,
+		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
+		Namespace: definition.Namespace,
+		Key:       definition.Key,
+		RawValue:  json.RawMessage(`"hello"`),
+	})
+	if err != nil {
+		t.Fatalf("SetValue() error = %v", err)
+	}
+	if err := service.DeleteValue(context.Background(), port.DeleteValueCommand{
+		Actor:           actor,
+		Owner:           port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
+		Namespace:       definition.Namespace,
+		Key:             definition.Key,
+		ExpectedVersion: value.Version,
+	}); err != nil {
+		t.Fatalf("DeleteValue() error = %v", err)
+	}
+	assertMetadataEventKeys(t, events.Drafts(), []string{
+		"metadata.definition.created",
+		"metadata.metafield.set",
+		"metadata.entry.created",
+		"metadata.metafield.deleted",
+		"metadata.entry.deleted",
+	})
+}
+
+// assertMetadataEventKeys verifies event draft key order.
+func assertMetadataEventKeys(t *testing.T, drafts []eventdomain.Draft, want []string) {
+	t.Helper()
+	if len(drafts) != len(want) {
+		t.Fatalf("event count = %d, want %d", len(drafts), len(want))
+	}
+	for index, key := range want {
+		if string(drafts[index].Key) != key {
+			t.Fatalf("event[%d] = %s, want %s", index, drafts[index].Key, key)
+		}
 	}
 }
 
@@ -418,6 +474,26 @@ func newServiceWithReferenceResolver(t *testing.T, resolver port.ReferenceResolv
 		MetaobjectDefinitions: metadatapostgres.NewMetaobjectDefinitionRepository(store),
 		MetaobjectEntries:     metadatapostgres.NewMetaobjectEntryRepository(store),
 		References:            resolver,
+	})
+}
+
+// newServiceWithEvents creates a metadata service with an event recorder.
+func newServiceWithEvents(t *testing.T, events *eventtesting.PublisherRecorder) Service {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("gorm.Open() error = %v", err)
+	}
+	if _, err := migrations.NewRunner(db, migrations.DefaultSource()).Up(context.Background()); err != nil {
+		t.Fatalf("Migrate() error = %v", err)
+	}
+	store := orm.NewStore(db)
+	return NewService(Dependencies{
+		Definitions:           metadatapostgres.NewMetafieldDefinitionRepository(store),
+		Values:                metadatapostgres.NewMetafieldValueRepository(store),
+		MetaobjectDefinitions: metadatapostgres.NewMetaobjectDefinitionRepository(store),
+		MetaobjectEntries:     metadatapostgres.NewMetaobjectEntryRepository(store),
+		Events:                events,
 	})
 }
 

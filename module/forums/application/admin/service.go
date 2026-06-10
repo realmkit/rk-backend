@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/niflaot/gamehub-go/module/forums/port"
+	"github.com/niflaot/gamehub-go/pkg/events/emitter"
 	"github.com/niflaot/gamehub-go/pkg/transaction"
 )
 
@@ -15,6 +16,7 @@ type Service struct {
 	permissions  port.PermissionAdmin
 	cache        port.ReadCache
 	transactions transaction.Runner
+	events       emitter.Publisher
 }
 
 // Dependencies contains admin service dependencies.
@@ -33,6 +35,9 @@ type Dependencies struct {
 
 	// Transactions runs transactional use cases.
 	Transactions transaction.Runner
+
+	// Events publishes forum admin events.
+	Events emitter.Publisher
 }
 
 // NewService creates an admin service.
@@ -43,6 +48,7 @@ func NewService(deps Dependencies) Service {
 		permissions:  deps.Permissions,
 		cache:        deps.Cache,
 		transactions: deps.Transactions,
+		events:       deps.Events,
 	}
 }
 
