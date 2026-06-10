@@ -198,6 +198,77 @@ func TestVisibilityAuthorizerSupportsGroupMembership(t *testing.T) {
 	}
 }
 
+// TestVisibilityAuthorizerPermissionSettingsAndSimulation verifies admin grant persistence.
+func TestVisibilityAuthorizerPermissionSettingsAndSimulation(t *testing.T) {
+	_, _, db := newRepositories(t)
+	store := orm.NewStore(db)
+	authorizer := NewVisibilityAuthorizer(store)
+	forumID := uuid.New()
+	actorID := uuid.New()
+	userID := uuid.New()
+	groupID := uuid.New()
+	memberID := uuid.New()
+	createUser(t, db, actorID)
+	createUser(t, db, userID)
+	createUser(t, db, memberID)
+	createGroup(t, db, groupID)
+	createMembership(t, db, groupID, memberID)
+	settings := domain.ForumPermissionSettings{
+		ForumID:    forumID,
+		Viewers:    []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectPublic}},
+		Creators:   []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectUser, SubjectID: userID}},
+		Moderators: []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectGroup, SubjectID: groupID}},
+	}
+
+	if err := authorizer.UpdateForumPermissionSettings(context.Background(), actorID, settings); err != nil {
+		t.Fatalf("UpdateForumPermissionSettings() error = %v", err)
+	}
+	found, err := authorizer.ForumPermissionSettings(context.Background(), forumID)
+	if err != nil {
+		t.Fatalf("ForumPermissionSettings() error = %v", err)
+	}
+	if len(found.Viewers) != 1 || found.Viewers[0].SubjectID != domain.PublicPermissionSubjectID() || len(found.Creators) != 1 || len(found.Moderators) != 1 {
+		t.Fatalf("found = %+v, want persisted normalized grants", found)
+	}
+	publicResult, err := authorizer.SimulateForumPermission(context.Background(), forumID, domain.ForumPermissionSimulationRequest{Permission: string(groupsdomain.PermissionForumsView)})
+	if err != nil {
+		t.Fatalf("Simulate public error = %v", err)
+	}
+	userResult, err := authorizer.SimulateForumPermission(context.Background(), forumID, domain.ForumPermissionSimulationRequest{ActorUserID: userID, Permission: string(groupsdomain.PermissionForumsCreateThread)})
+	if err != nil {
+		t.Fatalf("Simulate user error = %v", err)
+	}
+	groupResult, err := authorizer.SimulateForumPermission(context.Background(), forumID, domain.ForumPermissionSimulationRequest{ActorUserID: memberID, Permission: string(groupsdomain.PermissionForumsManageThreads)})
+	if err != nil {
+		t.Fatalf("Simulate group error = %v", err)
+	}
+	if !publicResult.Allowed || publicResult.MatchedRelation != string(groupsdomain.RelationViewer) || !userResult.Allowed || userResult.MatchedRelation != string(groupsdomain.RelationCreator) || !groupResult.Allowed || groupResult.MatchedRelation != string(groupsdomain.RelationModerator) {
+		t.Fatalf("results public=%+v user=%+v group=%+v, want matching explanations", publicResult, userResult, groupResult)
+	}
+	if err := authorizer.UpdateForumPermissionSettings(context.Background(), actorID, domain.ForumPermissionSettings{ForumID: forumID}); err != nil {
+		t.Fatalf("UpdateForumPermissionSettings clear error = %v", err)
+	}
+	cleared, err := authorizer.ForumPermissionSettings(context.Background(), forumID)
+	if err != nil {
+		t.Fatalf("ForumPermissionSettings cleared error = %v", err)
+	}
+	if len(cleared.Viewers) != 0 || len(cleared.Creators) != 0 || len(cleared.Moderators) != 0 {
+		t.Fatalf("cleared = %+v, want no managed grants", cleared)
+	}
+}
+
+// TestVisibilityAuthorizerRejectsMissingGrantSubjects verifies user and group validation.
+func TestVisibilityAuthorizerRejectsMissingGrantSubjects(t *testing.T) {
+	_, _, db := newRepositories(t)
+	authorizer := NewVisibilityAuthorizer(orm.NewStore(db))
+
+	err := authorizer.UpdateForumPermissionSettings(context.Background(), uuid.New(), domain.ForumPermissionSettings{ForumID: uuid.New(), Creators: []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectUser, SubjectID: uuid.New()}}})
+	var validation domain.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("UpdateForumPermissionSettings() error = %v, want validation", err)
+	}
+}
+
 // TestThreadAndPostRepositoriesUpdateCounters verifies content counters.
 func TestThreadAndPostRepositoriesUpdateCounters(t *testing.T) {
 	categories, forums, db := newRepositories(t)
@@ -604,6 +675,15 @@ func createMembership(t *testing.T, db *gorm.DB, groupID uuid.UUID, userID uuid.
 	}
 }
 
+// createUser stores one active user.
+func createUser(t *testing.T, db *gorm.DB, userID uuid.UUID) {
+	t.Helper()
+	err := db.Exec("INSERT INTO users (id, status, first_seen_at, version, created_at, updated_at) VALUES (?, 'active', CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", userID).Error
+	if err != nil {
+		t.Fatalf("insert user error = %v", err)
+	}
+}
+
 // testCategory returns a persisted category.
 func testCategory() domain.ForumCategory {
 	return domain.ForumCategory{ID: uuid.New(), Key: "official", Name: "Official", Status: domain.CategoryStatusActive, Version: 1}
@@ -612,7 +692,7 @@ func testCategory() domain.ForumCategory {
 // testForum returns a persisted forum.
 func testForum(categoryID uuid.UUID, parentID *uuid.UUID, key string) domain.Forum {
 	id := uuid.New()
-	return domain.Forum{ID: id, CategoryID: categoryID, ParentForumID: parentID, Kind: domain.ForumKindDiscussion, Key: domain.Key(key), Slug: domain.Slug(key), Name: key, Path: "/" + id.String() + "/", ThreadVisibilityMode: domain.ThreadVisibilityAllThreads, DefaultThreadStatus: domain.ThreadStatusOpen, Status: domain.ForumStatusActive, Version: 1}
+	return domain.Forum{ID: id, CategoryID: categoryID, ParentForumID: parentID, Kind: domain.ForumKindDiscussion, Key: domain.Key(key), Slug: domain.Slug(key), Name: key, Path: "/" + id.String() + "/", ThreadVisibilityMode: domain.ThreadVisibilityAllThreads, DefaultThreadStatus: domain.ThreadStatusOpen, AuthorPostEditWindowSeconds: domain.DefaultAuthorPostEditWindowSeconds, AuthorPostDeleteWindowSeconds: domain.DefaultAuthorPostDeleteWindowSeconds, Status: domain.ForumStatusActive, Version: 1}
 }
 
 // testThread returns a persisted thread.

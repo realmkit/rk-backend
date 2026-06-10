@@ -33,6 +33,8 @@ CREATE TABLE forums (
     thread_visibility_mode text NOT NULL,
     max_sticky_threads integer NOT NULL DEFAULT 0,
     default_thread_status text NOT NULL,
+    author_post_edit_window_seconds integer NOT NULL DEFAULT 600,
+    author_post_delete_window_seconds integer NOT NULL DEFAULT 300,
     status text NOT NULL,
     version bigint NOT NULL DEFAULT 1,
     created_at timestamptz NOT NULL,

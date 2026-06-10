@@ -34,6 +34,21 @@ type Service interface {
 	// UpdateForum updates a forum.
 	UpdateForum(ctx context.Context, command UpdateForumCommand) (domain.Forum, error)
 
+	// GetForumSettings returns admin forum settings.
+	GetForumSettings(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (domain.ForumSettings, error)
+
+	// UpdateForumSettings updates admin forum settings.
+	UpdateForumSettings(ctx context.Context, command UpdateForumSettingsCommand) (domain.ForumSettings, error)
+
+	// GetForumPermissionSettings returns forum permission grants.
+	GetForumPermissionSettings(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (domain.ForumPermissionSettings, error)
+
+	// UpdateForumPermissionSettings replaces forum permission grants.
+	UpdateForumPermissionSettings(ctx context.Context, command UpdateForumPermissionSettingsCommand) error
+
+	// SimulateForumPermission simulates one forum permission.
+	SimulateForumPermission(ctx context.Context, command SimulateForumPermissionCommand) (domain.ForumPermissionSimulationResult, error)
+
 	// MoveForum moves a forum.
 	MoveForum(ctx context.Context, command MoveForumCommand) (domain.Forum, error)
 

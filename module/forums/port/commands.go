@@ -78,6 +78,39 @@ type UpdateForumCommand struct {
 	ExpectedVersion uint64
 }
 
+// UpdateForumSettingsCommand updates admin forum settings.
+type UpdateForumSettingsCommand struct {
+	// ActorUserID is the user performing the command.
+	ActorUserID uuid.UUID
+
+	// Settings are the replacement settings.
+	Settings domain.ForumSettings
+
+	// ExpectedVersion is the required current version.
+	ExpectedVersion uint64
+}
+
+// UpdateForumPermissionSettingsCommand replaces forum permission grants.
+type UpdateForumPermissionSettingsCommand struct {
+	// ActorUserID is the user performing the command.
+	ActorUserID uuid.UUID
+
+	// Settings are the replacement grants.
+	Settings domain.ForumPermissionSettings
+}
+
+// SimulateForumPermissionCommand simulates one forum permission.
+type SimulateForumPermissionCommand struct {
+	// ActorUserID is the admin running the simulation.
+	ActorUserID uuid.UUID
+
+	// ForumID is the scoped forum.
+	ForumID uuid.UUID
+
+	// Request is the simulation input.
+	Request domain.ForumPermissionSimulationRequest
+}
+
 // MoveForumCommand moves one forum in the tree.
 type MoveForumCommand struct {
 	// ActorUserID is the user performing the command.

@@ -160,7 +160,7 @@ func applyForumFilter(query *gorm.DB, filter port.ForumFilter) *gorm.DB {
 
 // forumUpdates returns update fields.
 func forumUpdates(forum domain.Forum, expectedVersion uint64) map[string]any {
-	return map[string]any{"category_id": forum.CategoryID, "parent_forum_id": forum.ParentForumID, "kind": string(forum.Kind), "key": string(forum.Key), "slug": string(forum.Slug), "name": forum.Name, "description": forum.Description, "display_order": forum.DisplayOrder, "path": forum.Path, "depth": forum.Depth, "external_url": forum.ExternalURL, "icon_asset_id": forum.IconAssetID, "thread_visibility_mode": string(forum.ThreadVisibilityMode), "max_sticky_threads": forum.MaxStickyThreads, "default_thread_status": string(forum.DefaultThreadStatus), "status": string(forum.Status), "version": expectedVersion + 1}
+	return map[string]any{"category_id": forum.CategoryID, "parent_forum_id": forum.ParentForumID, "kind": string(forum.Kind), "key": string(forum.Key), "slug": string(forum.Slug), "name": forum.Name, "description": forum.Description, "display_order": forum.DisplayOrder, "path": forum.Path, "depth": forum.Depth, "external_url": forum.ExternalURL, "icon_asset_id": forum.IconAssetID, "thread_visibility_mode": string(forum.ThreadVisibilityMode), "max_sticky_threads": forum.MaxStickyThreads, "default_thread_status": string(forum.DefaultThreadStatus), "author_post_edit_window_seconds": forum.AuthorPostEditWindowSeconds, "author_post_delete_window_seconds": forum.AuthorPostDeleteWindowSeconds, "status": string(forum.Status), "version": expectedVersion + 1}
 }
 
 // forumPage maps models into a page.

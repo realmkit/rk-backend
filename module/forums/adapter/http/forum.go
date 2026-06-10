@@ -9,20 +9,22 @@ import (
 
 // forumRequest is a forum write request.
 type forumRequest struct {
-	CategoryID           uuid.UUID                   `json:"category_id"`
-	ParentForumID        *uuid.UUID                  `json:"parent_forum_id"`
-	Kind                 domain.ForumKind            `json:"kind"`
-	Key                  domain.Key                  `json:"key"`
-	Slug                 domain.Slug                 `json:"slug"`
-	Name                 string                      `json:"name"`
-	Description          string                      `json:"description"`
-	DisplayOrder         int                         `json:"display_order"`
-	ExternalURL          string                      `json:"external_url"`
-	IconAssetID          *uuid.UUID                  `json:"icon_asset_id"`
-	ThreadVisibilityMode domain.ThreadVisibilityMode `json:"thread_visibility_mode"`
-	MaxStickyThreads     int                         `json:"max_sticky_threads"`
-	DefaultThreadStatus  domain.ThreadStatus         `json:"default_thread_status"`
-	Status               domain.ForumStatus          `json:"status"`
+	CategoryID                    uuid.UUID                   `json:"category_id"`
+	ParentForumID                 *uuid.UUID                  `json:"parent_forum_id"`
+	Kind                          domain.ForumKind            `json:"kind"`
+	Key                           domain.Key                  `json:"key"`
+	Slug                          domain.Slug                 `json:"slug"`
+	Name                          string                      `json:"name"`
+	Description                   string                      `json:"description"`
+	DisplayOrder                  int                         `json:"display_order"`
+	ExternalURL                   string                      `json:"external_url"`
+	IconAssetID                   *uuid.UUID                  `json:"icon_asset_id"`
+	ThreadVisibilityMode          domain.ThreadVisibilityMode `json:"thread_visibility_mode"`
+	MaxStickyThreads              int                         `json:"max_sticky_threads"`
+	DefaultThreadStatus           domain.ThreadStatus         `json:"default_thread_status"`
+	AuthorPostEditWindowSeconds   int                         `json:"author_post_edit_window_seconds"`
+	AuthorPostDeleteWindowSeconds int                         `json:"author_post_delete_window_seconds"`
+	Status                        domain.ForumStatus          `json:"status"`
 }
 
 // moveForumRequest is a forum move request.
@@ -128,6 +130,116 @@ func (handler handler) updateForum(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusOK, forum)
 }
 
+// getForumSettings returns admin forum settings.
+func (handler handler) getForumSettings(ctx *fiber.Ctx) error {
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	id, err := idFromParam(ctx, "forum_id")
+	if err != nil {
+		return err
+	}
+	settings, err := handler.services.Forums.GetForumSettings(ctx.Context(), actor, id)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	setETag(ctx, settings.Version)
+	return writeJSON(ctx, fiber.StatusOK, settings)
+}
+
+// updateForumSettings updates admin forum settings.
+func (handler handler) updateForumSettings(ctx *fiber.Ctx) error {
+	if err := requireIdempotency(ctx); err != nil {
+		return err
+	}
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	id, err := idFromParam(ctx, "forum_id")
+	if err != nil {
+		return err
+	}
+	version, err := expectedVersion(ctx)
+	if err != nil {
+		return err
+	}
+	var request domain.ForumSettings
+	if err := decodeJSON(ctx, &request); err != nil {
+		return err
+	}
+	request.ForumID = id
+	settings, err := handler.services.Forums.UpdateForumSettings(ctx.Context(), port.UpdateForumSettingsCommand{ActorUserID: actor, Settings: request, ExpectedVersion: version})
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	setETag(ctx, settings.Version)
+	return writeJSON(ctx, fiber.StatusOK, settings)
+}
+
+// getForumPermissions returns forum permission grants.
+func (handler handler) getForumPermissions(ctx *fiber.Ctx) error {
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	id, err := idFromParam(ctx, "forum_id")
+	if err != nil {
+		return err
+	}
+	settings, err := handler.services.Forums.GetForumPermissionSettings(ctx.Context(), actor, id)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, settings)
+}
+
+// updateForumPermissions updates forum permission grants.
+func (handler handler) updateForumPermissions(ctx *fiber.Ctx) error {
+	if err := requireIdempotency(ctx); err != nil {
+		return err
+	}
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	id, err := idFromParam(ctx, "forum_id")
+	if err != nil {
+		return err
+	}
+	var request domain.ForumPermissionSettings
+	if err := decodeJSON(ctx, &request); err != nil {
+		return err
+	}
+	request.ForumID = id
+	if err := handler.services.Forums.UpdateForumPermissionSettings(ctx.Context(), port.UpdateForumPermissionSettingsCommand{ActorUserID: actor, Settings: request}); err != nil {
+		return handleError(ctx, err)
+	}
+	return writeNoContent(ctx)
+}
+
+// simulateForumPermission simulates one forum permission.
+func (handler handler) simulateForumPermission(ctx *fiber.Ctx) error {
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	id, err := idFromParam(ctx, "forum_id")
+	if err != nil {
+		return err
+	}
+	var request domain.ForumPermissionSimulationRequest
+	if err := decodeJSON(ctx, &request); err != nil {
+		return err
+	}
+	result, err := handler.services.Forums.SimulateForumPermission(ctx.Context(), port.SimulateForumPermissionCommand{ActorUserID: actor, ForumID: id, Request: request})
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, result)
+}
+
 // moveForum moves a forum.
 func (handler handler) moveForum(ctx *fiber.Ctx) error {
 	if err := requireIdempotency(ctx); err != nil {
@@ -201,7 +313,7 @@ func (handler handler) reorderForums(ctx *fiber.Ctx) error {
 
 // forumFromRequest maps request data to domain.
 func forumFromRequest(id uuid.UUID, request forumRequest) domain.Forum {
-	return domain.Forum{ID: id, CategoryID: request.CategoryID, ParentForumID: request.ParentForumID, Kind: request.Kind, Key: request.Key, Slug: request.Slug, Name: request.Name, Description: request.Description, DisplayOrder: request.DisplayOrder, ExternalURL: request.ExternalURL, IconAssetID: request.IconAssetID, ThreadVisibilityMode: request.ThreadVisibilityMode, MaxStickyThreads: request.MaxStickyThreads, DefaultThreadStatus: request.DefaultThreadStatus, Status: request.Status}
+	return domain.Forum{ID: id, CategoryID: request.CategoryID, ParentForumID: request.ParentForumID, Kind: request.Kind, Key: request.Key, Slug: request.Slug, Name: request.Name, Description: request.Description, DisplayOrder: request.DisplayOrder, ExternalURL: request.ExternalURL, IconAssetID: request.IconAssetID, ThreadVisibilityMode: request.ThreadVisibilityMode, MaxStickyThreads: request.MaxStickyThreads, DefaultThreadStatus: request.DefaultThreadStatus, AuthorPostEditWindowSeconds: request.AuthorPostEditWindowSeconds, AuthorPostDeleteWindowSeconds: request.AuthorPostDeleteWindowSeconds, Status: request.Status}
 }
 
 // forumFilterFromQuery returns forum filters from query params.

@@ -28,23 +28,25 @@ func (CategoryModel) TableName() string {
 // ForumModel is the GORM model for forums.
 type ForumModel struct {
 	orm.ID
-	CategoryID           uuid.UUID  `gorm:"type:uuid;not null;index"`
-	ParentForumID        *uuid.UUID `gorm:"type:uuid;index"`
-	Kind                 string     `gorm:"size:64;not null;index"`
-	Key                  string     `gorm:"size:64;not null;uniqueIndex"`
-	Slug                 string     `gorm:"size:120;not null;index"`
-	Name                 string     `gorm:"size:120;not null"`
-	Description          string     `gorm:"size:1000;not null;default:''"`
-	DisplayOrder         int        `gorm:"not null;default:0;index"`
-	Path                 string     `gorm:"size:700;not null;index"`
-	Depth                int        `gorm:"not null;default:0"`
-	ExternalURL          string     `gorm:"size:2048;not null;default:''"`
-	IconAssetID          *uuid.UUID `gorm:"type:uuid;index"`
-	ThreadVisibilityMode string     `gorm:"size:64;not null"`
-	MaxStickyThreads     int        `gorm:"not null;default:0"`
-	DefaultThreadStatus  string     `gorm:"size:64;not null"`
-	Status               string     `gorm:"size:64;not null;index"`
-	Version              uint64     `gorm:"not null;default:1"`
+	CategoryID                    uuid.UUID  `gorm:"type:uuid;not null;index"`
+	ParentForumID                 *uuid.UUID `gorm:"type:uuid;index"`
+	Kind                          string     `gorm:"size:64;not null;index"`
+	Key                           string     `gorm:"size:64;not null;uniqueIndex"`
+	Slug                          string     `gorm:"size:120;not null;index"`
+	Name                          string     `gorm:"size:120;not null"`
+	Description                   string     `gorm:"size:1000;not null;default:''"`
+	DisplayOrder                  int        `gorm:"not null;default:0;index"`
+	Path                          string     `gorm:"size:700;not null;index"`
+	Depth                         int        `gorm:"not null;default:0"`
+	ExternalURL                   string     `gorm:"size:2048;not null;default:''"`
+	IconAssetID                   *uuid.UUID `gorm:"type:uuid;index"`
+	ThreadVisibilityMode          string     `gorm:"size:64;not null"`
+	MaxStickyThreads              int        `gorm:"not null;default:0"`
+	DefaultThreadStatus           string     `gorm:"size:64;not null"`
+	AuthorPostEditWindowSeconds   int        `gorm:"not null;default:600"`
+	AuthorPostDeleteWindowSeconds int        `gorm:"not null;default:300"`
+	Status                        string     `gorm:"size:64;not null;index"`
+	Version                       uint64     `gorm:"not null;default:1"`
 	orm.Timestamps
 	orm.SoftDelete
 }

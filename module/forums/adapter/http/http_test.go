@@ -410,6 +410,11 @@ func TestForumHTTPWriteAndReadLifecycleRoutesExerciseHandlers(t *testing.T) {
 		{method: http.MethodGet, path: "/api/v1/forums/" + id, status: fiber.StatusOK},
 		{method: http.MethodGet, path: "/api/v1/forums?category_id=" + uuid.NewString() + "&parent_forum_id=" + uuid.NewString() + "&status=active", status: fiber.StatusOK},
 		{method: http.MethodPatch, path: "/api/v1/forums/" + id, body: forumBody, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/api/v1/forums/" + id + "/settings", status: fiber.StatusOK},
+		{method: http.MethodPatch, path: "/api/v1/forums/" + id + "/settings", body: `{"kind":"discussion","thread_visibility_mode":"own_threads","max_sticky_threads":3,"default_thread_status":"open","author_post_edit_window_seconds":120,"author_post_delete_window_seconds":60}`, status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/api/v1/forums/" + id + "/permissions", status: fiber.StatusOK},
+		{method: http.MethodPut, path: "/api/v1/forums/" + id + "/permissions", body: `{"viewers":[{"subject_type":"public"}]}`, status: fiber.StatusNoContent},
+		{method: http.MethodPost, path: "/api/v1/forums/" + id + "/permissions/simulate", body: `{"permission":"forums.view","object_type":"forum"}`, status: fiber.StatusOK},
 		{method: http.MethodPost, path: "/api/v1/forums/" + id + "/move", body: moveBody, status: fiber.StatusOK},
 		{method: http.MethodDelete, path: "/api/v1/forums/" + id, status: fiber.StatusNoContent},
 		{method: http.MethodPost, path: "/api/v1/forums/reorder", body: reorderBody, status: fiber.StatusNoContent},
@@ -517,6 +522,31 @@ func (service httpService) CreateForum(context.Context, port.CreateForumCommand)
 // UpdateForum updates a forum.
 func (service httpService) UpdateForum(context.Context, port.UpdateForumCommand) (domain.Forum, error) {
 	return domain.Forum{ID: uuid.New(), Key: "news", Name: "News", Version: 2}, service.err
+}
+
+// GetForumSettings returns forum settings.
+func (service httpService) GetForumSettings(context.Context, uuid.UUID, uuid.UUID) (domain.ForumSettings, error) {
+	return domain.ForumSettings{ForumID: uuid.New(), Kind: domain.ForumKindDiscussion, ThreadVisibilityMode: domain.ThreadVisibilityAllThreads, DefaultThreadStatus: domain.ThreadStatusOpen, AuthorPostEditWindowSeconds: 600, AuthorPostDeleteWindowSeconds: 300, Version: 1}, service.err
+}
+
+// UpdateForumSettings updates forum settings.
+func (service httpService) UpdateForumSettings(context.Context, port.UpdateForumSettingsCommand) (domain.ForumSettings, error) {
+	return domain.ForumSettings{ForumID: uuid.New(), Kind: domain.ForumKindDiscussion, ThreadVisibilityMode: domain.ThreadVisibilityOwnThreads, DefaultThreadStatus: domain.ThreadStatusOpen, AuthorPostEditWindowSeconds: 120, AuthorPostDeleteWindowSeconds: 60, Version: 2}, service.err
+}
+
+// GetForumPermissionSettings returns forum permission settings.
+func (service httpService) GetForumPermissionSettings(context.Context, uuid.UUID, uuid.UUID) (domain.ForumPermissionSettings, error) {
+	return domain.ForumPermissionSettings{ForumID: uuid.New(), Viewers: []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectPublic, SubjectID: domain.PublicPermissionSubjectID()}}}, service.err
+}
+
+// UpdateForumPermissionSettings updates forum permission settings.
+func (service httpService) UpdateForumPermissionSettings(context.Context, port.UpdateForumPermissionSettingsCommand) error {
+	return service.err
+}
+
+// SimulateForumPermission simulates one forum permission.
+func (service httpService) SimulateForumPermission(context.Context, port.SimulateForumPermissionCommand) (domain.ForumPermissionSimulationResult, error) {
+	return domain.ForumPermissionSimulationResult{Allowed: true, Reason: "matched_relation", Permission: "forums.view", ObjectType: "forum", ObjectID: uuid.New(), MatchedRelation: "viewer", CheckedRelations: []string{"viewer"}}, service.err
 }
 
 // MoveForum moves a forum.

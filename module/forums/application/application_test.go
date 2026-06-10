@@ -241,10 +241,13 @@ func TestServiceCreateReplyRejectsMissingAttachment(t *testing.T) {
 
 // TestServiceUpdatePostWritesRevision verifies edit history is preserved.
 func TestServiceUpdatePostWritesRevision(t *testing.T) {
-	service, _, _, threads, posts, _, _ := newContentTestService()
+	service, _, forums, threads, posts, _, _ := newContentTestService()
 	actorID := uuid.New()
 	thread := testThread(uuid.New(), actorID)
 	post := testPost(thread.ID, thread.ForumID, actorID, 1)
+	forum := testForum(uuid.New(), nil, 0, "edit")
+	forum.ID = thread.ForumID
+	forums.items[thread.ForumID] = forum
 	threads.items[thread.ID] = thread
 	posts.items[post.ID] = post
 
@@ -259,11 +262,14 @@ func TestServiceUpdatePostWritesRevision(t *testing.T) {
 
 // TestServiceUpdatePostRejectsExpiredAuthorWindow verifies edit window policy.
 func TestServiceUpdatePostRejectsExpiredAuthorWindow(t *testing.T) {
-	service, _, _, threads, posts, _, _ := newContentTestService()
+	service, _, forums, threads, posts, _, _ := newContentTestService()
 	actorID := uuid.New()
 	thread := testThread(uuid.New(), actorID)
 	post := testPost(thread.ID, thread.ForumID, actorID, 1)
 	post.CreatedAt = time.Now().UTC().Add(-authorPostEditWindow - time.Minute)
+	forum := testForum(uuid.New(), nil, 0, "expired")
+	forum.ID = thread.ForumID
+	forums.items[thread.ForumID] = forum
 	threads.items[thread.ID] = thread
 	posts.items[post.ID] = post
 
@@ -292,6 +298,28 @@ func TestServiceGetThreadAllowsVisibleForum(t *testing.T) {
 	}
 }
 
+// TestServiceGetPostRequiresManageForHiddenPost verifies direct hidden post reads.
+func TestServiceGetPostRequiresManageForHiddenPost(t *testing.T) {
+	service, _, _, _, posts, auth, _ := newContentTestService()
+	actorID := uuid.New()
+	post := testPost(uuid.New(), uuid.New(), uuid.New(), 1)
+	post.Status = domain.PostStatusHidden
+	posts.items[post.ID] = post
+
+	_, err := service.GetPost(context.Background(), actorID, post.ID)
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("GetPost() error = %v, want %v", err, port.ErrForbidden)
+	}
+	auth.managePosts[post.ForumID] = true
+	found, err := service.GetPost(context.Background(), actorID, post.ID)
+	if err != nil {
+		t.Fatalf("GetPost() allowed error = %v", err)
+	}
+	if found.ID != post.ID {
+		t.Fatalf("found = %+v, want hidden post", found)
+	}
+}
+
 // TestServiceUpdateThreadTitleRequiresManageForNonAuthor verifies title edit gates.
 func TestServiceUpdateThreadTitleRequiresManageForNonAuthor(t *testing.T) {
 	service, _, forums, threads, _, auth, _ := newContentTestService()
@@ -308,6 +336,21 @@ func TestServiceUpdateThreadTitleRequiresManageForNonAuthor(t *testing.T) {
 	auth.manageThreads[forum.ID] = true
 	if _, err := service.UpdateThreadTitle(context.Background(), port.UpdateThreadTitleCommand{ActorUserID: actorID, ThreadID: thread.ID, Title: "Changed title", Slug: "changed-title", ExpectedVersion: thread.Version}); err != nil {
 		t.Fatalf("UpdateThreadTitle() allowed error = %v", err)
+	}
+}
+
+// TestServiceDeleteThreadAllowsAuthor verifies author deletion path.
+func TestServiceDeleteThreadAllowsAuthor(t *testing.T) {
+	service, _, _, threads, _, _, _ := newContentTestService()
+	actorID := uuid.New()
+	thread := testThread(uuid.New(), actorID)
+	threads.items[thread.ID] = thread
+
+	if err := service.DeleteThread(context.Background(), port.DeleteThreadCommand{ActorUserID: actorID, ThreadID: thread.ID, ExpectedVersion: thread.Version}); err != nil {
+		t.Fatalf("DeleteThread() error = %v", err)
+	}
+	if _, ok := threads.items[thread.ID]; ok {
+		t.Fatalf("thread still exists after delete")
 	}
 }
 
@@ -450,6 +493,34 @@ func TestServiceLatestPostsUsesVisibleForumsAndCache(t *testing.T) {
 	}
 }
 
+// TestServiceMostLikedPostsUsesVisibleForumAndCache verifies most-liked visibility and caching.
+func TestServiceMostLikedPostsUsesVisibleForumAndCache(t *testing.T) {
+	service, _, forums, _, _, auth, interactions := newContentTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "popular")
+	forums.items[forum.ID] = forum
+	auth.visible[forum.ID] = true
+	interactions.mostLiked = []domain.MostLikedPost{{ForumID: forum.ID, ThreadID: uuid.New(), PostID: uuid.New(), AuthorUserID: uuid.New(), LikeCount: 10, Sequence: 2, Excerpt: "Popular"}}
+
+	first, err := service.ListMostLikedPosts(context.Background(), actorID, forum.ID, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("ListMostLikedPosts() first error = %v", err)
+	}
+	interactions.mostLiked = nil
+	second, err := service.ListMostLikedPosts(context.Background(), actorID, forum.ID, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("ListMostLikedPosts() second error = %v", err)
+	}
+	if len(first.Items) != 1 || len(second.Items) != 1 {
+		t.Fatalf("first=%+v second=%+v, want cached most-liked result", first.Items, second.Items)
+	}
+
+	_, err = service.ListMostLikedPosts(context.Background(), actorID, uuid.New(), pagination.Page{Limit: 10})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("ListMostLikedPosts() invisible error = %v, want %v", err, port.ErrForbidden)
+	}
+}
+
 // TestServiceReadStateRequiresAuthenticatedActor verifies anonymous read state is rejected.
 func TestServiceReadStateRequiresAuthenticatedActor(t *testing.T) {
 	service, _, _, _, _, _, _ := newContentTestService()
@@ -555,6 +626,97 @@ func TestServiceRepairMethodsDelegateToOperations(t *testing.T) {
 	}
 	if operations.rebuildStatsCalls != 1 || operations.verifyLikesCalls != 1 || operations.rebuildLikesCalls != 1 {
 		t.Fatalf("operations calls = %+v, want all repair hooks delegated", operations)
+	}
+}
+
+// TestServiceGetForumSettingsRequiresManageAndReturnsSettings verifies admin settings reads.
+func TestServiceGetForumSettingsRequiresManageAndReturnsSettings(t *testing.T) {
+	service, _, forums, auth, _ := newTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "settings-read")
+	forum.ThreadVisibilityMode = domain.ThreadVisibilityOwnOrStickyThreads
+	forums.items[forum.ID] = forum
+
+	_, err := service.GetForumSettings(context.Background(), actorID, forum.ID)
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("GetForumSettings() error = %v, want %v", err, port.ErrForbidden)
+	}
+	auth.manage[forum.ID] = true
+	settings, err := service.GetForumSettings(context.Background(), actorID, forum.ID)
+	if err != nil {
+		t.Fatalf("GetForumSettings() allowed error = %v", err)
+	}
+	if settings.ForumID != forum.ID || settings.ThreadVisibilityMode != domain.ThreadVisibilityOwnOrStickyThreads {
+		t.Fatalf("settings = %+v, want forum settings", settings)
+	}
+}
+
+// TestServiceForumSettingsUpdatePersistsAndClearsCaches verifies settings updates use forum versioning.
+func TestServiceForumSettingsUpdatePersistsAndClearsCaches(t *testing.T) {
+	service, categories, forums, auth, cache := newTestService()
+	actorID := uuid.New()
+	category := testCategory()
+	forum := testForum(category.ID, nil, 0, "settings")
+	categories.items[category.ID] = category
+	forums.items[forum.ID] = forum
+	auth.manage[forum.ID] = true
+	cache.items["forums:tree:v1:user:"+actorID.String()] = domain.ForumTree{}
+
+	settings := domain.ForumSettings{ForumID: forum.ID, Kind: domain.ForumKindDiscussion, ThreadVisibilityMode: domain.ThreadVisibilityOwnThreads, MaxStickyThreads: 7, DefaultThreadStatus: domain.ThreadStatusOpen, AuthorPostEditWindowSeconds: 120, AuthorPostDeleteWindowSeconds: -1}
+	updated, err := service.UpdateForumSettings(context.Background(), port.UpdateForumSettingsCommand{ActorUserID: actorID, Settings: settings, ExpectedVersion: forum.Version})
+	if err != nil {
+		t.Fatalf("UpdateForumSettings() error = %v", err)
+	}
+	if updated.ThreadVisibilityMode != domain.ThreadVisibilityOwnThreads || updated.MaxStickyThreads != 7 || forums.items[forum.ID].AuthorPostDeleteWindowSeconds != -1 {
+		t.Fatalf("settings=%+v forum=%+v, want persisted settings", updated, forums.items[forum.ID])
+	}
+	if len(cache.items) != 0 {
+		t.Fatalf("cache items = %d, want cleared", len(cache.items))
+	}
+}
+
+// TestServicePermissionSettingsRoundTripAndSimulation verifies permission admin use cases.
+func TestServicePermissionSettingsRoundTripAndSimulation(t *testing.T) {
+	service, _, forums, auth, _ := newTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "permissions")
+	forums.items[forum.ID] = forum
+	auth.manage[forum.ID] = true
+	subjectID := uuid.New()
+	settings := domain.ForumPermissionSettings{ForumID: forum.ID, Viewers: []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectPublic}}, Creators: []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectUser, SubjectID: subjectID}}}
+
+	if err := service.UpdateForumPermissionSettings(context.Background(), port.UpdateForumPermissionSettingsCommand{ActorUserID: actorID, Settings: settings}); err != nil {
+		t.Fatalf("UpdateForumPermissionSettings() error = %v", err)
+	}
+	found, err := service.GetForumPermissionSettings(context.Background(), actorID, forum.ID)
+	if err != nil {
+		t.Fatalf("GetForumPermissionSettings() error = %v", err)
+	}
+	if len(found.Viewers) != 1 || found.Viewers[0].SubjectID != domain.PublicPermissionSubjectID() || len(found.Creators) != 1 {
+		t.Fatalf("found = %+v, want normalized grants", found)
+	}
+	result, err := service.SimulateForumPermission(context.Background(), port.SimulateForumPermissionCommand{ActorUserID: actorID, ForumID: forum.ID, Request: domain.ForumPermissionSimulationRequest{ActorUserID: subjectID, Permission: "forums.create_thread"}})
+	if err != nil {
+		t.Fatalf("SimulateForumPermission() error = %v", err)
+	}
+	if !result.Allowed || result.MatchedRelation != "creator" {
+		t.Fatalf("result = %+v, want creator allow", result)
+	}
+}
+
+// TestServiceAuthorDeleteWindowCanBeDisabled verifies settings are enforced by post delete.
+func TestServiceAuthorDeleteWindowCanBeDisabled(t *testing.T) {
+	service, _, forums, _, posts, _, _ := newContentTestService()
+	actorID := uuid.New()
+	forum := testForum(uuid.New(), nil, 0, "delete-window")
+	forum.AuthorPostDeleteWindowSeconds = -1
+	post := testPost(uuid.New(), forum.ID, actorID, 1)
+	forums.items[forum.ID] = forum
+	posts.items[post.ID] = post
+
+	err := service.DeletePost(context.Background(), port.DeletePostCommand{ActorUserID: actorID, PostID: post.ID, ExpectedVersion: post.Version})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("DeletePost() error = %v, want %v", err, port.ErrForbidden)
 	}
 }
 
@@ -735,6 +897,7 @@ type memoryAuthorizer struct {
 	like          map[uuid.UUID]bool
 	manageThreads map[uuid.UUID]bool
 	managePosts   map[uuid.UUID]bool
+	settings      map[uuid.UUID]domain.ForumPermissionSettings
 }
 
 // VisibleForums returns visible forum IDs.
@@ -774,6 +937,42 @@ func (authorizer *memoryAuthorizer) CanManageThreads(_ context.Context, _ uuid.U
 // CanManagePosts returns post management decision.
 func (authorizer *memoryAuthorizer) CanManagePosts(_ context.Context, _ uuid.UUID, forumID uuid.UUID) (bool, error) {
 	return authorizer.managePosts[forumID], nil
+}
+
+// ForumPermissionSettings returns configured grants.
+func (authorizer *memoryAuthorizer) ForumPermissionSettings(_ context.Context, forumID uuid.UUID) (domain.ForumPermissionSettings, error) {
+	if authorizer.settings == nil {
+		authorizer.settings = map[uuid.UUID]domain.ForumPermissionSettings{}
+	}
+	settings, ok := authorizer.settings[forumID]
+	if !ok {
+		return domain.ForumPermissionSettings{ForumID: forumID}, nil
+	}
+	return settings, nil
+}
+
+// UpdateForumPermissionSettings stores configured grants.
+func (authorizer *memoryAuthorizer) UpdateForumPermissionSettings(_ context.Context, _ uuid.UUID, settings domain.ForumPermissionSettings) error {
+	if authorizer.settings == nil {
+		authorizer.settings = map[uuid.UUID]domain.ForumPermissionSettings{}
+	}
+	authorizer.settings[settings.ForumID] = settings.Normalize()
+	return nil
+}
+
+// SimulateForumPermission returns an explainable memory decision.
+func (authorizer *memoryAuthorizer) SimulateForumPermission(_ context.Context, forumID uuid.UUID, request domain.ForumPermissionSimulationRequest) (domain.ForumPermissionSimulationResult, error) {
+	settings, _ := authorizer.ForumPermissionSettings(context.Background(), forumID)
+	result := domain.ForumPermissionSimulationResult{Allowed: false, Reason: "no_matching_relation", Permission: request.Permission, ObjectType: request.ObjectType, ObjectID: request.ObjectID, CheckedRelations: []string{"viewer", "creator", "replyer", "liker", "moderator", "manager"}}
+	for _, grant := range settings.Creators {
+		if grant.SubjectType == domain.PermissionSubjectUser && grant.SubjectID == request.ActorUserID && request.Permission == "forums.create_thread" {
+			result.Allowed = true
+			result.Reason = "matched_relation"
+			result.MatchedRelation = "creator"
+			return result, nil
+		}
+	}
+	return result, nil
 }
 
 // memoryThreads stores threads in memory.

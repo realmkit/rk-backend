@@ -43,6 +43,9 @@ type ContentFormat string
 // ReferenceType is a structured post reference kind.
 type ReferenceType string
 
+// PermissionSubjectType identifies an admin-configurable forum grant subject.
+type PermissionSubjectType string
+
 const (
 	// CategoryStatusActive means the category can be displayed.
 	CategoryStatusActive CategoryStatus = "active"
@@ -141,6 +144,20 @@ const (
 )
 
 const (
+	// PermissionSubjectPublic grants anonymous and authenticated users.
+	PermissionSubjectPublic PermissionSubjectType = "public"
+
+	// PermissionSubjectAuthenticated grants any authenticated local user.
+	PermissionSubjectAuthenticated PermissionSubjectType = "authenticated"
+
+	// PermissionSubjectUser grants one user.
+	PermissionSubjectUser PermissionSubjectType = "user"
+
+	// PermissionSubjectGroup grants active members of one group.
+	PermissionSubjectGroup PermissionSubjectType = "group"
+)
+
+const (
 	// ReferenceReplyTo points to posts this post replies to.
 	ReferenceReplyTo ReferenceType = "reply_to"
 
@@ -155,6 +172,14 @@ const (
 
 	// ReferenceLink records extracted links.
 	ReferenceLink ReferenceType = "link"
+)
+
+const (
+	// DefaultAuthorPostEditWindowSeconds is the default author self-edit window.
+	DefaultAuthorPostEditWindowSeconds = 600
+
+	// DefaultAuthorPostDeleteWindowSeconds is the default author self-delete window.
+	DefaultAuthorPostDeleteWindowSeconds = 300
 )
 
 // rootForumObjectID is the reserved permission object for category and root forum administration.
@@ -279,6 +304,14 @@ func ValidateContentFormat(field string, format ContentFormat) []Violation {
 // ValidateReferenceType validates reference type.
 func ValidateReferenceType(field string, referenceType ReferenceType) []Violation {
 	if slices.Contains([]ReferenceType{ReferenceReplyTo, ReferenceQuote, ReferenceMention, ReferenceAttachment, ReferenceLink}, referenceType) {
+		return nil
+	}
+	return []Violation{{Field: field, Message: "is not supported"}}
+}
+
+// ValidatePermissionSubjectType validates forum permission grant subjects.
+func ValidatePermissionSubjectType(field string, subjectType PermissionSubjectType) []Violation {
+	if slices.Contains([]PermissionSubjectType{PermissionSubjectPublic, PermissionSubjectAuthenticated, PermissionSubjectUser, PermissionSubjectGroup}, subjectType) {
 		return nil
 	}
 	return []Violation{{Field: field, Message: "is not supported"}}

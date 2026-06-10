@@ -4205,6 +4205,349 @@
           }
         }
       }
+    },
+    "/api/v1/forums/{forum_id}/settings": {
+      "get": {
+        "operationId": "getForumSettings",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Get forum settings",
+        "description": "Requires forums.manage_forum for the target forum. Returns behavior settings used by backend enforcement.",
+        "parameters": [
+          {
+            "name": "forum_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forum settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateForumSettings",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Update forum settings",
+        "description": "Requires forums.manage_forum, Idempotency-Key, and If-Match. Changing visibility or policy settings clears forum read caches.",
+        "parameters": [
+          {
+            "name": "forum_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForumSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated forum settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/forums/{forum_id}/permissions": {
+      "get": {
+        "operationId": "getForumPermissions",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Get forum permission settings",
+        "description": "Requires forums.manage_forum. Returns relation grants that power forum visibility and actions.",
+        "parameters": [
+          {
+            "name": "forum_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forum permission settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumPermissionSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateForumPermissions",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Replace forum permission settings",
+        "description": "Requires forums.manage_forum and Idempotency-Key. Empty grant arrays disable that relation. User and group grants are validated before storage.",
+        "parameters": [
+          {
+            "name": "forum_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForumPermissionSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/v1/forums/{forum_id}/permissions/simulate": {
+      "post": {
+        "operationId": "simulateForumPermission",
+        "tags": [
+          "forums"
+        ],
+        "summary": "Simulate forum permission",
+        "description": "Requires forums.manage_forum. Explains whether the selected actor would be allowed by current forum relation grants.",
+        "parameters": [
+          {
+            "name": "forum_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForumPermissionSimulationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Forum permission simulation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForumPermissionSimulationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6450,7 +6793,9 @@
           "status",
           "version",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "author_post_edit_window_seconds",
+          "author_post_delete_window_seconds"
         ],
         "properties": {
           "id": {
@@ -6519,6 +6864,16 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "author_post_edit_window_seconds": {
+            "type": "integer",
+            "minimum": -1,
+            "description": "Author self-edit window in seconds. -1 disables author self-edit."
+          },
+          "author_post_delete_window_seconds": {
+            "type": "integer",
+            "minimum": -1,
+            "description": "Author self-delete window in seconds. -1 disables author self-delete."
           }
         }
       },
@@ -6582,6 +6937,16 @@
           },
           "status": {
             "$ref": "#/components/schemas/ForumStatus"
+          },
+          "author_post_edit_window_seconds": {
+            "type": "integer",
+            "minimum": -1,
+            "default": 600
+          },
+          "author_post_delete_window_seconds": {
+            "type": "integer",
+            "minimum": -1,
+            "default": 300
           }
         }
       },
@@ -7828,6 +8193,203 @@
           },
           "next_page_token": {
             "type": "string"
+          }
+        }
+      },
+      "ForumSettings": {
+        "type": "object",
+        "required": [
+          "forum_id",
+          "kind",
+          "thread_visibility_mode",
+          "max_sticky_threads",
+          "default_thread_status",
+          "author_post_edit_window_seconds",
+          "author_post_delete_window_seconds",
+          "version"
+        ],
+        "properties": {
+          "forum_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ForumKind"
+          },
+          "external_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "thread_visibility_mode": {
+            "$ref": "#/components/schemas/ThreadVisibilityMode"
+          },
+          "max_sticky_threads": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "default_thread_status": {
+            "$ref": "#/components/schemas/ThreadStatus"
+          },
+          "author_post_edit_window_seconds": {
+            "type": "integer",
+            "minimum": -1,
+            "description": "-1 disables author self-edit."
+          },
+          "author_post_delete_window_seconds": {
+            "type": "integer",
+            "minimum": -1,
+            "description": "-1 disables author self-delete."
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ForumPermissionGrant": {
+        "type": "object",
+        "required": [
+          "subject_type"
+        ],
+        "properties": {
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "public",
+              "authenticated",
+              "user",
+              "group"
+            ]
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Required for user/group. Public and authenticated use reserved IDs."
+          },
+          "subject_relation": {
+            "type": "string",
+            "enum": [
+              "member"
+            ],
+            "description": "Group grants use member."
+          }
+        }
+      },
+      "ForumPermissionSettings": {
+        "type": "object",
+        "required": [
+          "forum_id"
+        ],
+        "properties": {
+          "forum_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "viewers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumPermissionGrant"
+            }
+          },
+          "creators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumPermissionGrant"
+            }
+          },
+          "replyers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumPermissionGrant"
+            }
+          },
+          "likers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumPermissionGrant"
+            }
+          },
+          "moderators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumPermissionGrant"
+            }
+          },
+          "managers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumPermissionGrant"
+            }
+          }
+        }
+      },
+      "ForumPermissionSimulationRequest": {
+        "type": "object",
+        "required": [
+          "permission"
+        ],
+        "properties": {
+          "actor_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Omit for anonymous simulation."
+          },
+          "permission": {
+            "$ref": "#/components/schemas/Permission"
+          },
+          "object_type": {
+            "$ref": "#/components/schemas/AuthorizationObjectType"
+          },
+          "object_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ForumPermissionSimulationResult": {
+        "type": "object",
+        "required": [
+          "allowed",
+          "reason",
+          "permission",
+          "object_type",
+          "object_id",
+          "checked_relations"
+        ],
+        "properties": {
+          "allowed": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "matched_relation",
+              "no_matching_relation"
+            ]
+          },
+          "permission": {
+            "type": "string"
+          },
+          "object_type": {
+            "type": "string"
+          },
+          "object_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "matched_relation": {
+            "type": "string"
+          },
+          "checked_relations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }

@@ -28,6 +28,7 @@ type Service struct {
 	operations   port.OperationsRepository
 	assets       port.AssetResolver
 	authorizer   port.VisibilityAuthorizer
+	permissions  port.PermissionAdmin
 	cache        port.ReadCache
 	transactions transaction.Runner
 }
@@ -58,6 +59,9 @@ type Dependencies struct {
 	// Authorizer checks forum permissions.
 	Authorizer port.VisibilityAuthorizer
 
+	// Permissions manages forum permission configuration.
+	Permissions port.PermissionAdmin
+
 	// Cache caches visible trees.
 	Cache port.ReadCache
 
@@ -67,6 +71,12 @@ type Dependencies struct {
 
 // NewService creates a forum service.
 func NewService(deps Dependencies) Service {
+	permissions := deps.Permissions
+	if permissions == nil {
+		if admin, ok := deps.Authorizer.(port.PermissionAdmin); ok {
+			permissions = admin
+		}
+	}
 	return Service{
 		categories:   deps.Categories,
 		forums:       deps.Forums,
@@ -76,6 +86,7 @@ func NewService(deps Dependencies) Service {
 		operations:   deps.Operations,
 		assets:       deps.Assets,
 		authorizer:   deps.Authorizer,
+		permissions:  permissions,
 		cache:        deps.Cache,
 		transactions: deps.Transactions,
 	}
@@ -194,6 +205,105 @@ func (service Service) UpdateForum(ctx context.Context, command port.UpdateForum
 		return domain.Forum{}, err
 	}
 	return updated, service.clearTree(ctx)
+}
+
+// GetForumSettings returns admin forum settings.
+func (service Service) GetForumSettings(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (domain.ForumSettings, error) {
+	if err := service.requireManage(ctx, actorUserID, forumID); err != nil {
+		return domain.ForumSettings{}, err
+	}
+	forum, err := service.forums.FindByID(ctx, forumID)
+	if err != nil {
+		return domain.ForumSettings{}, err
+	}
+	return forum.Settings(), nil
+}
+
+// UpdateForumSettings updates admin forum settings.
+func (service Service) UpdateForumSettings(ctx context.Context, command port.UpdateForumSettingsCommand) (domain.ForumSettings, error) {
+	if err := service.requireManage(ctx, command.ActorUserID, command.Settings.ForumID); err != nil {
+		return domain.ForumSettings{}, err
+	}
+	current, err := service.forums.FindByID(ctx, command.Settings.ForumID)
+	if err != nil {
+		return domain.ForumSettings{}, err
+	}
+	settings := command.Settings.Normalize()
+	if err := settings.Validate(); err != nil {
+		return domain.ForumSettings{}, err
+	}
+	updatedForum := current
+	updatedForum.Kind = settings.Kind
+	updatedForum.ExternalURL = settings.ExternalURL
+	updatedForum.ThreadVisibilityMode = settings.ThreadVisibilityMode
+	updatedForum.MaxStickyThreads = settings.MaxStickyThreads
+	updatedForum.DefaultThreadStatus = settings.DefaultThreadStatus
+	updatedForum.AuthorPostEditWindowSeconds = settings.AuthorPostEditWindowSeconds
+	updatedForum.AuthorPostDeleteWindowSeconds = settings.AuthorPostDeleteWindowSeconds
+	if err := updatedForum.Validate(); err != nil {
+		return domain.ForumSettings{}, err
+	}
+	updated, err := service.forums.Update(ctx, updatedForum, command.ExpectedVersion)
+	if err != nil {
+		return domain.ForumSettings{}, err
+	}
+	return updated.Settings(), service.ClearReadCache(ctx)
+}
+
+// GetForumPermissionSettings returns forum permission grants.
+func (service Service) GetForumPermissionSettings(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (domain.ForumPermissionSettings, error) {
+	if err := service.requireManage(ctx, actorUserID, forumID); err != nil {
+		return domain.ForumPermissionSettings{}, err
+	}
+	if _, err := service.forums.FindByID(ctx, forumID); err != nil {
+		return domain.ForumPermissionSettings{}, err
+	}
+	if service.permissions == nil {
+		return domain.ForumPermissionSettings{}, port.ErrForbidden
+	}
+	return service.permissions.ForumPermissionSettings(ctx, forumID)
+}
+
+// UpdateForumPermissionSettings replaces forum permission grants.
+func (service Service) UpdateForumPermissionSettings(ctx context.Context, command port.UpdateForumPermissionSettingsCommand) error {
+	settings := command.Settings.Normalize()
+	if err := service.requireManage(ctx, command.ActorUserID, settings.ForumID); err != nil {
+		return err
+	}
+	if _, err := service.forums.FindByID(ctx, settings.ForumID); err != nil {
+		return err
+	}
+	if err := settings.Validate(); err != nil {
+		return err
+	}
+	if service.permissions == nil {
+		return port.ErrForbidden
+	}
+	err := service.transactions.WithinTx(ctx, func(ctx context.Context) error {
+		if err := service.permissions.UpdateForumPermissionSettings(ctx, command.ActorUserID, settings); err != nil {
+			return err
+		}
+		return service.ClearReadCache(ctx)
+	})
+	return err
+}
+
+// SimulateForumPermission simulates one forum permission.
+func (service Service) SimulateForumPermission(ctx context.Context, command port.SimulateForumPermissionCommand) (domain.ForumPermissionSimulationResult, error) {
+	if err := service.requireManage(ctx, command.ActorUserID, command.ForumID); err != nil {
+		return domain.ForumPermissionSimulationResult{}, err
+	}
+	if _, err := service.forums.FindByID(ctx, command.ForumID); err != nil {
+		return domain.ForumPermissionSimulationResult{}, err
+	}
+	request := command.Request.Normalize(command.ForumID)
+	if err := request.Validate(); err != nil {
+		return domain.ForumPermissionSimulationResult{}, err
+	}
+	if service.permissions == nil {
+		return domain.ForumPermissionSimulationResult{}, port.ErrForbidden
+	}
+	return service.permissions.SimulateForumPermission(ctx, command.ForumID, request)
 }
 
 // MoveForum moves a forum.

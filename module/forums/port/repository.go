@@ -82,3 +82,15 @@ type VisibilityAuthorizer interface {
 	// CanManagePosts reports whether actor can manage posts in forum.
 	CanManagePosts(ctx context.Context, actorUserID uuid.UUID, forumID uuid.UUID) (bool, error)
 }
+
+// PermissionAdmin manages forum permission settings and simulations.
+type PermissionAdmin interface {
+	// ForumPermissionSettings returns permission grants for a forum.
+	ForumPermissionSettings(ctx context.Context, forumID uuid.UUID) (domain.ForumPermissionSettings, error)
+
+	// UpdateForumPermissionSettings replaces permission grants for a forum.
+	UpdateForumPermissionSettings(ctx context.Context, actorUserID uuid.UUID, settings domain.ForumPermissionSettings) error
+
+	// SimulateForumPermission explains a forum permission decision.
+	SimulateForumPermission(ctx context.Context, forumID uuid.UUID, request domain.ForumPermissionSimulationRequest) (domain.ForumPermissionSimulationResult, error)
+}

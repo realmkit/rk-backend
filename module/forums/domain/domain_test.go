@@ -41,6 +41,72 @@ func TestForumValidateAcceptsDiscussion(t *testing.T) {
 	}
 }
 
+// TestForumSettingsReflectForumConfiguration verifies settings projection.
+func TestForumSettingsReflectForumConfiguration(t *testing.T) {
+	id := uuid.New()
+	forum := Forum{ID: id, CategoryID: uuid.New(), Key: "support", Slug: "support", Name: "Support", Path: "/" + id.String() + "/", ThreadVisibilityMode: ThreadVisibilityOwnThreads, MaxStickyThreads: 4, AuthorPostEditWindowSeconds: 45, AuthorPostDeleteWindowSeconds: -1}.Normalize()
+
+	settings := forum.Settings()
+
+	if settings.ForumID != forum.ID || settings.ThreadVisibilityMode != ThreadVisibilityOwnThreads || settings.MaxStickyThreads != 4 || settings.AuthorPostDeleteWindowSeconds != -1 {
+		t.Fatalf("Settings() = %+v, want forum configuration", settings)
+	}
+}
+
+// TestForumSettingsValidateSupportsDisabledAuthorWindows verifies settings validation.
+func TestForumSettingsValidateSupportsDisabledAuthorWindows(t *testing.T) {
+	settings := ForumSettings{ForumID: uuid.New(), Kind: ForumKindDiscussion, ThreadVisibilityMode: ThreadVisibilityOwnOrStickyThreads, DefaultThreadStatus: ThreadStatusOpen, MaxStickyThreads: 5, AuthorPostEditWindowSeconds: -1, AuthorPostDeleteWindowSeconds: -1}.Normalize()
+	if err := settings.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+}
+
+// TestForumSettingsValidateRejectsExternalURLOnDiscussion verifies link-only URLs.
+func TestForumSettingsValidateRejectsExternalURLOnDiscussion(t *testing.T) {
+	settings := ForumSettings{ForumID: uuid.New(), Kind: ForumKindDiscussion, ExternalURL: "https://example.test", ThreadVisibilityMode: ThreadVisibilityAllThreads, DefaultThreadStatus: ThreadStatusOpen}.Normalize()
+
+	err := settings.Validate()
+
+	if !errors.Is(err, ErrInvalid) {
+		t.Fatalf("Validate() error = %v, want %v", err, ErrInvalid)
+	}
+}
+
+// TestForumPermissionSettingsNormalizeReservedSubjects verifies grant normalization.
+func TestForumPermissionSettingsNormalizeReservedSubjects(t *testing.T) {
+	settings := ForumPermissionSettings{ForumID: uuid.New(), Viewers: []ForumPermissionGrant{{SubjectType: PermissionSubjectPublic}}, Replyers: []ForumPermissionGrant{{SubjectType: PermissionSubjectAuthenticated}}, Moderators: []ForumPermissionGrant{{SubjectType: PermissionSubjectGroup, SubjectID: uuid.New()}}}.Normalize()
+	if err := settings.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+	if settings.Viewers[0].SubjectID != PublicPermissionSubjectID() || settings.Replyers[0].SubjectID != AuthenticatedPermissionSubjectID() || settings.Moderators[0].SubjectRelation != "member" {
+		t.Fatalf("settings = %+v, want reserved ids and group member relation", settings)
+	}
+}
+
+// TestForumPermissionSettingsRejectsInvalidGrants verifies subject validation.
+func TestForumPermissionSettingsRejectsInvalidGrants(t *testing.T) {
+	settings := ForumPermissionSettings{ForumID: uuid.New(), Managers: []ForumPermissionGrant{{SubjectType: PermissionSubjectGroup, SubjectID: uuid.New(), SubjectRelation: "owner"}}, Creators: []ForumPermissionGrant{{SubjectType: PermissionSubjectUser}}}
+
+	err := settings.Validate()
+
+	if !errors.Is(err, ErrInvalid) {
+		t.Fatalf("Validate() error = %v, want %v", err, ErrInvalid)
+	}
+}
+
+// TestForumPermissionSimulationRequestNormalizeUsesForum verifies request defaults.
+func TestForumPermissionSimulationRequestNormalizeUsesForum(t *testing.T) {
+	forumID := uuid.New()
+	request := ForumPermissionSimulationRequest{Permission: " forums.view "}.Normalize(forumID)
+
+	if err := request.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+	if request.Permission != "forums.view" || request.ObjectType != "forum" || request.ObjectID != forumID {
+		t.Fatalf("Normalize() = %+v, want forum target", request)
+	}
+}
+
 // TestRootForumObjectIDIsStable verifies reserved permission target stability.
 func TestRootForumObjectIDIsStable(t *testing.T) {
 	if RootForumObjectID().String() != "00000000-0000-0000-0000-000000000101" {

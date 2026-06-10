@@ -252,7 +252,11 @@ func (service Service) DeletePost(ctx context.Context, command port.DeletePostCo
 		return err
 	}
 	if command.ActorUserID == post.AuthorUserID {
-		if !post.CreatedAt.IsZero() && time.Since(post.CreatedAt) > authorPostDeleteWindow {
+		allowed, err := service.authorCanDeletePost(ctx, post)
+		if err != nil {
+			return err
+		}
+		if !allowed {
 			return port.ErrForbidden
 		}
 	} else {
@@ -526,7 +530,11 @@ func (service Service) validateReferences(ctx context.Context, actorUserID uuid.
 
 // authorCanUpdatePost reports whether an author can still edit a post.
 func (service Service) authorCanUpdatePost(ctx context.Context, post domain.Post) (bool, error) {
-	if post.CreatedAt.IsZero() || time.Since(post.CreatedAt) > authorPostEditWindow {
+	forum, err := service.forums.FindByID(ctx, post.ForumID)
+	if err != nil {
+		return false, err
+	}
+	if !insideAuthorWindow(post.CreatedAt, forum.AuthorPostEditWindowSeconds, authorPostEditWindow) {
 		return false, nil
 	}
 	thread, err := service.threads.FindByID(ctx, post.ThreadID)
@@ -534,6 +542,27 @@ func (service Service) authorCanUpdatePost(ctx context.Context, post domain.Post
 		return false, err
 	}
 	return thread.Replyable(), nil
+}
+
+// authorCanDeletePost reports whether an author can still delete a post.
+func (service Service) authorCanDeletePost(ctx context.Context, post domain.Post) (bool, error) {
+	forum, err := service.forums.FindByID(ctx, post.ForumID)
+	if err != nil {
+		return false, err
+	}
+	return insideAuthorWindow(post.CreatedAt, forum.AuthorPostDeleteWindowSeconds, authorPostDeleteWindow), nil
+}
+
+// insideAuthorWindow reports whether createdAt is inside configured author window.
+func insideAuthorWindow(createdAt time.Time, configuredSeconds int, fallback time.Duration) bool {
+	if createdAt.IsZero() || configuredSeconds < 0 {
+		return false
+	}
+	window := time.Duration(configuredSeconds) * time.Second
+	if configuredSeconds == 0 {
+		window = fallback
+	}
+	return time.Since(createdAt) <= window
 }
 
 // requireThreadCreate verifies thread creation permission.
