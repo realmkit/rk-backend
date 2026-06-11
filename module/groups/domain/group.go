@@ -75,3 +75,44 @@ func validateName(field string, value string) []Violation {
 	}
 	return nil
 }
+
+// DisplayGroup returns the frontend display group from active memberships.
+func DisplayGroup(groups []Group, memberships []Membership, instant time.Time) (Group, bool) {
+	byID := map[uuid.UUID]Group{}
+	for _, group := range groups {
+		if group.GrantsPermissions() {
+			byID[group.ID] = group
+		}
+	}
+	var selected Group
+	var selectedMembership Membership
+	found := false
+	for _, membership := range memberships {
+		group, ok := byID[membership.GroupID]
+		if !ok || !membership.ActiveAt(instant) {
+			continue
+		}
+		if !found || betterDisplayGroup(group, membership, selected, selectedMembership) {
+			selected = group
+			selectedMembership = membership
+			found = true
+		}
+	}
+	return selected, found
+}
+
+// betterDisplayGroup reports whether candidate should be displayed first.
+func betterDisplayGroup(
+	candidate Group,
+	candidateMembership Membership,
+	current Group,
+	currentMembership Membership,
+) bool {
+	if candidate.Weight != current.Weight {
+		return candidate.Weight > current.Weight
+	}
+	if !candidateMembership.CreatedAt.Equal(currentMembership.CreatedAt) {
+		return candidateMembership.CreatedAt.Before(currentMembership.CreatedAt)
+	}
+	return candidate.Key < current.Key
+}

@@ -55,7 +55,10 @@ func (service Service) CreateUploadIntent(ctx context.Context, command port.Crea
 	if err != nil {
 		return port.UploadIntent{}, err
 	}
-	signed, err := service.store.PresignPut(ctx, storage.PresignPutRequest{Key: created.StorageKey, ContentType: created.ContentType, ExpiresIn: uploadIntentTTL})
+	signed, err := service.store.PresignPut(
+		ctx,
+		storage.PresignPutRequest{Key: created.StorageKey, ContentType: created.ContentType, ExpiresIn: uploadIntentTTL},
+	)
 	if err != nil {
 		return port.UploadIntent{}, err
 	}

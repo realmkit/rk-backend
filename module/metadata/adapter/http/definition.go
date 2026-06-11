@@ -111,7 +111,10 @@ func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
 		return handleError(ctx, err)
 	}
 	definition := applyDefinitionUpdate(current, request)
-	updated, err := handler.services.Definitions.UpdateDefinition(ctx.UserContext(), port.UpdateDefinitionCommand{Definition: definition, ExpectedVersion: version})
+	updated, err := handler.services.Definitions.UpdateDefinition(
+		ctx.UserContext(),
+		port.UpdateDefinitionCommand{Definition: definition, ExpectedVersion: version},
+	)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -129,7 +132,8 @@ func (handler handler) archiveDefinition(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if err := handler.services.Definitions.ArchiveDefinition(ctx.UserContext(), port.ArchiveDefinitionCommand{ID: id, ExpectedVersion: version}); err != nil {
+	command := port.ArchiveDefinitionCommand{ID: id, ExpectedVersion: version}
+	if err := handler.services.Definitions.ArchiveDefinition(ctx.UserContext(), command); err != nil {
 		return handleError(ctx, err)
 	}
 	return writeNoContent(ctx)

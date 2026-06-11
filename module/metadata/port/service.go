@@ -52,7 +52,10 @@ type MetaobjectService interface {
 	ArchiveMetaobjectDefinition(ctx context.Context, command ArchiveMetaobjectDefinitionCommand) error
 
 	// ListMetaobjectDefinitions returns metaobject definitions.
-	ListMetaobjectDefinitions(ctx context.Context, query ListMetaobjectDefinitionsQuery) (pagination.Result[MetaobjectDefinitionView], error)
+	ListMetaobjectDefinitions(
+		ctx context.Context,
+		query ListMetaobjectDefinitionsQuery,
+	) (pagination.Result[MetaobjectDefinitionView], error)
 
 	// GetMetaobjectDefinition returns one metaobject definition.
 	GetMetaobjectDefinition(ctx context.Context, query GetMetaobjectDefinitionQuery) (MetaobjectDefinitionView, error)

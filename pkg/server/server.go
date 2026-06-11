@@ -35,7 +35,7 @@ type Option func(*options)
 type options struct {
 	cors                  gamehubcors.Config
 	idempotencyConfigured bool
-	idempotencyRedisStore idempotency.RedisStore
+	idempotencyStore      idempotency.Store
 	assets                *assetshttp.Services
 	auth                  *auth.Config
 	authProvisioner       auth.Provisioner
@@ -75,7 +75,7 @@ func WithCORS(cfg gamehubcors.Config) Option {
 func WithIdempotencyStore(store idempotency.RedisStore) Option {
 	return func(options *options) {
 		options.idempotencyConfigured = true
-		options.idempotencyRedisStore = store
+		options.idempotencyStore = store
 	}
 }
 
@@ -161,7 +161,7 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 		Logger: log,
 	}))
 	app.Use(ratelimit.Middleware(options.rateLimitStore, DefaultRateLimit))
-	app.Use(idempotency.Middleware(options.idempotencyRedisStore, idempotency.WithLogger(log)))
+	app.Use(idempotency.Middleware(options.idempotencyStore, idempotency.WithLogger(log)))
 	app.Get("/health", health)
 	swagger.Register(app, development)
 
@@ -226,7 +226,7 @@ func optionsFrom(opts []Option) options {
 		opt(&options)
 	}
 	if !options.idempotencyConfigured {
-		panic("redis idempotency store is required")
+		options.idempotencyStore = idempotency.NewMemoryStore()
 	}
 	if options.rateLimitStore == nil {
 		options.rateLimitStore = ratelimit.NewMemoryStore()

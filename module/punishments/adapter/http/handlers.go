@@ -48,7 +48,11 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Punishments.ListDefinitions(ctx.Context(), port.DefinitionFilter{Status: domain.DefinitionStatus(ctx.Query("status"))}, page)
+	result, err := handler.services.Punishments.ListDefinitions(
+		ctx.Context(),
+		port.DefinitionFilter{Status: domain.DefinitionStatus(ctx.Query("status"))},
+		page,
+	)
 	if err != nil {
 		return handleError(ctx, err)
 	}

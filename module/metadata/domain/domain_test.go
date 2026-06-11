@@ -346,15 +346,49 @@ func TestNormalizeValueRejectsInvalidValueMatrix(t *testing.T) {
 		field FieldDefinition
 		raw   json.RawMessage
 	}{
-		{name: "url", field: FieldDefinition{Key: "website", Name: "Website", ValueType: ValueURL}, raw: json.RawMessage(`"ftp://example.com"`)},
+		{
+			name:  "url",
+			field: FieldDefinition{Key: "website", Name: "Website", ValueType: ValueURL},
+			raw:   json.RawMessage(`"ftp://example.com"`),
+		},
 		{name: "color", field: FieldDefinition{Key: "color", Name: "Color", ValueType: ValueColor}, raw: json.RawMessage(`"#fff"`)},
-		{name: "enum", field: FieldDefinition{Key: "rank", Name: "Rank", ValueType: ValueEnum, Rules: Rules{AllowedValues: []string{"admin"}}}, raw: json.RawMessage(`"member"`)},
-		{name: "integer min", field: FieldDefinition{Key: "score", Name: "Score", ValueType: ValueInteger, Rules: Rules{Min: &min}}, raw: json.RawMessage(`1`)},
-		{name: "integer max", field: FieldDefinition{Key: "score", Name: "Score", ValueType: ValueInteger, Rules: Rules{Max: &max}}, raw: json.RawMessage(`2`)},
-		{name: "decimal scale", field: FieldDefinition{Key: "weight", Name: "Weight", ValueType: ValueDecimal, Rules: Rules{Scale: &scale}}, raw: json.RawMessage(`"1.23"`)},
-		{name: "json bytes", field: FieldDefinition{Key: "payload", Name: "Payload", ValueType: ValueJSON, Rules: Rules{MaxBytes: &maxBytes}}, raw: json.RawMessage(`{"ok":true}`)},
-		{name: "owner id", field: FieldDefinition{Key: "friend", Name: "Friend", ValueType: ValueOwnerReference}, raw: json.RawMessage(`{"type":"user","id":"00000000-0000-0000-0000-000000000000"}`)},
-		{name: "metaobject ids", field: FieldDefinition{Key: "card", Name: "Card", ValueType: ValueMetaobjectReference}, raw: json.RawMessage(`{"definition_id":"00000000-0000-0000-0000-000000000000","entry_id":"00000000-0000-0000-0000-000000000000"}`)},
+		{
+			name:  "enum",
+			field: FieldDefinition{Key: "rank", Name: "Rank", ValueType: ValueEnum, Rules: Rules{AllowedValues: []string{"admin"}}},
+			raw:   json.RawMessage(`"member"`),
+		},
+		{
+			name:  "integer min",
+			field: FieldDefinition{Key: "score", Name: "Score", ValueType: ValueInteger, Rules: Rules{Min: &min}},
+			raw:   json.RawMessage(`1`),
+		},
+		{
+			name:  "integer max",
+			field: FieldDefinition{Key: "score", Name: "Score", ValueType: ValueInteger, Rules: Rules{Max: &max}},
+			raw:   json.RawMessage(`2`),
+		},
+		{
+			name:  "decimal scale",
+			field: FieldDefinition{Key: "weight", Name: "Weight", ValueType: ValueDecimal, Rules: Rules{Scale: &scale}},
+			raw:   json.RawMessage(`"1.23"`),
+		},
+		{
+			name:  "json bytes",
+			field: FieldDefinition{Key: "payload", Name: "Payload", ValueType: ValueJSON, Rules: Rules{MaxBytes: &maxBytes}},
+			raw:   json.RawMessage(`{"ok":true}`),
+		},
+		{
+			name:  "owner id",
+			field: FieldDefinition{Key: "friend", Name: "Friend", ValueType: ValueOwnerReference},
+			raw:   json.RawMessage(`{"type":"user","id":"00000000-0000-0000-0000-000000000000"}`),
+		},
+		{
+			name:  "metaobject ids",
+			field: FieldDefinition{Key: "card", Name: "Card", ValueType: ValueMetaobjectReference},
+			raw: json.RawMessage(
+				`{"definition_id":"00000000-0000-0000-0000-000000000000","entry_id":"00000000-0000-0000-0000-000000000000"}`,
+			),
+		},
 	}
 
 	for _, test := range tests {

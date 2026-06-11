@@ -53,7 +53,11 @@ func (service Service) GetTicket(ctx context.Context, ticketID uuid.UUID, actorU
 }
 
 // ListTickets returns a queue or user ticket list.
-func (service Service) ListTickets(ctx context.Context, filter port.TicketFilter, page pagination.Page) (pagination.Result[domain.Ticket], error) {
+func (service Service) ListTickets(
+	ctx context.Context,
+	filter port.TicketFilter,
+	page pagination.Page,
+) (pagination.Result[domain.Ticket], error) {
 	return service.tickets.List(ctx, filter, page)
 }
 
@@ -77,7 +81,11 @@ func (service Service) validateIntake(ctx context.Context, command port.CreateTi
 	return service.validatePunishmentAndAssets(ctx, command, definition)
 }
 
-func (service Service) validatePunishmentAndAssets(ctx context.Context, command port.CreateTicketCommand, definition domain.Definition) error {
+func (service Service) validatePunishmentAndAssets(
+	ctx context.Context,
+	command port.CreateTicketCommand,
+	definition domain.Definition,
+) error {
 	if command.PunishmentID != nil && service.punishments != nil {
 		punishment, err := service.punishments.GetPunishment(ctx, *command.PunishmentID)
 		if err != nil {
@@ -104,7 +112,10 @@ func (service Service) validatePunishmentAndAssets(ctx context.Context, command 
 	return nil
 }
 
-func (service Service) prepareTicket(command port.CreateTicketCommand, definition domain.Definition) (domain.Ticket, domain.Message, []domain.Evidence) {
+func (service Service) prepareTicket(
+	command port.CreateTicketCommand,
+	definition domain.Definition,
+) (domain.Ticket, domain.Message, []domain.Evidence) {
 	now := time.Now().UTC()
 	firstSLA, resolutionSLA := domain.SLADueAt(now, definition)
 	assignee := definition.DefaultAssigneeUserID

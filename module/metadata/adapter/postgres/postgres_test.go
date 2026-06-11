@@ -52,7 +52,11 @@ func TestMetafieldDefinitionRepositoryLifecycle(t *testing.T) {
 		t.Fatalf("FindByID() Name = %q, want Public Motto", found.Name)
 	}
 	active := true
-	list, err := repository.List(context.Background(), port.DefinitionFilter{OwnerType: domain.OwnerUser, Namespace: "profile", Active: &active}, testPage())
+	list, err := repository.List(
+		context.Background(),
+		port.DefinitionFilter{OwnerType: domain.OwnerUser, Namespace: "profile", Active: &active},
+		testPage(),
+	)
 	if err != nil {
 		t.Fatalf("List() error = %v", err)
 	}

@@ -25,7 +25,9 @@ import (
 // TestCreateDefinitionReturnsCreated verifies definition creation over HTTP.
 func TestCreateDefinitionReturnsCreated(t *testing.T) {
 	app := newTestApp(t)
-	body := []byte(`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text","rules":{"max_length":80}}`)
+	body := []byte(
+		`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text","rules":{"max_length":80}}`,
+	)
 	req := httptest.NewRequest(fiber.MethodPost, "/metadata/metafield-definitions", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "create-definition")
@@ -174,7 +176,11 @@ func TestValueLifecycleExercisesReadListAndDelete(t *testing.T) {
 	value := setOwnerValue(t, app, ownerID, "Ready")
 	version := uint64(value["version"].(float64))
 
-	listReq := httptest.NewRequest(fiber.MethodGet, "/metadata/owners/user/"+ownerID+"/metafields?namespace=profile&include_empty=false", nil)
+	listReq := httptest.NewRequest(
+		fiber.MethodGet,
+		"/metadata/owners/user/"+ownerID+"/metafields?namespace=profile&include_empty=false",
+		nil,
+	)
 	listRes, err := app.Test(listReq, -1)
 	if err != nil {
 		t.Fatalf("list values Test() error = %v", err)
@@ -257,7 +263,11 @@ func TestDefinitionLifecycleExercisesReadUpdateDelete(t *testing.T) {
 		t.Fatalf("get StatusCode = %d, want %d", getRes.StatusCode, fiber.StatusOK)
 	}
 
-	patchReq := httptest.NewRequest(fiber.MethodPatch, "/metadata/metafield-definitions/"+id, bytes.NewReader([]byte(`{"name":"Public Motto"}`)))
+	patchReq := httptest.NewRequest(
+		fiber.MethodPatch,
+		"/metadata/metafield-definitions/"+id,
+		bytes.NewReader([]byte(`{"name":"Public Motto"}`)),
+	)
 	patchReq.Header.Set(headers.ContentType, "application/json")
 	patchReq.Header.Set(headers.IfMatch, quoteVersion(version))
 	patchRes, err := app.Test(patchReq, -1)
@@ -284,7 +294,9 @@ func TestDefinitionLifecycleExercisesReadUpdateDelete(t *testing.T) {
 // TestMetaobjectLifecycleExercisesRoutes verifies metaobject definition and entry routes.
 func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	app := newTestApp(t)
-	body := []byte(`{"type":"profile_card","name":"Profile Card","fields":[{"key":"motto","name":"Motto","value_type":"single_line_text","required":true}]}`)
+	body := []byte(
+		`{"type":"profile_card","name":"Profile Card","fields":[{"key":"motto","name":"Motto","value_type":"single_line_text","required":true}]}`,
+	)
 	req := httptest.NewRequest(fiber.MethodPost, "/metadata/metaobject-definitions", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "create-metaobject-definition")
@@ -321,7 +333,11 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	}
 
 	definitionPatchBody := []byte(`{"name":"Profile Card Updated","description":"Shown on profiles","active":true}`)
-	definitionPatchReq := httptest.NewRequest(fiber.MethodPatch, "/metadata/metaobject-definitions/"+definitionID, bytes.NewReader(definitionPatchBody))
+	definitionPatchReq := httptest.NewRequest(
+		fiber.MethodPatch,
+		"/metadata/metaobject-definitions/"+definitionID,
+		bytes.NewReader(definitionPatchBody),
+	)
 	definitionPatchReq.Header.Set(headers.ContentType, "application/json")
 	definitionPatchReq.Header.Set(headers.IfMatch, quoteVersion(definitionVersion))
 	definitionPatchRes, err := app.Test(definitionPatchReq, -1)
@@ -336,7 +352,11 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 	definitionVersion = uint64(patchedDefinition["version"].(float64))
 
 	entryBody := []byte(`{"handle":"first_card","display_name":"First Card","fields":{"motto":"Ready"}}`)
-	entryReq := httptest.NewRequest(fiber.MethodPost, "/metadata/metaobject-definitions/"+definitionID+"/entries", bytes.NewReader(entryBody))
+	entryReq := httptest.NewRequest(
+		fiber.MethodPost,
+		"/metadata/metaobject-definitions/"+definitionID+"/entries",
+		bytes.NewReader(entryBody),
+	)
 	entryReq.Header.Set(headers.ContentType, "application/json")
 	entryReq.Header.Set(headers.IdempotencyKey, "create-metaobject-entry")
 	entryRes, err := app.Test(entryReq, -1)
@@ -371,7 +391,11 @@ func TestMetaobjectLifecycleExercisesRoutes(t *testing.T) {
 		t.Fatalf("get entry StatusCode = %d, want %d", getEntryRes.StatusCode, fiber.StatusOK)
 	}
 
-	patchReq := httptest.NewRequest(fiber.MethodPatch, "/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID, bytes.NewReader([]byte(`{"display_name":"Updated Card","fields":{"motto":"Still ready"}}`)))
+	patchReq := httptest.NewRequest(
+		fiber.MethodPatch,
+		"/metadata/metaobject-definitions/"+definitionID+"/entries/"+entryID,
+		bytes.NewReader([]byte(`{"display_name":"Updated Card","fields":{"motto":"Still ready"}}`)),
+	)
 	patchReq.Header.Set(headers.ContentType, "application/json")
 	patchReq.Header.Set(headers.IfMatch, quoteVersion(entryVersion))
 	patchRes, err := app.Test(patchReq, -1)

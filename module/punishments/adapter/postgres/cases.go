@@ -23,7 +23,11 @@ func NewCaseRepository(store orm.Store) CaseRepository {
 }
 
 // Issue stores a punishment with snapshots and active restrictions.
-func (repository CaseRepository) Issue(ctx context.Context, punishment domain.Punishment, restrictions []domain.ActiveRestriction) (domain.Punishment, error) {
+func (repository CaseRepository) Issue(
+	ctx context.Context,
+	punishment domain.Punishment,
+	restrictions []domain.ActiveRestriction,
+) (domain.Punishment, error) {
 	model := punishmentModel(punishment)
 	if err := repository.store.DB(ctx).Create(&model).Error; err != nil {
 		return domain.Punishment{}, port.ErrConflict
@@ -44,7 +48,11 @@ func (repository CaseRepository) Issue(ctx context.Context, punishment domain.Pu
 }
 
 // Update updates punishment note fields.
-func (repository CaseRepository) Update(ctx context.Context, punishment domain.Punishment, expectedVersion uint64) (domain.Punishment, error) {
+func (repository CaseRepository) Update(
+	ctx context.Context,
+	punishment domain.Punishment,
+	expectedVersion uint64,
+) (domain.Punishment, error) {
 	result := repository.store.DB(ctx).Model(&PunishmentModel{}).
 		Where("id = ? AND version = ?", punishment.ID, expectedVersion).
 		Updates(map[string]any{
@@ -121,7 +129,11 @@ func (repository CaseRepository) FindByIdempotencyKey(ctx context.Context, key s
 }
 
 // List returns punishments.
-func (repository CaseRepository) List(ctx context.Context, filter port.PunishmentFilter, page pagination.Page) (pagination.Result[domain.Punishment], error) {
+func (repository CaseRepository) List(
+	ctx context.Context,
+	filter port.PunishmentFilter,
+	page pagination.Page,
+) (pagination.Result[domain.Punishment], error) {
 	query := repository.store.DB(ctx).Model(&PunishmentModel{}).Order("created_at desc, id desc").Limit(page.Limit + 1)
 	if filter.TargetUserID != uuid.Nil {
 		query = query.Where("target_user_id = ?", filter.TargetUserID)

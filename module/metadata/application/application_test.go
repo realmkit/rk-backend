@@ -121,7 +121,10 @@ func TestServiceGetAndDeleteValue(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DeleteValue() error = %v", err)
 	}
-	if _, err := service.GetValue(context.Background(), port.GetValueQuery{Owner: port.OwnerRef{Type: definition.OwnerType, ID: ownerID}, Namespace: definition.Namespace, Key: definition.Key}); !errors.Is(err, port.ErrNotFound) {
+	if _, err := service.GetValue(context.Background(), port.GetValueQuery{Owner: port.OwnerRef{Type: definition.OwnerType, ID: ownerID}, Namespace: definition.Namespace, Key: definition.Key}); !errors.Is(
+		err,
+		port.ErrNotFound,
+	) {
 		t.Fatalf("GetValue() deleted error = %v, want %v", err, port.ErrNotFound)
 	}
 }
@@ -367,7 +370,10 @@ func TestServiceMetaobjectLifecycle(t *testing.T) {
 	if len(definitions.Items) != 1 {
 		t.Fatalf("ListMetaobjectDefinitions() items = %d, want 1", len(definitions.Items))
 	}
-	foundDefinition, err := service.GetMetaobjectDefinition(context.Background(), port.GetMetaobjectDefinitionQuery{ID: updatedDefinition.ID})
+	foundDefinition, err := service.GetMetaobjectDefinition(
+		context.Background(),
+		port.GetMetaobjectDefinitionQuery{ID: updatedDefinition.ID},
+	)
 	if err != nil {
 		t.Fatalf("GetMetaobjectDefinition() error = %v", err)
 	}
@@ -401,7 +407,10 @@ func TestServiceMetaobjectLifecycle(t *testing.T) {
 	if foundEntry.ID != updatedEntry.ID {
 		t.Fatalf("GetMetaobjectEntry() ID = %s, want %s", foundEntry.ID, updatedEntry.ID)
 	}
-	list, err := service.ListMetaobjectEntries(context.Background(), port.ListMetaobjectEntriesQuery{DefinitionID: updatedDefinition.ID, Page: testPage()})
+	list, err := service.ListMetaobjectEntries(
+		context.Background(),
+		port.ListMetaobjectEntriesQuery{DefinitionID: updatedDefinition.ID, Page: testPage()},
+	)
 	if err != nil {
 		t.Fatalf("ListMetaobjectEntries() error = %v", err)
 	}
@@ -443,10 +452,12 @@ func TestExistingResolversReportExistence(t *testing.T) {
 	if ok, err := (ExistingOwnerResolver{}).Exists(context.Background(), domain.OwnerUser, ownerID); err != nil || !ok {
 		t.Fatalf("ExistingOwnerResolver.Exists() = (%v, %v), want true nil", ok, err)
 	}
-	if ok, err := (ExistingReferenceResolver{}).OwnerExists(context.Background(), domain.OwnerReference{Type: domain.OwnerUser, ID: ownerID}); err != nil || !ok {
+	if ok, err := (ExistingReferenceResolver{}).OwnerExists(context.Background(), domain.OwnerReference{Type: domain.OwnerUser, ID: ownerID}); err != nil ||
+		!ok {
 		t.Fatalf("ExistingReferenceResolver.OwnerExists() = (%v, %v), want true nil", ok, err)
 	}
-	if ok, err := (ExistingReferenceResolver{}).MetaobjectEntryExists(context.Background(), domain.MetaobjectReference{DefinitionID: uuid.New(), EntryID: uuid.New()}); err != nil || !ok {
+	if ok, err := (ExistingReferenceResolver{}).MetaobjectEntryExists(context.Background(), domain.MetaobjectReference{DefinitionID: uuid.New(), EntryID: uuid.New()}); err != nil ||
+		!ok {
 		t.Fatalf("ExistingReferenceResolver.MetaobjectEntryExists() = (%v, %v), want true nil", ok, err)
 	}
 }

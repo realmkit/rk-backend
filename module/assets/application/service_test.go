@@ -138,7 +138,16 @@ func TestServiceMutableOperationsUseRepository(t *testing.T) {
 	if len(folders) != 1 {
 		t.Fatalf("ListFolders() = %v, want one folder", folders)
 	}
-	updated, err := service.Update(context.Background(), port.UpdateAssetCommand{ID: intent.Asset.ID, DisplayName: "Updated", Path: "brand/updated", Visibility: domain.VisibilityAuthenticated, ExpectedVersion: intent.Asset.Version})
+	updated, err := service.Update(
+		context.Background(),
+		port.UpdateAssetCommand{
+			ID:              intent.Asset.ID,
+			DisplayName:     "Updated",
+			Path:            "brand/updated",
+			Visibility:      domain.VisibilityAuthenticated,
+			ExpectedVersion: intent.Asset.Version,
+		},
+	)
 	if err != nil {
 		t.Fatalf("Update() error = %v", err)
 	}
@@ -304,7 +313,12 @@ func (store *memoryStore) Delete(context.Context, string) error {
 // PresignPut creates a presigned upload request.
 func (store *memoryStore) PresignPut(_ context.Context, request storage.PresignPutRequest) (storage.PresignedRequest, error) {
 	store.presignedPut++
-	return storage.PresignedRequest{Method: "PUT", URL: "https://storage.test/" + request.Key, Headers: map[string]string{"Content-Type": request.ContentType}, ExpiresAt: time.Now().Add(time.Minute)}, nil
+	return storage.PresignedRequest{
+		Method:    "PUT",
+		URL:       "https://storage.test/" + request.Key,
+		Headers:   map[string]string{"Content-Type": request.ContentType},
+		ExpiresAt: time.Now().Add(time.Minute),
+	}, nil
 }
 
 // PresignGet creates a presigned download URL.

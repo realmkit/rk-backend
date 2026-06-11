@@ -36,7 +36,10 @@ func (repository GroupRepository) Create(ctx context.Context, group domain.Group
 
 // Update stores mutable group fields.
 func (repository GroupRepository) Update(ctx context.Context, group domain.Group, expectedVersion uint64) (domain.Group, error) {
-	result := repository.store.DB(ctx).Model(&GroupModel{}).Where("id = ? AND version = ?", group.ID, expectedVersion).Updates(map[string]any{"name": group.Name, "description": group.Description, "color": string(group.Color), "weight": group.Weight, "status": string(group.Status), "icon_asset_id": group.IconAssetID, "version": expectedVersion + 1})
+	result := repository.store.DB(ctx).
+		Model(&GroupModel{}).
+		Where("id = ? AND version = ?", group.ID, expectedVersion).
+		Updates(groupUpdates(group, expectedVersion))
 	if result.Error != nil {
 		return domain.Group{}, result.Error
 	}
@@ -44,6 +47,19 @@ func (repository GroupRepository) Update(ctx context.Context, group domain.Group
 		return domain.Group{}, port.ErrPreconditionFailed
 	}
 	return repository.FindByID(ctx, group.ID)
+}
+
+// groupUpdates returns update fields for a group.
+func groupUpdates(group domain.Group, expectedVersion uint64) map[string]any {
+	return map[string]any{
+		"name":          group.Name,
+		"description":   group.Description,
+		"color":         string(group.Color),
+		"weight":        group.Weight,
+		"status":        string(group.Status),
+		"icon_asset_id": group.IconAssetID,
+		"version":       expectedVersion + 1,
+	}
 }
 
 // FindByID returns one group.
@@ -65,7 +81,11 @@ func (repository GroupRepository) FindByKey(ctx context.Context, key domain.Key)
 }
 
 // List returns matching groups.
-func (repository GroupRepository) List(ctx context.Context, filter port.GroupFilter, page pagination.Page) (pagination.Result[domain.Group], error) {
+func (repository GroupRepository) List(
+	ctx context.Context,
+	filter port.GroupFilter,
+	page pagination.Page,
+) (pagination.Result[domain.Group], error) {
 	query := repository.store.DB(ctx).Model(&GroupModel{}).Order("weight desc, key asc").Limit(page.Limit + 1)
 	if filter.Status != "" {
 		query = query.Where("status = ?", filter.Status)

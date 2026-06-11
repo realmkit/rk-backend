@@ -34,7 +34,10 @@ func TestCurrentUserRouteReturnsUser(t *testing.T) {
 // TestUpdateCurrentUserRequiresIdempotency verifies update headers.
 func TestUpdateCurrentUserRequiresIdempotency(t *testing.T) {
 	userID := uuid.New()
-	app := testApp(userID, &userService{user: domain.User{ID: userID, Status: domain.StatusActive, FirstSeenAt: time.Now().UTC(), Version: 1}})
+	app := testApp(
+		userID,
+		&userService{user: domain.User{ID: userID, Status: domain.StatusActive, FirstSeenAt: time.Now().UTC(), Version: 1}},
+	)
 	res, err := app.Test(testRequest(http.MethodPatch, "/users/me", `{}`))
 	if err != nil {
 		t.Fatalf("Test() error = %v", err)
@@ -48,7 +51,12 @@ func TestUpdateCurrentUserRequiresIdempotency(t *testing.T) {
 func TestUpdateCurrentUserReturnsUpdatedUser(t *testing.T) {
 	userID := uuid.New()
 	avatarID := uuid.New()
-	app := testApp(userID, &userService{user: domain.User{ID: userID, Status: domain.StatusActive, AvatarAssetID: &avatarID, FirstSeenAt: time.Now().UTC(), Version: 2}})
+	app := testApp(
+		userID,
+		&userService{
+			user: domain.User{ID: userID, Status: domain.StatusActive, AvatarAssetID: &avatarID, FirstSeenAt: time.Now().UTC(), Version: 2},
+		},
+	)
 	req := testRequest(http.MethodPatch, "/users/me", `{"avatar_asset_id":"`+avatarID.String()+`"}`)
 	req.Header.Set(headers.IdempotencyKey, "update")
 	req.Header.Set(headers.IfMatch, `"1"`)
@@ -91,7 +99,10 @@ func TestCurrentUserMapsNotFound(t *testing.T) {
 // TestUpdateCurrentUserRejectsInvalidJSON verifies strict JSON decoding.
 func TestUpdateCurrentUserRejectsInvalidJSON(t *testing.T) {
 	userID := uuid.New()
-	app := testApp(userID, &userService{user: domain.User{ID: userID, Status: domain.StatusActive, FirstSeenAt: time.Now().UTC(), Version: 1}})
+	app := testApp(
+		userID,
+		&userService{user: domain.User{ID: userID, Status: domain.StatusActive, FirstSeenAt: time.Now().UTC(), Version: 1}},
+	)
 	req := testRequest(http.MethodPatch, "/users/me", `{"avatar_asset_id":`)
 	req.Header.Set(headers.IdempotencyKey, "update")
 	req.Header.Set(headers.IfMatch, `"1"`)

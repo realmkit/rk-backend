@@ -195,7 +195,8 @@ func TestDefinitionLifecycle(t *testing.T) {
 	if _, err := service.GetDefinition(context.Background(), created.ID); err != nil {
 		t.Fatalf("GetDefinition() error = %v", err)
 	}
-	if list, err := service.ListDefinitions(context.Background(), port.DefinitionFilter{}, pagination.Page{Limit: 10}); err != nil || len(list.Items) != 1 {
+	if list, err := service.ListDefinitions(context.Background(), port.DefinitionFilter{}, pagination.Page{Limit: 10}); err != nil ||
+		len(list.Items) != 1 {
 		t.Fatalf("ListDefinitions() = %+v, %v; want one item", list, err)
 	}
 	if err := service.DeleteDefinition(context.Background(), created.ID, updated.Version); err != nil {

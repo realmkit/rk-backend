@@ -23,7 +23,9 @@ func NewClaimCacheRepository(store orm.Store) ClaimCacheRepository {
 // Upsert stores provider claim cache data.
 func (repository ClaimCacheRepository) Upsert(ctx context.Context, claims domain.ClaimCache) (domain.ClaimCache, error) {
 	var model ClaimCacheModel
-	err := repository.store.DB(ctx).First(&model, "user_id = ? AND issuer = ? AND subject = ?", claims.UserID, claims.Issuer, claims.Subject).Error
+	err := repository.store.DB(ctx).
+		First(&model, "user_id = ? AND issuer = ? AND subject = ?", claims.UserID, claims.Issuer, claims.Subject).
+		Error
 	if err == nil {
 		model.Username = claims.Username
 		model.Email = claims.Email

@@ -244,21 +244,3 @@ type DeleteMetaobjectEntryCommand struct {
 	// ExpectedVersion is the required current version.
 	ExpectedVersion uint64
 }
-
-// OwnerMetadataView represents all metadata for one owner.
-type OwnerMetadataView struct {
-	// Owner is the metadata owner.
-	Owner OwnerRef `json:"owner"`
-
-	// Metafields contains metadata fields with optional values.
-	Metafields []OwnerMetafieldView `json:"metafields"`
-}
-
-// OwnerMetafieldView represents one definition and optional value.
-type OwnerMetafieldView struct {
-	// Definition is the metafield definition.
-	Definition domain.MetafieldDefinition `json:"definition"`
-
-	// Value is the owner value when present.
-	Value *domain.MetafieldValue `json:"value,omitempty"`
-}

@@ -51,9 +51,15 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	case errors.Is(err, port.ErrNotFound):
 		return problem.Write(ctx, problem.New(fiber.StatusNotFound, "metadata_not_found", "Metadata resource was not found."))
 	case errors.Is(err, port.ErrPreconditionFailed):
-		return problem.Write(ctx, problem.New(fiber.StatusPreconditionFailed, "metadata_precondition_failed", "Resource version did not match."))
+		return problem.Write(
+			ctx,
+			problem.New(fiber.StatusPreconditionFailed, "metadata_precondition_failed", "Resource version did not match."),
+		)
 	case errors.Is(err, port.ErrConflict):
-		return problem.Write(ctx, problem.New(fiber.StatusConflict, "metadata_conflict", "Metadata resource conflicts with existing state."))
+		return problem.Write(
+			ctx,
+			problem.New(fiber.StatusConflict, "metadata_conflict", "Metadata resource conflicts with existing state."),
+		)
 	case errors.Is(err, port.ErrReferenced):
 		return problem.Write(ctx, problem.New(fiber.StatusConflict, "metadata_referenced", "Metadata resource has active dependents."))
 	case errors.Is(err, port.ErrInactive):
@@ -88,7 +94,9 @@ func pageFromQuery(ctx *fiber.Ctx) (pagination.Page, error) {
 		Cursor: ctx.Query("page_token"),
 	})
 	if err != nil {
-		return pagination.Page{}, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid.")}
+		return pagination.Page{}, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid."),
+		}
 	}
 	return page, nil
 }
@@ -101,7 +109,9 @@ func expectedVersion(ctx *fiber.Ctx) (uint64, error) {
 	}
 	version, err := strconv.ParseUint(value, 10, 64)
 	if err != nil {
-		return 0, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_if_match", "If-Match must contain a numeric version.")}
+		return 0, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_if_match", "If-Match must contain a numeric version."),
+		}
 	}
 	return version, nil
 }
@@ -121,7 +131,9 @@ func optionalExpectedVersion(ctx *fiber.Ctx) (*uint64, error) {
 // requireIdempotency verifies Idempotency-Key is present.
 func requireIdempotency(ctx *fiber.Ctx) error {
 	if strings.TrimSpace(ctx.Get(headers.IdempotencyKey)) == "" {
-		return problem.Error{Problem: problem.New(fiber.StatusBadRequest, "idempotency_key_required", "Idempotency-Key header is required.")}
+		return problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "idempotency_key_required", "Idempotency-Key header is required."),
+		}
 	}
 	return nil
 }

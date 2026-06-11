@@ -65,7 +65,14 @@ func (repository Repository) VerifyLikes(ctx context.Context) (domain.CounterDri
 		return domain.CounterDriftReport{}, err
 	}
 	for _, thread := range threads {
-		report.Mismatches = appendDrift(report.Mismatches, "forum_thread", thread.ID, "like_count", threadLikes[thread.ID], thread.LikeCount)
+		report.Mismatches = appendDrift(
+			report.Mismatches,
+			"forum_thread",
+			thread.ID,
+			"like_count",
+			threadLikes[thread.ID],
+			thread.LikeCount,
+		)
 	}
 	return report, nil
 }

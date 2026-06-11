@@ -23,7 +23,13 @@ import (
 
 // TestConfigPublicSplitsScopes verifies public auth config mapping.
 func TestConfigPublicSplitsScopes(t *testing.T) {
-	public := Config{Provider: "logto", IssuerURL: "https://auth.example", Audience: "api", ClientID: "frontend", Scopes: "openid profile email"}.Public()
+	public := Config{
+		Provider:  "logto",
+		IssuerURL: "https://auth.example",
+		Audience:  "api",
+		ClientID:  "frontend",
+		Scopes:    "openid profile email",
+	}.Public()
 	if len(public.Scopes) != 3 || public.Scopes[0] != "openid" {
 		t.Fatalf("Scopes = %v, want split scopes", public.Scopes)
 	}
@@ -32,7 +38,9 @@ func TestConfigPublicSplitsScopes(t *testing.T) {
 // TestMiddlewareDevelopmentBypass verifies development-only principal creation.
 func TestMiddlewareDevelopmentBypass(t *testing.T) {
 	userID := uuid.New()
-	provisioner := &testProvisioner{principal: principal.Principal{UserID: userID, SubjectHash: "dev:" + userID.String(), DevelopmentBypass: true}}
+	provisioner := &testProvisioner{
+		principal: principal.Principal{UserID: userID, SubjectHash: "dev:" + userID.String(), DevelopmentBypass: true},
+	}
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	app.Use(Middleware(Config{DevelopmentBypass: true}, nil, provisioner, MiddlewareConfig{Development: true}))
 	app.Get("/", func(ctx *fiber.Ctx) error {
@@ -119,7 +127,17 @@ func TestValidatorValidatesRS256Token(t *testing.T) {
 	}))
 	defer server.Close()
 	issuer = server.URL
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{"iss": issuer, "sub": "subject", "aud": "gamehub-api", "exp": time.Now().Add(time.Hour).Unix(), "scope": "openid profile", "preferred_username": "ian"})
+	token := jwt.NewWithClaims(
+		jwt.SigningMethodRS256,
+		jwt.MapClaims{
+			"iss":                issuer,
+			"sub":                "subject",
+			"aud":                "gamehub-api",
+			"exp":                time.Now().Add(time.Hour).Unix(),
+			"scope":              "openid profile",
+			"preferred_username": "ian",
+		},
+	)
 	token.Header["kid"] = "kid-1"
 	raw, err := token.SignedString(privateKey)
 	if err != nil {
@@ -180,5 +198,12 @@ func (provisioner *testProvisioner) DevelopmentPrincipal(context.Context, uuid.U
 
 // jwkFromKey maps an RSA public key into a JWK.
 func jwkFromKey(kid string, key *rsa.PublicKey) map[string]string {
-	return map[string]string{"kty": "RSA", "kid": kid, "alg": "RS256", "use": "sig", "n": base64.RawURLEncoding.EncodeToString(key.N.Bytes()), "e": base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes())}
+	return map[string]string{
+		"kty": "RSA",
+		"kid": kid,
+		"alg": "RS256",
+		"use": "sig",
+		"n":   base64.RawURLEncoding.EncodeToString(key.N.Bytes()),
+		"e":   base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes()),
+	}
 }

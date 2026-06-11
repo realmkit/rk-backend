@@ -132,7 +132,12 @@ func runStart(ctx context.Context, activeLogger **zap.Logger, deps commandDeps) 
 }
 
 // runtimeServerOptions creates server options from runtime dependencies.
-func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logger, deps commandDeps) ([]server.Option, func(*zap.Logger), error) {
+func runtimeServerOptions(
+	ctx context.Context,
+	cfg config.Config,
+	log *zap.Logger,
+	deps commandDeps,
+) ([]server.Option, func(*zap.Logger), error) {
 	if log == nil {
 		log = zap.NewNop()
 	}
@@ -141,13 +146,26 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 	if err != nil {
 		return nil, nil, err
 	}
-	logDevelopmentConnection(cfg, log, "redis connection established", zap.String("address", cfg.Redis.Address), zap.Int("database", cfg.Redis.Database))
+	logDevelopmentConnection(
+		cfg,
+		log,
+		"redis connection established",
+		zap.String("address", cfg.Redis.Address),
+		zap.Int("database", cfg.Redis.Database),
+	)
 	db, err := deps.openPostgres(ctx, cfg.Postgres)
 	if err != nil {
 		deps.closeRedis(client)
 		return nil, nil, err
 	}
-	logDevelopmentConnection(cfg, log, "postgres connection established", zap.String("host", cfg.Postgres.Host), zap.Int("port", cfg.Postgres.Port), zap.String("database", cfg.Postgres.Database))
+	logDevelopmentConnection(
+		cfg,
+		log,
+		"postgres connection established",
+		zap.String("host", cfg.Postgres.Host),
+		zap.Int("port", cfg.Postgres.Port),
+		zap.String("database", cfg.Postgres.Database),
+	)
 	assetStorage, err := deps.newStorage(ctx, cfg.Storage)
 	if err != nil {
 		closeDatabase(zap.NewNop(), deps.closePostgres, db)
@@ -159,7 +177,13 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 		deps.closeRedis(client)
 		return nil, nil, err
 	}
-	logDevelopmentConnection(cfg, log, "s3 storage connection established", zap.String("bucket", cfg.Storage.Bucket), zap.String("endpoint", cfg.Storage.Endpoint))
+	logDevelopmentConnection(
+		cfg,
+		log,
+		"s3 storage connection established",
+		zap.String("bucket", cfg.Storage.Bucket),
+		zap.String("endpoint", cfg.Storage.Endpoint),
+	)
 	assetRepository := assetspostgres.NewAssetRepository(orm.NewStore(db))
 	eventHub := eventshttp.NewHub()
 	eventService := eventsService(db, client, eventHub)
@@ -216,16 +240,4 @@ func runtime(_ context.Context, activeLogger **zap.Logger, deps commandDeps) (co
 	}
 	*activeLogger = log
 	return cfg, log, nil
-}
-
-// closeDatabase closes a database and logs failures.
-func closeDatabase(log *zap.Logger, closePostgres func(*gorm.DB) error, db *gorm.DB) {
-	if err := closePostgres(db); err != nil {
-		log.Error("close postgres failed", zap.Error(err))
-	}
-}
-
-// listen starts the Fiber application on the configured address.
-func listen(app *fiber.App, address string) error {
-	return app.Listen(address)
 }

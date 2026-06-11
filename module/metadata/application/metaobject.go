@@ -9,7 +9,10 @@ import (
 )
 
 // CreateMetaobjectDefinition creates a metaobject definition.
-func (service Service) CreateMetaobjectDefinition(ctx context.Context, command port.CreateMetaobjectDefinitionCommand) (port.MetaobjectDefinitionView, error) {
+func (service Service) CreateMetaobjectDefinition(
+	ctx context.Context,
+	command port.CreateMetaobjectDefinitionCommand,
+) (port.MetaobjectDefinitionView, error) {
 	if err := service.ensureDependencies(); err != nil {
 		return port.MetaobjectDefinitionView{}, err
 	}
@@ -38,7 +41,10 @@ func (service Service) CreateMetaobjectDefinition(ctx context.Context, command p
 }
 
 // UpdateMetaobjectDefinition updates a metaobject definition.
-func (service Service) UpdateMetaobjectDefinition(ctx context.Context, command port.UpdateMetaobjectDefinitionCommand) (port.MetaobjectDefinitionView, error) {
+func (service Service) UpdateMetaobjectDefinition(
+	ctx context.Context,
+	command port.UpdateMetaobjectDefinitionCommand,
+) (port.MetaobjectDefinitionView, error) {
 	if err := service.ensureDependencies(); err != nil {
 		return port.MetaobjectDefinitionView{}, err
 	}
@@ -105,7 +111,10 @@ func (service Service) ArchiveMetaobjectDefinition(ctx context.Context, command 
 }
 
 // ListMetaobjectDefinitions returns metaobject definitions.
-func (service Service) ListMetaobjectDefinitions(ctx context.Context, query port.ListMetaobjectDefinitionsQuery) (pagination.Result[port.MetaobjectDefinitionView], error) {
+func (service Service) ListMetaobjectDefinitions(
+	ctx context.Context,
+	query port.ListMetaobjectDefinitionsQuery,
+) (pagination.Result[port.MetaobjectDefinitionView], error) {
 	if err := service.ensureDependencies(); err != nil {
 		return pagination.Result[port.MetaobjectDefinitionView]{}, err
 	}
@@ -116,7 +125,10 @@ func (service Service) ListMetaobjectDefinitions(ctx context.Context, query port
 }
 
 // GetMetaobjectDefinition returns one metaobject definition.
-func (service Service) GetMetaobjectDefinition(ctx context.Context, query port.GetMetaobjectDefinitionQuery) (port.MetaobjectDefinitionView, error) {
+func (service Service) GetMetaobjectDefinition(
+	ctx context.Context,
+	query port.GetMetaobjectDefinitionQuery,
+) (port.MetaobjectDefinitionView, error) {
 	if err := service.ensureDependencies(); err != nil {
 		return port.MetaobjectDefinitionView{}, err
 	}
@@ -127,7 +139,10 @@ func (service Service) GetMetaobjectDefinition(ctx context.Context, query port.G
 }
 
 // CreateMetaobjectEntry creates a metaobject entry.
-func (service Service) CreateMetaobjectEntry(ctx context.Context, command port.CreateMetaobjectEntryCommand) (port.MetaobjectEntryView, error) {
+func (service Service) CreateMetaobjectEntry(
+	ctx context.Context,
+	command port.CreateMetaobjectEntryCommand,
+) (port.MetaobjectEntryView, error) {
 	if err := service.ensureDependencies(); err != nil {
 		return port.MetaobjectEntryView{}, err
 	}
@@ -168,7 +183,10 @@ func (service Service) CreateMetaobjectEntry(ctx context.Context, command port.C
 }
 
 // UpdateMetaobjectEntry updates a metaobject entry.
-func (service Service) UpdateMetaobjectEntry(ctx context.Context, command port.UpdateMetaobjectEntryCommand) (port.MetaobjectEntryView, error) {
+func (service Service) UpdateMetaobjectEntry(
+	ctx context.Context,
+	command port.UpdateMetaobjectEntryCommand,
+) (port.MetaobjectEntryView, error) {
 	if err := service.ensureDependencies(); err != nil {
 		return port.MetaobjectEntryView{}, err
 	}
@@ -217,15 +235,4 @@ func (service Service) GetMetaobjectEntry(ctx context.Context, query port.GetMet
 		return port.MetaobjectEntryView{}, err
 	}
 	return service.metaobjectEntries.FindByID(ctx, query.ID)
-}
-
-// ListMetaobjectEntries returns metaobject entries.
-func (service Service) ListMetaobjectEntries(ctx context.Context, query port.ListMetaobjectEntriesQuery) (pagination.Result[port.MetaobjectEntryView], error) {
-	if err := service.ensureDependencies(); err != nil {
-		return pagination.Result[port.MetaobjectEntryView]{}, err
-	}
-	if err := service.policy.CanManageMetaobjects(ctx, query.Actor); err != nil {
-		return pagination.Result[port.MetaobjectEntryView]{}, err
-	}
-	return service.metaobjectEntries.List(ctx, query.DefinitionID, query.Page)
 }

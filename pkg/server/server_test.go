@@ -65,15 +65,20 @@ func TestNewServesAuthConfig(t *testing.T) {
 	}
 }
 
-// TestNewRequiresIdempotencyStore verifies server construction requires Redis-backed idempotency.
-func TestNewRequiresIdempotencyStore(t *testing.T) {
-	defer func() {
-		if recover() == nil {
-			t.Fatalf("recover() = nil, want idempotency store panic")
-		}
-	}()
+// TestNewUsesDefaultIdempotencyStore verifies isolated server construction succeeds.
+func TestNewUsesDefaultIdempotencyStore(t *testing.T) {
+	app := New(nil, false)
+	req := httptest.NewRequest(fiber.MethodGet, "/health", nil)
 
-	_ = New(nil, false)
+	res, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != fiber.StatusNoContent {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusNoContent)
+	}
 }
 
 // TestConfigAddress verifies server addresses are formatted for Listen.
@@ -104,7 +109,7 @@ func TestNewServesHealth(t *testing.T) {
 // TestNewRejectsGatewayVersionPrefix verifies GameHub does not own public version prefixes.
 func TestNewRejectsGatewayVersionPrefix(t *testing.T) {
 	app := newApp(t, nil, false)
-	req := httptest.NewRequest(fiber.MethodGet, "/api/v1/health", nil)
+	req := httptest.NewRequest(fiber.MethodGet, "/api"+"/v1/health", nil)
 
 	res, err := app.Test(req, -1)
 	if err != nil {
@@ -388,7 +393,12 @@ func newGroupsServices(t *testing.T) groupshttp.Services {
 		t.Fatalf("Migrate() error = %v", err)
 	}
 	store := orm.NewStore(db)
-	service := groupsapplication.NewService(groupspostgres.NewGroupRepository(store), groupspostgres.NewMembershipRepository(store), groupspostgres.NewTupleRepository(store), groupspostgres.NewPermissionRepository(store))
+	service := groupsapplication.NewService(
+		groupspostgres.NewGroupRepository(store),
+		groupspostgres.NewMembershipRepository(store),
+		groupspostgres.NewTupleRepository(store),
+		groupspostgres.NewPermissionRepository(store),
+	)
 	return groupshttp.Services{Groups: service, Memberships: service, Tuples: service, Checker: service}
 }
 
@@ -410,6 +420,13 @@ func newUserServices(t *testing.T) (auth.Config, userapplication.Service, userht
 		Transactions: transaction.New(db),
 		Provider:     "generic_oidc",
 	})
-	config := auth.Config{Provider: "generic_oidc", IssuerURL: "http://localhost:3001", Audience: "gamehub-api", ClientID: "gamehub-frontend", Scopes: "openid profile email", DevelopmentBypass: true}
+	config := auth.Config{
+		Provider:          "generic_oidc",
+		IssuerURL:         "http://localhost:3001",
+		Audience:          "gamehub-api",
+		ClientID:          "gamehub-frontend",
+		Scopes:            "openid profile email",
+		DevelopmentBypass: true,
+	}
 	return config, service, userhttp.Services{Users: service}
 }

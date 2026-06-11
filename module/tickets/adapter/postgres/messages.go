@@ -40,7 +40,12 @@ func (repository TicketRepository) AddMessage(ctx context.Context, message domai
 }
 
 // ListMessages returns messages ordered by sequence.
-func (repository TicketRepository) ListMessages(ctx context.Context, ticketID uuid.UUID, includeStaffOnly bool, page pagination.Page) (pagination.Result[domain.Message], error) {
+func (repository TicketRepository) ListMessages(
+	ctx context.Context,
+	ticketID uuid.UUID,
+	includeStaffOnly bool,
+	page pagination.Page,
+) (pagination.Result[domain.Message], error) {
 	query := repository.store.DB(ctx).Model(&MessageModel{}).
 		Where("ticket_id = ?", ticketID).
 		Order("sequence asc").Limit(page.Limit + 1)
@@ -95,7 +100,11 @@ func (repository TicketRepository) AddAction(ctx context.Context, action domain.
 }
 
 // ListActions returns a ticket action page.
-func (repository TicketRepository) ListActions(ctx context.Context, ticketID uuid.UUID, page pagination.Page) (pagination.Result[domain.Action], error) {
+func (repository TicketRepository) ListActions(
+	ctx context.Context,
+	ticketID uuid.UUID,
+	page pagination.Page,
+) (pagination.Result[domain.Action], error) {
 	var models []ActionModel
 	err := repository.store.DB(ctx).Model(&ActionModel{}).Where("ticket_id = ?", ticketID).
 		Order("created_at asc, id asc").Limit(page.Limit + 1).Find(&models).Error

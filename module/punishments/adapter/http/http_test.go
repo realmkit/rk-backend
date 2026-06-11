@@ -118,7 +118,11 @@ func (service httpService) GetDefinition(context.Context, uuid.UUID) (domain.Def
 	return domain.Definition{ID: uuid.New(), Version: 1}, nil
 }
 
-func (service httpService) ListDefinitions(context.Context, port.DefinitionFilter, pagination.Page) (pagination.Result[domain.Definition], error) {
+func (service httpService) ListDefinitions(
+	context.Context,
+	port.DefinitionFilter,
+	pagination.Page,
+) (pagination.Result[domain.Definition], error) {
 	return pagination.Result[domain.Definition]{}, nil
 }
 
@@ -140,7 +144,11 @@ func (service httpService) GetPunishment(context.Context, uuid.UUID) (domain.Pun
 	return domain.Punishment{ID: uuid.New(), Version: 1}, nil
 }
 
-func (service httpService) ListPunishments(context.Context, port.PunishmentFilter, pagination.Page) (pagination.Result[domain.Punishment], error) {
+func (service httpService) ListPunishments(
+	context.Context,
+	port.PunishmentFilter,
+	pagination.Page,
+) (pagination.Result[domain.Punishment], error) {
 	return pagination.Result[domain.Punishment]{}, nil
 }
 

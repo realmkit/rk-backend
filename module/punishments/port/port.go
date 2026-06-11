@@ -93,7 +93,12 @@ type CaseRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (domain.Punishment, error)
 	FindByIdempotencyKey(ctx context.Context, key string) (domain.Punishment, error)
 	List(ctx context.Context, filter PunishmentFilter, page pagination.Page) (pagination.Result[domain.Punishment], error)
-	ActiveRestriction(ctx context.Context, userID uuid.UUID, actionKey string, now time.Time) (domain.ActiveRestriction, *domain.PunishmentSummary, error)
+	ActiveRestriction(
+		ctx context.Context,
+		userID uuid.UUID,
+		actionKey string,
+		now time.Time,
+	) (domain.ActiveRestriction, *domain.PunishmentSummary, error)
 	ListActiveRestrictions(ctx context.Context, userID uuid.UUID, now time.Time) ([]domain.ActiveRestriction, error)
 	VerifyRestrictions(ctx context.Context, now time.Time) (domain.DriftReport, error)
 	RebuildRestrictions(ctx context.Context, now time.Time) (domain.DriftReport, error)

@@ -32,8 +32,15 @@ func (repository CategoryRepository) Create(ctx context.Context, category domain
 }
 
 // Update stores mutable category fields.
-func (repository CategoryRepository) Update(ctx context.Context, category domain.ForumCategory, expectedVersion uint64) (domain.ForumCategory, error) {
-	result := repository.store.DB(ctx).Model(&CategoryModel{}).Where("id = ? AND version = ?", category.ID, expectedVersion).Updates(map[string]any{"key": string(category.Key), "name": category.Name, "description": category.Description, "display_order": category.DisplayOrder, "status": string(category.Status), "version": expectedVersion + 1})
+func (repository CategoryRepository) Update(
+	ctx context.Context,
+	category domain.ForumCategory,
+	expectedVersion uint64,
+) (domain.ForumCategory, error) {
+	result := repository.store.DB(ctx).
+		Model(&CategoryModel{}).
+		Where("id = ? AND version = ?", category.ID, expectedVersion).
+		Updates(categoryUpdates(category, expectedVersion))
 	if result.Error != nil {
 		return domain.ForumCategory{}, result.Error
 	}
@@ -53,7 +60,11 @@ func (repository CategoryRepository) FindByID(ctx context.Context, id uuid.UUID)
 }
 
 // List returns matching categories.
-func (repository CategoryRepository) List(ctx context.Context, filter port.CategoryFilter, page pagination.Page) (pagination.Result[domain.ForumCategory], error) {
+func (repository CategoryRepository) List(
+	ctx context.Context,
+	filter port.CategoryFilter,
+	page pagination.Page,
+) (pagination.Result[domain.ForumCategory], error) {
 	query := repository.store.DB(ctx).Model(&CategoryModel{}).Order("display_order asc, id asc").Limit(page.Limit + 1)
 	if filter.Status != "" {
 		query = query.Where("status = ?", filter.Status)
@@ -80,11 +91,28 @@ func (repository CategoryRepository) Delete(ctx context.Context, id uuid.UUID, e
 // Reorder updates category display order.
 func (repository CategoryRepository) Reorder(ctx context.Context, items []port.ReorderItem) error {
 	for _, item := range items {
-		if err := repository.store.DB(ctx).Model(&CategoryModel{}).Where("id = ?", item.ID).Update("display_order", item.DisplayOrder).Error; err != nil {
+		err := repository.store.DB(ctx).
+			Model(&CategoryModel{}).
+			Where("id = ?", item.ID).
+			Update("display_order", item.DisplayOrder).
+			Error
+		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// categoryUpdates returns update fields.
+func categoryUpdates(category domain.ForumCategory, expectedVersion uint64) map[string]any {
+	return map[string]any{
+		"key":           string(category.Key),
+		"name":          category.Name,
+		"description":   category.Description,
+		"display_order": category.DisplayOrder,
+		"status":        string(category.Status),
+		"version":       expectedVersion + 1,
+	}
 }
 
 // categoryPage maps models into a page.
@@ -99,6 +127,36 @@ func categoryPage(models []CategoryModel, limit int) pagination.Result[domain.Fo
 		items = append(items, categoryFromModel(model))
 	}
 	return pagination.Result[domain.ForumCategory]{Items: items, NextCursor: next}
+}
+
+// forumPage maps models into a page.
+func forumPage(models []ForumModel, limit int) pagination.Result[domain.Forum] {
+	next := ""
+	if len(models) > limit {
+		next = models[limit-1].ID.ID.String()
+		models = models[:limit]
+	}
+	items := make([]domain.Forum, 0, len(models))
+	for _, model := range models {
+		items = append(items, forumFromModel(model))
+	}
+	return pagination.Result[domain.Forum]{Items: items, NextCursor: next}
+}
+
+// statsFromModel maps persistence stats to domain.
+func statsFromModel(model StatsModel) domain.ForumStats {
+	return domain.ForumStats{
+		ForumID:                model.ForumID,
+		ThreadCount:            model.ThreadCount,
+		VisibleThreadCount:     model.VisibleThreadCount,
+		PostCount:              model.PostCount,
+		VisiblePostCount:       model.VisiblePostCount,
+		LatestThreadID:         model.LatestThreadID,
+		LatestPostID:           model.LatestPostID,
+		LatestPostAuthorUserID: model.LatestPostAuthorUserID,
+		LatestPostAt:           model.LatestPostAt,
+		UpdatedAt:              model.UpdatedAt,
+	}
 }
 
 // categoryModelFromDomain maps category to persistence.

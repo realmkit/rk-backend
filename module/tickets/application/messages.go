@@ -42,7 +42,13 @@ func (service Service) CreateMessage(ctx context.Context, command port.MessageCo
 }
 
 // ListMessages returns visible ticket messages.
-func (service Service) ListMessages(ctx context.Context, ticketID uuid.UUID, actorUserID uuid.UUID, includeStaffOnly bool, page pagination.Page) (pagination.Result[domain.Message], error) {
+func (service Service) ListMessages(
+	ctx context.Context,
+	ticketID uuid.UUID,
+	actorUserID uuid.UUID,
+	includeStaffOnly bool,
+	page pagination.Page,
+) (pagination.Result[domain.Message], error) {
 	if service.authorizer != nil {
 		if err := can(func() (bool, error) {
 			return service.authorizer.CanView(ctx, actorUserID, ticketID)
@@ -91,7 +97,12 @@ func (service Service) AddEvidence(ctx context.Context, command port.EvidenceCom
 }
 
 // ListEvidence returns ticket evidence.
-func (service Service) ListEvidence(ctx context.Context, ticketID uuid.UUID, actorUserID uuid.UUID, includeStaffOnly bool) ([]domain.Evidence, error) {
+func (service Service) ListEvidence(
+	ctx context.Context,
+	ticketID uuid.UUID,
+	actorUserID uuid.UUID,
+	includeStaffOnly bool,
+) ([]domain.Evidence, error) {
 	if service.authorizer != nil {
 		if err := can(func() (bool, error) {
 			return service.authorizer.CanView(ctx, actorUserID, ticketID)

@@ -116,9 +116,13 @@ func (store S3Store) PresignGet(ctx context.Context, key string, ttl time.Durati
 	if ttl <= 0 {
 		ttl = 15 * time.Minute
 	}
-	output, err := store.presign.PresignGetObject(ctx, &s3.GetObjectInput{Bucket: &store.bucket, Key: &key}, func(options *s3.PresignOptions) {
-		options.Expires = ttl
-	})
+	output, err := store.presign.PresignGetObject(
+		ctx,
+		&s3.GetObjectInput{Bucket: &store.bucket, Key: &key},
+		func(options *s3.PresignOptions) {
+			options.Expires = ttl
+		},
+	)
 	if err != nil {
 		return "", fmt.Errorf("presign s3 get %s: %w", key, err)
 	}

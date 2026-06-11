@@ -24,7 +24,10 @@ func (repository TicketRepository) VerifyStats(ctx context.Context) (domain.Drif
 			mismatches = append(mismatches, drift(ticket.ID.ID.String(), "message_count", ticket.MessageCount, actual.messages))
 		}
 		if actual.staffMessages != ticket.StaffMessageCount {
-			mismatches = append(mismatches, drift(ticket.ID.ID.String(), "staff_message_count", ticket.StaffMessageCount, actual.staffMessages))
+			mismatches = append(
+				mismatches,
+				drift(ticket.ID.ID.String(), "staff_message_count", ticket.StaffMessageCount, actual.staffMessages),
+			)
 		}
 		if actual.evidence != ticket.EvidenceCount {
 			mismatches = append(mismatches, drift(ticket.ID.ID.String(), "evidence_count", ticket.EvidenceCount, actual.evidence))
@@ -71,8 +74,11 @@ func (repository TicketRepository) DetectSLABreaches(ctx context.Context, now ti
 		string(domain.StatusEscalated),
 	}
 	var models []TicketModel
-	err := repository.store.DB(ctx).Where("status IN ? AND ((sla_first_response_due_at IS NOT NULL AND first_staff_response_at IS NULL AND sla_first_response_due_at < ?) OR (sla_resolution_due_at IS NOT NULL AND sla_resolution_due_at < ?))", statuses, now, now).
-		Order("opened_at asc").Find(&models).Error
+	err := repository.store.DB(ctx).
+		Where(slaBreachWhereClause, statuses, now, now).
+		Order("opened_at asc").
+		Find(&models).
+		Error
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +113,11 @@ func (repository TicketRepository) ticketCounts(ctx context.Context, ticketID an
 	if err := db.Model(&MessageModel{}).Where("ticket_id = ?", ticketID).Count(&counts.messages).Error; err != nil {
 		return counts, err
 	}
-	if err := db.Model(&MessageModel{}).Where("ticket_id = ? AND author_role = ?", ticketID, domain.RoleStaff).Count(&counts.staffMessages).Error; err != nil {
+	err := db.Model(&MessageModel{}).
+		Where("ticket_id = ? AND author_role = ?", ticketID, domain.RoleStaff).
+		Count(&counts.staffMessages).
+		Error
+	if err != nil {
 		return counts, err
 	}
 	if err := db.Model(&EvidenceModel{}).Where("ticket_id = ?", ticketID).Count(&counts.evidence).Error; err != nil {
@@ -115,6 +125,13 @@ func (repository TicketRepository) ticketCounts(ctx context.Context, ticketID an
 	}
 	return counts, nil
 }
+
+// slaBreachWhereClause selects tickets with overdue first response or resolution SLA.
+const slaBreachWhereClause = `status IN ?
+AND (
+	(sla_first_response_due_at IS NOT NULL AND first_staff_response_at IS NULL AND sla_first_response_due_at < ?)
+	OR (sla_resolution_due_at IS NOT NULL AND sla_resolution_due_at < ?)
+)`
 
 // ticketsFromModels maps ticket rows into domain tickets.
 func ticketsFromModels(models []TicketModel) []domain.Ticket {

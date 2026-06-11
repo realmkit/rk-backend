@@ -50,7 +50,11 @@ func (fake *fakePunishmentService) CreateDefinition(context.Context, punishmentd
 }
 
 // UpdateDefinition is unused.
-func (fake *fakePunishmentService) UpdateDefinition(context.Context, punishmentdomain.Definition, uint64) (punishmentdomain.Definition, error) {
+func (fake *fakePunishmentService) UpdateDefinition(
+	context.Context,
+	punishmentdomain.Definition,
+	uint64,
+) (punishmentdomain.Definition, error) {
 	return punishmentdomain.Definition{}, nil
 }
 
@@ -65,7 +69,11 @@ func (fake *fakePunishmentService) GetDefinition(context.Context, uuid.UUID) (pu
 }
 
 // ListDefinitions is unused.
-func (fake *fakePunishmentService) ListDefinitions(context.Context, punishmentport.DefinitionFilter, pagination.Page) (pagination.Result[punishmentdomain.Definition], error) {
+func (fake *fakePunishmentService) ListDefinitions(
+	context.Context,
+	punishmentport.DefinitionFilter,
+	pagination.Page,
+) (pagination.Result[punishmentdomain.Definition], error) {
 	return pagination.Result[punishmentdomain.Definition]{}, nil
 }
 
@@ -96,7 +104,11 @@ func (fake *fakePunishmentService) GetPunishment(context.Context, uuid.UUID) (pu
 }
 
 // ListPunishments is unused.
-func (fake *fakePunishmentService) ListPunishments(context.Context, punishmentport.PunishmentFilter, pagination.Page) (pagination.Result[punishmentdomain.Punishment], error) {
+func (fake *fakePunishmentService) ListPunishments(
+	context.Context,
+	punishmentport.PunishmentFilter,
+	pagination.Page,
+) (pagination.Result[punishmentdomain.Punishment], error) {
 	return pagination.Result[punishmentdomain.Punishment]{}, nil
 }
 

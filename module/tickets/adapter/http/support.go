@@ -47,7 +47,10 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	case errors.Is(err, port.ErrNotFound):
 		return problem.Write(ctx, problem.New(fiber.StatusNotFound, "ticket_not_found", "Ticket resource was not found."))
 	case errors.Is(err, port.ErrPreconditionFailed):
-		return problem.Write(ctx, problem.New(fiber.StatusPreconditionFailed, "ticket_precondition_failed", "Ticket version did not match."))
+		return problem.Write(
+			ctx,
+			problem.New(fiber.StatusPreconditionFailed, "ticket_precondition_failed", "Ticket version did not match."),
+		)
 	case errors.Is(err, port.ErrConflict):
 		return problem.Write(ctx, problem.New(fiber.StatusConflict, "ticket_conflict", "Ticket conflicts with current state."))
 	case errors.Is(err, port.ErrForbidden):
@@ -73,7 +76,9 @@ func pageFromQuery(ctx *fiber.Ctx) (pagination.Page, error) {
 		Cursor: ctx.Query("page_token"),
 	})
 	if err != nil {
-		return pagination.Page{}, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid.")}
+		return pagination.Page{}, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid."),
+		}
 	}
 	return page, nil
 }
@@ -82,11 +87,15 @@ func pageFromQuery(ctx *fiber.Ctx) (pagination.Page, error) {
 func currentUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
 	value := strings.TrimSpace(ctx.Get(currentUserIDHeader))
 	if value == "" {
-		return uuid.Nil, problem.Error{Problem: problem.New(fiber.StatusUnauthorized, "unauthenticated", currentUserIDHeader+" is required.")}
+		return uuid.Nil, problem.Error{
+			Problem: problem.New(fiber.StatusUnauthorized, "unauthenticated", currentUserIDHeader+" is required."),
+		}
 	}
 	id, err := uuid.Parse(value)
 	if err != nil {
-		return uuid.Nil, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_current_user", currentUserIDHeader+" must be a UUID.")}
+		return uuid.Nil, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_current_user", currentUserIDHeader+" must be a UUID."),
+		}
 	}
 	return id, nil
 }
@@ -99,7 +108,9 @@ func expectedVersion(ctx *fiber.Ctx) (uint64, error) {
 	}
 	version, err := strconv.ParseUint(value, 10, 64)
 	if err != nil {
-		return 0, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_if_match", "If-Match must contain a numeric version.")}
+		return 0, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_if_match", "If-Match must contain a numeric version."),
+		}
 	}
 	return version, nil
 }
@@ -108,7 +119,9 @@ func expectedVersion(ctx *fiber.Ctx) (uint64, error) {
 func requireIdempotency(ctx *fiber.Ctx) (string, error) {
 	key := strings.TrimSpace(ctx.Get(headers.IdempotencyKey))
 	if key == "" {
-		return "", problem.Error{Problem: problem.New(fiber.StatusBadRequest, "idempotency_key_required", "Idempotency-Key header is required.")}
+		return "", problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "idempotency_key_required", "Idempotency-Key header is required."),
+		}
 	}
 	return key, nil
 }

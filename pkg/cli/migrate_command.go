@@ -6,9 +6,18 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/gofiber/fiber/v2"
+	forumsapp "github.com/niflaot/gamehub-go/module/forums/application"
+	punishmentsapp "github.com/niflaot/gamehub-go/module/punishments/application"
+	ticketsdomain "github.com/niflaot/gamehub-go/module/tickets/domain"
+	cronhttp "github.com/niflaot/gamehub-go/pkg/cronjob/adapter/http"
+	eventshttp "github.com/niflaot/gamehub-go/pkg/events/adapter/http"
+	eventsapp "github.com/niflaot/gamehub-go/pkg/events/application"
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
+	"github.com/niflaot/gamehub-go/pkg/server"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 // newMigrateCommand creates the migrate command group.
@@ -30,23 +39,41 @@ func newMigrateCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Comma
 
 // newMigrateUpCommand creates the migrate up command.
 func newMigrateUpCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
-	return migrateStatusCommand("up", "Apply pending migrations", activeLogger, deps, func(ctx context.Context, runner migrations.Runner) (migrations.Status, error) {
-		return runner.Up(ctx)
-	})
+	return migrateStatusCommand(
+		"up",
+		"Apply pending migrations",
+		activeLogger,
+		deps,
+		func(ctx context.Context, runner migrations.Runner) (migrations.Status, error) {
+			return runner.Up(ctx)
+		},
+	)
 }
 
 // newMigrateStatusCommand creates the migrate status command.
 func newMigrateStatusCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
-	return migrateStatusCommand("status", "Show migration status", activeLogger, deps, func(ctx context.Context, runner migrations.Runner) (migrations.Status, error) {
-		return runner.Status(ctx)
-	})
+	return migrateStatusCommand(
+		"status",
+		"Show migration status",
+		activeLogger,
+		deps,
+		func(ctx context.Context, runner migrations.Runner) (migrations.Status, error) {
+			return runner.Status(ctx)
+		},
+	)
 }
 
 // newMigrateValidateCommand creates the migrate validate command.
 func newMigrateValidateCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
-	return migrateStatusCommand("validate", "Validate migration files and history", activeLogger, deps, func(ctx context.Context, runner migrations.Runner) (migrations.Status, error) {
-		return runner.Validate(ctx)
-	})
+	return migrateStatusCommand(
+		"validate",
+		"Validate migration files and history",
+		activeLogger,
+		deps,
+		func(ctx context.Context, runner migrations.Runner) (migrations.Status, error) {
+			return runner.Validate(ctx)
+		},
+	)
 }
 
 // migrateStatusCommand creates a migration command that writes status.
@@ -100,12 +127,18 @@ func newMigrateRepairCommand(activeLogger **zap.Logger, deps commandDeps) *cobra
 func newMigrateDownCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
 	var steps int
 	var confirmed bool
-	cmd := migrateStatusCommand("down", "Roll back applied migrations", activeLogger, deps, func(ctx context.Context, runner migrations.Runner) (migrations.Status, error) {
-		if !confirmed {
-			return migrations.Status{}, fmt.Errorf("down requires --i-understand-this-can-destroy-data")
-		}
-		return runner.Down(ctx, steps)
-	})
+	cmd := migrateStatusCommand(
+		"down",
+		"Roll back applied migrations",
+		activeLogger,
+		deps,
+		func(ctx context.Context, runner migrations.Runner) (migrations.Status, error) {
+			if !confirmed {
+				return migrations.Status{}, fmt.Errorf("down requires --i-understand-this-can-destroy-data")
+			}
+			return runner.Down(ctx, steps)
+		},
+	)
 	cmd.Flags().IntVar(&steps, "steps", 1, "number of migrations to roll back")
 	cmd.Flags().BoolVar(&confirmed, "i-understand-this-can-destroy-data", false, "confirm destructive rollback")
 	return cmd
@@ -114,12 +147,18 @@ func newMigrateDownCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.C
 // newMigrateResetCommand creates the migrate reset command.
 func newMigrateResetCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
 	var confirmed bool
-	cmd := migrateStatusCommand("reset", "Roll back all applied migrations", activeLogger, deps, func(ctx context.Context, runner migrations.Runner) (migrations.Status, error) {
-		if !confirmed {
-			return migrations.Status{}, fmt.Errorf("reset requires --i-understand-this-can-destroy-data")
-		}
-		return runner.Reset(ctx)
-	})
+	cmd := migrateStatusCommand(
+		"reset",
+		"Roll back all applied migrations",
+		activeLogger,
+		deps,
+		func(ctx context.Context, runner migrations.Runner) (migrations.Status, error) {
+			if !confirmed {
+				return migrations.Status{}, fmt.Errorf("reset requires --i-understand-this-can-destroy-data")
+			}
+			return runner.Reset(ctx)
+		},
+	)
 	cmd.Flags().BoolVar(&confirmed, "i-understand-this-can-destroy-data", false, "confirm destructive reset")
 	return cmd
 }
@@ -144,7 +183,14 @@ func runMigration(
 }
 
 // runMigrationRepair runs the migration repair command.
-func runMigrationRepair(ctx context.Context, activeLogger **zap.Logger, deps commandDeps, version int64, checksum string, reason string) error {
+func runMigrationRepair(
+	ctx context.Context,
+	activeLogger **zap.Logger,
+	deps commandDeps,
+	version int64,
+	checksum string,
+	reason string,
+) error {
 	cfg, log, err := runtime(ctx, activeLogger, deps)
 	if err != nil {
 		return err
@@ -163,4 +209,41 @@ func writeStatus(output io.Writer, status migrations.Status) {
 	for _, migration := range status.Pending {
 		fmt.Fprintf(output, "pending %06d %s\n", migration.Version, migration.Name)
 	}
+}
+
+// infrastructureOptions creates server options for shared infrastructure.
+func infrastructureOptions(
+	_ context.Context,
+	db *gorm.DB,
+	events eventsapp.Service,
+	hub *eventshttp.Hub,
+	forums forumsapp.Service,
+	punishments punishmentsapp.Service,
+	tickets ticketOperations,
+) ([]server.Option, error) {
+	cron := cronService(db, events, forums, punishments, tickets)
+	return []server.Option{
+		server.WithEvents(eventshttp.Services{Events: events, Hub: hub}),
+		server.WithCron(cronhttp.Services{Cron: cron}),
+	}, nil
+}
+
+// ticketOperations is the ticket surface used by cron wiring.
+type ticketOperations interface {
+	DetectSLABreaches(context.Context) (int64, error)
+	CloseStaleTickets(context.Context) (int64, error)
+	VerifyStats(context.Context) (ticketsdomain.DriftReport, error)
+	RebuildStats(context.Context) (ticketsdomain.DriftReport, error)
+}
+
+// closeDatabase closes a database and logs failures.
+func closeDatabase(log *zap.Logger, closePostgres func(*gorm.DB) error, db *gorm.DB) {
+	if err := closePostgres(db); err != nil {
+		log.Error("close postgres failed", zap.Error(err))
+	}
+}
+
+// listen starts the Fiber application on the configured address.
+func listen(app *fiber.App, address string) error {
+	return app.Listen(address)
 }

@@ -11,7 +11,12 @@ import (
 )
 
 // ActiveRestriction returns one matching active restriction.
-func (repository CaseRepository) ActiveRestriction(ctx context.Context, userID uuid.UUID, actionKey string, now time.Time) (domain.ActiveRestriction, *domain.PunishmentSummary, error) {
+func (repository CaseRepository) ActiveRestriction(
+	ctx context.Context,
+	userID uuid.UUID,
+	actionKey string,
+	now time.Time,
+) (domain.ActiveRestriction, *domain.PunishmentSummary, error) {
 	var model RestrictionModel
 	err := repository.store.DB(ctx).
 		Where("target_user_id = ? AND action_key = ? AND starts_at <= ?", userID, actionKey, now).
@@ -35,7 +40,11 @@ func (repository CaseRepository) ActiveRestriction(ctx context.Context, userID u
 }
 
 // ListActiveRestrictions returns active restrictions for a user.
-func (repository CaseRepository) ListActiveRestrictions(ctx context.Context, userID uuid.UUID, now time.Time) ([]domain.ActiveRestriction, error) {
+func (repository CaseRepository) ListActiveRestrictions(
+	ctx context.Context,
+	userID uuid.UUID,
+	now time.Time,
+) ([]domain.ActiveRestriction, error) {
 	var models []RestrictionModel
 	err := repository.store.DB(ctx).
 		Where("target_user_id = ? AND starts_at <= ?", userID, now).
@@ -129,16 +138,26 @@ func (repository CaseRepository) actualRestrictions(ctx context.Context) (map[st
 }
 
 // driftReport compares expected and actual active restriction projections.
-func driftReport(expected map[string]domain.ActiveRestriction, actual map[string]domain.ActiveRestriction, repaired bool) domain.DriftReport {
+func driftReport(
+	expected map[string]domain.ActiveRestriction,
+	actual map[string]domain.ActiveRestriction,
+	repaired bool,
+) domain.DriftReport {
 	report := domain.DriftReport{Repaired: repaired}
 	for key, restriction := range expected {
 		if _, ok := actual[key]; !ok {
-			report.Mismatches = append(report.Mismatches, domain.CounterDrift{PunishmentID: restriction.PunishmentID, ActionKey: restriction.ActionKey, Expected: true})
+			report.Mismatches = append(
+				report.Mismatches,
+				domain.CounterDrift{PunishmentID: restriction.PunishmentID, ActionKey: restriction.ActionKey, Expected: true},
+			)
 		}
 	}
 	for key, restriction := range actual {
 		if _, ok := expected[key]; !ok {
-			report.Mismatches = append(report.Mismatches, domain.CounterDrift{PunishmentID: restriction.PunishmentID, ActionKey: restriction.ActionKey, Actual: true})
+			report.Mismatches = append(
+				report.Mismatches,
+				domain.CounterDrift{PunishmentID: restriction.PunishmentID, ActionKey: restriction.ActionKey, Actual: true},
+			)
 		}
 	}
 	return report

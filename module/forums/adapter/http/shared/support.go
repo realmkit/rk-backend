@@ -57,7 +57,10 @@ func HandleError(ctx *fiber.Ctx, err error) error {
 	case errors.Is(err, port.ErrForbidden):
 		return problem.Write(ctx, problem.New(fiber.StatusForbidden, "permission_denied", "Permission was denied."))
 	case errors.Is(err, port.ErrInvalidMove):
-		return problem.Write(ctx, problem.New(fiber.StatusConflict, "invalid_forum_move", "Forum cannot be moved to the requested location."))
+		return problem.Write(
+			ctx,
+			problem.New(fiber.StatusConflict, "invalid_forum_move", "Forum cannot be moved to the requested location."),
+		)
 	default:
 		return err
 	}

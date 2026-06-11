@@ -79,7 +79,11 @@ func TestCreateMessageAndEvidenceRoutes(t *testing.T) {
 	app, service := newApp()
 	service.message = domain.Message{ID: uuid.New(), TicketID: uuid.New(), Version: 1}
 	ticketID := uuid.New()
-	req := httptest.NewRequest(http.MethodPost, "/tickets/"+ticketID.String()+"/messages", bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"hello"}`))
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/tickets/"+ticketID.String()+"/messages",
+		bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"hello"}`),
+	)
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(currentUserIDHeader, uuid.New().String())
 	req.Header.Set(headers.IdempotencyKey, "msg-1")
@@ -273,7 +277,11 @@ func (service *httpService) GetDefinition(context.Context, uuid.UUID) (domain.De
 }
 
 // ListDefinitions returns no definitions.
-func (service *httpService) ListDefinitions(context.Context, port.DefinitionFilter, pagination.Page) (pagination.Result[domain.Definition], error) {
+func (service *httpService) ListDefinitions(
+	context.Context,
+	port.DefinitionFilter,
+	pagination.Page,
+) (pagination.Result[domain.Definition], error) {
 	return pagination.Result[domain.Definition]{}, nil
 }
 
@@ -330,7 +338,13 @@ func (service *httpService) CreateMessage(_ context.Context, command port.Messag
 }
 
 // ListMessages returns no messages.
-func (service *httpService) ListMessages(context.Context, uuid.UUID, uuid.UUID, bool, pagination.Page) (pagination.Result[domain.Message], error) {
+func (service *httpService) ListMessages(
+	context.Context,
+	uuid.UUID,
+	uuid.UUID,
+	bool,
+	pagination.Page,
+) (pagination.Result[domain.Message], error) {
 	return pagination.Result[domain.Message]{}, nil
 }
 

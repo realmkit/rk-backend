@@ -129,7 +129,11 @@ func TestUpdateForumRequiresIfMatch(t *testing.T) {
 // TestCreateThreadReturnsCreated verifies thread creation route response shape.
 func TestCreateThreadReturnsCreated(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPost, "/forums/"+uuid.NewString()+"/threads", bytes.NewBufferString(`{"title":"Hello world","slug":"hello-world","content_document_json":{"type":"doc"},"content_text":"Hello"}`))
+	req, _ := http.NewRequest(
+		http.MethodPost,
+		"/forums/"+uuid.NewString()+"/threads",
+		bytes.NewBufferString(`{"title":"Hello world","slug":"hello-world","content_document_json":{"type":"doc"},"content_text":"Hello"}`),
+	)
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.Accept, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "create-thread")
@@ -150,7 +154,11 @@ func TestCreateThreadReturnsCreated(t *testing.T) {
 // TestCreateReplyRequiresIdempotency verifies reply command headers.
 func TestCreateReplyRequiresIdempotency(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPost, "/threads/"+uuid.NewString()+"/posts", bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"Reply"}`))
+	req, _ := http.NewRequest(
+		http.MethodPost,
+		"/threads/"+uuid.NewString()+"/posts",
+		bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"Reply"}`),
+	)
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.Accept, "application/json")
 	req.Header.Set(currentUserIDHeader, uuid.NewString())
@@ -167,7 +175,11 @@ func TestCreateReplyRequiresIdempotency(t *testing.T) {
 // TestUpdatePostRequiresIfMatch verifies post edit concurrency headers.
 func TestUpdatePostRequiresIfMatch(t *testing.T) {
 	app := newTestApp(httpService{})
-	req, _ := http.NewRequest(http.MethodPatch, "/posts/"+uuid.NewString(), bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"Edit"}`))
+	req, _ := http.NewRequest(
+		http.MethodPatch,
+		"/posts/"+uuid.NewString(),
+		bytes.NewBufferString(`{"content_document_json":{"type":"doc"},"content_text":"Edit"}`),
+	)
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.Accept, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "edit-post")
@@ -408,13 +420,32 @@ func TestForumHTTPWriteAndReadLifecycleRoutesExerciseHandlers(t *testing.T) {
 		{method: http.MethodPost, path: "/forum-categories/reorder", body: reorderBody, status: fiber.StatusNoContent},
 		{method: http.MethodPost, path: "/forums", body: forumBody, status: fiber.StatusCreated},
 		{method: http.MethodGet, path: "/forums/" + id, status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/forums?category_id=" + uuid.NewString() + "&parent_forum_id=" + uuid.NewString() + "&status=active", status: fiber.StatusOK},
+		{
+			method: http.MethodGet,
+			path:   "/forums?category_id=" + uuid.NewString() + "&parent_forum_id=" + uuid.NewString() + "&status=active",
+			status: fiber.StatusOK,
+		},
 		{method: http.MethodPatch, path: "/forums/" + id, body: forumBody, status: fiber.StatusOK},
 		{method: http.MethodGet, path: "/forums/" + id + "/settings", status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/forums/" + id + "/settings", body: `{"kind":"discussion","thread_visibility_mode":"own_threads","max_sticky_threads":3,"default_thread_status":"open","author_post_edit_window_seconds":120,"author_post_delete_window_seconds":60}`, status: fiber.StatusOK},
+		{
+			method: http.MethodPatch,
+			path:   "/forums/" + id + "/settings",
+			body:   `{"kind":"discussion","thread_visibility_mode":"own_threads","max_sticky_threads":3,"default_thread_status":"open","author_post_edit_window_seconds":120,"author_post_delete_window_seconds":60}`,
+			status: fiber.StatusOK,
+		},
 		{method: http.MethodGet, path: "/forums/" + id + "/permissions", status: fiber.StatusOK},
-		{method: http.MethodPut, path: "/forums/" + id + "/permissions", body: `{"viewers":[{"subject_type":"public"}]}`, status: fiber.StatusNoContent},
-		{method: http.MethodPost, path: "/forums/" + id + "/permissions/simulate", body: `{"permission":"forums.view","object_type":"forum"}`, status: fiber.StatusOK},
+		{
+			method: http.MethodPut,
+			path:   "/forums/" + id + "/permissions",
+			body:   `{"viewers":[{"subject_type":"public"}]}`,
+			status: fiber.StatusNoContent,
+		},
+		{
+			method: http.MethodPost,
+			path:   "/forums/" + id + "/permissions/simulate",
+			body:   `{"permission":"forums.view","object_type":"forum"}`,
+			status: fiber.StatusOK,
+		},
 		{method: http.MethodPost, path: "/forums/" + id + "/move", body: moveBody, status: fiber.StatusOK},
 		{method: http.MethodDelete, path: "/forums/" + id, status: fiber.StatusNoContent},
 		{method: http.MethodPost, path: "/forums/reorder", body: reorderBody, status: fiber.StatusNoContent},
@@ -492,22 +523,46 @@ type httpService struct {
 
 // CreateCategory creates a category.
 func (service httpService) CreateCategory(context.Context, port.CreateCategoryCommand) (domain.ForumCategory, error) {
-	return domain.ForumCategory{ID: uuid.New(), Key: "official", Name: "Official", Status: domain.CategoryStatusActive, Version: 1}, service.err
+	return domain.ForumCategory{
+		ID:      uuid.New(),
+		Key:     "official",
+		Name:    "Official",
+		Status:  domain.CategoryStatusActive,
+		Version: 1,
+	}, service.err
 }
 
 // UpdateCategory updates a category.
 func (service httpService) UpdateCategory(context.Context, port.UpdateCategoryCommand) (domain.ForumCategory, error) {
-	return domain.ForumCategory{ID: uuid.New(), Key: "official", Name: "Official", Status: domain.CategoryStatusActive, Version: 2}, service.err
+	return domain.ForumCategory{
+		ID:      uuid.New(),
+		Key:     "official",
+		Name:    "Official",
+		Status:  domain.CategoryStatusActive,
+		Version: 2,
+	}, service.err
 }
 
 // GetCategory returns one category.
 func (service httpService) GetCategory(context.Context, uuid.UUID) (domain.ForumCategory, error) {
-	return domain.ForumCategory{ID: uuid.New(), Key: "official", Name: "Official", Status: domain.CategoryStatusActive, Version: 1}, service.err
+	return domain.ForumCategory{
+		ID:      uuid.New(),
+		Key:     "official",
+		Name:    "Official",
+		Status:  domain.CategoryStatusActive,
+		Version: 1,
+	}, service.err
 }
 
 // ListCategories lists categories.
-func (service httpService) ListCategories(context.Context, port.CategoryFilter, pagination.Page) (pagination.Result[domain.ForumCategory], error) {
-	return pagination.Result[domain.ForumCategory]{Items: []domain.ForumCategory{{ID: uuid.New(), Key: "official", Name: "Official", Status: domain.CategoryStatusActive, Version: 1}}}, service.err
+func (service httpService) ListCategories(
+	context.Context,
+	port.CategoryFilter,
+	pagination.Page,
+) (pagination.Result[domain.ForumCategory], error) {
+	return pagination.Result[domain.ForumCategory]{
+		Items: []domain.ForumCategory{{ID: uuid.New(), Key: "official", Name: "Official", Status: domain.CategoryStatusActive, Version: 1}},
+	}, service.err
 }
 
 // DeleteCategory deletes a category.
@@ -532,17 +587,38 @@ func (service httpService) UpdateForum(context.Context, port.UpdateForumCommand)
 
 // GetForumSettings returns forum settings.
 func (service httpService) GetForumSettings(context.Context, uuid.UUID, uuid.UUID) (domain.ForumSettings, error) {
-	return domain.ForumSettings{ForumID: uuid.New(), Kind: domain.ForumKindDiscussion, ThreadVisibilityMode: domain.ThreadVisibilityAllThreads, DefaultThreadStatus: domain.ThreadStatusOpen, AuthorPostEditWindowSeconds: 600, AuthorPostDeleteWindowSeconds: 300, Version: 1}, service.err
+	return domain.ForumSettings{
+		ForumID:                       uuid.New(),
+		Kind:                          domain.ForumKindDiscussion,
+		ThreadVisibilityMode:          domain.ThreadVisibilityAllThreads,
+		DefaultThreadStatus:           domain.ThreadStatusOpen,
+		AuthorPostEditWindowSeconds:   600,
+		AuthorPostDeleteWindowSeconds: 300,
+		Version:                       1,
+	}, service.err
 }
 
 // UpdateForumSettings updates forum settings.
 func (service httpService) UpdateForumSettings(context.Context, port.UpdateForumSettingsCommand) (domain.ForumSettings, error) {
-	return domain.ForumSettings{ForumID: uuid.New(), Kind: domain.ForumKindDiscussion, ThreadVisibilityMode: domain.ThreadVisibilityOwnThreads, DefaultThreadStatus: domain.ThreadStatusOpen, AuthorPostEditWindowSeconds: 120, AuthorPostDeleteWindowSeconds: 60, Version: 2}, service.err
+	return domain.ForumSettings{
+		ForumID:                       uuid.New(),
+		Kind:                          domain.ForumKindDiscussion,
+		ThreadVisibilityMode:          domain.ThreadVisibilityOwnThreads,
+		DefaultThreadStatus:           domain.ThreadStatusOpen,
+		AuthorPostEditWindowSeconds:   120,
+		AuthorPostDeleteWindowSeconds: 60,
+		Version:                       2,
+	}, service.err
 }
 
 // GetForumPermissionSettings returns forum permission settings.
 func (service httpService) GetForumPermissionSettings(context.Context, uuid.UUID, uuid.UUID) (domain.ForumPermissionSettings, error) {
-	return domain.ForumPermissionSettings{ForumID: uuid.New(), Viewers: []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectPublic, SubjectID: domain.PublicPermissionSubjectID()}}}, service.err
+	return domain.ForumPermissionSettings{
+		ForumID: uuid.New(),
+		Viewers: []domain.ForumPermissionGrant{
+			{SubjectType: domain.PermissionSubjectPublic, SubjectID: domain.PublicPermissionSubjectID()},
+		},
+	}, service.err
 }
 
 // UpdateForumPermissionSettings updates forum permission settings.
@@ -551,8 +627,19 @@ func (service httpService) UpdateForumPermissionSettings(context.Context, port.U
 }
 
 // SimulateForumPermission simulates one forum permission.
-func (service httpService) SimulateForumPermission(context.Context, port.SimulateForumPermissionCommand) (domain.ForumPermissionSimulationResult, error) {
-	return domain.ForumPermissionSimulationResult{Allowed: true, Reason: "matched_relation", Permission: "forums.view", ObjectType: "forum", ObjectID: uuid.New(), MatchedRelation: "viewer", CheckedRelations: []string{"viewer"}}, service.err
+func (service httpService) SimulateForumPermission(
+	context.Context,
+	port.SimulateForumPermissionCommand,
+) (domain.ForumPermissionSimulationResult, error) {
+	return domain.ForumPermissionSimulationResult{
+		Allowed:          true,
+		Reason:           "matched_relation",
+		Permission:       "forums.view",
+		ObjectType:       "forum",
+		ObjectID:         uuid.New(),
+		MatchedRelation:  "viewer",
+		CheckedRelations: []string{"viewer"},
+	}, service.err
 }
 
 // MoveForum moves a forum.
@@ -596,7 +683,12 @@ func (service httpService) GetThread(context.Context, uuid.UUID, uuid.UUID) (dom
 }
 
 // ListThreads lists threads.
-func (service httpService) ListThreads(context.Context, uuid.UUID, port.ThreadFilter, pagination.Page) (pagination.Result[domain.Thread], error) {
+func (service httpService) ListThreads(
+	context.Context,
+	uuid.UUID,
+	port.ThreadFilter,
+	pagination.Page,
+) (pagination.Result[domain.Thread], error) {
 	return pagination.Result[domain.Thread]{}, service.err
 }
 
@@ -636,7 +728,12 @@ func (service httpService) DeletePost(context.Context, port.DeletePostCommand) e
 }
 
 // ListPostRevisions lists revisions.
-func (service httpService) ListPostRevisions(context.Context, uuid.UUID, uuid.UUID, pagination.Page) (pagination.Result[domain.PostRevision], error) {
+func (service httpService) ListPostRevisions(
+	context.Context,
+	uuid.UUID,
+	uuid.UUID,
+	pagination.Page,
+) (pagination.Result[domain.PostRevision], error) {
 	return pagination.Result[domain.PostRevision]{}, service.err
 }
 
@@ -651,18 +748,50 @@ func (service httpService) UnlikePost(context.Context, port.UnlikePostCommand) (
 }
 
 // ListLatestPosts lists latest posts.
-func (service httpService) ListLatestPosts(context.Context, uuid.UUID, uuid.UUID, pagination.Page) (pagination.Result[domain.LatestPostSummary], error) {
-	return pagination.Result[domain.LatestPostSummary]{Items: []domain.LatestPostSummary{{ForumID: uuid.New(), ThreadID: uuid.New(), PostID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ThreadTitle: "Thread"}}}, service.err
+func (service httpService) ListLatestPosts(
+	context.Context,
+	uuid.UUID,
+	uuid.UUID,
+	pagination.Page,
+) (pagination.Result[domain.LatestPostSummary], error) {
+	return pagination.Result[domain.LatestPostSummary]{
+		Items: []domain.LatestPostSummary{
+			{ForumID: uuid.New(), ThreadID: uuid.New(), PostID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ThreadTitle: "Thread"},
+		},
+	}, service.err
 }
 
 // ListMostLikedPosts lists most-liked posts.
-func (service httpService) ListMostLikedPosts(context.Context, uuid.UUID, uuid.UUID, pagination.Page) (pagination.Result[domain.MostLikedPost], error) {
-	return pagination.Result[domain.MostLikedPost]{Items: []domain.MostLikedPost{{ForumID: uuid.New(), ThreadID: uuid.New(), PostID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ThreadTitle: "Thread", LikeCount: 3}}}, service.err
+func (service httpService) ListMostLikedPosts(
+	context.Context,
+	uuid.UUID,
+	uuid.UUID,
+	pagination.Page,
+) (pagination.Result[domain.MostLikedPost], error) {
+	return pagination.Result[domain.MostLikedPost]{
+		Items: []domain.MostLikedPost{
+			{
+				ForumID:      uuid.New(),
+				ThreadID:     uuid.New(),
+				PostID:       uuid.New(),
+				AuthorUserID: uuid.New(),
+				Sequence:     1,
+				ThreadTitle:  "Thread",
+				LikeCount:    3,
+			},
+		},
+	}, service.err
 }
 
 // MarkThreadRead marks a thread read.
 func (service httpService) MarkThreadRead(context.Context, port.MarkThreadReadCommand) (domain.ThreadReadState, error) {
-	return domain.ThreadReadState{ID: uuid.New(), UserID: uuid.New(), ForumID: uuid.New(), ThreadID: uuid.New(), LastReadPostSequence: 1}, service.err
+	return domain.ThreadReadState{
+		ID:                   uuid.New(),
+		UserID:               uuid.New(),
+		ForumID:              uuid.New(),
+		ThreadID:             uuid.New(),
+		LastReadPostSequence: 1,
+	}, service.err
 }
 
 // MarkForumRead marks a forum read.
@@ -677,7 +806,9 @@ func (service httpService) GetUnreadSummary(context.Context, uuid.UUID) (domain.
 
 // Search searches forum content.
 func (service httpService) Search(context.Context, port.SearchCommand, pagination.Page) (pagination.Result[domain.SearchResult], error) {
-	return pagination.Result[domain.SearchResult]{Items: []domain.SearchResult{{Type: "thread", ForumID: uuid.New(), ThreadID: uuid.New(), Title: "Thread"}}}, service.err
+	return pagination.Result[domain.SearchResult]{
+		Items: []domain.SearchResult{{Type: "thread", ForumID: uuid.New(), ThreadID: uuid.New(), Title: "Thread"}},
+	}, service.err
 }
 
 // VerifyStats reports stats drift.

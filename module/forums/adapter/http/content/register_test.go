@@ -65,19 +65,45 @@ func contentRoutes() []contentRoute {
 		{method: http.MethodGet, path: "/forums/search?query=hello", status: fiber.StatusOK},
 		{method: http.MethodGet, path: "/forums/unread-summary", status: fiber.StatusOK},
 		{method: http.MethodGet, path: "/forums/" + forumID + "/threads", status: fiber.StatusOK},
-		{method: http.MethodPost, path: "/forums/" + forumID + "/threads", body: `{"title":"Hello","content_document_json":{"type":"doc"}}`, status: fiber.StatusCreated, idempotent: true},
+		{
+			method:     http.MethodPost,
+			path:       "/forums/" + forumID + "/threads",
+			body:       `{"title":"Hello","content_document_json":{"type":"doc"}}`,
+			status:     fiber.StatusCreated,
+			idempotent: true,
+		},
 		{method: http.MethodGet, path: "/forums/" + forumID + "/latest-posts", status: fiber.StatusOK},
 		{method: http.MethodGet, path: "/forums/" + forumID + "/posts/most-liked", status: fiber.StatusOK},
 		{method: http.MethodGet, path: "/forums/" + forumID + "/search?query=hello", status: fiber.StatusOK},
 		{method: http.MethodPost, path: "/forums/" + forumID + "/read", status: fiber.StatusNoContent, idempotent: true},
 		{method: http.MethodGet, path: "/threads/" + threadID, status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/threads/" + threadID, body: `{"title":"Next"}`, status: fiber.StatusOK, idempotent: true, versioned: true},
+		{
+			method:     http.MethodPatch,
+			path:       "/threads/" + threadID,
+			body:       `{"title":"Next"}`,
+			status:     fiber.StatusOK,
+			idempotent: true,
+			versioned:  true,
+		},
 		{method: http.MethodDelete, path: "/threads/" + threadID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
 		{method: http.MethodGet, path: "/threads/" + threadID + "/posts", status: fiber.StatusOK},
-		{method: http.MethodPost, path: "/threads/" + threadID + "/posts", body: `{"content_document_json":{"type":"doc"}}`, status: fiber.StatusCreated, idempotent: true},
+		{
+			method:     http.MethodPost,
+			path:       "/threads/" + threadID + "/posts",
+			body:       `{"content_document_json":{"type":"doc"}}`,
+			status:     fiber.StatusCreated,
+			idempotent: true,
+		},
 		{method: http.MethodPost, path: "/threads/" + threadID + "/read", body: `{}`, status: fiber.StatusOK, idempotent: true},
 		{method: http.MethodGet, path: "/posts/" + postID, status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/posts/" + postID, body: `{"content_document_json":{"type":"doc"}}`, status: fiber.StatusOK, idempotent: true, versioned: true},
+		{
+			method:     http.MethodPatch,
+			path:       "/posts/" + postID,
+			body:       `{"content_document_json":{"type":"doc"}}`,
+			status:     fiber.StatusOK,
+			idempotent: true,
+			versioned:  true,
+		},
 		{method: http.MethodDelete, path: "/posts/" + postID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
 		{method: http.MethodPut, path: "/posts/" + postID + "/like", status: fiber.StatusOK, idempotent: true},
 		{method: http.MethodDelete, path: "/posts/" + postID + "/like", status: fiber.StatusOK, idempotent: true},
@@ -101,7 +127,12 @@ func (contentService) GetThread(context.Context, uuid.UUID, uuid.UUID) (domain.T
 }
 
 // ListThreads returns a test thread page.
-func (contentService) ListThreads(context.Context, uuid.UUID, port.ThreadFilter, pagination.Page) (pagination.Result[domain.Thread], error) {
+func (contentService) ListThreads(
+	context.Context,
+	uuid.UUID,
+	port.ThreadFilter,
+	pagination.Page,
+) (pagination.Result[domain.Thread], error) {
 	return pagination.Result[domain.Thread]{Items: []domain.Thread{}}, nil
 }
 
@@ -137,7 +168,12 @@ func (contentService) UpdatePost(context.Context, port.UpdatePostCommand) (domai
 func (contentService) DeletePost(context.Context, port.DeletePostCommand) error { return nil }
 
 // ListPostRevisions returns a test revision page.
-func (contentService) ListPostRevisions(context.Context, uuid.UUID, uuid.UUID, pagination.Page) (pagination.Result[domain.PostRevision], error) {
+func (contentService) ListPostRevisions(
+	context.Context,
+	uuid.UUID,
+	uuid.UUID,
+	pagination.Page,
+) (pagination.Result[domain.PostRevision], error) {
 	return pagination.Result[domain.PostRevision]{Items: []domain.PostRevision{}}, nil
 }
 
@@ -155,12 +191,22 @@ func (interactionService) UnlikePost(context.Context, port.UnlikePostCommand) (d
 }
 
 // ListLatestPosts returns latest posts.
-func (interactionService) ListLatestPosts(context.Context, uuid.UUID, uuid.UUID, pagination.Page) (pagination.Result[domain.LatestPostSummary], error) {
+func (interactionService) ListLatestPosts(
+	context.Context,
+	uuid.UUID,
+	uuid.UUID,
+	pagination.Page,
+) (pagination.Result[domain.LatestPostSummary], error) {
 	return pagination.Result[domain.LatestPostSummary]{Items: []domain.LatestPostSummary{}}, nil
 }
 
 // ListMostLikedPosts returns most-liked posts.
-func (interactionService) ListMostLikedPosts(context.Context, uuid.UUID, uuid.UUID, pagination.Page) (pagination.Result[domain.MostLikedPost], error) {
+func (interactionService) ListMostLikedPosts(
+	context.Context,
+	uuid.UUID,
+	uuid.UUID,
+	pagination.Page,
+) (pagination.Result[domain.MostLikedPost], error) {
 	return pagination.Result[domain.MostLikedPost]{Items: []domain.MostLikedPost{}}, nil
 }
 

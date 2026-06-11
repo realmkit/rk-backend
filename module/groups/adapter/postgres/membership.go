@@ -49,7 +49,11 @@ func (repository MembershipRepository) Find(ctx context.Context, groupID uuid.UU
 }
 
 // ListByGroup returns group memberships.
-func (repository MembershipRepository) ListByGroup(ctx context.Context, groupID uuid.UUID, page pagination.Page) (pagination.Result[domain.Membership], error) {
+func (repository MembershipRepository) ListByGroup(
+	ctx context.Context,
+	groupID uuid.UUID,
+	page pagination.Page,
+) (pagination.Result[domain.Membership], error) {
 	query := repository.store.DB(ctx).Model(&MembershipModel{}).Where("group_id = ?", groupID).Order("created_at asc").Limit(page.Limit + 1)
 	var models []MembershipModel
 	if err := query.Find(&models).Error; err != nil {
@@ -88,8 +92,15 @@ func (repository MembershipRepository) Delete(ctx context.Context, groupID uuid.
 }
 
 // update stores mutable membership fields.
-func (repository MembershipRepository) update(ctx context.Context, membership domain.Membership, expectedVersion uint64) (domain.Membership, error) {
-	result := repository.store.DB(ctx).Model(&MembershipModel{}).Where("id = ? AND version = ?", membership.ID, expectedVersion).Updates(map[string]any{"status": string(membership.Status), "assigned_by_user_id": membership.AssignedByUserID, "assigned_reason": membership.AssignedReason, "starts_at": membership.StartsAt, "expires_at": membership.ExpiresAt, "version": expectedVersion + 1})
+func (repository MembershipRepository) update(
+	ctx context.Context,
+	membership domain.Membership,
+	expectedVersion uint64,
+) (domain.Membership, error) {
+	result := repository.store.DB(ctx).
+		Model(&MembershipModel{}).
+		Where("id = ? AND version = ?", membership.ID, expectedVersion).
+		Updates(membershipUpdates(membership, expectedVersion))
 	if result.Error != nil {
 		return domain.Membership{}, result.Error
 	}
@@ -97,6 +108,18 @@ func (repository MembershipRepository) update(ctx context.Context, membership do
 		return domain.Membership{}, port.ErrPreconditionFailed
 	}
 	return repository.Find(ctx, membership.GroupID, membership.UserID)
+}
+
+// membershipUpdates returns update fields for a membership.
+func membershipUpdates(membership domain.Membership, expectedVersion uint64) map[string]any {
+	return map[string]any{
+		"status":              string(membership.Status),
+		"assigned_by_user_id": membership.AssignedByUserID,
+		"assigned_reason":     membership.AssignedReason,
+		"starts_at":           membership.StartsAt,
+		"expires_at":          membership.ExpiresAt,
+		"version":             expectedVersion + 1,
+	}
 }
 
 // membershipPage maps membership models into a page.

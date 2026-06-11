@@ -227,22 +227,38 @@ func TestVisibilityAuthorizerPermissionSettingsAndSimulation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ForumPermissionSettings() error = %v", err)
 	}
-	if len(found.Viewers) != 1 || found.Viewers[0].SubjectID != domain.PublicPermissionSubjectID() || len(found.Creators) != 1 || len(found.Moderators) != 1 {
+	if len(found.Viewers) != 1 || found.Viewers[0].SubjectID != domain.PublicPermissionSubjectID() || len(found.Creators) != 1 ||
+		len(found.Moderators) != 1 {
 		t.Fatalf("found = %+v, want persisted normalized grants", found)
 	}
-	publicResult, err := authorizer.SimulateForumPermission(context.Background(), forumID, domain.ForumPermissionSimulationRequest{Permission: string(groupsdomain.PermissionForumsView)})
+	publicResult, err := authorizer.SimulateForumPermission(
+		context.Background(),
+		forumID,
+		domain.ForumPermissionSimulationRequest{Permission: string(groupsdomain.PermissionForumsView)},
+	)
 	if err != nil {
 		t.Fatalf("Simulate public error = %v", err)
 	}
-	userResult, err := authorizer.SimulateForumPermission(context.Background(), forumID, domain.ForumPermissionSimulationRequest{ActorUserID: userID, Permission: string(groupsdomain.PermissionForumsCreateThread)})
+	userResult, err := authorizer.SimulateForumPermission(
+		context.Background(),
+		forumID,
+		domain.ForumPermissionSimulationRequest{ActorUserID: userID, Permission: string(groupsdomain.PermissionForumsCreateThread)},
+	)
 	if err != nil {
 		t.Fatalf("Simulate user error = %v", err)
 	}
-	groupResult, err := authorizer.SimulateForumPermission(context.Background(), forumID, domain.ForumPermissionSimulationRequest{ActorUserID: memberID, Permission: string(groupsdomain.PermissionForumsManageThreads)})
+	groupResult, err := authorizer.SimulateForumPermission(
+		context.Background(),
+		forumID,
+		domain.ForumPermissionSimulationRequest{ActorUserID: memberID, Permission: string(groupsdomain.PermissionForumsManageThreads)},
+	)
 	if err != nil {
 		t.Fatalf("Simulate group error = %v", err)
 	}
-	if !publicResult.Allowed || publicResult.MatchedRelation != string(groupsdomain.RelationViewer) || !userResult.Allowed || userResult.MatchedRelation != string(groupsdomain.RelationCreator) || !groupResult.Allowed || groupResult.MatchedRelation != string(groupsdomain.RelationModerator) {
+	if !publicResult.Allowed || publicResult.MatchedRelation != string(groupsdomain.RelationViewer) || !userResult.Allowed ||
+		userResult.MatchedRelation != string(groupsdomain.RelationCreator) ||
+		!groupResult.Allowed ||
+		groupResult.MatchedRelation != string(groupsdomain.RelationModerator) {
 		t.Fatalf("results public=%+v user=%+v group=%+v, want matching explanations", publicResult, userResult, groupResult)
 	}
 	if err := authorizer.UpdateForumPermissionSettings(context.Background(), actorID, domain.ForumPermissionSettings{ForumID: forumID}); err != nil {
@@ -262,7 +278,14 @@ func TestVisibilityAuthorizerRejectsMissingGrantSubjects(t *testing.T) {
 	_, _, db := newRepositories(t)
 	authorizer := NewVisibilityAuthorizer(orm.NewStore(db))
 
-	err := authorizer.UpdateForumPermissionSettings(context.Background(), uuid.New(), domain.ForumPermissionSettings{ForumID: uuid.New(), Creators: []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectUser, SubjectID: uuid.New()}}})
+	err := authorizer.UpdateForumPermissionSettings(
+		context.Background(),
+		uuid.New(),
+		domain.ForumPermissionSettings{
+			ForumID:  uuid.New(),
+			Creators: []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectUser, SubjectID: uuid.New()}},
+		},
+	)
 	var validation domain.ValidationError
 	if !errors.As(err, &validation) {
 		t.Fatalf("UpdateForumPermissionSettings() error = %v, want validation", err)
@@ -341,7 +364,14 @@ func TestPostRepositoryUpdateWithRevisionPersistsHistory(t *testing.T) {
 	updated.ContentDocumentJSON = []byte(`{"type":"doc","content":[]}`)
 	updated.ContentText = "Edited"
 	updated.EditCount = 1
-	revision := domain.PostRevision{ID: uuid.New(), PostID: post.ID, EditedByUserID: authorID, PreviousContentDocumentJSON: post.ContentDocumentJSON, PreviousContentText: post.ContentText, EditReason: "typo"}
+	revision := domain.PostRevision{
+		ID:                          uuid.New(),
+		PostID:                      post.ID,
+		EditedByUserID:              authorID,
+		PreviousContentDocumentJSON: post.ContentDocumentJSON,
+		PreviousContentText:         post.ContentText,
+		EditReason:                  "typo",
+	}
 
 	if _, err := posts.UpdateWithRevision(context.Background(), updated, revision, post.Version); err != nil {
 		t.Fatalf("UpdateWithRevision error = %v", err)
@@ -379,8 +409,18 @@ func TestPostRepositoryStoresReferencesAndNextSequence(t *testing.T) {
 		t.Fatalf("Create opener error = %v", err)
 	}
 	replyID := uuid.New()
-	reference := domain.PostReference{ID: uuid.New(), SourcePostID: replyID, TargetPostID: &opener.ID, ReferenceType: domain.ReferenceQuote, QuoteExcerpt: "Original"}
-	reply, err := posts.Create(context.Background(), testPost(thread.ID, forum.ID, uuid.New(), replyID, 2), []domain.PostReference{reference})
+	reference := domain.PostReference{
+		ID:            uuid.New(),
+		SourcePostID:  replyID,
+		TargetPostID:  &opener.ID,
+		ReferenceType: domain.ReferenceQuote,
+		QuoteExcerpt:  "Original",
+	}
+	reply, err := posts.Create(
+		context.Background(),
+		testPost(thread.ID, forum.ID, uuid.New(), replyID, 2),
+		[]domain.PostReference{reference},
+	)
 	if err != nil {
 		t.Fatalf("Create reply error = %v", err)
 	}
@@ -405,7 +445,14 @@ func TestInteractionRepositoryLikeUnlikeIdempotency(t *testing.T) {
 	interactions := NewInteractionRepository(orm.NewStore(db))
 	_, forum, thread, post := createContentFixture(t, categories, forums, threads, posts, "likes")
 	userID := uuid.New()
-	like := domain.PostLike{ID: uuid.New(), PostID: post.ID, ThreadID: thread.ID, ForumID: forum.ID, UserID: userID, CreatedAt: time.Now().UTC()}
+	like := domain.PostLike{
+		ID:        uuid.New(),
+		PostID:    post.ID,
+		ThreadID:  thread.ID,
+		ForumID:   forum.ID,
+		UserID:    userID,
+		CreatedAt: time.Now().UTC(),
+	}
 
 	changed, err := interactions.LikePost(context.Background(), like)
 	if err != nil {
@@ -456,11 +503,19 @@ func TestInteractionRepositoryWidgetsReturnVisibleRows(t *testing.T) {
 		t.Fatalf("LikePost error = %v", err)
 	}
 
-	latest, err := interactions.ListLatestPosts(context.Background(), port.LatestPostFilter{ForumIDs: []uuid.UUID{forum.ID}}, pagination.Page{Limit: 10})
+	latest, err := interactions.ListLatestPosts(
+		context.Background(),
+		port.LatestPostFilter{ForumIDs: []uuid.UUID{forum.ID}},
+		pagination.Page{Limit: 10},
+	)
 	if err != nil {
 		t.Fatalf("ListLatestPosts error = %v", err)
 	}
-	mostLiked, err := interactions.ListMostLikedPosts(context.Background(), port.MostLikedFilter{ForumID: forum.ID}, pagination.Page{Limit: 10})
+	mostLiked, err := interactions.ListMostLikedPosts(
+		context.Background(),
+		port.MostLikedFilter{ForumID: forum.ID},
+		pagination.Page{Limit: 10},
+	)
 	if err != nil {
 		t.Fatalf("ListMostLikedPosts error = %v", err)
 	}
@@ -488,7 +543,14 @@ func TestInteractionRepositoryReadStateAndUnreadSummary(t *testing.T) {
 	if before.UnreadThreadCount != 1 {
 		t.Fatalf("before unread = %+v, want one unread thread", before)
 	}
-	state := domain.ThreadReadState{ID: uuid.New(), UserID: userID, ForumID: forum.ID, ThreadID: thread.ID, LastReadPostSequence: 1, LastReadAt: time.Now().UTC()}
+	state := domain.ThreadReadState{
+		ID:                   uuid.New(),
+		UserID:               userID,
+		ForumID:              forum.ID,
+		ThreadID:             thread.ID,
+		LastReadPostSequence: 1,
+		LastReadAt:           time.Now().UTC(),
+	}
 	if err := interactions.MarkThreadRead(context.Background(), state); err != nil {
 		t.Fatalf("MarkThreadRead error = %v", err)
 	}
@@ -520,7 +582,11 @@ func TestOperationsRepositorySearchReturnsThreadsAndPosts(t *testing.T) {
 		t.Fatalf("UpdateWithRevision error = %v", err)
 	}
 
-	result, err := operations.Search(context.Background(), port.SearchFilter{ForumIDs: []uuid.UUID{forum.ID}, Query: "alpha"}, pagination.Page{Limit: 10})
+	result, err := operations.Search(
+		context.Background(),
+		port.SearchFilter{ForumIDs: []uuid.UUID{forum.ID}, Query: "alpha"},
+		pagination.Page{Limit: 10},
+	)
 	if err != nil {
 		t.Fatalf("Search() error = %v", err)
 	}
@@ -621,7 +687,14 @@ func newRepositories(t *testing.T) (CategoryRepository, ForumRepository, *gorm.D
 }
 
 // createContentFixture creates one category, forum, thread, and opener post.
-func createContentFixture(t *testing.T, categories CategoryRepository, forums ForumRepository, threads ThreadRepository, posts PostRepository, key string) (domain.ForumCategory, domain.Forum, domain.Thread, domain.Post) {
+func createContentFixture(
+	t *testing.T,
+	categories CategoryRepository,
+	forums ForumRepository,
+	threads ThreadRepository,
+	posts PostRepository,
+	key string,
+) (domain.ForumCategory, domain.Forum, domain.Thread, domain.Post) {
 	t.Helper()
 	category, err := categories.Create(context.Background(), testCategory())
 	if err != nil {
@@ -651,7 +724,16 @@ func createTuple(t *testing.T, db *gorm.DB, forumID uuid.UUID, subjectType group
 	if subjectType == groupsdomain.SubjectGroup {
 		subjectRelation = string(groupsdomain.RelationMember)
 	}
-	err := db.Exec("INSERT INTO authorization_relation_tuples (id, object_type, object_id, relation, subject_type, subject_id, subject_relation, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", uuid.New(), groupsdomain.ObjectForum, forumID, groupsdomain.RelationViewer, subjectType, subjectID, subjectRelation).Error
+	err := db.Exec(
+		"INSERT INTO authorization_relation_tuples (id, object_type, object_id, relation, subject_type, subject_id, subject_relation, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+		uuid.New(),
+		groupsdomain.ObjectForum,
+		forumID,
+		groupsdomain.RelationViewer,
+		subjectType,
+		subjectID,
+		subjectRelation,
+	).Error
 	if err != nil {
 		t.Fatalf("insert tuple error = %v", err)
 	}
@@ -660,7 +742,13 @@ func createTuple(t *testing.T, db *gorm.DB, forumID uuid.UUID, subjectType group
 // createGroup stores one active group.
 func createGroup(t *testing.T, db *gorm.DB, groupID uuid.UUID) {
 	t.Helper()
-	err := db.Exec("INSERT INTO groups (id, key, name, description, color, weight, status, version, created_at, updated_at) VALUES (?, ?, ?, '', '#ffffff', 0, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", groupID, "mods"+groupID.String()[:8], "Moderators", groupsdomain.GroupStatusActive).Error
+	err := db.Exec(
+		"INSERT INTO groups (id, key, name, description, color, weight, status, version, created_at, updated_at) VALUES (?, ?, ?, '', '#ffffff', 0, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+		groupID,
+		"mods"+groupID.String()[:8],
+		"Moderators",
+		groupsdomain.GroupStatusActive,
+	).Error
 	if err != nil {
 		t.Fatalf("insert group error = %v", err)
 	}
@@ -669,7 +757,13 @@ func createGroup(t *testing.T, db *gorm.DB, groupID uuid.UUID) {
 // createMembership stores one active group membership.
 func createMembership(t *testing.T, db *gorm.DB, groupID uuid.UUID, userID uuid.UUID) {
 	t.Helper()
-	err := db.Exec("INSERT INTO group_memberships (id, group_id, user_id, status, version, created_at, updated_at) VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", uuid.New(), groupID, userID, groupsdomain.MembershipStatusActive).Error
+	err := db.Exec(
+		"INSERT INTO group_memberships (id, group_id, user_id, status, version, created_at, updated_at) VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+		uuid.New(),
+		groupID,
+		userID,
+		groupsdomain.MembershipStatusActive,
+	).Error
 	if err != nil {
 		t.Fatalf("insert membership error = %v", err)
 	}
@@ -678,7 +772,10 @@ func createMembership(t *testing.T, db *gorm.DB, groupID uuid.UUID, userID uuid.
 // createUser stores one active user.
 func createUser(t *testing.T, db *gorm.DB, userID uuid.UUID) {
 	t.Helper()
-	err := db.Exec("INSERT INTO users (id, status, first_seen_at, version, created_at, updated_at) VALUES (?, 'active', CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", userID).Error
+	err := db.Exec(
+		"INSERT INTO users (id, status, first_seen_at, version, created_at, updated_at) VALUES (?, 'active', CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+		userID,
+	).Error
 	if err != nil {
 		t.Fatalf("insert user error = %v", err)
 	}
@@ -692,15 +789,56 @@ func testCategory() domain.ForumCategory {
 // testForum returns a persisted forum.
 func testForum(categoryID uuid.UUID, parentID *uuid.UUID, key string) domain.Forum {
 	id := uuid.New()
-	return domain.Forum{ID: id, CategoryID: categoryID, ParentForumID: parentID, Kind: domain.ForumKindDiscussion, Key: domain.Key(key), Slug: domain.Slug(key), Name: key, Path: "/" + id.String() + "/", ThreadVisibilityMode: domain.ThreadVisibilityAllThreads, DefaultThreadStatus: domain.ThreadStatusOpen, AuthorPostEditWindowSeconds: domain.DefaultAuthorPostEditWindowSeconds, AuthorPostDeleteWindowSeconds: domain.DefaultAuthorPostDeleteWindowSeconds, Status: domain.ForumStatusActive, Version: 1}
+	return domain.Forum{
+		ID:                            id,
+		CategoryID:                    categoryID,
+		ParentForumID:                 parentID,
+		Kind:                          domain.ForumKindDiscussion,
+		Key:                           domain.Key(key),
+		Slug:                          domain.Slug(key),
+		Name:                          key,
+		Path:                          "/" + id.String() + "/",
+		ThreadVisibilityMode:          domain.ThreadVisibilityAllThreads,
+		DefaultThreadStatus:           domain.ThreadStatusOpen,
+		AuthorPostEditWindowSeconds:   domain.DefaultAuthorPostEditWindowSeconds,
+		AuthorPostDeleteWindowSeconds: domain.DefaultAuthorPostDeleteWindowSeconds,
+		Status:                        domain.ForumStatusActive,
+		Version:                       1,
+	}
 }
 
 // testThread returns a persisted thread.
 func testThread(forumID uuid.UUID, authorID uuid.UUID, openerID uuid.UUID) domain.Thread {
-	return domain.Thread{ID: uuid.New(), ForumID: forumID, AuthorUserID: authorID, OpenerPostID: openerID, LatestPostID: openerID, LatestPostAuthorUserID: authorID, LatestPostAt: time.Now().UTC(), Title: "A thread", Slug: "a-thread", Status: domain.ThreadStatusOpen, StickyState: domain.StickyStateNormal, PostCount: 1, VisiblePostCount: 1, Version: 1}
+	return domain.Thread{
+		ID:                     uuid.New(),
+		ForumID:                forumID,
+		AuthorUserID:           authorID,
+		OpenerPostID:           openerID,
+		LatestPostID:           openerID,
+		LatestPostAuthorUserID: authorID,
+		LatestPostAt:           time.Now().UTC(),
+		Title:                  "A thread",
+		Slug:                   "a-thread",
+		Status:                 domain.ThreadStatusOpen,
+		StickyState:            domain.StickyStateNormal,
+		PostCount:              1,
+		VisiblePostCount:       1,
+		Version:                1,
+	}
 }
 
 // testPost returns a persisted post.
 func testPost(threadID uuid.UUID, forumID uuid.UUID, authorID uuid.UUID, postID uuid.UUID, sequence int64) domain.Post {
-	return domain.Post{ID: postID, ThreadID: threadID, ForumID: forumID, AuthorUserID: authorID, Sequence: sequence, Status: domain.PostStatusVisible, ContentFormat: domain.ContentFormatProseMirror, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "Original", Version: 1}
+	return domain.Post{
+		ID:                  postID,
+		ThreadID:            threadID,
+		ForumID:             forumID,
+		AuthorUserID:        authorID,
+		Sequence:            sequence,
+		Status:              domain.PostStatusVisible,
+		ContentFormat:       domain.ContentFormatProseMirror,
+		ContentDocumentJSON: []byte(`{"type":"doc"}`),
+		ContentText:         "Original",
+		Version:             1,
+	}
 }

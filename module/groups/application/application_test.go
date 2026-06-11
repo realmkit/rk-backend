@@ -20,7 +20,10 @@ func TestServiceAssignCreatesMembershipTuple(t *testing.T) {
 	group := testGroup("moderator", domain.GroupStatusActive)
 	userID := uuid.New()
 
-	membership, err := service.Assign(context.Background(), port.AssignMembershipCommand{Membership: domain.Membership{GroupID: group.ID, UserID: userID}})
+	membership, err := service.Assign(
+		context.Background(),
+		port.AssignMembershipCommand{Membership: domain.Membership{GroupID: group.ID, UserID: userID}},
+	)
 	if err != nil {
 		t.Fatalf("Assign() error = %v", err)
 	}
@@ -32,7 +35,10 @@ func TestServiceAssignCreatesMembershipTuple(t *testing.T) {
 // TestServiceGroupLifecycle verifies create, update, list, get, and delete paths.
 func TestServiceGroupLifecycle(t *testing.T) {
 	service, groups, _, _ := newTestService()
-	created, err := service.Create(context.Background(), port.CreateGroupCommand{Group: domain.Group{Key: "admin", Name: "Admin", Color: "#ff0000", Weight: 100}})
+	created, err := service.Create(
+		context.Background(),
+		port.CreateGroupCommand{Group: domain.Group{Key: "admin", Name: "Admin", Color: "#ff0000", Weight: 100}},
+	)
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
@@ -152,9 +158,19 @@ func TestServiceCheckAllowsDirectUserTuple(t *testing.T) {
 	service, _, _, tuples := newTestService()
 	userID := uuid.New()
 	groupID := uuid.New()
-	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectGroup, ObjectID: groupID, Relation: domain.RelationManager, SubjectType: domain.SubjectUser, SubjectID: userID}
+	tuples.items[uuid.New()] = domain.RelationTuple{
+		ID:          uuid.New(),
+		ObjectType:  domain.ObjectGroup,
+		ObjectID:    groupID,
+		Relation:    domain.RelationManager,
+		SubjectType: domain.SubjectUser,
+		SubjectID:   userID,
+	}
 
-	decision, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: userID, Permission: "groups.update", ObjectType: domain.ObjectGroup, ObjectID: groupID})
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{ActorUserID: userID, Permission: "groups.update", ObjectType: domain.ObjectGroup, ObjectID: groupID},
+	)
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
@@ -198,10 +214,26 @@ func TestServiceCheckAllowsGroupSubjectMember(t *testing.T) {
 	staffGroup := testGroup("staff", domain.GroupStatusActive)
 	targetID := uuid.New()
 	groups.items[staffGroup.ID] = staffGroup
-	memberships.items[membershipKey(staffGroup.ID, actorID)] = domain.Membership{ID: uuid.New(), GroupID: staffGroup.ID, UserID: actorID, Status: domain.MembershipStatusActive}
-	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectAsset, ObjectID: targetID, Relation: domain.RelationViewer, SubjectType: domain.SubjectGroup, SubjectID: staffGroup.ID, SubjectRelation: domain.RelationMember}
+	memberships.items[membershipKey(staffGroup.ID, actorID)] = domain.Membership{
+		ID:      uuid.New(),
+		GroupID: staffGroup.ID,
+		UserID:  actorID,
+		Status:  domain.MembershipStatusActive,
+	}
+	tuples.items[uuid.New()] = domain.RelationTuple{
+		ID:              uuid.New(),
+		ObjectType:      domain.ObjectAsset,
+		ObjectID:        targetID,
+		Relation:        domain.RelationViewer,
+		SubjectType:     domain.SubjectGroup,
+		SubjectID:       staffGroup.ID,
+		SubjectRelation: domain.RelationMember,
+	}
 
-	decision, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: actorID, Permission: "assets.view", ObjectType: domain.ObjectAsset, ObjectID: targetID})
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{ActorUserID: actorID, Permission: "assets.view", ObjectType: domain.ObjectAsset, ObjectID: targetID},
+	)
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
@@ -218,10 +250,27 @@ func TestServiceCheckDeniesDisabledGroupAndExpiredMembership(t *testing.T) {
 	targetID := uuid.New()
 	expired := time.Now().UTC().Add(-time.Minute)
 	groups.items[staffGroup.ID] = staffGroup
-	memberships.items[membershipKey(staffGroup.ID, actorID)] = domain.Membership{ID: uuid.New(), GroupID: staffGroup.ID, UserID: actorID, Status: domain.MembershipStatusActive, ExpiresAt: &expired}
-	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectAsset, ObjectID: targetID, Relation: domain.RelationViewer, SubjectType: domain.SubjectGroup, SubjectID: staffGroup.ID, SubjectRelation: domain.RelationMember}
+	memberships.items[membershipKey(staffGroup.ID, actorID)] = domain.Membership{
+		ID:        uuid.New(),
+		GroupID:   staffGroup.ID,
+		UserID:    actorID,
+		Status:    domain.MembershipStatusActive,
+		ExpiresAt: &expired,
+	}
+	tuples.items[uuid.New()] = domain.RelationTuple{
+		ID:              uuid.New(),
+		ObjectType:      domain.ObjectAsset,
+		ObjectID:        targetID,
+		Relation:        domain.RelationViewer,
+		SubjectType:     domain.SubjectGroup,
+		SubjectID:       staffGroup.ID,
+		SubjectRelation: domain.RelationMember,
+	}
 
-	decision, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: actorID, Permission: "assets.view", ObjectType: domain.ObjectAsset, ObjectID: targetID})
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{ActorUserID: actorID, Permission: "assets.view", ObjectType: domain.ObjectAsset, ObjectID: targetID},
+	)
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
@@ -233,7 +282,10 @@ func TestServiceCheckDeniesDisabledGroupAndExpiredMembership(t *testing.T) {
 // TestServiceCheckDeniesObjectTypeMismatch verifies wrong object type denies without error.
 func TestServiceCheckDeniesObjectTypeMismatch(t *testing.T) {
 	service, _, _, _ := newTestService()
-	decision, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: uuid.New(), Permission: "assets.view", ObjectType: domain.ObjectGroup, ObjectID: uuid.New()})
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{ActorUserID: uuid.New(), Permission: "assets.view", ObjectType: domain.ObjectGroup, ObjectID: uuid.New()},
+	)
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
@@ -246,9 +298,19 @@ func TestServiceCheckDeniesObjectTypeMismatch(t *testing.T) {
 func TestServiceCheckAllowsPublicSubjectForAnonymous(t *testing.T) {
 	service, _, _, tuples := newTestService()
 	forumID := uuid.New()
-	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectForum, ObjectID: forumID, Relation: domain.RelationViewer, SubjectType: domain.SubjectPublic, SubjectID: domain.PublicSubjectID()}
+	tuples.items[uuid.New()] = domain.RelationTuple{
+		ID:          uuid.New(),
+		ObjectType:  domain.ObjectForum,
+		ObjectID:    forumID,
+		Relation:    domain.RelationViewer,
+		SubjectType: domain.SubjectPublic,
+		SubjectID:   domain.PublicSubjectID(),
+	}
 
-	decision, err := service.Check(context.Background(), port.CheckRequest{Permission: domain.PermissionForumsView, ObjectType: domain.ObjectForum, ObjectID: forumID})
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{Permission: domain.PermissionForumsView, ObjectType: domain.ObjectForum, ObjectID: forumID},
+	)
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
@@ -262,9 +324,19 @@ func TestServiceCheckAllowsAuthenticatedSubjectForSignedInUser(t *testing.T) {
 	service, _, _, tuples := newTestService()
 	actorID := uuid.New()
 	forumID := uuid.New()
-	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectForum, ObjectID: forumID, Relation: domain.RelationViewer, SubjectType: domain.SubjectAuthenticated, SubjectID: domain.AuthenticatedSubjectID()}
+	tuples.items[uuid.New()] = domain.RelationTuple{
+		ID:          uuid.New(),
+		ObjectType:  domain.ObjectForum,
+		ObjectID:    forumID,
+		Relation:    domain.RelationViewer,
+		SubjectType: domain.SubjectAuthenticated,
+		SubjectID:   domain.AuthenticatedSubjectID(),
+	}
 
-	decision, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: actorID, Permission: domain.PermissionForumsView, ObjectType: domain.ObjectForum, ObjectID: forumID})
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{ActorUserID: actorID, Permission: domain.PermissionForumsView, ObjectType: domain.ObjectForum, ObjectID: forumID},
+	)
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
@@ -277,9 +349,19 @@ func TestServiceCheckAllowsAuthenticatedSubjectForSignedInUser(t *testing.T) {
 func TestServiceCheckDeniesAuthenticatedSubjectForAnonymous(t *testing.T) {
 	service, _, _, tuples := newTestService()
 	forumID := uuid.New()
-	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectForum, ObjectID: forumID, Relation: domain.RelationViewer, SubjectType: domain.SubjectAuthenticated, SubjectID: domain.AuthenticatedSubjectID()}
+	tuples.items[uuid.New()] = domain.RelationTuple{
+		ID:          uuid.New(),
+		ObjectType:  domain.ObjectForum,
+		ObjectID:    forumID,
+		Relation:    domain.RelationViewer,
+		SubjectType: domain.SubjectAuthenticated,
+		SubjectID:   domain.AuthenticatedSubjectID(),
+	}
 
-	decision, err := service.Check(context.Background(), port.CheckRequest{Permission: domain.PermissionForumsView, ObjectType: domain.ObjectForum, ObjectID: forumID})
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{Permission: domain.PermissionForumsView, ObjectType: domain.ObjectForum, ObjectID: forumID},
+	)
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
@@ -295,7 +377,13 @@ func TestServiceCheckEvaluatesPolicyConditions(t *testing.T) {
 	service.clock = func() time.Time { return now }
 	actorID := uuid.New()
 	postID := uuid.New()
-	policies.definitions["posts.update"] = domain.PermissionDefinition{ID: uuid.New(), Permission: "posts.update", ObjectType: "post", Enabled: true, Version: 1}
+	policies.definitions["posts.update"] = domain.PermissionDefinition{
+		ID:         uuid.New(),
+		Permission: "posts.update",
+		ObjectType: "post",
+		Enabled:    true,
+		Version:    1,
+	}
 	policies.rules["posts.update"] = []domain.PermissionRule{{
 		ID:         uuid.New(),
 		Permission: "posts.update",
@@ -304,16 +392,41 @@ func TestServiceCheckEvaluatesPolicyConditions(t *testing.T) {
 		Conditions: []domain.PolicyCondition{{Type: domain.ConditionWithinDuration, Field: "post.created_at", Duration: "10m"}},
 		Enabled:    true,
 	}}
-	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: "post", ObjectID: postID, Relation: "author", SubjectType: domain.SubjectUser, SubjectID: actorID}
+	tuples.items[uuid.New()] = domain.RelationTuple{
+		ID:          uuid.New(),
+		ObjectType:  "post",
+		ObjectID:    postID,
+		Relation:    "author",
+		SubjectType: domain.SubjectUser,
+		SubjectID:   actorID,
+	}
 
-	allowed, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: actorID, Permission: "posts.update", ObjectType: "post", ObjectID: postID, Context: map[string]any{"post.created_at": now.Add(-5 * time.Minute)}})
+	allowed, err := service.Check(
+		context.Background(),
+		port.CheckRequest{
+			ActorUserID: actorID,
+			Permission:  "posts.update",
+			ObjectType:  "post",
+			ObjectID:    postID,
+			Context:     map[string]any{"post.created_at": now.Add(-5 * time.Minute)},
+		},
+	)
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
 	if !allowed.Allowed || len(allowed.MatchedConditions) != 1 {
 		t.Fatalf("Decision = %+v, want allowed with matched condition", allowed)
 	}
-	denied, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: actorID, Permission: "posts.update", ObjectType: "post", ObjectID: postID, Context: map[string]any{"post.created_at": now.Add(-15 * time.Minute)}})
+	denied, err := service.Check(
+		context.Background(),
+		port.CheckRequest{
+			ActorUserID: actorID,
+			Permission:  "posts.update",
+			ObjectType:  "post",
+			ObjectID:    postID,
+			Context:     map[string]any{"post.created_at": now.Add(-15 * time.Minute)},
+		},
+	)
 	if err != nil {
 		t.Fatalf("Check() stale error = %v", err)
 	}
@@ -327,10 +440,26 @@ func TestServiceCheckDisabledPolicyDoesNotFallback(t *testing.T) {
 	service, _, _, tuples, policies := newPolicyTestService()
 	actorID := uuid.New()
 	groupID := uuid.New()
-	policies.definitions["groups.update"] = domain.PermissionDefinition{ID: uuid.New(), Permission: "groups.update", ObjectType: domain.ObjectGroup, Enabled: false, Version: 1}
-	tuples.items[uuid.New()] = domain.RelationTuple{ID: uuid.New(), ObjectType: domain.ObjectGroup, ObjectID: groupID, Relation: domain.RelationManager, SubjectType: domain.SubjectUser, SubjectID: actorID}
+	policies.definitions["groups.update"] = domain.PermissionDefinition{
+		ID:         uuid.New(),
+		Permission: "groups.update",
+		ObjectType: domain.ObjectGroup,
+		Enabled:    false,
+		Version:    1,
+	}
+	tuples.items[uuid.New()] = domain.RelationTuple{
+		ID:          uuid.New(),
+		ObjectType:  domain.ObjectGroup,
+		ObjectID:    groupID,
+		Relation:    domain.RelationManager,
+		SubjectType: domain.SubjectUser,
+		SubjectID:   actorID,
+	}
 
-	decision, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: actorID, Permission: "groups.update", ObjectType: domain.ObjectGroup, ObjectID: groupID})
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{ActorUserID: actorID, Permission: "groups.update", ObjectType: domain.ObjectGroup, ObjectID: groupID},
+	)
 	if !errors.Is(err, port.ErrUnknownPermission) {
 		t.Fatalf("Check() error = %v, want %v", err, port.ErrUnknownPermission)
 	}
@@ -344,9 +473,22 @@ func TestServiceRemoveDeletesMembershipAndTuple(t *testing.T) {
 	service, _, memberships, tuples := newTestService()
 	groupID := uuid.New()
 	userID := uuid.New()
-	memberships.items[membershipKey(groupID, userID)] = domain.Membership{ID: uuid.New(), GroupID: groupID, UserID: userID, Status: domain.MembershipStatusActive, Version: 1}
+	memberships.items[membershipKey(groupID, userID)] = domain.Membership{
+		ID:      uuid.New(),
+		GroupID: groupID,
+		UserID:  userID,
+		Status:  domain.MembershipStatusActive,
+		Version: 1,
+	}
 	tupleID := uuid.New()
-	tuples.items[tupleID] = domain.RelationTuple{ID: tupleID, ObjectType: domain.ObjectGroup, ObjectID: groupID, Relation: domain.RelationMember, SubjectType: domain.SubjectUser, SubjectID: userID}
+	tuples.items[tupleID] = domain.RelationTuple{
+		ID:          tupleID,
+		ObjectType:  domain.ObjectGroup,
+		ObjectID:    groupID,
+		Relation:    domain.RelationMember,
+		SubjectType: domain.SubjectUser,
+		SubjectID:   userID,
+	}
 
 	if err := service.Remove(context.Background(), port.RemoveMembershipCommand{GroupID: groupID, UserID: userID}); err != nil {
 		t.Fatalf("Remove() error = %v", err)
@@ -359,7 +501,18 @@ func TestServiceRemoveDeletesMembershipAndTuple(t *testing.T) {
 // TestServiceTupleLifecycle verifies create and delete tuple paths.
 func TestServiceTupleLifecycle(t *testing.T) {
 	service, _, _, tuples := newTestService()
-	tuple, err := service.CreateTuple(context.Background(), port.CreateTupleCommand{Tuple: domain.RelationTuple{ObjectType: domain.ObjectGroup, ObjectID: uuid.New(), Relation: domain.RelationViewer, SubjectType: domain.SubjectUser, SubjectID: uuid.New()}})
+	tuple, err := service.CreateTuple(
+		context.Background(),
+		port.CreateTupleCommand{
+			Tuple: domain.RelationTuple{
+				ObjectType:  domain.ObjectGroup,
+				ObjectID:    uuid.New(),
+				Relation:    domain.RelationViewer,
+				SubjectType: domain.SubjectUser,
+				SubjectID:   uuid.New(),
+			},
+		},
+	)
 	if err != nil {
 		t.Fatalf("CreateTuple() error = %v", err)
 	}
@@ -384,8 +537,18 @@ func TestServiceListUserGroupsSelectsDisplayGroup(t *testing.T) {
 	vip.Weight = 20
 	groups.items[member.ID] = member
 	groups.items[vip.ID] = vip
-	memberships.items[membershipKey(member.ID, userID)] = domain.Membership{ID: uuid.New(), GroupID: member.ID, UserID: userID, Status: domain.MembershipStatusActive}
-	memberships.items[membershipKey(vip.ID, userID)] = domain.Membership{ID: uuid.New(), GroupID: vip.ID, UserID: userID, Status: domain.MembershipStatusActive}
+	memberships.items[membershipKey(member.ID, userID)] = domain.Membership{
+		ID:      uuid.New(),
+		GroupID: member.ID,
+		UserID:  userID,
+		Status:  domain.MembershipStatusActive,
+	}
+	memberships.items[membershipKey(vip.ID, userID)] = domain.Membership{
+		ID:      uuid.New(),
+		GroupID: vip.ID,
+		UserID:  userID,
+		Status:  domain.MembershipStatusActive,
+	}
 
 	result, err := service.ListUserGroups(context.Background(), userID)
 	if err != nil {
@@ -401,7 +564,12 @@ func TestServiceListGroupMembersDelegatesRepository(t *testing.T) {
 	service, _, memberships, _ := newTestService()
 	groupID := uuid.New()
 	userID := uuid.New()
-	memberships.items[membershipKey(groupID, userID)] = domain.Membership{ID: uuid.New(), GroupID: groupID, UserID: userID, Status: domain.MembershipStatusActive}
+	memberships.items[membershipKey(groupID, userID)] = domain.Membership{
+		ID:      uuid.New(),
+		GroupID: groupID,
+		UserID:  userID,
+		Status:  domain.MembershipStatusActive,
+	}
 
 	result, err := service.ListGroupMembers(context.Background(), groupID, pagination.Page{Limit: 10})
 	if err != nil {
@@ -426,7 +594,10 @@ func newPolicyTestService() (Service, *memoryGroups, *memoryMemberships, *memory
 	groups := &memoryGroups{items: map[uuid.UUID]domain.Group{}}
 	memberships := &memoryMemberships{items: map[string]domain.Membership{}}
 	tuples := &memoryTuples{items: map[uuid.UUID]domain.RelationTuple{}}
-	policies := &memoryPolicies{definitions: map[domain.Permission]domain.PermissionDefinition{}, rules: map[domain.Permission][]domain.PermissionRule{}}
+	policies := &memoryPolicies{
+		definitions: map[domain.Permission]domain.PermissionDefinition{},
+		rules:       map[domain.Permission][]domain.PermissionRule{},
+	}
 	service := NewService(groups, memberships, tuples, policies)
 	return service, groups, memberships, tuples, policies
 }
@@ -529,7 +700,11 @@ func (repository *memoryMemberships) Find(_ context.Context, groupID uuid.UUID, 
 }
 
 // ListByGroup returns group memberships.
-func (repository *memoryMemberships) ListByGroup(_ context.Context, groupID uuid.UUID, _ pagination.Page) (pagination.Result[domain.Membership], error) {
+func (repository *memoryMemberships) ListByGroup(
+	_ context.Context,
+	groupID uuid.UUID,
+	_ pagination.Page,
+) (pagination.Result[domain.Membership], error) {
 	items := []domain.Membership{}
 	for _, membership := range repository.items {
 		if membership.GroupID == groupID {
@@ -582,7 +757,11 @@ func (repository *memoryTuples) FindByID(_ context.Context, id uuid.UUID) (domai
 }
 
 // List returns matching tuples.
-func (repository *memoryTuples) List(_ context.Context, filter port.TupleFilter, _ pagination.Page) (pagination.Result[domain.RelationTuple], error) {
+func (repository *memoryTuples) List(
+	_ context.Context,
+	filter port.TupleFilter,
+	_ pagination.Page,
+) (pagination.Result[domain.RelationTuple], error) {
 	items := []domain.RelationTuple{}
 	for _, tuple := range repository.items {
 		if filter.ObjectType != "" && tuple.ObjectType != filter.ObjectType {
@@ -616,7 +795,10 @@ func (repository *memoryTuples) Delete(_ context.Context, id uuid.UUID) error {
 
 // equivalentTuple reports whether tuples are equivalent.
 func equivalentTuple(left domain.RelationTuple, right domain.RelationTuple) bool {
-	return left.ObjectType == right.ObjectType && left.ObjectID == right.ObjectID && left.Relation == right.Relation && left.SubjectType == right.SubjectType && left.SubjectID == right.SubjectID && left.SubjectRelation == right.SubjectRelation
+	return left.ObjectType == right.ObjectType && left.ObjectID == right.ObjectID && left.Relation == right.Relation &&
+		left.SubjectType == right.SubjectType &&
+		left.SubjectID == right.SubjectID &&
+		left.SubjectRelation == right.SubjectRelation
 }
 
 // memoryPolicies stores policy records in memory.
@@ -626,7 +808,10 @@ type memoryPolicies struct {
 }
 
 // UpsertDefinition stores a permission definition.
-func (repository *memoryPolicies) UpsertDefinition(_ context.Context, definition domain.PermissionDefinition) (domain.PermissionDefinition, error) {
+func (repository *memoryPolicies) UpsertDefinition(
+	_ context.Context,
+	definition domain.PermissionDefinition,
+) (domain.PermissionDefinition, error) {
 	repository.definitions[definition.Permission] = definition
 	return definition, nil
 }
@@ -654,7 +839,10 @@ func (repository *memoryPolicies) ListRules(_ context.Context, permission domain
 // TestServiceCheckUnknownPermission verifies unknown permission errors.
 func TestServiceCheckUnknownPermission(t *testing.T) {
 	service, _, _, _ := newTestService()
-	_, err := service.Check(context.Background(), port.CheckRequest{ActorUserID: uuid.New(), Permission: "missing.permission", ObjectType: domain.ObjectGroup, ObjectID: uuid.New()})
+	_, err := service.Check(
+		context.Background(),
+		port.CheckRequest{ActorUserID: uuid.New(), Permission: "missing.permission", ObjectType: domain.ObjectGroup, ObjectID: uuid.New()},
+	)
 	if !errors.Is(err, port.ErrUnknownPermission) {
 		t.Fatalf("Check() error = %v, want %v", err, port.ErrUnknownPermission)
 	}

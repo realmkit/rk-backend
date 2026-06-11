@@ -65,7 +65,10 @@ func (store Store) Ensure(ctx context.Context) error {
 // Applied returns all recorded migration rows.
 func (store Store) Applied(ctx context.Context) ([]Record, error) {
 	var rows []historyRow
-	err := store.db.WithContext(ctx).Raw("SELECT version, name, direction, checksum, started_at, finished_at, duration_ms, success, error, executor, app_version, dirty FROM gamehub_schema_migrations ORDER BY version ASC").Scan(&rows).Error
+	err := store.db.WithContext(ctx).
+		Raw(appliedSQL).
+		Scan(&rows).
+		Error
 	if err != nil {
 		return nil, err
 	}
@@ -89,26 +92,33 @@ func (store Store) Start(ctx context.Context, migration Migration, executor stri
 		AppVersion: appVersion,
 		Dirty:      true,
 	}
-	return store.db.WithContext(ctx).Exec("INSERT INTO gamehub_schema_migrations(version, name, direction, checksum, started_at, success, error, executor, app_version, dirty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row.Version, row.Name, row.Direction, row.Checksum, row.StartedAt, row.Success, row.Error, row.Executor, row.AppVersion, row.Dirty).Error
+	return store.db.WithContext(ctx).
+		Exec(startSQL, row.startArgs()...).
+		Error
 }
 
 // Succeed marks migration execution successful.
 func (store Store) Succeed(ctx context.Context, migration Migration, started time.Time) error {
 	finished := time.Now().UTC()
 	duration := finished.Sub(started).Milliseconds()
-	return store.db.WithContext(ctx).Exec("UPDATE gamehub_schema_migrations SET finished_at = ?, duration_ms = ?, success = ?, error = ?, dirty = ? WHERE version = ?", finished, duration, true, "", false, migration.Version).Error
+	return store.db.WithContext(ctx).
+		Exec(finishSQL, finished, duration, true, "", false, migration.Version).
+		Error
 }
 
 // Fail marks migration execution failed.
 func (store Store) Fail(ctx context.Context, migration Migration, started time.Time, runErr error) error {
 	finished := time.Now().UTC()
 	duration := finished.Sub(started).Milliseconds()
-	return store.db.WithContext(ctx).Exec("UPDATE gamehub_schema_migrations SET finished_at = ?, duration_ms = ?, success = ?, error = ?, dirty = ? WHERE version = ?", finished, duration, false, runErr.Error(), true, migration.Version).Error
+	return store.db.WithContext(ctx).
+		Exec(finishSQL, finished, duration, false, runErr.Error(), true, migration.Version).
+		Error
 }
 
 // Repair clears a dirty migration after manual repair.
 func (store Store) Repair(ctx context.Context, version int64, checksum string, reason string) error {
-	result := store.db.WithContext(ctx).Exec("UPDATE gamehub_schema_migrations SET checksum = ?, error = ?, dirty = ?, success = ? WHERE version = ? AND dirty = ?", checksum, "repaired: "+reason, false, true, version, true)
+	result := store.db.WithContext(ctx).
+		Exec(repairSQL, checksum, "repaired: "+reason, false, true, version, true)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -157,10 +167,82 @@ func (row historyRow) record() Record {
 	}
 }
 
+// startArgs returns positional SQL arguments for a migration start record.
+func (row historyRow) startArgs() []any {
+	return []any{
+		row.Version,
+		row.Name,
+		row.Direction,
+		row.Checksum,
+		row.StartedAt,
+		row.Success,
+		row.Error,
+		row.Executor,
+		row.AppVersion,
+		row.Dirty,
+	}
+}
+
 // historyTableSQL returns schema history creation SQL.
 func historyTableSQL(dialect string) string {
 	if dialect == "sqlite" {
-		return "CREATE TABLE IF NOT EXISTS gamehub_schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, direction TEXT NOT NULL, checksum TEXT NOT NULL, started_at DATETIME NOT NULL, finished_at DATETIME NULL, duration_ms INTEGER NULL, success BOOLEAN NOT NULL DEFAULT FALSE, error TEXT NULL, executor TEXT NOT NULL, app_version TEXT NULL, dirty BOOLEAN NOT NULL DEFAULT FALSE)"
+		return sqliteHistoryTableSQL
 	}
-	return "CREATE TABLE IF NOT EXISTS gamehub_schema_migrations (version BIGINT PRIMARY KEY, name TEXT NOT NULL, direction TEXT NOT NULL, checksum TEXT NOT NULL, started_at TIMESTAMPTZ NOT NULL, finished_at TIMESTAMPTZ NULL, duration_ms BIGINT NULL, success BOOLEAN NOT NULL DEFAULT FALSE, error TEXT NULL, executor TEXT NOT NULL, app_version TEXT NULL, dirty BOOLEAN NOT NULL DEFAULT FALSE)"
+	return postgresHistoryTableSQL
 }
+
+// Store SQL statements.
+const (
+	appliedSQL = `
+SELECT version, name, direction, checksum, started_at, finished_at, duration_ms,
+	success, error, executor, app_version, dirty
+FROM gamehub_schema_migrations
+ORDER BY version ASC`
+
+	startSQL = `
+INSERT INTO gamehub_schema_migrations(
+	version, name, direction, checksum, started_at, success, error, executor, app_version, dirty
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+	finishSQL = `
+UPDATE gamehub_schema_migrations
+SET finished_at = ?, duration_ms = ?, success = ?, error = ?, dirty = ?
+WHERE version = ?`
+
+	repairSQL = `
+UPDATE gamehub_schema_migrations
+SET checksum = ?, error = ?, dirty = ?, success = ?
+WHERE version = ? AND dirty = ?`
+
+	sqliteHistoryTableSQL = `
+CREATE TABLE IF NOT EXISTS gamehub_schema_migrations (
+	version INTEGER PRIMARY KEY,
+	name TEXT NOT NULL,
+	direction TEXT NOT NULL,
+	checksum TEXT NOT NULL,
+	started_at DATETIME NOT NULL,
+	finished_at DATETIME NULL,
+	duration_ms INTEGER NULL,
+	success BOOLEAN NOT NULL DEFAULT FALSE,
+	error TEXT NULL,
+	executor TEXT NOT NULL,
+	app_version TEXT NULL,
+	dirty BOOLEAN NOT NULL DEFAULT FALSE
+)`
+
+	postgresHistoryTableSQL = `
+CREATE TABLE IF NOT EXISTS gamehub_schema_migrations (
+	version BIGINT PRIMARY KEY,
+	name TEXT NOT NULL,
+	direction TEXT NOT NULL,
+	checksum TEXT NOT NULL,
+	started_at TIMESTAMPTZ NOT NULL,
+	finished_at TIMESTAMPTZ NULL,
+	duration_ms BIGINT NULL,
+	success BOOLEAN NOT NULL DEFAULT FALSE,
+	error TEXT NULL,
+	executor TEXT NOT NULL,
+	app_version TEXT NULL,
+	dirty BOOLEAN NOT NULL DEFAULT FALSE
+)`
+)

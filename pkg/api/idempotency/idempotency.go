@@ -108,7 +108,14 @@ func Middleware(store Store, options ...Option) fiber.Handler {
 		}
 
 		if len(ctx.Response().Body()) > MaxStoredBody {
-			return problem.Write(ctx, problem.New(fiber.StatusInternalServerError, "idempotency_response_too_large", "Response is too large to store for idempotent replay."))
+			return problem.Write(
+				ctx,
+				problem.New(
+					fiber.StatusInternalServerError,
+					"idempotency_response_too_large",
+					"Response is too large to store for idempotent replay.",
+				),
+			)
 		}
 
 		return store.Complete(ctx.UserContext(), key, Entry{
@@ -166,7 +173,10 @@ func fingerprintFor(ctx *fiber.Ctx) string {
 // replayOrReject handles existing idempotency records.
 func replayOrReject(ctx *fiber.Ctx, entry Entry, fingerprint string) error {
 	if entry.Fingerprint != fingerprint {
-		return problem.Write(ctx, problem.New(fiber.StatusConflict, "idempotency_conflict", "Idempotency key was reused with a different request."))
+		return problem.Write(
+			ctx,
+			problem.New(fiber.StatusConflict, "idempotency_conflict", "Idempotency key was reused with a different request."),
+		)
 	}
 	if !entry.Complete {
 		return problem.Write(ctx, problem.New(fiber.StatusConflict, "idempotency_in_progress", "Idempotent request is still in progress."))

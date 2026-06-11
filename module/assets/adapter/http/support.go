@@ -57,7 +57,10 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	case errors.Is(err, port.ErrInvalidState):
 		return problem.Write(ctx, problem.New(fiber.StatusConflict, "asset_invalid_state", "Asset state does not allow this operation."))
 	case errors.Is(err, port.ErrUploadMismatch):
-		return problem.Write(ctx, problem.New(fiber.StatusUnprocessableEntity, "asset_upload_mismatch", "Uploaded object does not match the asset intent."))
+		return problem.Write(
+			ctx,
+			problem.New(fiber.StatusUnprocessableEntity, "asset_upload_mismatch", "Uploaded object does not match the asset intent."),
+		)
 	default:
 		return err
 	}
@@ -79,7 +82,9 @@ func pageFromQuery(ctx *fiber.Ctx) (pagination.Page, error) {
 		Cursor: ctx.Query("page_token"),
 	})
 	if err != nil {
-		return pagination.Page{}, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid.")}
+		return pagination.Page{}, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid."),
+		}
 	}
 	return page, nil
 }
@@ -92,7 +97,9 @@ func expectedVersion(ctx *fiber.Ctx) (uint64, error) {
 	}
 	version, err := strconv.ParseUint(value, 10, 64)
 	if err != nil {
-		return 0, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_if_match", "If-Match must contain a numeric version.")}
+		return 0, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_if_match", "If-Match must contain a numeric version."),
+		}
 	}
 	return version, nil
 }
@@ -100,7 +107,9 @@ func expectedVersion(ctx *fiber.Ctx) (uint64, error) {
 // requireIdempotency verifies Idempotency-Key is present.
 func requireIdempotency(ctx *fiber.Ctx) error {
 	if strings.TrimSpace(ctx.Get(headers.IdempotencyKey)) == "" {
-		return problem.Error{Problem: problem.New(fiber.StatusBadRequest, "idempotency_key_required", "Idempotency-Key header is required.")}
+		return problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "idempotency_key_required", "Idempotency-Key header is required."),
+		}
 	}
 	return nil
 }

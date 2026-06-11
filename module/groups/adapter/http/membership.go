@@ -54,7 +54,10 @@ func (handler handler) assignMembership(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	membership, err := handler.services.Memberships.Assign(ctx.Context(), port.AssignMembershipCommand{Membership: membershipFromRequest(groupID, userID, request)})
+	membership, err := handler.services.Memberships.Assign(
+		ctx.Context(),
+		port.AssignMembershipCommand{Membership: membershipFromRequest(groupID, userID, request)},
+	)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -75,7 +78,12 @@ func (handler handler) removeMembership(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if err := handler.services.Memberships.Remove(ctx.Context(), port.RemoveMembershipCommand{GroupID: groupID, UserID: userID, ExpectedVersion: &version}); err != nil {
+	command := port.RemoveMembershipCommand{
+		GroupID:         groupID,
+		UserID:          userID,
+		ExpectedVersion: &version,
+	}
+	if err := handler.services.Memberships.Remove(ctx.Context(), command); err != nil {
 		return handleError(ctx, err)
 	}
 	return writeNoContent(ctx)
@@ -123,5 +131,13 @@ func membershipIDs(ctx *fiber.Ctx) (uuid.UUID, uuid.UUID, error) {
 
 // membershipFromRequest maps HTTP request to membership.
 func membershipFromRequest(groupID uuid.UUID, userID uuid.UUID, request membershipRequest) domain.Membership {
-	return domain.Membership{GroupID: groupID, UserID: userID, Status: request.Status, AssignedByUserID: request.AssignedByUserID, AssignedReason: request.AssignedReason, StartsAt: request.StartsAt, ExpiresAt: request.ExpiresAt}
+	return domain.Membership{
+		GroupID:          groupID,
+		UserID:           userID,
+		Status:           request.Status,
+		AssignedByUserID: request.AssignedByUserID,
+		AssignedReason:   request.AssignedReason,
+		StartsAt:         request.StartsAt,
+		ExpiresAt:        request.ExpiresAt,
+	}
 }

@@ -55,7 +55,11 @@ func (repository Repository) Get(ctx context.Context, id uuid.UUID) (domain.Even
 }
 
 // List returns matching events.
-func (repository Repository) List(ctx context.Context, filter port.ListFilter, page pagination.Page) (pagination.Result[domain.Event], error) {
+func (repository Repository) List(
+	ctx context.Context,
+	filter port.ListFilter,
+	page pagination.Page,
+) (pagination.Result[domain.Event], error) {
 	var models []EventModel
 	query := repository.filter(repository.store.DB(ctx), filter)
 	if err := query.Order("occurred_at DESC, id DESC").Limit(page.Limit).Find(&models).Error; err != nil {
@@ -65,7 +69,13 @@ func (repository Repository) List(ctx context.Context, filter port.ListFilter, p
 }
 
 // Claim claims due events.
-func (repository Repository) Claim(ctx context.Context, workerID string, limit int, now time.Time, lockUntil time.Time) ([]domain.Event, error) {
+func (repository Repository) Claim(
+	ctx context.Context,
+	workerID string,
+	limit int,
+	now time.Time,
+	lockUntil time.Time,
+) ([]domain.Event, error) {
 	var models []EventModel
 	db := repository.store.DB(ctx)
 	err := db.Where("status IN ? AND available_at <= ?", []string{"pending", "failed"}, now).
@@ -127,7 +137,13 @@ func (repository Repository) Cancel(ctx context.Context, id uuid.UUID, now time.
 }
 
 // updateStatus updates common status fields.
-func (repository Repository) updateStatus(ctx context.Context, id uuid.UUID, status domain.Status, now time.Time, extra map[string]any) error {
+func (repository Repository) updateStatus(
+	ctx context.Context,
+	id uuid.UUID,
+	status domain.Status,
+	now time.Time,
+	extra map[string]any,
+) error {
 	updates := map[string]any{"status": string(status), "locked_by": "", "locked_until": nil, "updated_at": now}
 	for key, value := range extra {
 		updates[key] = value

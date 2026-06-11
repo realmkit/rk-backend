@@ -16,7 +16,9 @@ var keyPattern = regexp.MustCompile(`^[a-z][a-z0-9_]{0,62}$`)
 func ValidateNamespace(field string, namespace Namespace) []Violation {
 	value := strings.TrimSpace(string(namespace))
 	if !keyPattern.MatchString(value) {
-		return []Violation{{Field: field, Message: "must start with a lowercase letter and contain lowercase letters, numbers, or underscores"}}
+		return []Violation{
+			{Field: field, Message: "must start with a lowercase letter and contain lowercase letters, numbers, or underscores"},
+		}
 	}
 	return nil
 }
@@ -84,7 +86,10 @@ func ValidateContentType(field string, contentType string) []Violation {
 	if _, _, err := mime.ParseMediaType(value); err != nil {
 		return []Violation{{Field: field, Message: "must be a valid media type"}}
 	}
-	if slices.Contains([]string{"image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf", "text/plain", "application/json"}, value) {
+	if slices.Contains(
+		[]string{"image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf", "text/plain", "application/json"},
+		value,
+	) {
 		return nil
 	}
 	return []Violation{{Field: field, Message: "is not supported"}}

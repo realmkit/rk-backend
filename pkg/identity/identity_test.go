@@ -4,7 +4,16 @@ import "testing"
 
 // TestFromClaimsMapsProviderData verifies provider claims normalize into identity data.
 func TestFromClaimsMapsProviderData(t *testing.T) {
-	claims := map[string]any{"iss": "https://auth.example", "sub": "subject", "preferred_username": "ian", "email": "ian@example.com", "email_verified": true, "name": "Ian", "picture": "https://cdn.example/avatar.png", "locale": "en"}
+	claims := map[string]any{
+		"iss":                "https://auth.example",
+		"sub":                "subject",
+		"preferred_username": "ian",
+		"email":              "ian@example.com",
+		"email_verified":     true,
+		"name":               "Ian",
+		"picture":            "https://cdn.example/avatar.png",
+		"locale":             "en",
+	}
 
 	identity, err := FromClaims(claims)
 	if err != nil {

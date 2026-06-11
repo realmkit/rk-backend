@@ -1,3 +1,4 @@
+// Package postgres contains GORM repositories for groups and permissions.
 package postgres
 
 import (

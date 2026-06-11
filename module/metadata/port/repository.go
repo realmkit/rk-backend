@@ -20,7 +20,12 @@ type MetafieldDefinitionRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (domain.MetafieldDefinition, error)
 
 	// FindByKey returns one definition by owner type, namespace, and key.
-	FindByKey(ctx context.Context, ownerType domain.OwnerType, namespace domain.Namespace, key domain.Key) (domain.MetafieldDefinition, error)
+	FindByKey(
+		ctx context.Context,
+		ownerType domain.OwnerType,
+		namespace domain.Namespace,
+		key domain.Key,
+	) (domain.MetafieldDefinition, error)
 
 	// List returns definitions matching filter.
 	List(ctx context.Context, filter DefinitionFilter, page pagination.Page) (pagination.Result[domain.MetafieldDefinition], error)
@@ -62,7 +67,11 @@ type MetaobjectDefinitionRepository interface {
 	FindByType(ctx context.Context, objectType domain.MetaobjectType) (domain.MetaobjectDefinition, error)
 
 	// List returns definitions matching filter.
-	List(ctx context.Context, filter MetaobjectDefinitionFilter, page pagination.Page) (pagination.Result[domain.MetaobjectDefinition], error)
+	List(
+		ctx context.Context,
+		filter MetaobjectDefinitionFilter,
+		page pagination.Page,
+	) (pagination.Result[domain.MetaobjectDefinition], error)
 
 	// Archive soft deletes definition.
 	Archive(ctx context.Context, id uuid.UUID, expectedVersion uint64) error

@@ -148,8 +148,21 @@ func (repo *memoryCron) ClaimDue(_ context.Context, workerID string, now time.Ti
 }
 
 // StartRun creates a run.
-func (repo *memoryCron) StartRun(_ context.Context, definition domain.Definition, trigger domain.TriggerType, workerID string, now time.Time) (domain.Run, error) {
-	run := domain.Run{ID: uuid.New(), JobKey: definition.Key, Status: domain.RunRunning, TriggerType: trigger, WorkerID: workerID, StartedAt: now}
+func (repo *memoryCron) StartRun(
+	_ context.Context,
+	definition domain.Definition,
+	trigger domain.TriggerType,
+	workerID string,
+	now time.Time,
+) (domain.Run, error) {
+	run := domain.Run{
+		ID:          uuid.New(),
+		JobKey:      definition.Key,
+		Status:      domain.RunRunning,
+		TriggerType: trigger,
+		WorkerID:    workerID,
+		StartedAt:   now,
+	}
 	repo.runs = append(repo.runs, run)
 	return run, nil
 }

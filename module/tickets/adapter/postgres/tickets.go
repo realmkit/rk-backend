@@ -23,7 +23,12 @@ func NewTicketRepository(store orm.Store) TicketRepository {
 }
 
 // Create stores one ticket with its opener and initial evidence.
-func (repository TicketRepository) Create(ctx context.Context, ticket domain.Ticket, opener domain.Message, evidence []domain.Evidence) (domain.Ticket, error) {
+func (repository TicketRepository) Create(
+	ctx context.Context,
+	ticket domain.Ticket,
+	opener domain.Message,
+	evidence []domain.Evidence,
+) (domain.Ticket, error) {
 	db := repository.store.DB(ctx)
 	model := ticketModel(ticket.Normalize())
 	opener.Sequence = 1
@@ -78,7 +83,11 @@ func (repository TicketRepository) FindByIdempotencyKey(ctx context.Context, key
 }
 
 // List returns a filtered ticket page.
-func (repository TicketRepository) List(ctx context.Context, filter port.TicketFilter, page pagination.Page) (pagination.Result[domain.Ticket], error) {
+func (repository TicketRepository) List(
+	ctx context.Context,
+	filter port.TicketFilter,
+	page pagination.Page,
+) (pagination.Result[domain.Ticket], error) {
 	query := repository.store.DB(ctx).Model(&TicketModel{}).
 		Order("updated_at desc, id desc").Limit(page.Limit + 1)
 	query = ticketFilter(query, filter)

@@ -44,7 +44,11 @@ func (repo *definitionRepo) FindByID(_ context.Context, id uuid.UUID) (domain.De
 }
 
 // List returns all definitions.
-func (repo *definitionRepo) List(_ context.Context, _ port.DefinitionFilter, _ pagination.Page) (pagination.Result[domain.Definition], error) {
+func (repo *definitionRepo) List(
+	_ context.Context,
+	_ port.DefinitionFilter,
+	_ pagination.Page,
+) (pagination.Result[domain.Definition], error) {
 	items := make([]domain.Definition, 0, len(repo.items))
 	for _, item := range repo.items {
 		items = append(items, item)
@@ -72,7 +76,12 @@ func newTicketRepo() *ticketRepo {
 }
 
 // Create stores one ticket graph.
-func (repo *ticketRepo) Create(_ context.Context, ticket domain.Ticket, opener domain.Message, evidence []domain.Evidence) (domain.Ticket, error) {
+func (repo *ticketRepo) Create(
+	_ context.Context,
+	ticket domain.Ticket,
+	opener domain.Message,
+	evidence []domain.Evidence,
+) (domain.Ticket, error) {
 	opener.Sequence = 1
 	repo.items[ticket.ID] = ticket
 	repo.messages[ticket.ID] = append(repo.messages[ticket.ID], opener)
@@ -126,7 +135,12 @@ func (repo *ticketRepo) AddMessage(_ context.Context, message domain.Message) (d
 }
 
 // ListMessages returns ticket messages.
-func (repo *ticketRepo) ListMessages(_ context.Context, id uuid.UUID, _ bool, _ pagination.Page) (pagination.Result[domain.Message], error) {
+func (repo *ticketRepo) ListMessages(
+	_ context.Context,
+	id uuid.UUID,
+	_ bool,
+	_ pagination.Page,
+) (pagination.Result[domain.Message], error) {
 	return pagination.Result[domain.Message]{Items: repo.messages[id]}, nil
 }
 

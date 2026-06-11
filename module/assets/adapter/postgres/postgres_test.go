@@ -38,7 +38,11 @@ func TestAssetRepositoryLifecycle(t *testing.T) {
 	if updated.Version != 2 || updated.DisplayName != "Updated Logo" {
 		t.Fatalf("updated = %+v, want version 2 and display name", updated)
 	}
-	list, err := repository.List(context.Background(), port.AssetFilter{Namespace: "community", PathPrefix: "brand"}, pagination.Page{Limit: 10})
+	list, err := repository.List(
+		context.Background(),
+		port.AssetFilter{Namespace: "community", PathPrefix: "brand"},
+		pagination.Page{Limit: 10},
+	)
 	if err != nil {
 		t.Fatalf("List() error = %v", err)
 	}

@@ -82,7 +82,10 @@ func (handler handler) updateCurrentUser(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	user, err := handler.services.Users.UpdateCurrent(ctx.Context(), userport.UpdateCurrentCommand{UserID: current.UserID, AvatarAssetID: request.AvatarAssetID, ExpectedVersion: version})
+	user, err := handler.services.Users.UpdateCurrent(
+		ctx.Context(),
+		userport.UpdateCurrentCommand{UserID: current.UserID, AvatarAssetID: request.AvatarAssetID, ExpectedVersion: version},
+	)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -97,5 +100,14 @@ func (handler handler) accountURL(ctx *fiber.Ctx) error {
 
 // claimsSummary maps claim cache to response summary.
 func claimsSummary(cache domain.ClaimCache) *claimCacheSummary {
-	return &claimCacheSummary{Username: cache.Username, Email: cache.Email, EmailVerified: cache.EmailVerified, DisplayName: cache.DisplayName, PictureURL: cache.PictureURL, PreferredLocale: cache.PreferredLocale, ClaimsHash: cache.ClaimsHash, SyncedAt: cache.SyncedAt}
+	return &claimCacheSummary{
+		Username:        cache.Username,
+		Email:           cache.Email,
+		EmailVerified:   cache.EmailVerified,
+		DisplayName:     cache.DisplayName,
+		PictureURL:      cache.PictureURL,
+		PreferredLocale: cache.PreferredLocale,
+		ClaimsHash:      cache.ClaimsHash,
+		SyncedAt:        cache.SyncedAt,
+	}
 }

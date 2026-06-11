@@ -23,7 +23,10 @@ func NewMetafieldDefinitionRepository(store orm.Store) MetafieldDefinitionReposi
 }
 
 // Create stores definition.
-func (repository MetafieldDefinitionRepository) Create(ctx context.Context, definition domain.MetafieldDefinition) (domain.MetafieldDefinition, error) {
+func (repository MetafieldDefinitionRepository) Create(
+	ctx context.Context,
+	definition domain.MetafieldDefinition,
+) (domain.MetafieldDefinition, error) {
 	if _, err := repository.FindByKey(ctx, definition.OwnerType, definition.Namespace, definition.Key); err == nil {
 		return domain.MetafieldDefinition{}, port.ErrConflict
 	} else if !errors.Is(err, port.ErrNotFound) {
@@ -40,17 +43,24 @@ func (repository MetafieldDefinitionRepository) Create(ctx context.Context, defi
 }
 
 // Update stores mutable definition changes.
-func (repository MetafieldDefinitionRepository) Update(ctx context.Context, definition domain.MetafieldDefinition, expectedVersion uint64) (domain.MetafieldDefinition, error) {
+func (repository MetafieldDefinitionRepository) Update(
+	ctx context.Context,
+	definition domain.MetafieldDefinition,
+	expectedVersion uint64,
+) (domain.MetafieldDefinition, error) {
 	model := definitionModelFromDomain(definition)
-	result := repository.store.DB(ctx).Model(&MetafieldDefinitionModel{}).Where("id = ? AND version = ?", definition.ID, expectedVersion).Updates(map[string]any{
-		"name":        model.Name,
-		"description": model.Description,
-		"is_required": model.Required,
-		"rules":       model.Rules,
-		"sort_order":  model.SortOrder,
-		"active":      model.Active,
-		"version":     expectedVersion + 1,
-	})
+	result := repository.store.DB(ctx).
+		Model(&MetafieldDefinitionModel{}).
+		Where("id = ? AND version = ?", definition.ID, expectedVersion).
+		Updates(map[string]any{
+			"name":        model.Name,
+			"description": model.Description,
+			"is_required": model.Required,
+			"rules":       model.Rules,
+			"sort_order":  model.SortOrder,
+			"active":      model.Active,
+			"version":     expectedVersion + 1,
+		})
 	if result.Error != nil {
 		return domain.MetafieldDefinition{}, result.Error
 	}
@@ -70,7 +80,12 @@ func (repository MetafieldDefinitionRepository) FindByID(ctx context.Context, id
 }
 
 // FindByKey returns one definition by owner type, namespace, and key.
-func (repository MetafieldDefinitionRepository) FindByKey(ctx context.Context, ownerType domain.OwnerType, namespace domain.Namespace, key domain.Key) (domain.MetafieldDefinition, error) {
+func (repository MetafieldDefinitionRepository) FindByKey(
+	ctx context.Context,
+	ownerType domain.OwnerType,
+	namespace domain.Namespace,
+	key domain.Key,
+) (domain.MetafieldDefinition, error) {
 	var model MetafieldDefinitionModel
 	err := repository.store.DB(ctx).First(&model, "owner_type = ? AND namespace = ? AND key = ?", ownerType, namespace, key).Error
 	if err != nil {
@@ -80,7 +95,11 @@ func (repository MetafieldDefinitionRepository) FindByKey(ctx context.Context, o
 }
 
 // List returns definitions matching filter.
-func (repository MetafieldDefinitionRepository) List(ctx context.Context, filter port.DefinitionFilter, page pagination.Page) (pagination.Result[domain.MetafieldDefinition], error) {
+func (repository MetafieldDefinitionRepository) List(
+	ctx context.Context,
+	filter port.DefinitionFilter,
+	page pagination.Page,
+) (pagination.Result[domain.MetafieldDefinition], error) {
 	query := repository.store.DB(ctx).Model(&MetafieldDefinitionModel{}).Order("sort_order asc, created_at asc").Limit(page.Limit + 1)
 	query = applyDefinitionFilter(query, filter)
 	var models []MetafieldDefinitionModel

@@ -24,31 +24,19 @@ import (
 	userpostgres "github.com/niflaot/gamehub-go/module/user/adapter/postgres"
 	userapp "github.com/niflaot/gamehub-go/module/user/application"
 	"github.com/niflaot/gamehub-go/pkg/config"
-	cronhttp "github.com/niflaot/gamehub-go/pkg/cronjob/adapter/http"
 	cronpostgres "github.com/niflaot/gamehub-go/pkg/cronjob/adapter/postgres"
 	cronapp "github.com/niflaot/gamehub-go/pkg/cronjob/application"
 	cronDomain "github.com/niflaot/gamehub-go/pkg/cronjob/domain"
 	cronport "github.com/niflaot/gamehub-go/pkg/cronjob/port"
-	eventshttp "github.com/niflaot/gamehub-go/pkg/events/adapter/http"
 	eventspostgres "github.com/niflaot/gamehub-go/pkg/events/adapter/postgres"
 	eventsredis "github.com/niflaot/gamehub-go/pkg/events/adapter/redis"
 	eventsapp "github.com/niflaot/gamehub-go/pkg/events/application"
 	eventsport "github.com/niflaot/gamehub-go/pkg/events/port"
 	"github.com/niflaot/gamehub-go/pkg/orm"
-	"github.com/niflaot/gamehub-go/pkg/server"
 	"github.com/niflaot/gamehub-go/pkg/transaction"
 	goredis "github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
-
-// infrastructureOptions creates server options for shared infrastructure.
-func infrastructureOptions(_ context.Context, db *gorm.DB, events eventsapp.Service, hub *eventshttp.Hub, forums forumsapp.Service, punishments punishmentsapp.Service, tickets ticketOperations) ([]server.Option, error) {
-	cron := cronService(db, events, forums, punishments, tickets)
-	return []server.Option{
-		server.WithEvents(eventshttp.Services{Events: events, Hub: hub}),
-		server.WithCron(cronhttp.Services{Cron: cron}),
-	}, nil
-}
 
 // forumsService creates forums application service.
 func forumsService(
@@ -169,16 +157,26 @@ func eventsService(db *gorm.DB, client *goredis.Client, broker eventsport.Broker
 }
 
 // cronService creates the cron application service.
-func cronService(db *gorm.DB, events eventsapp.Service, forums forumsapp.Service, punishments punishmentsapp.Service, tickets ticketOperations) cronapp.Service {
+func cronService(
+	db *gorm.DB,
+	events eventsapp.Service,
+	forums forumsapp.Service,
+	punishments punishmentsapp.Service,
+	tickets ticketOperations,
+) cronapp.Service {
 	handlers := map[string]cronport.Handler{
-		cronDomain.JobEventsDispatchPending: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
-			result, err := events.DispatchOnce(ctx, "cron-events-dispatch")
-			return cronDomain.Result{ProcessedCount: int64(result.Processed)}, err
-		}),
-		cronDomain.JobForumsFlushThreadViews: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
-			count, err := forums.FlushThreadViews(ctx)
-			return cronDomain.Result{ProcessedCount: count, ChangedCount: count}, err
-		}),
+		cronDomain.JobEventsDispatchPending: cronport.HandlerFunc(
+			func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+				result, err := events.DispatchOnce(ctx, "cron-events-dispatch")
+				return cronDomain.Result{ProcessedCount: int64(result.Processed)}, err
+			},
+		),
+		cronDomain.JobForumsFlushThreadViews: cronport.HandlerFunc(
+			func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+				count, err := forums.FlushThreadViews(ctx)
+				return cronDomain.Result{ProcessedCount: count, ChangedCount: count}, err
+			},
+		),
 		cronDomain.JobForumsVerifyStats: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
 			report, err := forums.VerifyStats(ctx)
 			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches))}, err
@@ -187,22 +185,30 @@ func cronService(db *gorm.DB, events eventsapp.Service, forums forumsapp.Service
 			report, err := forums.VerifyLikes(ctx)
 			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches))}, err
 		}),
-		cronDomain.JobPunishmentsExpireActive: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
-			count, err := punishments.ExpirePunishments(ctx)
-			return cronDomain.Result{ProcessedCount: count, ChangedCount: count}, err
-		}),
-		cronDomain.JobPunishmentsVerifyRestrictions: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
-			report, err := punishments.VerifyRestrictions(ctx)
-			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches))}, err
-		}),
-		cronDomain.JobPunishmentsRebuildRestrictions: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
-			report, err := punishments.RebuildRestrictions(ctx)
-			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches)), ChangedCount: int64(len(report.Mismatches))}, err
-		}),
-		cronDomain.JobTicketsDetectSLABreaches: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
-			count, err := tickets.DetectSLABreaches(ctx)
-			return cronDomain.Result{ProcessedCount: count}, err
-		}),
+		cronDomain.JobPunishmentsExpireActive: cronport.HandlerFunc(
+			func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+				count, err := punishments.ExpirePunishments(ctx)
+				return cronDomain.Result{ProcessedCount: count, ChangedCount: count}, err
+			},
+		),
+		cronDomain.JobPunishmentsVerifyRestrictions: cronport.HandlerFunc(
+			func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+				report, err := punishments.VerifyRestrictions(ctx)
+				return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches))}, err
+			},
+		),
+		cronDomain.JobPunishmentsRebuildRestrictions: cronport.HandlerFunc(
+			func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+				report, err := punishments.RebuildRestrictions(ctx)
+				return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches)), ChangedCount: int64(len(report.Mismatches))}, err
+			},
+		),
+		cronDomain.JobTicketsDetectSLABreaches: cronport.HandlerFunc(
+			func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+				count, err := tickets.DetectSLABreaches(ctx)
+				return cronDomain.Result{ProcessedCount: count}, err
+			},
+		),
 		cronDomain.JobTicketsCloseStale: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
 			count, err := tickets.CloseStaleTickets(ctx)
 			return cronDomain.Result{ProcessedCount: count, ChangedCount: count}, err
@@ -211,10 +217,12 @@ func cronService(db *gorm.DB, events eventsapp.Service, forums forumsapp.Service
 			report, err := tickets.VerifyStats(ctx)
 			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches))}, err
 		}),
-		cronDomain.JobTicketsRebuildStats: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
-			report, err := tickets.RebuildStats(ctx)
-			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches)), ChangedCount: int64(len(report.Mismatches))}, err
-		}),
+		cronDomain.JobTicketsRebuildStats: cronport.HandlerFunc(
+			func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+				report, err := tickets.RebuildStats(ctx)
+				return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches)), ChangedCount: int64(len(report.Mismatches))}, err
+			},
+		),
 		cronDomain.JobAssetsExpireUploadIntents:  noopHandler(),
 		cronDomain.JobUsersCleanupIdentityClaims: noopHandler(),
 	}

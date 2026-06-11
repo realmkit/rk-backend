@@ -41,11 +41,28 @@ func TestGroupRoutesExerciseLifecycle(t *testing.T) {
 		status int
 		header map[string]string
 	}{
-		{method: http.MethodPost, path: "/groups", body: `{"key":"admin","name":"Admin","color":"#ff0000","weight":100,"status":"active"}`, status: fiber.StatusCreated, header: map[string]string{headers.IdempotencyKey: "create"}},
+		{
+			method: http.MethodPost,
+			path:   "/groups",
+			body:   `{"key":"admin","name":"Admin","color":"#ff0000","weight":100,"status":"active"}`,
+			status: fiber.StatusCreated,
+			header: map[string]string{headers.IdempotencyKey: "create"},
+		},
 		{method: http.MethodGet, path: "/groups", status: fiber.StatusOK},
 		{method: http.MethodGet, path: "/groups/" + group.ID.String(), status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/groups/" + group.ID.String(), body: `{"name":"Admin","color":"#ff0000","weight":100,"status":"active"}`, status: fiber.StatusOK, header: map[string]string{headers.IdempotencyKey: "update", headers.IfMatch: `"1"`}},
-		{method: http.MethodDelete, path: "/groups/" + group.ID.String(), status: fiber.StatusNoContent, header: map[string]string{headers.IdempotencyKey: "delete", headers.IfMatch: `"1"`}},
+		{
+			method: http.MethodPatch,
+			path:   "/groups/" + group.ID.String(),
+			body:   `{"name":"Admin","color":"#ff0000","weight":100,"status":"active"}`,
+			status: fiber.StatusOK,
+			header: map[string]string{headers.IdempotencyKey: "update", headers.IfMatch: `"1"`},
+		},
+		{
+			method: http.MethodDelete,
+			path:   "/groups/" + group.ID.String(),
+			status: fiber.StatusNoContent,
+			header: map[string]string{headers.IdempotencyKey: "delete", headers.IfMatch: `"1"`},
+		},
 	}
 	for _, tt := range cases {
 		req := testRequest(tt.method, tt.path, tt.body)
@@ -66,7 +83,11 @@ func TestGroupRoutesExerciseLifecycle(t *testing.T) {
 func TestMembershipAndPermissionRoutes(t *testing.T) {
 	group := testHTTPGroup()
 	userID := uuid.New()
-	service := &httpService{group: group, membership: domain.Membership{ID: uuid.New(), GroupID: group.ID, UserID: userID, Status: domain.MembershipStatusActive, Version: 1}, decision: port.Decision{Allowed: true, Reason: "matched_relation"}}
+	service := &httpService{
+		group:      group,
+		membership: domain.Membership{ID: uuid.New(), GroupID: group.ID, UserID: userID, Status: domain.MembershipStatusActive, Version: 1},
+		decision:   port.Decision{Allowed: true, Reason: "matched_relation"},
+	}
 	app := testApp(service)
 	cases := []struct {
 		method string
@@ -76,11 +97,32 @@ func TestMembershipAndPermissionRoutes(t *testing.T) {
 		header map[string]string
 	}{
 		{method: http.MethodGet, path: "/groups/" + group.ID.String() + "/members", status: fiber.StatusOK},
-		{method: http.MethodPut, path: "/groups/" + group.ID.String() + "/members/" + userID.String(), body: `{"status":"active"}`, status: fiber.StatusOK, header: map[string]string{headers.IdempotencyKey: "assign"}},
-		{method: http.MethodDelete, path: "/groups/" + group.ID.String() + "/members/" + userID.String(), status: fiber.StatusNoContent, header: map[string]string{headers.IdempotencyKey: "remove", headers.IfMatch: `"1"`}},
+		{
+			method: http.MethodPut,
+			path:   "/groups/" + group.ID.String() + "/members/" + userID.String(),
+			body:   `{"status":"active"}`,
+			status: fiber.StatusOK,
+			header: map[string]string{headers.IdempotencyKey: "assign"},
+		},
+		{
+			method: http.MethodDelete,
+			path:   "/groups/" + group.ID.String() + "/members/" + userID.String(),
+			status: fiber.StatusNoContent,
+			header: map[string]string{headers.IdempotencyKey: "remove", headers.IfMatch: `"1"`},
+		},
 		{method: http.MethodGet, path: "/users/" + userID.String() + "/groups", status: fiber.StatusOK},
-		{method: http.MethodGet, path: "/users/me/groups", status: fiber.StatusOK, header: map[string]string{currentUserIDHeader: userID.String()}},
-		{method: http.MethodPost, path: "/permissions/check", body: `{"actor_user_id":"` + userID.String() + `","permission":"groups.read","object_type":"group","object_id":"` + group.ID.String() + `"}`, status: fiber.StatusOK},
+		{
+			method: http.MethodGet,
+			path:   "/users/me/groups",
+			status: fiber.StatusOK,
+			header: map[string]string{currentUserIDHeader: userID.String()},
+		},
+		{
+			method: http.MethodPost,
+			path:   "/permissions/check",
+			body:   `{"actor_user_id":"` + userID.String() + `","permission":"groups.read","object_type":"group","object_id":"` + group.ID.String() + `"}`,
+			status: fiber.StatusOK,
+		},
 	}
 	for _, tt := range cases {
 		req := testRequest(tt.method, tt.path, tt.body)
@@ -133,7 +175,15 @@ func testRequest(method string, target string, body string) *http.Request {
 
 // testHTTPGroup returns an HTTP test group.
 func testHTTPGroup() domain.Group {
-	return domain.Group{ID: uuid.MustParse("11111111-1111-1111-1111-111111111111"), Key: "admin", Name: "Admin", Color: "#ff0000", Weight: 100, Status: domain.GroupStatusActive, Version: 1}
+	return domain.Group{
+		ID:      uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+		Key:     "admin",
+		Name:    "Admin",
+		Color:   "#ff0000",
+		Weight:  100,
+		Status:  domain.GroupStatusActive,
+		Version: 1,
+	}
 }
 
 // httpService is a fake groups service.

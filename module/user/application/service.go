@@ -101,7 +101,15 @@ func (service Service) UpdateCurrent(ctx context.Context, command port.UpdateCur
 
 // principalFor returns an authenticated principal for user and identity.
 func (service Service) principalFor(user domain.User, link domain.IdentityLink, token auth.Token, development bool) principal.Principal {
-	return principal.Principal{UserID: user.ID, Issuer: link.Issuer, Subject: link.Subject, SubjectHash: link.SubjectHash, Audience: token.Audience, Scopes: token.Scopes, DevelopmentBypass: development}
+	return principal.Principal{
+		UserID:            user.ID,
+		Issuer:            link.Issuer,
+		Subject:           link.Subject,
+		SubjectHash:       link.SubjectHash,
+		Audience:          token.Audience,
+		Scopes:            token.Scopes,
+		DevelopmentBypass: development,
+	}
 }
 
 // disabledError returns an auth-aware disabled user error.

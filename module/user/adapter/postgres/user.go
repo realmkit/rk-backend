@@ -33,7 +33,10 @@ func (repository UserRepository) Create(ctx context.Context, user domain.User) (
 
 // Update stores mutable user fields.
 func (repository UserRepository) Update(ctx context.Context, user domain.User, expectedVersion uint64) (domain.User, error) {
-	result := repository.store.DB(ctx).Model(&UserModel{}).Where("id = ? AND version = ?", user.ID, expectedVersion).Updates(map[string]any{"avatar_asset_id": user.AvatarAssetID, "version": expectedVersion + 1})
+	result := repository.store.DB(ctx).
+		Model(&UserModel{}).
+		Where("id = ? AND version = ?", user.ID, expectedVersion).
+		Updates(map[string]any{"avatar_asset_id": user.AvatarAssetID, "version": expectedVersion + 1})
 	if result.Error != nil {
 		return domain.User{}, result.Error
 	}

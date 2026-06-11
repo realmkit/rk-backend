@@ -81,7 +81,14 @@ func (handler handler) createUploadIntent(ctx *fiber.Ctx) error {
 		return handleError(ctx, err)
 	}
 	setETag(ctx, intent.Asset.Version)
-	return writeJSON(ctx, fiber.StatusCreated, uploadIntentResponse{Asset: intent.Asset, UploadURL: uploadURLResponse{Method: intent.Method, URL: intent.URL, Headers: intent.Headers, ExpiresAt: intent.ExpiresAt}})
+	return writeJSON(
+		ctx,
+		fiber.StatusCreated,
+		uploadIntentResponse{
+			Asset:     intent.Asset,
+			UploadURL: uploadURLResponse{Method: intent.Method, URL: intent.URL, Headers: intent.Headers, ExpiresAt: intent.ExpiresAt},
+		},
+	)
 }
 
 // completeUpload completes an upload intent.
@@ -168,7 +175,16 @@ func (handler handler) updateAsset(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	asset, err := handler.services.Assets.Update(ctx.Context(), port.UpdateAssetCommand{ID: id, DisplayName: request.DisplayName, Path: request.Path, Visibility: request.Visibility, ExpectedVersion: version})
+	asset, err := handler.services.Assets.Update(
+		ctx.Context(),
+		port.UpdateAssetCommand{
+			ID:              id,
+			DisplayName:     request.DisplayName,
+			Path:            request.Path,
+			Visibility:      request.Visibility,
+			ExpectedVersion: version,
+		},
+	)
 	if err != nil {
 		return handleError(ctx, err)
 	}

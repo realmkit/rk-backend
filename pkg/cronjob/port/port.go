@@ -59,7 +59,13 @@ type Repository interface {
 	ClaimDue(ctx context.Context, workerID string, now time.Time, lockUntil time.Time) (domain.Definition, bool, error)
 
 	// StartRun creates a running run record.
-	StartRun(ctx context.Context, definition domain.Definition, trigger domain.TriggerType, workerID string, now time.Time) (domain.Run, error)
+	StartRun(
+		ctx context.Context,
+		definition domain.Definition,
+		trigger domain.TriggerType,
+		workerID string,
+		now time.Time,
+	) (domain.Run, error)
 
 	// CompleteRun marks a run complete and advances definition.
 	CompleteRun(ctx context.Context, run domain.Run, result domain.Result, now time.Time, nextRunAt *time.Time) error

@@ -21,9 +21,16 @@ func NewMetafieldValueRepository(store orm.Store) MetafieldValueRepository {
 }
 
 // Upsert creates or updates value.
-func (repository MetafieldValueRepository) Upsert(ctx context.Context, value domain.MetafieldValue, expectedVersion *uint64) (domain.MetafieldValue, bool, error) {
+func (repository MetafieldValueRepository) Upsert(
+	ctx context.Context,
+	value domain.MetafieldValue,
+	expectedVersion *uint64,
+) (domain.MetafieldValue, bool, error) {
 	var current MetafieldValueModel
-	err := repository.store.DB(ctx).Where("definition_id = ? AND owner_type = ? AND owner_id = ?", value.DefinitionID, value.OwnerType, value.OwnerID).First(&current).Error
+	err := repository.store.DB(ctx).
+		Where("definition_id = ? AND owner_type = ? AND owner_id = ?", value.DefinitionID, value.OwnerType, value.OwnerID).
+		First(&current).
+		Error
 	if err == nil {
 		return repository.updateExisting(ctx, current, value, expectedVersion)
 	}
@@ -42,9 +49,16 @@ func (repository MetafieldValueRepository) Upsert(ctx context.Context, value dom
 }
 
 // Find returns one owner value.
-func (repository MetafieldValueRepository) Find(ctx context.Context, definitionID uuid.UUID, ownerType domain.OwnerType, ownerID uuid.UUID) (domain.MetafieldValue, error) {
+func (repository MetafieldValueRepository) Find(
+	ctx context.Context,
+	definitionID uuid.UUID,
+	ownerType domain.OwnerType,
+	ownerID uuid.UUID,
+) (domain.MetafieldValue, error) {
 	var model MetafieldValueModel
-	err := repository.store.DB(ctx).First(&model, "definition_id = ? AND owner_type = ? AND owner_id = ?", definitionID, ownerType, ownerID).Error
+	err := repository.store.DB(ctx).
+		First(&model, "definition_id = ? AND owner_type = ? AND owner_id = ?", definitionID, ownerType, ownerID).
+		Error
 	if err != nil {
 		return domain.MetafieldValue{}, mapError(err)
 	}
@@ -52,7 +66,11 @@ func (repository MetafieldValueRepository) Find(ctx context.Context, definitionI
 }
 
 // ListForOwner returns all values for owner.
-func (repository MetafieldValueRepository) ListForOwner(ctx context.Context, ownerType domain.OwnerType, ownerID uuid.UUID) ([]domain.MetafieldValue, error) {
+func (repository MetafieldValueRepository) ListForOwner(
+	ctx context.Context,
+	ownerType domain.OwnerType,
+	ownerID uuid.UUID,
+) ([]domain.MetafieldValue, error) {
 	var models []MetafieldValueModel
 	err := repository.store.DB(ctx).Find(&models, "owner_type = ? AND owner_id = ?", ownerType, ownerID).Error
 	if err != nil {
@@ -66,8 +84,16 @@ func (repository MetafieldValueRepository) ListForOwner(ctx context.Context, own
 }
 
 // Delete soft deletes one owner value.
-func (repository MetafieldValueRepository) Delete(ctx context.Context, definitionID uuid.UUID, ownerType domain.OwnerType, ownerID uuid.UUID, expectedVersion uint64) error {
-	result := repository.store.DB(ctx).Where("definition_id = ? AND owner_type = ? AND owner_id = ? AND version = ?", definitionID, ownerType, ownerID, expectedVersion).Delete(&MetafieldValueModel{})
+func (repository MetafieldValueRepository) Delete(
+	ctx context.Context,
+	definitionID uuid.UUID,
+	ownerType domain.OwnerType,
+	ownerID uuid.UUID,
+	expectedVersion uint64,
+) error {
+	result := repository.store.DB(ctx).
+		Where("definition_id = ? AND owner_type = ? AND owner_id = ? AND version = ?", definitionID, ownerType, ownerID, expectedVersion).
+		Delete(&MetafieldValueModel{})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -85,15 +111,23 @@ func (repository MetafieldValueRepository) CountByDefinition(ctx context.Context
 }
 
 // updateExisting updates a current value.
-func (repository MetafieldValueRepository) updateExisting(ctx context.Context, current MetafieldValueModel, value domain.MetafieldValue, expectedVersion *uint64) (domain.MetafieldValue, bool, error) {
+func (repository MetafieldValueRepository) updateExisting(
+	ctx context.Context,
+	current MetafieldValueModel,
+	value domain.MetafieldValue,
+	expectedVersion *uint64,
+) (domain.MetafieldValue, bool, error) {
 	if expectedVersion != nil && current.Version != *expectedVersion {
 		return domain.MetafieldValue{}, false, port.ErrPreconditionFailed
 	}
 	nextVersion := current.Version + 1
-	result := repository.store.DB(ctx).Model(&MetafieldValueModel{}).Where("id = ? AND version = ?", current.ID.ID, current.Version).Updates(map[string]any{
-		"value_json": JSON(value.Value),
-		"version":    nextVersion,
-	})
+	result := repository.store.DB(ctx).
+		Model(&MetafieldValueModel{}).
+		Where("id = ? AND version = ?", current.ID.ID, current.Version).
+		Updates(map[string]any{
+			"value_json": JSON(value.Value),
+			"version":    nextVersion,
+		})
 	if result.Error != nil {
 		return domain.MetafieldValue{}, false, result.Error
 	}

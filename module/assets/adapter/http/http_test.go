@@ -36,7 +36,11 @@ func TestCreateUploadIntentRequiresIdempotency(t *testing.T) {
 func TestCreateUploadIntentReturnsCreated(t *testing.T) {
 	service := &httpService{asset: testHTTPAsset()}
 	app := testApp(service)
-	req := httptestRequest(http.MethodPost, "/assets/upload-intents", `{"namespace":"community","path":"brand","filename":"logo.png","visibility":"public","content_type":"image/png","size_bytes":512}`)
+	req := httptestRequest(
+		http.MethodPost,
+		"/assets/upload-intents",
+		`{"namespace":"community","path":"brand","filename":"logo.png","visibility":"public","content_type":"image/png","size_bytes":512}`,
+	)
 	req.Header.Set(headers.IdempotencyKey, "intent-key")
 
 	resp, err := app.Test(req)
@@ -54,7 +58,11 @@ func TestCreateUploadIntentReturnsCreated(t *testing.T) {
 // TestUpdateAssetRequiresIfMatch verifies optimistic concurrency header is required.
 func TestUpdateAssetRequiresIfMatch(t *testing.T) {
 	app := testApp(&httpService{asset: testHTTPAsset()})
-	req := httptestRequest(http.MethodPatch, "/assets/"+testHTTPAsset().ID.String(), `{"display_name":"Logo","path":"brand","visibility":"public"}`)
+	req := httptestRequest(
+		http.MethodPatch,
+		"/assets/"+testHTTPAsset().ID.String(),
+		`{"display_name":"Logo","path":"brand","visibility":"public"}`,
+	)
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -109,12 +117,36 @@ func TestAssetRoutesExerciseReadAndMutationPaths(t *testing.T) {
 		status int
 		header map[string]string
 	}{
-		{name: "complete", method: http.MethodPost, path: "/assets/" + asset.ID.String() + "/complete", status: fiber.StatusOK, header: map[string]string{headers.IdempotencyKey: "complete-key"}},
+		{
+			name:   "complete",
+			method: http.MethodPost,
+			path:   "/assets/" + asset.ID.String() + "/complete",
+			status: fiber.StatusOK,
+			header: map[string]string{headers.IdempotencyKey: "complete-key"},
+		},
 		{name: "get", method: http.MethodGet, path: "/assets/" + asset.ID.String(), status: fiber.StatusOK},
 		{name: "url", method: http.MethodGet, path: "/assets/" + asset.ID.String() + "/url", status: fiber.StatusOK},
-		{name: "list", method: http.MethodGet, path: "/assets?namespace=community&path=brand&path_prefix=brand&status=available&page_size=10", status: fiber.StatusOK},
-		{name: "update", method: http.MethodPatch, path: "/assets/" + asset.ID.String(), body: `{"display_name":"Logo","path":"brand","visibility":"public"}`, status: fiber.StatusOK, header: map[string]string{headers.IfMatch: `"1"`}},
-		{name: "delete", method: http.MethodDelete, path: "/assets/" + asset.ID.String(), status: fiber.StatusNoContent, header: map[string]string{headers.IfMatch: `"1"`}},
+		{
+			name:   "list",
+			method: http.MethodGet,
+			path:   "/assets?namespace=community&path=brand&path_prefix=brand&status=available&page_size=10",
+			status: fiber.StatusOK,
+		},
+		{
+			name:   "update",
+			method: http.MethodPatch,
+			path:   "/assets/" + asset.ID.String(),
+			body:   `{"display_name":"Logo","path":"brand","visibility":"public"}`,
+			status: fiber.StatusOK,
+			header: map[string]string{headers.IfMatch: `"1"`},
+		},
+		{
+			name:   "delete",
+			method: http.MethodDelete,
+			path:   "/assets/" + asset.ID.String(),
+			status: fiber.StatusNoContent,
+			header: map[string]string{headers.IfMatch: `"1"`},
+		},
 	}
 	for _, tt := range cases {
 		req := httptestRequest(tt.method, tt.path, tt.body)
@@ -154,7 +186,20 @@ func httptestRequest(method string, target string, body string) *http.Request {
 
 // testHTTPAsset returns an HTTP test asset.
 func testHTTPAsset() domain.Asset {
-	return domain.Asset{ID: uuid.MustParse("11111111-1111-1111-1111-111111111111"), Namespace: "community", Path: "brand", Filename: "logo.png", DisplayName: "Logo", Visibility: domain.VisibilityPublic, Status: domain.StatusAvailable, StorageKey: "assets/logo.png", Bucket: "gamehub-assets", ContentType: "image/png", SizeBytes: 512, Version: 1}
+	return domain.Asset{
+		ID:          uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+		Namespace:   "community",
+		Path:        "brand",
+		Filename:    "logo.png",
+		DisplayName: "Logo",
+		Visibility:  domain.VisibilityPublic,
+		Status:      domain.StatusAvailable,
+		StorageKey:  "assets/logo.png",
+		Bucket:      "gamehub-assets",
+		ContentType: "image/png",
+		SizeBytes:   512,
+		Version:     1,
+	}
 }
 
 // httpService is a fake assets service.

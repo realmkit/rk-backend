@@ -116,7 +116,10 @@ func (service Service) GetDefinition(ctx context.Context, query port.GetDefiniti
 }
 
 // ListDefinitions returns metafield definitions.
-func (service Service) ListDefinitions(ctx context.Context, query port.ListDefinitionsQuery) (pagination.Result[port.DefinitionView], error) {
+func (service Service) ListDefinitions(
+	ctx context.Context,
+	query port.ListDefinitionsQuery,
+) (pagination.Result[port.DefinitionView], error) {
 	if err := service.ensureDependencies(); err != nil {
 		return pagination.Result[port.DefinitionView]{}, err
 	}

@@ -57,3 +57,22 @@ func decisionError(allowed bool, err error) error {
 	}
 	return nil
 }
+
+// requireUnrestricted verifies punishment restrictions do not block the action.
+func (service Service) requireUnrestricted(
+	ctx context.Context,
+	actorUserID uuid.UUID,
+	actionKey string,
+) error {
+	if service.restrictions == nil || actorUserID == uuid.Nil {
+		return nil
+	}
+	restricted, err := service.restrictions.Restricted(ctx, actorUserID, actionKey)
+	if err != nil {
+		return err
+	}
+	if restricted {
+		return port.ErrForbidden
+	}
+	return nil
+}

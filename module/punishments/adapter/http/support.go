@@ -49,11 +49,17 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	case errors.Is(err, port.ErrNotFound):
 		return problem.Write(ctx, problem.New(fiber.StatusNotFound, "punishment_not_found", "Punishment resource was not found."))
 	case errors.Is(err, port.ErrPreconditionFailed):
-		return problem.Write(ctx, problem.New(fiber.StatusPreconditionFailed, "punishment_precondition_failed", "Punishment version did not match."))
+		return problem.Write(
+			ctx,
+			problem.New(fiber.StatusPreconditionFailed, "punishment_precondition_failed", "Punishment version did not match."),
+		)
 	case errors.Is(err, port.ErrConflict):
 		return problem.Write(ctx, problem.New(fiber.StatusConflict, "punishment_conflict", "Punishment conflicts with current state."))
 	case errors.Is(err, port.ErrForbidden):
-		return problem.Write(ctx, problem.New(fiber.StatusForbidden, "punishment_restricted", "Action is restricted by an active punishment."))
+		return problem.Write(
+			ctx,
+			problem.New(fiber.StatusForbidden, "punishment_restricted", "Action is restricted by an active punishment."),
+		)
 	default:
 		return err
 	}

@@ -50,11 +50,22 @@ func (service Service) DevelopmentPrincipal(ctx context.Context, userID uuid.UUI
 	if !user.CanAuthenticate() {
 		return principal.Principal{}, disabledError()
 	}
-	return principal.Principal{UserID: user.ID, Issuer: "gamehub-development", SubjectHash: "dev:" + user.ID.String(), Scopes: []string{"development"}, DevelopmentBypass: true}, nil
+	return principal.Principal{
+		UserID:            user.ID,
+		Issuer:            "gamehub-development",
+		SubjectHash:       "dev:" + user.ID.String(),
+		Scopes:            []string{"development"},
+		DevelopmentBypass: true,
+	}, nil
 }
 
 // provisionExisting updates last-seen and claim cache for an existing identity.
-func (service Service) provisionExisting(ctx context.Context, link domain.IdentityLink, external identity.ExternalIdentity, token auth.Token) (principal.Principal, error) {
+func (service Service) provisionExisting(
+	ctx context.Context,
+	link domain.IdentityLink,
+	external identity.ExternalIdentity,
+	token auth.Token,
+) (principal.Principal, error) {
 	user, err := service.users.FindByID(ctx, link.UserID)
 	if err != nil {
 		return principal.Principal{}, err
@@ -88,11 +99,25 @@ func (service Service) createProvisionedUser(
 	var createdLink domain.IdentityLink
 	err := service.transactions.WithinTx(ctx, func(ctx context.Context) error {
 		now := service.clock()
-		user, err := service.users.Create(ctx, domain.User{ID: uuid.New(), Status: domain.StatusActive, FirstSeenAt: now, LastSeenAt: &now, Version: 1})
+		user, err := service.users.Create(
+			ctx,
+			domain.User{ID: uuid.New(), Status: domain.StatusActive, FirstSeenAt: now, LastSeenAt: &now, Version: 1},
+		)
 		if err != nil {
 			return err
 		}
-		link := domain.IdentityLink{ID: uuid.New(), UserID: user.ID, Provider: service.provider, Issuer: external.Issuer, Subject: external.Subject, SubjectHash: identity.SubjectHash(external.Issuer, external.Subject), ClaimsHash: external.RawClaimsHash, LinkedAt: now, LastSeenAt: &now, LastSyncedAt: &now}
+		link := domain.IdentityLink{
+			ID:           uuid.New(),
+			UserID:       user.ID,
+			Provider:     service.provider,
+			Issuer:       external.Issuer,
+			Subject:      external.Subject,
+			SubjectHash:  identity.SubjectHash(external.Issuer, external.Subject),
+			ClaimsHash:   external.RawClaimsHash,
+			LinkedAt:     now,
+			LastSeenAt:   &now,
+			LastSyncedAt: &now,
+		}
 		if err := link.Validate(); err != nil {
 			return err
 		}
@@ -111,5 +136,18 @@ func (service Service) createProvisionedUser(
 
 // claimCacheFromExternal maps external identity to claim cache.
 func claimCacheFromExternal(userID uuid.UUID, external identity.ExternalIdentity, syncedAt time.Time) domain.ClaimCache {
-	return domain.ClaimCache{ID: uuid.New(), UserID: userID, Issuer: external.Issuer, Subject: external.Subject, Username: external.Username, Email: external.Email, EmailVerified: external.EmailVerified, DisplayName: external.DisplayName, PictureURL: external.PictureURL, PreferredLocale: external.PreferredLocale, ClaimsHash: external.RawClaimsHash, SyncedAt: syncedAt}
+	return domain.ClaimCache{
+		ID:              uuid.New(),
+		UserID:          userID,
+		Issuer:          external.Issuer,
+		Subject:         external.Subject,
+		Username:        external.Username,
+		Email:           external.Email,
+		EmailVerified:   external.EmailVerified,
+		DisplayName:     external.DisplayName,
+		PictureURL:      external.PictureURL,
+		PreferredLocale: external.PreferredLocale,
+		ClaimsHash:      external.RawClaimsHash,
+		SyncedAt:        syncedAt,
+	}
 }

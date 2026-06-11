@@ -54,7 +54,10 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	case errors.Is(err, port.ErrDisabled):
 		return problem.Write(ctx, problem.New(fiber.StatusForbidden, "user_disabled", "User is disabled."))
 	case errors.Is(err, errAccountURLUnavailable):
-		return problem.Write(ctx, problem.New(fiber.StatusNotFound, "provider_account_url_unavailable", "Provider account URL is not configured."))
+		return problem.Write(
+			ctx,
+			problem.New(fiber.StatusNotFound, "provider_account_url_unavailable", "Provider account URL is not configured."),
+		)
 	default:
 		return err
 	}
@@ -68,7 +71,9 @@ func expectedVersion(ctx *fiber.Ctx) (uint64, error) {
 	}
 	version, err := strconv.ParseUint(value, 10, 64)
 	if err != nil {
-		return 0, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_if_match", "If-Match must contain a numeric version.")}
+		return 0, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_if_match", "If-Match must contain a numeric version."),
+		}
 	}
 	return version, nil
 }
@@ -76,7 +81,9 @@ func expectedVersion(ctx *fiber.Ctx) (uint64, error) {
 // requireIdempotency verifies Idempotency-Key is present.
 func requireIdempotency(ctx *fiber.Ctx) error {
 	if strings.TrimSpace(ctx.Get(headers.IdempotencyKey)) == "" {
-		return problem.Error{Problem: problem.New(fiber.StatusBadRequest, "idempotency_key_required", "Idempotency-Key header is required.")}
+		return problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "idempotency_key_required", "Idempotency-Key header is required."),
+		}
 	}
 	return nil
 }

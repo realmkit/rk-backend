@@ -54,7 +54,12 @@ func (repository Repository) ListDefinitions(ctx context.Context, page paginatio
 }
 
 // ClaimDue claims one due definition.
-func (repository Repository) ClaimDue(ctx context.Context, workerID string, now time.Time, lockUntil time.Time) (domain.Definition, bool, error) {
+func (repository Repository) ClaimDue(
+	ctx context.Context,
+	workerID string,
+	now time.Time,
+	lockUntil time.Time,
+) (domain.Definition, bool, error) {
 	var model DefinitionModel
 	db := repository.store.DB(ctx)
 	err := db.Clauses(clause.Locking{Strength: "UPDATE", Options: "SKIP LOCKED"}).
@@ -78,14 +83,26 @@ func (repository Repository) ClaimDue(ctx context.Context, workerID string, now 
 }
 
 // StartRun creates a running run.
-func (repository Repository) StartRun(ctx context.Context, definition domain.Definition, trigger domain.TriggerType, workerID string, now time.Time) (domain.Run, error) {
+func (repository Repository) StartRun(
+	ctx context.Context,
+	definition domain.Definition,
+	trigger domain.TriggerType,
+	workerID string,
+	now time.Time,
+) (domain.Run, error) {
 	model := runningModel(definition, trigger, workerID, now)
 	err := repository.store.DB(ctx).Create(&model).Error
 	return runFromModel(model), translate(err)
 }
 
 // CompleteRun marks a run complete and advances definition.
-func (repository Repository) CompleteRun(ctx context.Context, run domain.Run, result domain.Result, now time.Time, nextRunAt *time.Time) error {
+func (repository Repository) CompleteRun(
+	ctx context.Context,
+	run domain.Run,
+	result domain.Result,
+	now time.Time,
+	nextRunAt *time.Time,
+) error {
 	metadata, _ := json.Marshal(result.Metadata)
 	runUpdates := map[string]any{
 		"status": domain.RunSucceeded, "finished_at": now, "duration_ms": now.Sub(run.StartedAt).Milliseconds(),
@@ -148,8 +165,21 @@ func (repository Repository) RepairLocks(ctx context.Context, now time.Time) (in
 }
 
 // releaseDefinition updates definition state after a run.
-func (repository Repository) releaseDefinition(ctx context.Context, key string, status domain.RunStatus, now time.Time, nextRunAt *time.Time) error {
-	updates := map[string]any{"last_run_at": now, "last_status": status, "next_run_at": nextRunAt, "locked_by": "", "locked_until": nil, "updated_at": now}
+func (repository Repository) releaseDefinition(
+	ctx context.Context,
+	key string,
+	status domain.RunStatus,
+	now time.Time,
+	nextRunAt *time.Time,
+) error {
+	updates := map[string]any{
+		"last_run_at":  now,
+		"last_status":  status,
+		"next_run_at":  nextRunAt,
+		"locked_by":    "",
+		"locked_until": nil,
+		"updated_at":   now,
+	}
 	return translate(repository.store.DB(ctx).Model(&DefinitionModel{}).Where("key = ?", key).Updates(updates).Error)
 }
 

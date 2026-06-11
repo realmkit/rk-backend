@@ -67,20 +67,58 @@ func structureRoutes() []structureRoute {
 		{method: http.MethodPost, path: "/forum-categories", body: categoryBody, status: fiber.StatusCreated, idempotent: true},
 		{method: http.MethodGet, path: "/forum-categories", status: fiber.StatusOK},
 		{method: http.MethodGet, path: "/forum-categories/" + categoryID, status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/forum-categories/" + categoryID, body: categoryBody, status: fiber.StatusOK, idempotent: true, versioned: true},
-		{method: http.MethodDelete, path: "/forum-categories/" + categoryID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
+		{
+			method:     http.MethodPatch,
+			path:       "/forum-categories/" + categoryID,
+			body:       categoryBody,
+			status:     fiber.StatusOK,
+			idempotent: true,
+			versioned:  true,
+		},
+		{
+			method:     http.MethodDelete,
+			path:       "/forum-categories/" + categoryID,
+			status:     fiber.StatusNoContent,
+			idempotent: true,
+			versioned:  true,
+		},
 		{method: http.MethodPost, path: "/forum-categories/reorder", body: `{"items":[]}`, status: fiber.StatusNoContent, idempotent: true},
 		{method: http.MethodPost, path: "/forums", body: forumBody, status: fiber.StatusCreated, idempotent: true},
 		{method: http.MethodGet, path: "/forums", status: fiber.StatusOK},
 		{method: http.MethodGet, path: "/forums/" + forumID + "/settings", status: fiber.StatusOK},
-		{method: http.MethodPatch, path: "/forums/" + forumID + "/settings", body: settingsBody, status: fiber.StatusOK, idempotent: true, versioned: true},
+		{
+			method:     http.MethodPatch,
+			path:       "/forums/" + forumID + "/settings",
+			body:       settingsBody,
+			status:     fiber.StatusOK,
+			idempotent: true,
+			versioned:  true,
+		},
 		{method: http.MethodGet, path: "/forums/" + forumID + "/permissions", status: fiber.StatusOK},
-		{method: http.MethodPut, path: "/forums/" + forumID + "/permissions", body: permissionsBody, status: fiber.StatusNoContent, idempotent: true},
-		{method: http.MethodPost, path: "/forums/" + forumID + "/permissions/simulate", body: `{"permission":"forums.view","object_type":"forum"}`, status: fiber.StatusOK},
+		{
+			method:     http.MethodPut,
+			path:       "/forums/" + forumID + "/permissions",
+			body:       permissionsBody,
+			status:     fiber.StatusNoContent,
+			idempotent: true,
+		},
+		{
+			method: http.MethodPost,
+			path:   "/forums/" + forumID + "/permissions/simulate",
+			body:   `{"permission":"forums.view","object_type":"forum"}`,
+			status: fiber.StatusOK,
+		},
 		{method: http.MethodGet, path: "/forums/" + forumID, status: fiber.StatusOK},
 		{method: http.MethodPatch, path: "/forums/" + forumID, body: forumBody, status: fiber.StatusOK, idempotent: true, versioned: true},
 		{method: http.MethodDelete, path: "/forums/" + forumID, status: fiber.StatusNoContent, idempotent: true, versioned: true},
-		{method: http.MethodPost, path: "/forums/" + forumID + "/move", body: `{"category_id":"` + uuid.NewString() + `"}`, status: fiber.StatusOK, idempotent: true, versioned: true},
+		{
+			method:     http.MethodPost,
+			path:       "/forums/" + forumID + "/move",
+			body:       `{"category_id":"` + uuid.NewString() + `"}`,
+			status:     fiber.StatusOK,
+			idempotent: true,
+			versioned:  true,
+		},
 		{method: http.MethodPost, path: "/forums/reorder", body: `{"items":[]}`, status: fiber.StatusNoContent, idempotent: true},
 	}
 }
@@ -104,7 +142,11 @@ func (structureService) GetCategory(context.Context, uuid.UUID) (domain.ForumCat
 }
 
 // ListCategories returns a test category page.
-func (structureService) ListCategories(context.Context, port.CategoryFilter, pagination.Page) (pagination.Result[domain.ForumCategory], error) {
+func (structureService) ListCategories(
+	context.Context,
+	port.CategoryFilter,
+	pagination.Page,
+) (pagination.Result[domain.ForumCategory], error) {
 	return pagination.Result[domain.ForumCategory]{Items: []domain.ForumCategory{}}, nil
 }
 
@@ -176,6 +218,9 @@ func (adminService) UpdateForumPermissionSettings(context.Context, port.UpdateFo
 }
 
 // SimulateForumPermission returns a test simulation.
-func (adminService) SimulateForumPermission(context.Context, port.SimulateForumPermissionCommand) (domain.ForumPermissionSimulationResult, error) {
+func (adminService) SimulateForumPermission(
+	context.Context,
+	port.SimulateForumPermissionCommand,
+) (domain.ForumPermissionSimulationResult, error) {
 	return domain.ForumPermissionSimulationResult{Allowed: true}, nil
 }

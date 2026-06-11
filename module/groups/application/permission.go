@@ -3,79 +3,13 @@ package application
 import (
 	"context"
 	"errors"
-	"slices"
 	"sort"
-	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/module/groups/domain"
 	"github.com/niflaot/gamehub-go/module/groups/port"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 )
-
-// staticPermissionRule defines built-in fallback policy rules.
-type staticPermissionRule struct {
-	objectType domain.ObjectType
-	relations  []domain.Relation
-}
-
-// staticPermissionRules maps permissions to built-in fallback requirements.
-var staticPermissionRules = map[domain.Permission]staticPermissionRule{
-	"groups.read":                                  {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationViewer, domain.RelationManager, domain.RelationMember, domain.RelationOwner}},
-	"groups.update":                                {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
-	"groups.delete":                                {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationOwner}},
-	"groups.assign_member":                         {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
-	"groups.read_members":                          {objectType: domain.ObjectGroup, relations: []domain.Relation{domain.RelationViewer, domain.RelationManager, domain.RelationMember, domain.RelationOwner}},
-	"assets.view":                                  {objectType: domain.ObjectAsset, relations: []domain.Relation{domain.RelationViewer, domain.RelationOwner}},
-	"assets.update":                                {objectType: domain.ObjectAsset, relations: []domain.Relation{domain.RelationEditor, domain.RelationOwner}},
-	"metadata.write_user":                          {objectType: domain.ObjectUser, relations: []domain.Relation{domain.RelationSelf, domain.RelationManager}},
-	domain.PermissionForumsView:                    {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationViewer, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionForumsManageForum:             {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionForumsCreateThread:            {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationCreator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionForumsReply:                   {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationReplyer, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionForumsLikePosts:               {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationLiker, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionForumsPinThreads:              {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionForumsManageThreads:           {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionForumsManagePosts:             {objectType: domain.ObjectForum, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionThreadsView:                   {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationViewer, domain.RelationAuthor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionThreadsUpdate:                 {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationAuthor, domain.RelationEditor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionThreadsClose:                  {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionThreadsOpen:                   {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionThreadsDelete:                 {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationAuthor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionThreadsPin:                    {objectType: domain.ObjectForumThread, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPostsView:                     {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationViewer, domain.RelationAuthor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPostsUpdate:                   {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationAuthor, domain.RelationEditor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPostsDelete:                   {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationAuthor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPostsLike:                     {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationLiker, domain.RelationViewer, domain.RelationAuthor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPostsViewHidden:               {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPostsViewRevisions:            {objectType: domain.ObjectForumPost, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPunishmentsView:               {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationViewer, domain.RelationTarget, domain.RelationIssuer, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPunishmentsViewPrivate:        {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPunishmentsIssue:              {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPunishmentsRevoke:             {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPunishmentsUpdate:             {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPunishmentsManageDefinitions:  {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPunishmentsManageIntegrations: {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPunishmentsViewEvents:         {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionPunishmentsReplayEvents:       {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsView:                   {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationSubmitter, domain.RelationAssignee, domain.RelationTeamMember, domain.RelationViewer, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsViewPrivate:            {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsCreate:                 {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationCreator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsReply:                  {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationSubmitter, domain.RelationAssignee, domain.RelationTeamMember, domain.RelationReplyer, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsReplyStaffOnly:         {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsAddEvidence:            {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationSubmitter, domain.RelationAssignee, domain.RelationTeamMember, domain.RelationEditor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsAssign:                 {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsEscalate:               {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsClose:                  {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationSubmitter, domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsReopen:                 {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsManage:                 {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsManageDefinitions:      {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsPerformActions:         {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsAcceptAppeal:           {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsRejectAppeal:           {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-	domain.PermissionTicketsLinkPunishment:         {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
-}
 
 // Check returns an authorization decision.
 func (service Service) Check(ctx context.Context, request port.CheckRequest) (port.Decision, error) {
@@ -96,7 +30,10 @@ func (service Service) Check(ctx context.Context, request port.CheckRequest) (po
 }
 
 // permissionRules returns configured rules or built-in fallback rules.
-func (service Service) permissionRules(ctx context.Context, permission domain.Permission) ([]domain.PermissionRule, domain.ObjectType, error) {
+func (service Service) permissionRules(
+	ctx context.Context,
+	permission domain.Permission,
+) ([]domain.PermissionRule, domain.ObjectType, error) {
 	if service.policies != nil {
 		definition, err := service.policies.FindDefinition(ctx, permission)
 		if err == nil {
@@ -139,14 +76,32 @@ func enabledRules(rules []domain.PermissionRule) []domain.PermissionRule {
 func staticRules(permission domain.Permission, rule staticPermissionRule) []domain.PermissionRule {
 	rules := make([]domain.PermissionRule, 0, len(rule.relations))
 	for index, relation := range rule.relations {
-		rules = append(rules, domain.PermissionRule{ID: uuid.New(), Permission: permission, ObjectType: rule.objectType, Relation: relation, Priority: index, Enabled: true})
+		rules = append(
+			rules,
+			domain.PermissionRule{
+				ID:         uuid.New(),
+				Permission: permission,
+				ObjectType: rule.objectType,
+				Relation:   relation,
+				Priority:   index,
+				Enabled:    true,
+			},
+		)
 	}
 	return rules
 }
 
 // checkRelations checks one permission's allowed policy rules.
-func (service Service) checkRelations(ctx context.Context, request port.CheckRequest, rules []domain.PermissionRule) (port.Decision, error) {
-	tuples, err := service.tuples.List(ctx, port.TupleFilter{ObjectType: request.ObjectType, ObjectID: request.ObjectID}, pagination.Page{Limit: 100})
+func (service Service) checkRelations(
+	ctx context.Context,
+	request port.CheckRequest,
+	rules []domain.PermissionRule,
+) (port.Decision, error) {
+	tuples, err := service.tuples.List(
+		ctx,
+		port.TupleFilter{ObjectType: request.ObjectType, ObjectID: request.ObjectID},
+		pagination.Page{Limit: 100},
+	)
 	if err != nil {
 		return port.Decision{}, err
 	}
@@ -165,7 +120,12 @@ func (service Service) checkRelations(ctx context.Context, request port.CheckReq
 				return port.Decision{}, err
 			}
 			if conditionsOK {
-				return port.Decision{Allowed: true, Reason: "matched_relation", MatchedRelation: tuple.Relation, MatchedConditions: rule.Conditions}, nil
+				return port.Decision{
+					Allowed:           true,
+					Reason:            "matched_relation",
+					MatchedRelation:   tuple.Relation,
+					MatchedConditions: rule.Conditions,
+				}, nil
 			}
 			failed = append(failed, failedConditions...)
 		}
@@ -185,133 +145,6 @@ func matchingRules(relation domain.Relation, rules []domain.PermissionRule) []do
 		}
 	}
 	return matches
-}
-
-// conditionsMatch reports whether all policy conditions pass.
-func (service Service) conditionsMatch(request port.CheckRequest, conditions []domain.PolicyCondition) (bool, []domain.PolicyCondition, error) {
-	var failed []domain.PolicyCondition
-	for _, condition := range conditions {
-		ok, err := service.conditionMatches(request, condition)
-		if err != nil {
-			return false, nil, err
-		}
-		if !ok {
-			failed = append(failed, condition)
-		}
-	}
-	return len(failed) == 0, failed, nil
-}
-
-// conditionMatches reports whether one policy condition passes.
-func (service Service) conditionMatches(request port.CheckRequest, condition domain.PolicyCondition) (bool, error) {
-	value, found := request.Context[condition.Field]
-	switch condition.Type {
-	case domain.ConditionEquals:
-		return found && stringValue(value) == condition.Value, nil
-	case domain.ConditionIn:
-		return found && slices.Contains(condition.Values, stringValue(value)), nil
-	case domain.ConditionFieldEqualsActor, domain.ConditionAssignedToActor:
-		return found && uuidValue(value) == request.ActorUserID, nil
-	case domain.ConditionFieldNotEqualsActor:
-		return !found || uuidValue(value) != request.ActorUserID, nil
-	case domain.ConditionIsUnset:
-		return !found || isEmpty(value), nil
-	case domain.ConditionWithinDuration:
-		return service.timestampWithinDuration(value, condition.Duration)
-	case domain.ConditionOlderThan:
-		return service.timestampOlderThan(value, condition.Duration)
-	default:
-		return false, nil
-	}
-}
-
-// timestampWithinDuration reports whether value is inside the duration window.
-func (service Service) timestampWithinDuration(value any, duration string) (bool, error) {
-	instant, ok := timeValue(value)
-	if !ok {
-		return false, nil
-	}
-	period, err := time.ParseDuration(duration)
-	if err != nil {
-		return false, err
-	}
-	now := service.clock()
-	return !instant.After(now) && now.Sub(instant) <= period, nil
-}
-
-// timestampOlderThan reports whether value is older than the duration.
-func (service Service) timestampOlderThan(value any, duration string) (bool, error) {
-	instant, ok := timeValue(value)
-	if !ok {
-		return false, nil
-	}
-	period, err := time.ParseDuration(duration)
-	if err != nil {
-		return false, err
-	}
-	return service.clock().Sub(instant) >= period, nil
-}
-
-// stringValue normalizes scalar context values to string.
-func stringValue(value any) string {
-	switch typed := value.(type) {
-	case string:
-		return typed
-	case domain.ObjectType:
-		return string(typed)
-	case domain.Relation:
-		return string(typed)
-	case uuid.UUID:
-		return typed.String()
-	default:
-		return ""
-	}
-}
-
-// uuidValue normalizes context values to UUID.
-func uuidValue(value any) uuid.UUID {
-	switch typed := value.(type) {
-	case uuid.UUID:
-		return typed
-	case string:
-		parsed, err := uuid.Parse(typed)
-		if err != nil {
-			return uuid.Nil
-		}
-		return parsed
-	default:
-		return uuid.Nil
-	}
-}
-
-// timeValue normalizes context values to time.
-func timeValue(value any) (time.Time, bool) {
-	switch typed := value.(type) {
-	case time.Time:
-		return typed.UTC(), true
-	case string:
-		parsed, err := time.Parse(time.RFC3339Nano, typed)
-		if err != nil {
-			return time.Time{}, false
-		}
-		return parsed.UTC(), true
-	default:
-		return time.Time{}, false
-	}
-}
-
-// isEmpty reports whether a context value should be considered unset.
-func isEmpty(value any) bool {
-	switch typed := value.(type) {
-	case nil:
-		return true
-	case string:
-		return strings.TrimSpace(typed) == ""
-	case uuid.UUID:
-		return typed == uuid.Nil
-	default:
-		return false
-	}
 }
 
 // subjectMatches reports whether actor matches tuple subject.

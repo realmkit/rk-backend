@@ -38,14 +38,17 @@ func (repository AssetRepository) Create(ctx context.Context, asset domain.Asset
 
 // Update stores mutable asset fields.
 func (repository AssetRepository) Update(ctx context.Context, asset domain.Asset, expectedVersion uint64) (domain.Asset, error) {
-	result := repository.store.DB(ctx).Model(&AssetModel{}).Where("id = ? AND version = ?", asset.ID, expectedVersion).Updates(map[string]any{
-		"path":         string(asset.Path),
-		"display_name": asset.DisplayName,
-		"visibility":   string(asset.Visibility),
-		"status":       string(asset.Status),
-		"etag":         asset.ETag,
-		"version":      expectedVersion + 1,
-	})
+	result := repository.store.DB(ctx).
+		Model(&AssetModel{}).
+		Where("id = ? AND version = ?", asset.ID, expectedVersion).
+		Updates(map[string]any{
+			"path":         string(asset.Path),
+			"display_name": asset.DisplayName,
+			"visibility":   string(asset.Visibility),
+			"status":       string(asset.Status),
+			"etag":         asset.ETag,
+			"version":      expectedVersion + 1,
+		})
 	if result.Error != nil {
 		return domain.Asset{}, result.Error
 	}
@@ -65,7 +68,11 @@ func (repository AssetRepository) FindByID(ctx context.Context, id uuid.UUID) (d
 }
 
 // List returns matching assets.
-func (repository AssetRepository) List(ctx context.Context, filter port.AssetFilter, page pagination.Page) (pagination.Result[domain.Asset], error) {
+func (repository AssetRepository) List(
+	ctx context.Context,
+	filter port.AssetFilter,
+	page pagination.Page,
+) (pagination.Result[domain.Asset], error) {
 	query := applyAssetFilter(repository.store.DB(ctx).Model(&AssetModel{}), filter).Order("created_at desc, id desc").Limit(page.Limit + 1)
 	var models []AssetModel
 	if err := query.Find(&models).Error; err != nil {

@@ -28,7 +28,11 @@ func (repository IdentityLinkRepository) Create(ctx context.Context, link domain
 }
 
 // FindByIssuerSubject returns one identity link.
-func (repository IdentityLinkRepository) FindByIssuerSubject(ctx context.Context, issuer string, subject string) (domain.IdentityLink, error) {
+func (repository IdentityLinkRepository) FindByIssuerSubject(
+	ctx context.Context,
+	issuer string,
+	subject string,
+) (domain.IdentityLink, error) {
 	var model IdentityLinkModel
 	if err := repository.store.DB(ctx).First(&model, "issuer = ? AND subject = ?", issuer, subject).Error; err != nil {
 		return domain.IdentityLink{}, mapError(err)
@@ -38,7 +42,10 @@ func (repository IdentityLinkRepository) FindByIssuerSubject(ctx context.Context
 
 // Touch stores last-seen and sync information.
 func (repository IdentityLinkRepository) Touch(ctx context.Context, link domain.IdentityLink) error {
-	result := repository.store.DB(ctx).Model(&IdentityLinkModel{}).Where("id = ?", link.ID).Updates(map[string]any{"last_seen_at": link.LastSeenAt, "last_synced_at": link.LastSyncedAt, "claims_hash": link.ClaimsHash})
+	result := repository.store.DB(ctx).
+		Model(&IdentityLinkModel{}).
+		Where("id = ?", link.ID).
+		Updates(map[string]any{"last_seen_at": link.LastSeenAt, "last_synced_at": link.LastSyncedAt, "claims_hash": link.ClaimsHash})
 	if result.Error != nil {
 		return result.Error
 	}

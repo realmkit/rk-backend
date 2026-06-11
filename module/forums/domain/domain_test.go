@@ -21,7 +21,16 @@ func TestCategoryValidateAcceptsDefaults(t *testing.T) {
 
 // TestForumValidateRejectsInvalidLink verifies link forum URL validation.
 func TestForumValidateRejectsInvalidLink(t *testing.T) {
-	forum := Forum{ID: uuid.New(), CategoryID: uuid.New(), Kind: ForumKindLink, Key: "discord", Slug: "discord", Name: "Discord", Path: "/" + uuid.NewString() + "/", Status: ForumStatusActive}.Normalize()
+	forum := Forum{
+		ID:         uuid.New(),
+		CategoryID: uuid.New(),
+		Kind:       ForumKindLink,
+		Key:        "discord",
+		Slug:       "discord",
+		Name:       "Discord",
+		Path:       "/" + uuid.NewString() + "/",
+		Status:     ForumStatusActive,
+	}.Normalize()
 	forum.Path = "/" + forum.ID.String() + "/"
 	err := forum.Validate()
 	if !errors.Is(err, ErrInvalid) {
@@ -44,18 +53,38 @@ func TestForumValidateAcceptsDiscussion(t *testing.T) {
 // TestForumSettingsReflectForumConfiguration verifies settings projection.
 func TestForumSettingsReflectForumConfiguration(t *testing.T) {
 	id := uuid.New()
-	forum := Forum{ID: id, CategoryID: uuid.New(), Key: "support", Slug: "support", Name: "Support", Path: "/" + id.String() + "/", ThreadVisibilityMode: ThreadVisibilityOwnThreads, MaxStickyThreads: 4, AuthorPostEditWindowSeconds: 45, AuthorPostDeleteWindowSeconds: -1}.Normalize()
+	forum := Forum{
+		ID:                            id,
+		CategoryID:                    uuid.New(),
+		Key:                           "support",
+		Slug:                          "support",
+		Name:                          "Support",
+		Path:                          "/" + id.String() + "/",
+		ThreadVisibilityMode:          ThreadVisibilityOwnThreads,
+		MaxStickyThreads:              4,
+		AuthorPostEditWindowSeconds:   45,
+		AuthorPostDeleteWindowSeconds: -1,
+	}.Normalize()
 
 	settings := forum.Settings()
 
-	if settings.ForumID != forum.ID || settings.ThreadVisibilityMode != ThreadVisibilityOwnThreads || settings.MaxStickyThreads != 4 || settings.AuthorPostDeleteWindowSeconds != -1 {
+	if settings.ForumID != forum.ID || settings.ThreadVisibilityMode != ThreadVisibilityOwnThreads || settings.MaxStickyThreads != 4 ||
+		settings.AuthorPostDeleteWindowSeconds != -1 {
 		t.Fatalf("Settings() = %+v, want forum configuration", settings)
 	}
 }
 
 // TestForumSettingsValidateSupportsDisabledAuthorWindows verifies settings validation.
 func TestForumSettingsValidateSupportsDisabledAuthorWindows(t *testing.T) {
-	settings := ForumSettings{ForumID: uuid.New(), Kind: ForumKindDiscussion, ThreadVisibilityMode: ThreadVisibilityOwnOrStickyThreads, DefaultThreadStatus: ThreadStatusOpen, MaxStickyThreads: 5, AuthorPostEditWindowSeconds: -1, AuthorPostDeleteWindowSeconds: -1}.Normalize()
+	settings := ForumSettings{
+		ForumID:                       uuid.New(),
+		Kind:                          ForumKindDiscussion,
+		ThreadVisibilityMode:          ThreadVisibilityOwnOrStickyThreads,
+		DefaultThreadStatus:           ThreadStatusOpen,
+		MaxStickyThreads:              5,
+		AuthorPostEditWindowSeconds:   -1,
+		AuthorPostDeleteWindowSeconds: -1,
+	}.Normalize()
 	if err := settings.Validate(); err != nil {
 		t.Fatalf("Validate() error = %v", err)
 	}
@@ -63,7 +92,13 @@ func TestForumSettingsValidateSupportsDisabledAuthorWindows(t *testing.T) {
 
 // TestForumSettingsValidateRejectsExternalURLOnDiscussion verifies link-only URLs.
 func TestForumSettingsValidateRejectsExternalURLOnDiscussion(t *testing.T) {
-	settings := ForumSettings{ForumID: uuid.New(), Kind: ForumKindDiscussion, ExternalURL: "https://example.test", ThreadVisibilityMode: ThreadVisibilityAllThreads, DefaultThreadStatus: ThreadStatusOpen}.Normalize()
+	settings := ForumSettings{
+		ForumID:              uuid.New(),
+		Kind:                 ForumKindDiscussion,
+		ExternalURL:          "https://example.test",
+		ThreadVisibilityMode: ThreadVisibilityAllThreads,
+		DefaultThreadStatus:  ThreadStatusOpen,
+	}.Normalize()
 
 	err := settings.Validate()
 
@@ -74,18 +109,29 @@ func TestForumSettingsValidateRejectsExternalURLOnDiscussion(t *testing.T) {
 
 // TestForumPermissionSettingsNormalizeReservedSubjects verifies grant normalization.
 func TestForumPermissionSettingsNormalizeReservedSubjects(t *testing.T) {
-	settings := ForumPermissionSettings{ForumID: uuid.New(), Viewers: []ForumPermissionGrant{{SubjectType: PermissionSubjectPublic}}, Replyers: []ForumPermissionGrant{{SubjectType: PermissionSubjectAuthenticated}}, Moderators: []ForumPermissionGrant{{SubjectType: PermissionSubjectGroup, SubjectID: uuid.New()}}}.Normalize()
+	settings := ForumPermissionSettings{
+		ForumID:    uuid.New(),
+		Viewers:    []ForumPermissionGrant{{SubjectType: PermissionSubjectPublic}},
+		Replyers:   []ForumPermissionGrant{{SubjectType: PermissionSubjectAuthenticated}},
+		Moderators: []ForumPermissionGrant{{SubjectType: PermissionSubjectGroup, SubjectID: uuid.New()}},
+	}.Normalize()
 	if err := settings.Validate(); err != nil {
 		t.Fatalf("Validate() error = %v", err)
 	}
-	if settings.Viewers[0].SubjectID != PublicPermissionSubjectID() || settings.Replyers[0].SubjectID != AuthenticatedPermissionSubjectID() || settings.Moderators[0].SubjectRelation != "member" {
+	if settings.Viewers[0].SubjectID != PublicPermissionSubjectID() ||
+		settings.Replyers[0].SubjectID != AuthenticatedPermissionSubjectID() ||
+		settings.Moderators[0].SubjectRelation != "member" {
 		t.Fatalf("settings = %+v, want reserved ids and group member relation", settings)
 	}
 }
 
 // TestForumPermissionSettingsRejectsInvalidGrants verifies subject validation.
 func TestForumPermissionSettingsRejectsInvalidGrants(t *testing.T) {
-	settings := ForumPermissionSettings{ForumID: uuid.New(), Managers: []ForumPermissionGrant{{SubjectType: PermissionSubjectGroup, SubjectID: uuid.New(), SubjectRelation: "owner"}}, Creators: []ForumPermissionGrant{{SubjectType: PermissionSubjectUser}}}
+	settings := ForumPermissionSettings{
+		ForumID:  uuid.New(),
+		Managers: []ForumPermissionGrant{{SubjectType: PermissionSubjectGroup, SubjectID: uuid.New(), SubjectRelation: "owner"}},
+		Creators: []ForumPermissionGrant{{SubjectType: PermissionSubjectUser}},
+	}
 
 	err := settings.Validate()
 
@@ -116,7 +162,15 @@ func TestRootForumObjectIDIsStable(t *testing.T) {
 
 // TestPostValidateRejectsInvalidContent verifies WYSIWYG JSON validation.
 func TestPostValidateRejectsInvalidContent(t *testing.T) {
-	post := Post{ID: uuid.New(), ThreadID: uuid.New(), ForumID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ContentDocumentJSON: []byte(`[]`), ContentText: "hello"}.Normalize()
+	post := Post{
+		ID:                  uuid.New(),
+		ThreadID:            uuid.New(),
+		ForumID:             uuid.New(),
+		AuthorUserID:        uuid.New(),
+		Sequence:            1,
+		ContentDocumentJSON: []byte(`[]`),
+		ContentText:         "hello",
+	}.Normalize()
 	err := post.Validate()
 	if !errors.Is(err, ErrInvalid) {
 		t.Fatalf("Validate() error = %v, want %v", err, ErrInvalid)
@@ -126,11 +180,28 @@ func TestPostValidateRejectsInvalidContent(t *testing.T) {
 // TestThreadAndPostValidateAcceptValidContent verifies content entities accept valid state.
 func TestThreadAndPostValidateAcceptValidContent(t *testing.T) {
 	authorID := uuid.New()
-	thread := Thread{ID: uuid.New(), ForumID: uuid.New(), AuthorUserID: authorID, OpenerPostID: uuid.New(), LatestPostID: uuid.New(), LatestPostAuthorUserID: authorID, Title: "Valid title", Slug: "valid-title"}.Normalize()
+	thread := Thread{
+		ID:                     uuid.New(),
+		ForumID:                uuid.New(),
+		AuthorUserID:           authorID,
+		OpenerPostID:           uuid.New(),
+		LatestPostID:           uuid.New(),
+		LatestPostAuthorUserID: authorID,
+		Title:                  "Valid title",
+		Slug:                   "valid-title",
+	}.Normalize()
 	if err := thread.Validate(); err != nil {
 		t.Fatalf("Thread Validate() error = %v", err)
 	}
-	post := Post{ID: uuid.New(), ThreadID: thread.ID, ForumID: thread.ForumID, AuthorUserID: authorID, Sequence: 1, ContentDocumentJSON: []byte(`{"type":"doc"}`), ContentText: "hello"}.Normalize()
+	post := Post{
+		ID:                  uuid.New(),
+		ThreadID:            thread.ID,
+		ForumID:             thread.ForumID,
+		AuthorUserID:        authorID,
+		Sequence:            1,
+		ContentDocumentJSON: []byte(`{"type":"doc"}`),
+		ContentText:         "hello",
+	}.Normalize()
 	if err := post.Validate(); err != nil {
 		t.Fatalf("Post Validate() error = %v", err)
 	}

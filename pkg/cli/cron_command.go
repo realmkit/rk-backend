@@ -26,84 +26,152 @@ func newCronCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command 
 
 // newCronRunCommand creates the cron worker command.
 func newCronRunCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
-	return &cobra.Command{Use: "run", Short: "Run due cron jobs until stopped", SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, _ []string) error {
-		return runCronAction(cmd.Context(), activeLogger, deps, func(ctx context.Context, service cronapp.Service) error {
-			ticker := time.NewTicker(time.Minute)
-			defer ticker.Stop()
-			for {
-				_, _ = service.RunOnce(ctx)
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case <-ticker.C:
+	return &cobra.Command{
+		Use:           "run",
+		Short:         "Run due cron jobs until stopped",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runCronAction(cmd.Context(), activeLogger, deps, func(ctx context.Context, service cronapp.Service) error {
+				ticker := time.NewTicker(time.Minute)
+				defer ticker.Stop()
+				for {
+					_, _ = service.RunOnce(ctx)
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case <-ticker.C:
+					}
 				}
-			}
-		})
-	}}
+			})
+		},
+	}
 }
 
 // newCronRunOnceCommand creates the run-once command.
 func newCronRunOnceCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
-	return &cobra.Command{Use: "run-once", Short: "Run one due cron job", SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, _ []string) error {
-		return runCronSummary(cmd.Context(), activeLogger, deps, cmd, func(ctx context.Context, service cronapp.Service) (cronapp.RunSummary, error) {
-			return service.RunOnce(ctx)
-		})
-	}}
+	return &cobra.Command{
+		Use:           "run-once",
+		Short:         "Run one due cron job",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runCronSummary(
+				cmd.Context(),
+				activeLogger,
+				deps,
+				cmd,
+				func(ctx context.Context, service cronapp.Service) (cronapp.RunSummary, error) {
+					return service.RunOnce(ctx)
+				},
+			)
+		},
+	}
 }
 
 // newCronTriggerCommand creates the trigger command.
 func newCronTriggerCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
-	return &cobra.Command{Use: "trigger {job_key}", Short: "Run one cron job now", Args: cobra.ExactArgs(1), SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, args []string) error {
-		return runCronSummary(cmd.Context(), activeLogger, deps, cmd, func(ctx context.Context, service cronapp.Service) (cronapp.RunSummary, error) {
-			return service.Trigger(ctx, args[0])
-		})
-	}}
+	return &cobra.Command{
+		Use:           "trigger {job_key}",
+		Short:         "Run one cron job now",
+		Args:          cobra.ExactArgs(1),
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runCronSummary(
+				cmd.Context(),
+				activeLogger,
+				deps,
+				cmd,
+				func(ctx context.Context, service cronapp.Service) (cronapp.RunSummary, error) {
+					return service.Trigger(ctx, args[0])
+				},
+			)
+		},
+	}
 }
 
 // newCronListCommand creates the list command.
 func newCronListCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
-	return &cobra.Command{Use: "list", Short: "List cron jobs", SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, _ []string) error {
-		return runCronAction(cmd.Context(), activeLogger, deps, func(ctx context.Context, service cronapp.Service) error {
-			result, err := service.ListDefinitions(ctx, pagination.Page{Limit: 100})
-			if err != nil {
-				return err
-			}
-			for _, definition := range result.Items {
-				fmt.Fprintf(cmd.OutOrStdout(), "job key=%s enabled=%t next_run_at=%v last_status=%s\n", definition.Key, definition.Enabled, definition.NextRunAt, definition.LastStatus)
-			}
-			return nil
-		})
-	}}
+	return &cobra.Command{
+		Use:           "list",
+		Short:         "List cron jobs",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runCronAction(cmd.Context(), activeLogger, deps, func(ctx context.Context, service cronapp.Service) error {
+				result, err := service.ListDefinitions(ctx, pagination.Page{Limit: 100})
+				if err != nil {
+					return err
+				}
+				for _, definition := range result.Items {
+					fmt.Fprintf(
+						cmd.OutOrStdout(),
+						"job key=%s enabled=%t next_run_at=%v last_status=%s\n",
+						definition.Key,
+						definition.Enabled,
+						definition.NextRunAt,
+						definition.LastStatus,
+					)
+				}
+				return nil
+			})
+		},
+	}
 }
 
 // newCronRepairLocksCommand creates the repair-locks command.
 func newCronRepairLocksCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
-	return &cobra.Command{Use: "repair-locks", Short: "Repair stale cron locks", SilenceUsage: true, SilenceErrors: true, RunE: func(cmd *cobra.Command, _ []string) error {
-		return runCronAction(cmd.Context(), activeLogger, deps, func(ctx context.Context, service cronapp.Service) error {
-			count, err := service.RepairLocks(ctx)
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "repaired=%d\n", count)
-			return nil
-		})
-	}}
+	return &cobra.Command{
+		Use:           "repair-locks",
+		Short:         "Repair stale cron locks",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runCronAction(cmd.Context(), activeLogger, deps, func(ctx context.Context, service cronapp.Service) error {
+				count, err := service.RepairLocks(ctx)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "repaired=%d\n", count)
+				return nil
+			})
+		},
+	}
 }
 
 // runCronSummary runs a cron command and writes a run summary.
-func runCronSummary(ctx context.Context, activeLogger **zap.Logger, deps commandDeps, cmd *cobra.Command, action func(context.Context, cronapp.Service) (cronapp.RunSummary, error)) error {
+func runCronSummary(
+	ctx context.Context,
+	activeLogger **zap.Logger,
+	deps commandDeps,
+	cmd *cobra.Command,
+	action func(context.Context, cronapp.Service) (cronapp.RunSummary, error),
+) error {
 	return runCronAction(ctx, activeLogger, deps, func(ctx context.Context, service cronapp.Service) error {
 		result, err := action(ctx, service)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(cmd.OutOrStdout(), "run_id=%s job_key=%s processed=%d failed=%t\n", result.RunID, result.JobKey, result.ProcessedCount, result.Failed)
+		fmt.Fprintf(
+			cmd.OutOrStdout(),
+			"run_id=%s job_key=%s processed=%d failed=%t\n",
+			result.RunID,
+			result.JobKey,
+			result.ProcessedCount,
+			result.Failed,
+		)
 		return nil
 	})
 }
 
 // runCronAction runs one cron service action.
-func runCronAction(ctx context.Context, activeLogger **zap.Logger, deps commandDeps, action func(context.Context, cronapp.Service) error) error {
+func runCronAction(
+	ctx context.Context,
+	activeLogger **zap.Logger,
+	deps commandDeps,
+	action func(context.Context, cronapp.Service) error,
+) error {
 	cfg, log, err := runtime(ctx, activeLogger, deps)
 	if err != nil {
 		return err

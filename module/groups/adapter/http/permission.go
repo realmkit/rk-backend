@@ -22,7 +22,16 @@ func (handler handler) checkPermission(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	decision, err := handler.services.Checker.Check(ctx.Context(), port.CheckRequest{ActorUserID: request.ActorUserID, Permission: request.Permission, ObjectType: request.ObjectType, ObjectID: request.ObjectID, Context: request.Context})
+	decision, err := handler.services.Checker.Check(
+		ctx.Context(),
+		port.CheckRequest{
+			ActorUserID: request.ActorUserID,
+			Permission:  request.Permission,
+			ObjectType:  request.ObjectType,
+			ObjectID:    request.ObjectID,
+			Context:     request.Context,
+		},
+	)
 	if err != nil {
 		return handleError(ctx, err)
 	}

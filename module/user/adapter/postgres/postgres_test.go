@@ -43,7 +43,15 @@ func TestUserRepositoryLifecycle(t *testing.T) {
 func TestIdentityLinkRepositoryLifecycle(t *testing.T) {
 	_, links, _ := newRepositories(t)
 	now := time.Now().UTC()
-	link := domain.IdentityLink{ID: uuid.New(), UserID: uuid.New(), Provider: "generic_oidc", Issuer: "issuer", Subject: "subject", SubjectHash: "hash", LinkedAt: now}
+	link := domain.IdentityLink{
+		ID:          uuid.New(),
+		UserID:      uuid.New(),
+		Provider:    "generic_oidc",
+		Issuer:      "issuer",
+		Subject:     "subject",
+		SubjectHash: "hash",
+		LinkedAt:    now,
+	}
 	created, err := links.Create(context.Background(), link)
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -65,7 +73,14 @@ func TestIdentityLinkRepositoryLifecycle(t *testing.T) {
 // TestClaimCacheRepositoryUpsert verifies claim cache upserts.
 func TestClaimCacheRepositoryUpsert(t *testing.T) {
 	_, _, claims := newRepositories(t)
-	cache := domain.ClaimCache{ID: uuid.New(), UserID: uuid.New(), Issuer: "issuer", Subject: "subject", Username: "ian", SyncedAt: time.Now().UTC()}
+	cache := domain.ClaimCache{
+		ID:       uuid.New(),
+		UserID:   uuid.New(),
+		Issuer:   "issuer",
+		Subject:  "subject",
+		Username: "ian",
+		SyncedAt: time.Now().UTC(),
+	}
 	created, err := claims.Upsert(context.Background(), cache)
 	if err != nil {
 		t.Fatalf("Upsert() error = %v", err)

@@ -191,7 +191,10 @@ func ValidateEffect(field string, effect Effect) []Violation {
 
 // ValidateIssuerType validates issuer type.
 func ValidateIssuerType(field string, issuerType IssuerType) []Violation {
-	if slices.Contains([]IssuerType{IssuerUser, IssuerSystem, IssuerIntegration, IssuerAnticheat, IssuerImport, IssuerUnknown}, issuerType) {
+	if slices.Contains(
+		[]IssuerType{IssuerUser, IssuerSystem, IssuerIntegration, IssuerAnticheat, IssuerImport, IssuerUnknown},
+		issuerType,
+	) {
 		return nil
 	}
 	return []Violation{{Field: field, Message: "is not supported"}}
@@ -199,7 +202,10 @@ func ValidateIssuerType(field string, issuerType IssuerType) []Violation {
 
 // ValidatePunishmentStatus validates punishment status.
 func ValidatePunishmentStatus(field string, status PunishmentStatus) []Violation {
-	if slices.Contains([]PunishmentStatus{PunishmentActive, PunishmentExpired, PunishmentRevoked, PunishmentVoided, PunishmentPending}, status) {
+	if slices.Contains(
+		[]PunishmentStatus{PunishmentActive, PunishmentExpired, PunishmentRevoked, PunishmentVoided, PunishmentPending},
+		status,
+	) {
 		return nil
 	}
 	return []Violation{{Field: field, Message: "is not supported"}}

@@ -16,7 +16,11 @@ func (service Service) GetPunishment(ctx context.Context, id uuid.UUID) (domain.
 }
 
 // ListPunishments returns matching punishments.
-func (service Service) ListPunishments(ctx context.Context, filter port.PunishmentFilter, page pagination.Page) (pagination.Result[domain.Punishment], error) {
+func (service Service) ListPunishments(
+	ctx context.Context,
+	filter port.PunishmentFilter,
+	page pagination.Page,
+) (pagination.Result[domain.Punishment], error) {
 	return service.cases.List(ctx, filter, page)
 }
 

@@ -19,12 +19,22 @@ import (
 func TestServiceProvisionCreatesUserLinkAndClaims(t *testing.T) {
 	service, users, links, claims := newTestService()
 	external := testIdentity()
-	principal, err := service.Provision(context.Background(), external, auth.Token{Identity: external, Audience: []string{"api"}, Scopes: []string{"openid"}})
+	principal, err := service.Provision(
+		context.Background(),
+		external,
+		auth.Token{Identity: external, Audience: []string{"api"}, Scopes: []string{"openid"}},
+	)
 	if err != nil {
 		t.Fatalf("Provision() error = %v", err)
 	}
 	if principal.UserID == uuid.Nil || len(users.items) != 1 || len(links.items) != 1 || len(claims.items) != 1 {
-		t.Fatalf("principal=%+v users=%d links=%d claims=%d, want provisioned", principal, len(users.items), len(links.items), len(claims.items))
+		t.Fatalf(
+			"principal=%+v users=%d links=%d claims=%d, want provisioned",
+			principal,
+			len(users.items),
+			len(links.items),
+			len(claims.items),
+		)
 	}
 }
 
@@ -122,7 +132,10 @@ func TestServiceCurrentAndUpdate(t *testing.T) {
 	if current.Claims == nil || current.Claims.Username != "ian" {
 		t.Fatalf("Current() claims = %+v, want cache", current.Claims)
 	}
-	updated, err := service.UpdateCurrent(context.Background(), port.UpdateCurrentCommand{UserID: userID, AvatarAssetID: &avatarID, ExpectedVersion: 1})
+	updated, err := service.UpdateCurrent(
+		context.Background(),
+		port.UpdateCurrentCommand{UserID: userID, AvatarAssetID: &avatarID, ExpectedVersion: 1},
+	)
 	if err != nil {
 		t.Fatalf("UpdateCurrent() error = %v", err)
 	}

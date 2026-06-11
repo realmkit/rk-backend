@@ -57,7 +57,9 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\nGAMEHUB_LOG_LEVEL=debug\nGAMEHUB_POSTGRES_HOST=db\nGAMEHUB_POSTGRES_PORT=5433\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_POSTGRES_SSL_MODE=require\nGAMEHUB_REDIS_ADDRESS=redis:6379\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\nGAMEHUB_CORS_ALLOW_ORIGINS=https://admin.gamehub.test\nGAMEHUB_AUTH_ISSUER_URL=https://auth.example.test\nGAMEHUB_AUTH_AUDIENCE=file-api\nGAMEHUB_AUTH_CLIENT_ID=file-frontend\n")
+	content := []byte(
+		"GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\nGAMEHUB_LOG_LEVEL=debug\nGAMEHUB_POSTGRES_HOST=db\nGAMEHUB_POSTGRES_PORT=5433\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_POSTGRES_SSL_MODE=require\nGAMEHUB_REDIS_ADDRESS=redis:6379\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\nGAMEHUB_CORS_ALLOW_ORIGINS=https://admin.gamehub.test\nGAMEHUB_AUTH_ISSUER_URL=https://auth.example.test\nGAMEHUB_AUTH_AUDIENCE=file-api\nGAMEHUB_AUTH_CLIENT_ID=file-frontend\n",
+	)
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -107,7 +109,9 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\nGAMEHUB_LOG_LEVEL=info\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\nGAMEHUB_AUTH_ISSUER_URL=https://file-auth.example.test\nGAMEHUB_AUTH_AUDIENCE=file-api\nGAMEHUB_AUTH_CLIENT_ID=file-frontend\n")
+	content := []byte(
+		"GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\nGAMEHUB_LOG_LEVEL=info\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\nGAMEHUB_AUTH_ISSUER_URL=https://file-auth.example.test\nGAMEHUB_AUTH_AUDIENCE=file-api\nGAMEHUB_AUTH_CLIENT_ID=file-frontend\n",
+	)
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -174,7 +178,9 @@ func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
 	clearGameHubEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
-	content := []byte("host=127.0.0.2\nport=6060\nenvironment=local\nlog.level=error\npostgres.database=keydb\npostgres.username=keyuser\npostgres.password=keypass\nstorage.bucket=key-bucket\nstorage.endpoint=http://storage:9000\nstorage.access_key_id=key-access\nstorage.secret_access_key=key-secret\nauth.issuer_url=https://key-auth.example.test\nauth.audience=key-api\nauth.client_id=key-frontend\n")
+	content := []byte(
+		"host=127.0.0.2\nport=6060\nenvironment=local\nlog.level=error\npostgres.database=keydb\npostgres.username=keyuser\npostgres.password=keypass\nstorage.bucket=key-bucket\nstorage.endpoint=http://storage:9000\nstorage.access_key_id=key-access\nstorage.secret_access_key=key-secret\nauth.issuer_url=https://key-auth.example.test\nauth.audience=key-api\nauth.client_id=key-frontend\n",
+	)
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -322,7 +328,35 @@ func TestSchemaCollectsSquashedFields(t *testing.T) {
 		got = append(got, field.key)
 	}
 
-	want := []string{"host", "port", "environment", "log.level", "postgres.host", "postgres.port", "postgres.database", "postgres.username", "postgres.password", "postgres.ssl_mode", "redis.address", "redis.password", "redis.database", "storage.bucket", "storage.region", "storage.endpoint", "storage.access_key_id", "storage.secret_access_key", "storage.public_base_url", "cors.enabled", "cors.allow_origins", "auth.provider", "auth.issuer_url", "auth.audience", "auth.client_id", "auth.scopes", "auth.development_bypass"}
+	want := []string{
+		"host",
+		"port",
+		"environment",
+		"log.level",
+		"postgres.host",
+		"postgres.port",
+		"postgres.database",
+		"postgres.username",
+		"postgres.password",
+		"postgres.ssl_mode",
+		"redis.address",
+		"redis.password",
+		"redis.database",
+		"storage.bucket",
+		"storage.region",
+		"storage.endpoint",
+		"storage.access_key_id",
+		"storage.secret_access_key",
+		"storage.public_base_url",
+		"cors.enabled",
+		"cors.allow_origins",
+		"auth.provider",
+		"auth.issuer_url",
+		"auth.audience",
+		"auth.client_id",
+		"auth.scopes",
+		"auth.development_bypass",
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fields = %v, want %v", got, want)
 	}
@@ -349,7 +383,7 @@ func TestSchemaRejectsNonStructs(t *testing.T) {
 func TestSchemaCollectsNestedAndSkippedFields(t *testing.T) {
 	type databaseConfig struct {
 		URL     string `mapstructure:"url" default:"postgres://localhost/gamehub"`
-		NoTag   string `default:"fallback"`
+		NoTag   string `                   default:"fallback"`
 		Ignored string `mapstructure:"-"`
 	}
 	type appConfig struct {

@@ -34,7 +34,9 @@ func pageFromQuery(ctx *fiber.Ctx) (pagination.Page, error) {
 		Cursor: ctx.Query("page_token"),
 	})
 	if err != nil {
-		return pagination.Page{}, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid.")}
+		return pagination.Page{}, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid."),
+		}
 	}
 	return page, nil
 }

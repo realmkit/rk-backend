@@ -23,7 +23,11 @@ func (service Service) CreateDefinition(ctx context.Context, definition domain.D
 }
 
 // UpdateDefinition updates a ticket definition.
-func (service Service) UpdateDefinition(ctx context.Context, definition domain.Definition, expectedVersion uint64) (domain.Definition, error) {
+func (service Service) UpdateDefinition(
+	ctx context.Context,
+	definition domain.Definition,
+	expectedVersion uint64,
+) (domain.Definition, error) {
 	definition = definition.Normalize()
 	if err := definition.Validate(); err != nil {
 		return domain.Definition{}, err
@@ -53,6 +57,10 @@ func (service Service) GetDefinition(ctx context.Context, id uuid.UUID) (domain.
 }
 
 // ListDefinitions returns ticket definitions.
-func (service Service) ListDefinitions(ctx context.Context, filter port.DefinitionFilter, page pagination.Page) (pagination.Result[domain.Definition], error) {
+func (service Service) ListDefinitions(
+	ctx context.Context,
+	filter port.DefinitionFilter,
+	page pagination.Page,
+) (pagination.Result[domain.Definition], error) {
 	return service.definitions.List(ctx, filter, page)
 }

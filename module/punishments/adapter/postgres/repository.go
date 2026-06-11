@@ -40,7 +40,11 @@ func (repository DefinitionRepository) Create(ctx context.Context, definition do
 }
 
 // Update updates a definition.
-func (repository DefinitionRepository) Update(ctx context.Context, definition domain.Definition, expectedVersion uint64) (domain.Definition, error) {
+func (repository DefinitionRepository) Update(
+	ctx context.Context,
+	definition domain.Definition,
+	expectedVersion uint64,
+) (domain.Definition, error) {
 	result := repository.store.DB(ctx).Model(&DefinitionModel{}).
 		Where("id = ? AND version = ?", definition.ID, expectedVersion).
 		Updates(map[string]any{
@@ -85,7 +89,11 @@ func (repository DefinitionRepository) FindByID(ctx context.Context, id uuid.UUI
 }
 
 // List returns definitions.
-func (repository DefinitionRepository) List(ctx context.Context, filter port.DefinitionFilter, page pagination.Page) (pagination.Result[domain.Definition], error) {
+func (repository DefinitionRepository) List(
+	ctx context.Context,
+	filter port.DefinitionFilter,
+	page pagination.Page,
+) (pagination.Result[domain.Definition], error) {
 	query := repository.store.DB(ctx).Model(&DefinitionModel{}).Order("display_order, severity desc, name, id").Limit(page.Limit + 1)
 	if filter.Status != "" {
 		query = query.Where("status = ?", filter.Status)

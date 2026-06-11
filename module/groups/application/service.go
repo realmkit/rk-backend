@@ -23,7 +23,12 @@ type Service struct {
 }
 
 // NewService creates a groups service.
-func NewService(groups port.GroupRepository, memberships port.MembershipRepository, tuples port.TupleRepository, policies ...port.PermissionRepository) Service {
+func NewService(
+	groups port.GroupRepository,
+	memberships port.MembershipRepository,
+	tuples port.TupleRepository,
+	policies ...port.PermissionRepository,
+) Service {
 	var policyRepository port.PermissionRepository
 	if len(policies) > 0 {
 		policyRepository = policies[0]
@@ -140,7 +145,17 @@ func (service Service) Remove(ctx context.Context, command port.RemoveMembership
 	if err := service.memberships.Delete(ctx, command.GroupID, command.UserID, command.ExpectedVersion); err != nil {
 		return err
 	}
-	tuples, err := service.tuples.List(ctx, port.TupleFilter{ObjectType: domain.ObjectGroup, ObjectID: membership.GroupID, Relation: domain.RelationMember, SubjectType: domain.SubjectUser, SubjectID: membership.UserID}, pagination.Page{Limit: 100})
+	tuples, err := service.tuples.List(
+		ctx,
+		port.TupleFilter{
+			ObjectType:  domain.ObjectGroup,
+			ObjectID:    membership.GroupID,
+			Relation:    domain.RelationMember,
+			SubjectType: domain.SubjectUser,
+			SubjectID:   membership.UserID,
+		},
+		pagination.Page{Limit: 100},
+	)
 	if err != nil {
 		return err
 	}
@@ -153,7 +168,11 @@ func (service Service) Remove(ctx context.Context, command port.RemoveMembership
 }
 
 // ListGroupMembers lists memberships for a group.
-func (service Service) ListGroupMembers(ctx context.Context, groupID uuid.UUID, page pagination.Page) (pagination.Result[domain.Membership], error) {
+func (service Service) ListGroupMembers(
+	ctx context.Context,
+	groupID uuid.UUID,
+	page pagination.Page,
+) (pagination.Result[domain.Membership], error) {
 	return service.memberships.ListByGroup(ctx, groupID, page)
 }
 

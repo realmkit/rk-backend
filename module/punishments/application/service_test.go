@@ -169,7 +169,11 @@ func newCaseFake() *caseFake {
 	}
 }
 
-func (fake *caseFake) Issue(_ context.Context, punishment domain.Punishment, restrictions []domain.ActiveRestriction) (domain.Punishment, error) {
+func (fake *caseFake) Issue(
+	_ context.Context,
+	punishment domain.Punishment,
+	restrictions []domain.ActiveRestriction,
+) (domain.Punishment, error) {
 	fake.punishments[punishment.ID] = punishment
 	if punishment.IdempotencyKey != "" {
 		fake.idempotency[punishment.IdempotencyKey] = punishment.ID
@@ -211,7 +215,12 @@ func (fake *caseFake) List(context.Context, port.PunishmentFilter, pagination.Pa
 	return pagination.Result[domain.Punishment]{}, nil
 }
 
-func (fake *caseFake) ActiveRestriction(_ context.Context, _ uuid.UUID, actionKey string, _ time.Time) (domain.ActiveRestriction, *domain.PunishmentSummary, error) {
+func (fake *caseFake) ActiveRestriction(
+	_ context.Context,
+	_ uuid.UUID,
+	actionKey string,
+	_ time.Time,
+) (domain.ActiveRestriction, *domain.PunishmentSummary, error) {
 	for _, restriction := range fake.restrictions {
 		if restriction.ActionKey == actionKey {
 			return restriction, &domain.PunishmentSummary{ID: restriction.PunishmentID}, nil

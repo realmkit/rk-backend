@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"syscall"
 
@@ -14,7 +15,8 @@ import (
 func main() {
 	activeLogger, loggerErr := logger.New(logger.Config{Level: "info"})
 	if loggerErr != nil {
-		panic(loggerErr)
+		fmt.Fprintf(os.Stderr, "create startup logger: %v\n", loggerErr)
+		os.Exit(1)
 	}
 
 	var runErr error

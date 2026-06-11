@@ -80,9 +80,23 @@ func (repository Repository) appendThreadDrift(
 	for _, thread := range threads {
 		want := expected[thread.ID]
 		report.Mismatches = appendDrift(report.Mismatches, "forum_thread", thread.ID, "post_count", want.PostCount, thread.PostCount)
-		report.Mismatches = appendDrift(report.Mismatches, "forum_thread", thread.ID, "visible_post_count", want.VisiblePostCount, thread.VisiblePostCount)
+		report.Mismatches = appendDrift(
+			report.Mismatches,
+			"forum_thread",
+			thread.ID,
+			"visible_post_count",
+			want.VisiblePostCount,
+			thread.VisiblePostCount,
+		)
 		report.Mismatches = appendDrift(report.Mismatches, "forum_thread", thread.ID, "reply_count", want.ReplyCount, thread.ReplyCount)
-		report.Mismatches = appendDrift(report.Mismatches, "forum_thread", thread.ID, "visible_reply_count", want.VisibleReplyCount, thread.VisibleReplyCount)
+		report.Mismatches = appendDrift(
+			report.Mismatches,
+			"forum_thread",
+			thread.ID,
+			"visible_reply_count",
+			want.VisibleReplyCount,
+			thread.VisibleReplyCount,
+		)
 	}
 	return nil
 }
@@ -100,9 +114,23 @@ func (repository Repository) appendForumDrift(
 	for _, stat := range stats {
 		want := expected[stat.ForumID]
 		report.Mismatches = appendDrift(report.Mismatches, "forum_stats", stat.ForumID, "thread_count", want.ThreadCount, stat.ThreadCount)
-		report.Mismatches = appendDrift(report.Mismatches, "forum_stats", stat.ForumID, "visible_thread_count", want.VisibleThreadCount, stat.VisibleThreadCount)
+		report.Mismatches = appendDrift(
+			report.Mismatches,
+			"forum_stats",
+			stat.ForumID,
+			"visible_thread_count",
+			want.VisibleThreadCount,
+			stat.VisibleThreadCount,
+		)
 		report.Mismatches = appendDrift(report.Mismatches, "forum_stats", stat.ForumID, "post_count", want.PostCount, stat.PostCount)
-		report.Mismatches = appendDrift(report.Mismatches, "forum_stats", stat.ForumID, "visible_post_count", want.VisiblePostCount, stat.VisiblePostCount)
+		report.Mismatches = appendDrift(
+			report.Mismatches,
+			"forum_stats",
+			stat.ForumID,
+			"visible_post_count",
+			want.VisiblePostCount,
+			stat.VisiblePostCount,
+		)
 	}
 	return nil
 }

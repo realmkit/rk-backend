@@ -63,7 +63,10 @@ func TestDisplayGroupUsesWeightThenCreatedAtThenKey(t *testing.T) {
 	member := validGroup("member", 10)
 	vip := validGroup("vip", 50)
 	groups := []Group{member, vip}
-	memberships := []Membership{{GroupID: member.ID, Status: MembershipStatusActive, CreatedAt: now.Add(-time.Hour)}, {GroupID: vip.ID, Status: MembershipStatusActive, CreatedAt: now}}
+	memberships := []Membership{
+		{GroupID: member.ID, Status: MembershipStatusActive, CreatedAt: now.Add(-time.Hour)},
+		{GroupID: vip.ID, Status: MembershipStatusActive, CreatedAt: now},
+	}
 
 	got, ok := DisplayGroup(groups, memberships, now)
 	if !ok || got.ID != vip.ID {
@@ -85,7 +88,13 @@ func TestRelationTupleValidateRejectsMissingIdentifiers(t *testing.T) {
 
 // TestRelationTupleValidateAcceptsPublicSubject verifies public tuple validation.
 func TestRelationTupleValidateAcceptsPublicSubject(t *testing.T) {
-	tuple := RelationTuple{ObjectType: ObjectForum, ObjectID: uuid.New(), Relation: RelationViewer, SubjectType: SubjectPublic, SubjectID: PublicSubjectID()}
+	tuple := RelationTuple{
+		ObjectType:  ObjectForum,
+		ObjectID:    uuid.New(),
+		Relation:    RelationViewer,
+		SubjectType: SubjectPublic,
+		SubjectID:   PublicSubjectID(),
+	}
 	if err := tuple.Validate(); err != nil {
 		t.Fatalf("Validate() error = %v", err)
 	}
@@ -93,7 +102,13 @@ func TestRelationTupleValidateAcceptsPublicSubject(t *testing.T) {
 
 // TestRelationTupleValidateRejectsWrongReservedSubjectID verifies reserved subject IDs.
 func TestRelationTupleValidateRejectsWrongReservedSubjectID(t *testing.T) {
-	tuple := RelationTuple{ObjectType: ObjectForum, ObjectID: uuid.New(), Relation: RelationViewer, SubjectType: SubjectAuthenticated, SubjectID: uuid.New()}
+	tuple := RelationTuple{
+		ObjectType:  ObjectForum,
+		ObjectID:    uuid.New(),
+		Relation:    RelationViewer,
+		SubjectType: SubjectAuthenticated,
+		SubjectID:   uuid.New(),
+	}
 	err := tuple.Validate()
 	var validation ValidationError
 	if !errors.As(err, &validation) {

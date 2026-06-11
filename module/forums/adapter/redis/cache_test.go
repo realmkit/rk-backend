@@ -19,7 +19,9 @@ func TestTreeCacheStoresAndClearsTree(t *testing.T) {
 	defer client.Close()
 	cache := NewTreeCache(client)
 	key := "forums:tree:v1:anonymous"
-	tree := domain.ForumTree{Categories: []domain.CategoryNode{{Category: domain.ForumCategory{ID: uuid.New(), Key: "official", Name: "Official"}}}}
+	tree := domain.ForumTree{
+		Categories: []domain.CategoryNode{{Category: domain.ForumCategory{ID: uuid.New(), Key: "official", Name: "Official"}}},
+	}
 
 	if err := cache.SetTree(context.Background(), key, tree, time.Minute); err != nil {
 		t.Fatalf("SetTree() error = %v", err)
@@ -47,8 +49,24 @@ func TestTreeCacheStoresWidgetPages(t *testing.T) {
 	cache := NewTreeCache(client)
 	latestKey := "forums:latest:v1:global:all:anonymous::20"
 	mostLikedKey := "forums:most-liked:v1:" + uuid.NewString() + ":all:anonymous::20"
-	latest := pagination.Result[domain.LatestPostSummary]{Items: []domain.LatestPostSummary{{ForumID: uuid.New(), ThreadID: uuid.New(), PostID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ThreadTitle: "Latest"}}}
-	mostLiked := pagination.Result[domain.MostLikedPost]{Items: []domain.MostLikedPost{{ForumID: uuid.New(), ThreadID: uuid.New(), PostID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ThreadTitle: "Popular", LikeCount: 5}}}
+	latest := pagination.Result[domain.LatestPostSummary]{
+		Items: []domain.LatestPostSummary{
+			{ForumID: uuid.New(), ThreadID: uuid.New(), PostID: uuid.New(), AuthorUserID: uuid.New(), Sequence: 1, ThreadTitle: "Latest"},
+		},
+	}
+	mostLiked := pagination.Result[domain.MostLikedPost]{
+		Items: []domain.MostLikedPost{
+			{
+				ForumID:      uuid.New(),
+				ThreadID:     uuid.New(),
+				PostID:       uuid.New(),
+				AuthorUserID: uuid.New(),
+				Sequence:     1,
+				ThreadTitle:  "Popular",
+				LikeCount:    5,
+			},
+		},
+	}
 
 	if err := cache.SetLatestPosts(context.Background(), latestKey, latest, time.Minute); err != nil {
 		t.Fatalf("SetLatestPosts() error = %v", err)

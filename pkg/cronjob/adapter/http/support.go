@@ -26,7 +26,9 @@ func pageFromQuery(ctx *fiber.Ctx) (pagination.Page, error) {
 		Cursor: ctx.Query("page_token"),
 	})
 	if err != nil {
-		return pagination.Page{}, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid.")}
+		return pagination.Page{}, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid."),
+		}
 	}
 	return page, nil
 }
@@ -39,7 +41,9 @@ func expectedVersion(ctx *fiber.Ctx) (uint64, error) {
 	}
 	version, err := strconv.ParseUint(value, 10, 64)
 	if err != nil {
-		return 0, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_if_match", "If-Match must contain a numeric version.")}
+		return 0, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_if_match", "If-Match must contain a numeric version."),
+		}
 	}
 	return version, nil
 }
@@ -58,7 +62,10 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	case errors.Is(err, port.ErrNotFound):
 		return problem.Write(ctx, problem.New(fiber.StatusNotFound, "cronjob_not_found", "Cron job was not found."))
 	case errors.Is(err, port.ErrPreconditionFailed):
-		return problem.Write(ctx, problem.New(fiber.StatusPreconditionFailed, "cronjob_precondition_failed", "Cron job version did not match."))
+		return problem.Write(
+			ctx,
+			problem.New(fiber.StatusPreconditionFailed, "cronjob_precondition_failed", "Cron job version did not match."),
+		)
 	case errors.Is(err, port.ErrNoDueJob):
 		return problem.Write(ctx, problem.New(fiber.StatusConflict, "cronjob_not_due", "No cron job is due."))
 	case errors.Is(err, port.ErrHandlerMissing):

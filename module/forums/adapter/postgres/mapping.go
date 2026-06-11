@@ -3,6 +3,9 @@ package postgres
 import (
 	"encoding/json"
 
+	forumsauthz "github.com/niflaot/gamehub-go/module/forums/adapter/postgres/authz"
+	forumsinteraction "github.com/niflaot/gamehub-go/module/forums/adapter/postgres/interaction"
+	forumsoperations "github.com/niflaot/gamehub-go/module/forums/adapter/postgres/operations"
 	"github.com/niflaot/gamehub-go/module/forums/domain"
 	"github.com/niflaot/gamehub-go/pkg/orm"
 )
@@ -217,4 +220,28 @@ func referenceFromModel(model PostReferenceModel) domain.PostReference {
 		LinkURL:       model.LinkURL,
 		CreatedAt:     model.CreatedAt,
 	}
+}
+
+// VisibilityAuthorizer resolves forum permissions from authorization tuples.
+type VisibilityAuthorizer = forumsauthz.VisibilityAuthorizer
+
+// NewVisibilityAuthorizer creates a visibility authorizer.
+func NewVisibilityAuthorizer(store orm.Store) VisibilityAuthorizer {
+	return forumsauthz.NewVisibilityAuthorizer(store)
+}
+
+// InteractionRepository stores forum interactions in PostgreSQL.
+type InteractionRepository = forumsinteraction.Repository
+
+// NewInteractionRepository creates an interaction repository.
+func NewInteractionRepository(store orm.Store) InteractionRepository {
+	return forumsinteraction.NewRepository(store)
+}
+
+// OperationsRepository runs forum search, repair, and counter flushes in PostgreSQL.
+type OperationsRepository = forumsoperations.Repository
+
+// NewOperationsRepository creates an operations repository.
+func NewOperationsRepository(store orm.Store) OperationsRepository {
+	return forumsoperations.NewRepository(store)
 }

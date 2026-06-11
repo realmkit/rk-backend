@@ -46,7 +46,13 @@ type Public struct {
 
 // Public returns frontend-safe configuration.
 func (config Config) Public() Public {
-	return Public{Provider: config.Provider, IssuerURL: config.IssuerURL, Audience: config.Audience, ClientID: config.ClientID, Scopes: config.ScopeList()}
+	return Public{
+		Provider:  config.Provider,
+		IssuerURL: config.IssuerURL,
+		Audience:  config.Audience,
+		ClientID:  config.ClientID,
+		Scopes:    config.ScopeList(),
+	}
 }
 
 // ScopeList returns configured scopes split on whitespace.

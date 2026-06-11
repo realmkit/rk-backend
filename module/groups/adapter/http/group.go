@@ -116,5 +116,13 @@ func (handler handler) deleteGroup(ctx *fiber.Ctx) error {
 
 // groupFromRequest maps HTTP request to group.
 func groupFromRequest(request groupRequest) domain.Group {
-	return domain.Group{Key: request.Key, Name: request.Name, Description: request.Description, Color: request.Color, Weight: request.Weight, Status: request.Status, IconAssetID: request.IconAssetID}
+	return domain.Group{
+		Key:         request.Key,
+		Name:        request.Name,
+		Description: request.Description,
+		Color:       request.Color,
+		Weight:      request.Weight,
+		Status:      request.Status,
+		IconAssetID: request.IconAssetID,
+	}
 }

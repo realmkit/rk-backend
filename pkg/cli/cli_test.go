@@ -37,7 +37,8 @@ func TestRootCommandShowsHelpByDefault(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if !strings.Contains(output.String(), "start") || !strings.Contains(output.String(), "migrate") || !strings.Contains(output.String(), "forums") {
+	if !strings.Contains(output.String(), "start") || !strings.Contains(output.String(), "migrate") ||
+		!strings.Contains(output.String(), "forums") {
 		t.Fatalf("output = %q, want start, migrate, and forums commands", output.String())
 	}
 }
@@ -168,7 +169,11 @@ func TestMigrateRepairRunsWithFlags(t *testing.T) {
 		t.Fatalf("Start() error = %v", err)
 	}
 
-	_, err = executeCommand(t, []string{"migrate", "repair", "--version", "1", "--checksum", loaded[0].Checksum, "--reason", "manual"}, deps)
+	_, err = executeCommand(
+		t,
+		[]string{"migrate", "repair", "--version", "1", "--checksum", loaded[0].Checksum, "--reason", "manual"},
+		deps,
+	)
 	if err != nil {
 		t.Fatalf("repair Execute() error = %v", err)
 	}
