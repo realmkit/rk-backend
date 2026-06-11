@@ -18,6 +18,7 @@ type Service struct {
 	posts        port.PostRepository
 	interactions port.InteractionRepository
 	authorizer   port.VisibilityAuthorizer
+	restrictions port.RestrictionChecker
 	cache        port.ReadCache
 	events       emitter.Publisher
 }
@@ -39,6 +40,9 @@ type Dependencies struct {
 	// Authorizer checks forum permissions.
 	Authorizer port.VisibilityAuthorizer
 
+	// Restrictions checks punishment restrictions.
+	Restrictions port.RestrictionChecker
+
 	// Cache caches widget reads.
 	Cache port.ReadCache
 
@@ -54,6 +58,7 @@ func NewService(deps Dependencies) Service {
 		posts:        deps.Posts,
 		interactions: deps.Interactions,
 		authorizer:   deps.Authorizer,
+		restrictions: deps.Restrictions,
 		cache:        deps.Cache,
 		events:       deps.Events,
 	}

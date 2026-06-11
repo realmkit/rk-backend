@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"sync"
 
@@ -18,6 +19,12 @@ type Hub struct {
 // NewHub creates a WebSocket hub.
 func NewHub() *Hub {
 	return &Hub{clients: map[uuid.UUID]*client{}}
+}
+
+// Publish broadcasts one dispatched event to local WebSocket clients.
+func (hub *Hub) Publish(_ context.Context, event domain.Event) error {
+	hub.Broadcast(event)
+	return nil
 }
 
 // Broadcast sends event to subscribed local clients.
@@ -51,7 +58,12 @@ func (handler handler) webSocket(conn *websocket.Conn) {
 	if hub == nil {
 		hub = NewHub()
 	}
-	client := &client{id: uuid.New(), conn: conn, scopes: map[string]domain.Scope{}}
+	client := &client{
+		id:     uuid.New(),
+		conn:   conn,
+		userID: socketUserID(conn),
+		scopes: map[string]domain.Scope{},
+	}
 	hub.add(client)
 	defer hub.remove(client.id)
 	_ = conn.WriteJSON(map[string]any{"type": "ready", "connection_id": client.id.String()})
@@ -68,6 +80,7 @@ func (handler handler) webSocket(conn *websocket.Conn) {
 type client struct {
 	id     uuid.UUID
 	conn   *websocket.Conn
+	userID uuid.UUID
 	scopes map[string]domain.Scope
 }
 
@@ -80,6 +93,10 @@ func (client *client) handle(body []byte) {
 	}
 	switch message.Type {
 	case "subscribe":
+		if !client.canSubscribe(message.Scope) {
+			_ = client.conn.WriteJSON(map[string]any{"type": "error", "code": "scope_forbidden"})
+			return
+		}
 		client.scopes[scopeKey(message.Scope)] = message.Scope
 		_ = client.conn.WriteJSON(map[string]any{"type": "subscribed", "scope": message.Scope})
 	case "unsubscribe":
@@ -101,6 +118,21 @@ func (client *client) matches(scopes []domain.Scope) bool {
 	return false
 }
 
+// canSubscribe authorizes one subscription scope.
+func (client *client) canSubscribe(scope domain.Scope) bool {
+	if err := scope.Validate(); err != nil {
+		return false
+	}
+	switch scope.Type {
+	case domain.ScopeGlobal:
+		return true
+	case domain.ScopeUser:
+		return client.userID != uuid.Nil && scope.ID == client.userID.String()
+	default:
+		return false
+	}
+}
+
 // write sends one event message.
 func (client *client) write(event domain.Event) error {
 	return client.conn.WriteJSON(map[string]any{"type": "event", "event": event})
@@ -115,4 +147,17 @@ type socketMessage struct {
 // scopeKey returns a comparable scope key.
 func scopeKey(scope domain.Scope) string {
 	return string(scope.Type) + ":" + scope.ID + ":" + scope.Permission
+}
+
+// socketUserID extracts the authenticated user ID made available to the socket.
+func socketUserID(conn *websocket.Conn) uuid.UUID {
+	value := conn.Headers("X-GameHub-User-Id")
+	if value == "" {
+		value = conn.Query("user_id")
+	}
+	id, err := uuid.Parse(value)
+	if err != nil {
+		return uuid.Nil
+	}
+	return id
 }

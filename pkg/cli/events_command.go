@@ -143,5 +143,5 @@ func runEventsAction(ctx context.Context, activeLogger **zap.Logger, deps comman
 			log.Error("close redis failed", zap.Error(err))
 		}
 	}()
-	return action(ctx, eventsService(db, client))
+	return action(ctx, eventsService(db, client, nil))
 }

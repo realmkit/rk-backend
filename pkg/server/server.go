@@ -10,6 +10,7 @@ import (
 	forumshttp "github.com/niflaot/gamehub-go/module/forums/adapter/http"
 	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
+	punishmentshttp "github.com/niflaot/gamehub-go/module/punishments/adapter/http"
 	userhttp "github.com/niflaot/gamehub-go/module/user/adapter/http"
 	"github.com/niflaot/gamehub-go/pkg/api/auth"
 	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
@@ -42,6 +43,7 @@ type options struct {
 	forums                *forumshttp.Services
 	groups                *groupshttp.Services
 	metadata              *metadatahttp.Services
+	punishments           *punishmentshttp.Services
 	rateLimitStore        ratelimit.Store
 	users                 *userhttp.Services
 }
@@ -118,6 +120,13 @@ func WithMetadata(services metadatahttp.Services) Option {
 	}
 }
 
+// WithPunishments registers punishment routes with services.
+func WithPunishments(services punishmentshttp.Services) Option {
+	return func(options *options) {
+		options.punishments = &services
+	}
+}
+
 // WithRateLimitStore configures the rate limit store.
 func WithRateLimitStore(store ratelimit.Store) Option {
 	return func(options *options) {
@@ -183,6 +192,9 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	}
 	if options.metadata != nil {
 		metadatahttp.Register(api, *options.metadata)
+	}
+	if options.punishments != nil {
+		punishmentshttp.Register(api, *options.punishments)
 	}
 	return app
 }

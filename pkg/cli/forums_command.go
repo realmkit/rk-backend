@@ -150,8 +150,9 @@ func runForumAction(ctx context.Context, activeLogger **zap.Logger, deps command
 			}
 		}()
 	}
-	events := eventsService(db, client)
-	return action(ctx, forumsService(db, client, nil, events))
+	events := eventsService(db, client, nil)
+	punishments := punishmentsService(db, client, events)
+	return action(ctx, forumsService(db, client, nil, punishments, events))
 }
 
 // writeForumReport writes a counter drift report.

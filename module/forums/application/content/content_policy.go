@@ -129,7 +129,10 @@ func (service Service) requireThreadCreate(
 	forumID uuid.UUID,
 ) error {
 	allowed, err := service.authorizer.CanCreateThread(ctx, actorUserID, forumID)
-	return decisionError(allowed, err)
+	if err := decisionError(allowed, err); err != nil {
+		return err
+	}
+	return service.requireUnrestricted(ctx, actorUserID, "gamehub.forums.create_thread")
 }
 
 func (service Service) requireReply(
@@ -138,7 +141,10 @@ func (service Service) requireReply(
 	forumID uuid.UUID,
 ) error {
 	allowed, err := service.authorizer.CanReply(ctx, actorUserID, forumID)
-	return decisionError(allowed, err)
+	if err := decisionError(allowed, err); err != nil {
+		return err
+	}
+	return service.requireUnrestricted(ctx, actorUserID, "gamehub.forums.reply")
 }
 
 func (service Service) requireLikePosts(
@@ -191,6 +197,24 @@ func decisionError(allowed bool, err error) error {
 		return err
 	}
 	if !allowed {
+		return port.ErrForbidden
+	}
+	return nil
+}
+
+func (service Service) requireUnrestricted(
+	ctx context.Context,
+	actorUserID uuid.UUID,
+	actionKey string,
+) error {
+	if service.restrictions == nil || actorUserID == uuid.Nil {
+		return nil
+	}
+	restricted, err := service.restrictions.Restricted(ctx, actorUserID, actionKey)
+	if err != nil {
+		return err
+	}
+	if restricted {
 		return port.ErrForbidden
 	}
 	return nil

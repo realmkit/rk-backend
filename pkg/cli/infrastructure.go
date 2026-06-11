@@ -19,6 +19,11 @@ import (
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
 	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
 	metadataapp "github.com/niflaot/gamehub-go/module/metadata/application"
+	punishmentshttp "github.com/niflaot/gamehub-go/module/punishments/adapter/http"
+	punishmentspostgres "github.com/niflaot/gamehub-go/module/punishments/adapter/postgres"
+	punishmentsredis "github.com/niflaot/gamehub-go/module/punishments/adapter/redis"
+	punishmentsapp "github.com/niflaot/gamehub-go/module/punishments/application"
+	punishmentsport "github.com/niflaot/gamehub-go/module/punishments/port"
 	userhttp "github.com/niflaot/gamehub-go/module/user/adapter/http"
 	userpostgres "github.com/niflaot/gamehub-go/module/user/adapter/postgres"
 	userapp "github.com/niflaot/gamehub-go/module/user/application"
@@ -41,10 +46,10 @@ import (
 )
 
 // infrastructureOptions creates server options for shared infrastructure.
-func infrastructureOptions(_ context.Context, db *gorm.DB, events eventsapp.Service, forums forumsapp.Service) ([]server.Option, error) {
-	cron := cronService(db, events, forums)
+func infrastructureOptions(_ context.Context, db *gorm.DB, events eventsapp.Service, hub *eventshttp.Hub, forums forumsapp.Service, punishments punishmentsapp.Service) ([]server.Option, error) {
+	cron := cronService(db, events, forums, punishments)
 	return []server.Option{
-		server.WithEvents(eventshttp.Services{Events: events, Hub: eventshttp.NewHub()}),
+		server.WithEvents(eventshttp.Services{Events: events, Hub: hub}),
 		server.WithCron(cronhttp.Services{Cron: cron}),
 	}, nil
 }
@@ -59,6 +64,7 @@ func forumsService(
 	db *gorm.DB,
 	client *goredis.Client,
 	assetService assetsport.Service,
+	restrictions forumsport.RestrictionChecker,
 	events eventsapp.Service,
 ) forumsapp.Service {
 	store := orm.NewStore(db)
@@ -75,10 +81,34 @@ func forumsService(
 		Operations:   forumspostgres.NewOperationsRepository(store),
 		Assets:       forumsassets.NewResolver(assetService),
 		Authorizer:   forumspostgres.NewVisibilityAuthorizer(store),
+		Restrictions: restrictions,
 		Cache:        readCache,
 		Transactions: transaction.New(db),
 		Events:       events,
 	})
+}
+
+// punishmentsService creates punishment application service.
+func punishmentsService(db *gorm.DB, client *goredis.Client, events eventsapp.Service) punishmentsapp.Service {
+	store := orm.NewStore(db)
+	definitions := punishmentspostgres.NewDefinitionRepository(store)
+	cases := punishmentspostgres.NewCaseRepository(store)
+	var restrictionCache punishmentsport.RestrictionCache
+	if client != nil {
+		restrictionCache = punishmentsredis.NewCache(client)
+	}
+	return punishmentsapp.NewService(punishmentsapp.Dependencies{
+		Definitions:  definitions,
+		Cases:        cases,
+		Cache:        restrictionCache,
+		Transactions: transaction.New(db),
+		Events:       events,
+	})
+}
+
+// punishmentshttpServices creates HTTP services for punishments.
+func punishmentshttpServices(service punishmentsapp.Service) punishmentshttp.Services {
+	return punishmentshttp.Services{Punishments: service}
 }
 
 // forumshttpServices creates HTTP services for forums.
@@ -153,9 +183,8 @@ func usershttpServices(userService userapp.Service, groupService groupsapp.Servi
 }
 
 // eventsService creates the events application service.
-func eventsService(db *gorm.DB, client *goredis.Client) eventsapp.Service {
-	var broker eventsport.Broker
-	if client != nil {
+func eventsService(db *gorm.DB, client *goredis.Client, broker eventsport.Broker) eventsapp.Service {
+	if broker == nil && client != nil {
 		broker = eventsredis.NewBroker(client)
 	}
 	return eventsapp.NewService(eventsapp.Dependencies{
@@ -165,7 +194,7 @@ func eventsService(db *gorm.DB, client *goredis.Client) eventsapp.Service {
 }
 
 // cronService creates the cron application service.
-func cronService(db *gorm.DB, events eventsapp.Service, forums forumsapp.Service) cronapp.Service {
+func cronService(db *gorm.DB, events eventsapp.Service, forums forumsapp.Service, punishments punishmentsapp.Service) cronapp.Service {
 	handlers := map[string]cronport.Handler{
 		cronDomain.JobEventsDispatchPending: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
 			result, err := events.DispatchOnce(ctx, "cron-events-dispatch")
@@ -183,7 +212,18 @@ func cronService(db *gorm.DB, events eventsapp.Service, forums forumsapp.Service
 			report, err := forums.VerifyLikes(ctx)
 			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches))}, err
 		}),
-		cronDomain.JobPunishmentsExpireActive:    noopHandler(),
+		cronDomain.JobPunishmentsExpireActive: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+			count, err := punishments.ExpirePunishments(ctx)
+			return cronDomain.Result{ProcessedCount: count, ChangedCount: count}, err
+		}),
+		cronDomain.JobPunishmentsVerifyRestrictions: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+			report, err := punishments.VerifyRestrictions(ctx)
+			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches))}, err
+		}),
+		cronDomain.JobPunishmentsRebuildRestrictions: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+			report, err := punishments.RebuildRestrictions(ctx)
+			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches)), ChangedCount: int64(len(report.Mismatches))}, err
+		}),
 		cronDomain.JobAssetsExpireUploadIntents:  noopHandler(),
 		cronDomain.JobUsersCleanupIdentityClaims: noopHandler(),
 	}

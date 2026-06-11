@@ -72,6 +72,9 @@ type Dependencies struct {
 	// Authorizer checks forum permissions.
 	Authorizer port.VisibilityAuthorizer
 
+	// Restrictions checks punishment restrictions.
+	Restrictions port.RestrictionChecker
+
 	// Permissions manages forum permission configuration.
 	Permissions port.PermissionAdmin
 
@@ -130,6 +133,7 @@ func contentDeps(deps Dependencies) contentapp.Dependencies {
 		Posts:        deps.Posts,
 		Assets:       deps.Assets,
 		Authorizer:   deps.Authorizer,
+		Restrictions: deps.Restrictions,
 		Cache:        deps.Cache,
 		Transactions: deps.Transactions,
 		Events:       deps.Events,
@@ -144,6 +148,7 @@ func interactionDeps(deps Dependencies) interactionapp.Dependencies {
 		Posts:        deps.Posts,
 		Interactions: deps.Interactions,
 		Authorizer:   deps.Authorizer,
+		Restrictions: deps.Restrictions,
 		Cache:        deps.Cache,
 		Events:       deps.Events,
 	}

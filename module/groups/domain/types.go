@@ -85,6 +85,9 @@ const (
 
 	// ObjectCronJob is a cron job authorization object.
 	ObjectCronJob ObjectType = "cronjob"
+
+	// ObjectPunishment is a punishment authorization object.
+	ObjectPunishment ObjectType = "punishment"
 )
 
 const (
@@ -134,6 +137,12 @@ const (
 
 	// RelationAuthor is an author relation.
 	RelationAuthor Relation = "author"
+
+	// RelationIssuer is an issuer relation.
+	RelationIssuer Relation = "issuer"
+
+	// RelationTarget is a target relation.
+	RelationTarget Relation = "target"
 )
 
 const (
@@ -214,6 +223,33 @@ const (
 
 	// PermissionCronJobsRepair allows repairing cron job locks.
 	PermissionCronJobsRepair Permission = "cronjobs.repair"
+
+	// PermissionPunishmentsView allows reading punishments.
+	PermissionPunishmentsView Permission = "punishments.view"
+
+	// PermissionPunishmentsViewPrivate allows reading private punishment fields.
+	PermissionPunishmentsViewPrivate Permission = "punishments.view_private"
+
+	// PermissionPunishmentsIssue allows issuing punishments.
+	PermissionPunishmentsIssue Permission = "punishments.issue"
+
+	// PermissionPunishmentsRevoke allows revoking punishments.
+	PermissionPunishmentsRevoke Permission = "punishments.revoke"
+
+	// PermissionPunishmentsUpdate allows updating punishments.
+	PermissionPunishmentsUpdate Permission = "punishments.update"
+
+	// PermissionPunishmentsManageDefinitions allows managing punishment definitions.
+	PermissionPunishmentsManageDefinitions Permission = "punishments.manage_definitions"
+
+	// PermissionPunishmentsManageIntegrations allows managing punishment integrations.
+	PermissionPunishmentsManageIntegrations Permission = "punishments.manage_integrations"
+
+	// PermissionPunishmentsViewEvents allows reading punishment events.
+	PermissionPunishmentsViewEvents Permission = "punishments.view_events"
+
+	// PermissionPunishmentsReplayEvents allows replaying punishment events.
+	PermissionPunishmentsReplayEvents Permission = "punishments.replay_events"
 )
 
 const (

@@ -121,9 +121,10 @@ func runCronAction(ctx context.Context, activeLogger **zap.Logger, deps commandD
 			log.Error("close redis failed", zap.Error(err))
 		}
 	}()
-	events := eventsService(db, client)
-	forums := forumsService(db, client, nil, events)
-	service := cronService(db, events, forums)
+	events := eventsService(db, client, nil)
+	punishments := punishmentsService(db, client, events)
+	forums := forumsService(db, client, nil, punishments, events)
+	service := cronService(db, events, forums, punishments)
 	if err := service.EnsureDefinitions(ctx, cronDomain.DefaultDefinitions(time.Now().UTC())); err != nil {
 		return err
 	}

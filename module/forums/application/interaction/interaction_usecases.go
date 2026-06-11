@@ -26,6 +26,9 @@ func (service Service) LikePost(
 	if err := service.requireLikePosts(ctx, command.ActorUserID, post.ForumID); err != nil {
 		return domain.PostLikeSummary{}, err
 	}
+	if err := service.requireUnrestricted(ctx, command.ActorUserID, "gamehub.forums.like_posts"); err != nil {
+		return domain.PostLikeSummary{}, err
+	}
 	like := newPostLike(post, command.ActorUserID)
 	if err := like.Validate(); err != nil {
 		return domain.PostLikeSummary{}, err
@@ -61,6 +64,9 @@ func (service Service) UnlikePost(
 		return domain.PostLikeSummary{}, err
 	}
 	if err := service.requireLikePosts(ctx, command.ActorUserID, post.ForumID); err != nil {
+		return domain.PostLikeSummary{}, err
+	}
+	if err := service.requireUnrestricted(ctx, command.ActorUserID, "gamehub.forums.like_posts"); err != nil {
 		return domain.PostLikeSummary{}, err
 	}
 	changed, err := service.interactions.UnlikePost(ctx, post.ID, command.ActorUserID)

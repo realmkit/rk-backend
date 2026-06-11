@@ -18,6 +18,12 @@ const (
 	// JobPunishmentsExpireActive expires active punishments.
 	JobPunishmentsExpireActive = "punishments.expire-active"
 
+	// JobPunishmentsVerifyRestrictions verifies punishment restrictions.
+	JobPunishmentsVerifyRestrictions = "punishments.verify-restrictions"
+
+	// JobPunishmentsRebuildRestrictions rebuilds punishment restrictions.
+	JobPunishmentsRebuildRestrictions = "punishments.rebuild-restrictions"
+
 	// JobAssetsExpireUploadIntents expires stale upload intents.
 	JobAssetsExpireUploadIntents = "assets.expire-upload-intents"
 
@@ -33,6 +39,8 @@ func DefaultDefinitions(now time.Time) []Definition {
 		interval(JobForumsVerifyStats, "Verify forum stats", 24*time.Hour, now),
 		interval(JobForumsVerifyLikes, "Verify forum likes", 24*time.Hour, now),
 		interval(JobPunishmentsExpireActive, "Expire active punishments", 5*time.Minute, now),
+		interval(JobPunishmentsVerifyRestrictions, "Verify punishment restrictions", 24*time.Hour, now),
+		manual(JobPunishmentsRebuildRestrictions, "Rebuild punishment restrictions", now),
 		interval(JobAssetsExpireUploadIntents, "Expire upload intents", 30*time.Minute, now),
 		interval(JobUsersCleanupIdentityClaims, "Cleanup identity claims", 24*time.Hour, now),
 	}
@@ -50,5 +58,20 @@ func interval(key string, name string, duration time.Duration, now time.Time) De
 		ConcurrencyPolicy:  ConcurrencyForbid,
 		NextRunAt:          &next,
 		Version:            1,
+	}
+}
+
+// manual creates a disabled manual definition.
+func manual(key string, name string, now time.Time) Definition {
+	return Definition{
+		Key:                key,
+		Name:               name,
+		ScheduleKind:       ScheduleManual,
+		ScheduleExpression: "",
+		Enabled:            false,
+		ConcurrencyPolicy:  ConcurrencyForbid,
+		Version:            1,
+		CreatedAt:          now,
+		UpdatedAt:          now,
 	}
 }

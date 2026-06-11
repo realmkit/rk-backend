@@ -9,6 +9,7 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
 	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
 	"github.com/niflaot/gamehub-go/pkg/config"
+	eventshttp "github.com/niflaot/gamehub-go/pkg/events/adapter/http"
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/orm"
 	"github.com/niflaot/gamehub-go/pkg/postgres"
@@ -160,13 +161,15 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 	}
 	logDevelopmentConnection(cfg, log, "s3 storage connection established", zap.String("bucket", cfg.Storage.Bucket), zap.String("endpoint", cfg.Storage.Endpoint))
 	assetRepository := assetspostgres.NewAssetRepository(orm.NewStore(db))
-	eventService := eventsService(db, client)
+	eventHub := eventshttp.NewHub()
+	eventService := eventsService(db, client, eventHub)
 	assetService := assetsapp.NewService(assetRepository, assetStorage, cfg.Storage.Bucket).WithEvents(eventService)
 	groupService := groupsService(db, eventService)
-	forumService := forumsService(db, client, assetService, eventService)
+	punishmentService := punishmentsService(db, client, eventService)
+	forumService := forumsService(db, client, assetService, punishmentService, eventService)
 	userService := usersService(db, cfg, eventService)
 	metadataService := metadataService(db, eventService)
-	infraOptions, err := infrastructureOptions(ctx, db, eventService, forumService)
+	infraOptions, err := infrastructureOptions(ctx, db, eventService, eventHub, forumService, punishmentService)
 	if err != nil {
 		closeDatabase(zap.NewNop(), deps.closePostgres, db)
 		deps.closeRedis(client)
@@ -180,6 +183,7 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 		server.WithGroups(groupshttpServices(groupService)),
 		server.WithForums(forumshttpServices(forumService)),
 		server.WithMetadata(metadatahttpServices(metadataService)),
+		server.WithPunishments(punishmentshttpServices(punishmentService)),
 		server.WithUsers(usershttpServices(userService, groupService)),
 	)
 	options = append(options, infraOptions...)

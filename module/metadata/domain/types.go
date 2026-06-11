@@ -43,6 +43,12 @@ const (
 
 	// OwnerForumThread attaches metadata to forum threads.
 	OwnerForumThread OwnerType = "forum_thread"
+
+	// OwnerPunishmentDefinition attaches metadata to punishment definitions.
+	OwnerPunishmentDefinition OwnerType = "punishment_definition"
+
+	// OwnerPunishment attaches metadata to punishments.
+	OwnerPunishment OwnerType = "punishment"
 )
 
 // Supported value types.
@@ -71,6 +77,8 @@ func AllowedOwnerTypes() []OwnerType {
 		OwnerForumCategory,
 		OwnerForum,
 		OwnerForumThread,
+		OwnerPunishmentDefinition,
+		OwnerPunishment,
 	}
 }
 

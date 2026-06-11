@@ -50,6 +50,109 @@ func TestOperationExistsNormalizesFiberParameters(t *testing.T) {
 	}
 }
 
+// TestPunishmentOperationsExist verifies punishment routes are documented.
+func TestPunishmentOperationsExist(t *testing.T) {
+	tests := []struct {
+		method string
+		path   string
+	}{
+		{method: "POST", path: "/punishment-definitions"},
+		{method: "GET", path: "/punishment-definitions"},
+		{method: "GET", path: "/punishment-definitions/:definition_id"},
+		{method: "PATCH", path: "/punishment-definitions/:definition_id"},
+		{method: "DELETE", path: "/punishment-definitions/:definition_id"},
+		{method: "POST", path: "/punishment-definitions/:definition_id/actions/reorder"},
+		{method: "POST", path: "/punishments"},
+		{method: "GET", path: "/punishments"},
+		{method: "GET", path: "/punishments/:punishment_id"},
+		{method: "PATCH", path: "/punishments/:punishment_id"},
+		{method: "POST", path: "/punishments/:punishment_id/revoke"},
+		{method: "GET", path: "/users/:user_id/punishments"},
+		{method: "GET", path: "/users/:user_id/punishments/active"},
+		{method: "POST", path: "/punishments/restrictions/check"},
+		{method: "GET", path: "/users/:user_id/punishments/restrictions"},
+	}
+
+	for _, tt := range tests {
+		ok, err := OperationExists(tt.method, tt.path)
+		if err != nil {
+			t.Fatalf("OperationExists(%q, %q) error = %v", tt.method, tt.path, err)
+		}
+		if !ok {
+			t.Fatalf("OperationExists(%q, %q) = false, want true", tt.method, tt.path)
+		}
+	}
+}
+
+// TestPunishmentOperationsUseConcernTags verifies punishment routes are grouped.
+func TestPunishmentOperationsUseConcernTags(t *testing.T) {
+	expected := map[string]string{
+		"checkPunishmentRestriction":         "punishment-restrictions",
+		"createPunishmentDefinition":         "punishment-definitions",
+		"deletePunishmentDefinition":         "punishment-definitions",
+		"getPunishment":                      "punishments",
+		"getPunishmentDefinition":            "punishment-definitions",
+		"issuePunishment":                    "punishments",
+		"listPunishmentDefinitions":          "punishment-definitions",
+		"listPunishments":                    "punishments",
+		"listUserActivePunishments":          "punishments",
+		"listUserPunishmentRestrictions":     "punishment-restrictions",
+		"listUserPunishments":                "punishments",
+		"reorderPunishmentDefinitionActions": "punishment-definitions",
+		"revokePunishment":                   "punishments",
+		"updatePunishment":                   "punishments",
+		"updatePunishmentDefinition":         "punishment-definitions",
+	}
+	requiredTags := map[string]bool{
+		"punishment-definitions":  false,
+		"punishment-restrictions": false,
+		"punishments":             false,
+	}
+
+	var contract struct {
+		Tags []struct {
+			Name string `json:"name"`
+		} `json:"tags"`
+		Paths map[string]map[string]struct {
+			OperationID string   `json:"operationId"`
+			Tags        []string `json:"tags"`
+		} `json:"paths"`
+	}
+	if err := json.Unmarshal(Document(), &contract); err != nil {
+		t.Fatalf("Unmarshal() error = %v", err)
+	}
+
+	for _, tag := range contract.Tags {
+		if _, ok := requiredTags[tag.Name]; ok {
+			requiredTags[tag.Name] = true
+		}
+	}
+	for tag, found := range requiredTags {
+		if !found {
+			t.Fatalf("punishment tag %q is not declared", tag)
+		}
+	}
+
+	seen := map[string]bool{}
+	for _, methods := range contract.Paths {
+		for _, operation := range methods {
+			want, ok := expected[operation.OperationID]
+			if !ok {
+				continue
+			}
+			seen[operation.OperationID] = true
+			if len(operation.Tags) != 1 || operation.Tags[0] != want {
+				t.Fatalf("%s tags = %v, want [%s]", operation.OperationID, operation.Tags, want)
+			}
+		}
+	}
+	for operationID := range expected {
+		if !seen[operationID] {
+			t.Fatalf("punishment operation %q was not found", operationID)
+		}
+	}
+}
+
 // TestForumMilestoneOneOperationsExist verifies forum structure routes are documented.
 func TestForumMilestoneOneOperationsExist(t *testing.T) {
 	tests := []struct {
