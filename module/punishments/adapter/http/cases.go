@@ -19,7 +19,7 @@ func (handler handler) issuePunishment(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	issued, err := handler.services.Punishments.IssuePunishment(ctx.Context(), issueCommand(ctx, actor, request))
+	issued, err := handler.services.Punishments.IssuePunishment(ctx.UserContext(), issueCommand(ctx, actor, request))
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -35,7 +35,7 @@ func (handler handler) listPunishments(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Punishments.ListPunishments(ctx.Context(), punishmentFilter(ctx), page)
+	result, err := handler.services.Punishments.ListPunishments(ctx.UserContext(), punishmentFilter(ctx), page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -50,7 +50,7 @@ func (handler handler) getPunishment(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	punishment, err := handler.services.Punishments.GetPunishment(ctx.Context(), id)
+	punishment, err := handler.services.Punishments.GetPunishment(ctx.UserContext(), id)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -78,7 +78,7 @@ func (handler handler) updatePunishment(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	updated, err := handler.services.Punishments.UpdatePunishment(ctx.Context(), port.UpdateCommand{
+	updated, err := handler.services.Punishments.UpdatePunishment(ctx.UserContext(), port.UpdateCommand{
 		ActorUserID:     actor,
 		PunishmentID:    id,
 		Reason:          request.Reason,
@@ -114,7 +114,7 @@ func (handler handler) revokePunishment(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	err = handler.services.Punishments.RevokePunishment(ctx.Context(), port.RevokeCommand{
+	err = handler.services.Punishments.RevokePunishment(ctx.UserContext(), port.RevokeCommand{
 		ActorUserID: actor, PunishmentID: id, Reason: request.Reason,
 		ExpectedVersion: version,
 	})
@@ -140,7 +140,7 @@ func (handler handler) listUserPunishments(ctx *fiber.Ctx) error {
 	if activePunishmentPath(ctx.Path()) {
 		filter.Status = domain.PunishmentActive
 	}
-	result, err := handler.services.Punishments.ListPunishments(ctx.Context(), filter, page)
+	result, err := handler.services.Punishments.ListPunishments(ctx.UserContext(), filter, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -158,7 +158,7 @@ func (handler handler) checkRestriction(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	result, err := handler.services.Punishments.CheckRestriction(ctx.Context(), port.CheckCommand{
+	result, err := handler.services.Punishments.CheckRestriction(ctx.UserContext(), port.CheckCommand{
 		UserID:    request.UserID,
 		ActionKey: request.ActionKey,
 	})
@@ -176,7 +176,7 @@ func (handler handler) listRestrictions(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	restrictions, err := handler.services.Punishments.ListActiveRestrictions(ctx.Context(), userID)
+	restrictions, err := handler.services.Punishments.ListActiveRestrictions(ctx.UserContext(), userID)
 	if err != nil {
 		return handleError(ctx, err)
 	}

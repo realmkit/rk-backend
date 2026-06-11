@@ -38,7 +38,7 @@ func (handler handler) createDefinition(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	created, err := handler.services.Punishments.CreateDefinition(ctx.Context(), definitionFromRequest(request, uuid.Nil))
+	created, err := handler.services.Punishments.CreateDefinition(ctx.UserContext(), definitionFromRequest(request, uuid.Nil))
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -55,7 +55,7 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 		return err
 	}
 	result, err := handler.services.Punishments.ListDefinitions(
-		ctx.Context(),
+		ctx.UserContext(),
 		port.DefinitionFilter{Status: domain.DefinitionStatus(ctx.Query("status"))},
 		page,
 	)
@@ -73,7 +73,7 @@ func (handler handler) getDefinition(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	definition, err := handler.services.Punishments.GetDefinition(ctx.Context(), id)
+	definition, err := handler.services.Punishments.GetDefinition(ctx.UserContext(), id)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -97,7 +97,7 @@ func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	updated, err := handler.services.Punishments.UpdateDefinition(ctx.Context(), definitionFromRequest(request, id), version)
+	updated, err := handler.services.Punishments.UpdateDefinition(ctx.UserContext(), definitionFromRequest(request, id), version)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -117,7 +117,7 @@ func (handler handler) deleteDefinition(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if err := handler.services.Punishments.DeleteDefinition(ctx.Context(), id, version); err != nil {
+	if err := handler.services.Punishments.DeleteDefinition(ctx.UserContext(), id, version); err != nil {
 		return handleError(ctx, err)
 	}
 	return ctx.SendStatus(fiber.StatusNoContent)
@@ -140,7 +140,7 @@ func (handler handler) reorderActions(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	if err := handler.services.Punishments.ReorderDefinitionActions(ctx.Context(), id, request.IDs); err != nil {
+	if err := handler.services.Punishments.ReorderDefinitionActions(ctx.UserContext(), id, request.IDs); err != nil {
 		return handleError(ctx, err)
 	}
 	return ctx.SendStatus(fiber.StatusNoContent)

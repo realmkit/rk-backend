@@ -36,7 +36,7 @@ func (handler handler) createMessage(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	message, err := handler.services.Conversation.CreateMessage(ctx.Context(), port.MessageCommand{
+	message, err := handler.services.Conversation.CreateMessage(ctx.UserContext(), port.MessageCommand{
 		ActorUserID:         actor,
 		TicketID:            ticketID,
 		Visibility:          request.Visibility,
@@ -66,7 +66,7 @@ func (handler handler) listMessages(ctx *fiber.Ctx) error {
 		return err
 	}
 	includeStaffOnly := ctx.QueryBool("include_staff_only")
-	result, err := handler.services.Conversation.ListMessages(ctx.Context(), ticketID, actor, includeStaffOnly, page)
+	result, err := handler.services.Conversation.ListMessages(ctx.UserContext(), ticketID, actor, includeStaffOnly, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -83,7 +83,7 @@ func (handler handler) addEvidence(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	evidence, err := handler.services.Conversation.AddEvidence(ctx.Context(), port.EvidenceCommand{
+	evidence, err := handler.services.Conversation.AddEvidence(ctx.UserContext(), port.EvidenceCommand{
 		ActorUserID:    actor,
 		TicketID:       ticketID,
 		MessageID:      request.MessageID,
@@ -111,7 +111,7 @@ func (handler handler) listEvidence(ctx *fiber.Ctx) error {
 		return err
 	}
 	includeStaffOnly := ctx.QueryBool("include_staff_only")
-	items, err := handler.services.Conversation.ListEvidence(ctx.Context(), ticketID, actor, includeStaffOnly)
+	items, err := handler.services.Conversation.ListEvidence(ctx.UserContext(), ticketID, actor, includeStaffOnly)
 	if err != nil {
 		return handleError(ctx, err)
 	}

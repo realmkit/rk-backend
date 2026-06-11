@@ -39,7 +39,7 @@ func (handler handler) createDefinition(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	created, err := handler.services.Definitions.CreateDefinition(ctx.Context(), request.definition(uuid.Nil))
+	created, err := handler.services.Definitions.CreateDefinition(ctx.UserContext(), request.definition(uuid.Nil))
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -60,7 +60,7 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 		Kind:   domain.Kind(ctx.Query("kind")),
 		Status: domain.DefinitionStatus(ctx.Query("status")),
 	}
-	result, err := handler.services.Definitions.ListDefinitions(ctx.Context(), filter, page)
+	result, err := handler.services.Definitions.ListDefinitions(ctx.UserContext(), filter, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -76,7 +76,7 @@ func (handler handler) getDefinition(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	definition, err := handler.services.Definitions.GetDefinition(ctx.Context(), id)
+	definition, err := handler.services.Definitions.GetDefinition(ctx.UserContext(), id)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -101,7 +101,7 @@ func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	updated, err := handler.services.Definitions.UpdateDefinition(ctx.Context(), request.definition(id), version)
+	updated, err := handler.services.Definitions.UpdateDefinition(ctx.UserContext(), request.definition(id), version)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -122,7 +122,7 @@ func (handler handler) deleteDefinition(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if err := handler.services.Definitions.DeleteDefinition(ctx.Context(), id, version); err != nil {
+	if err := handler.services.Definitions.DeleteDefinition(ctx.UserContext(), id, version); err != nil {
 		return handleError(ctx, err)
 	}
 	return ctx.SendStatus(fiber.StatusNoContent)

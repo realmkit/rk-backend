@@ -25,7 +25,7 @@ func (handler handler) createCategory(ctx *fiber.Ctx) error {
 		ActorUserID: actor,
 		Category:    categoryFromRequest(uuid.Nil, request),
 	}
-	category, err := handler.services.Structure.CreateCategory(ctx.Context(), command)
+	category, err := handler.services.Structure.CreateCategory(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -39,7 +39,7 @@ func (handler handler) getCategory(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	category, err := handler.services.Structure.GetCategory(ctx.Context(), id)
+	category, err := handler.services.Structure.GetCategory(ctx.UserContext(), id)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -54,7 +54,7 @@ func (handler handler) listCategories(ctx *fiber.Ctx) error {
 		return err
 	}
 	filter := port.CategoryFilter{Status: domain.CategoryStatus(ctx.Query("status"))}
-	result, err := handler.services.Structure.ListCategories(ctx.Context(), filter, page)
+	result, err := handler.services.Structure.ListCategories(ctx.UserContext(), filter, page)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -82,7 +82,7 @@ func (handler handler) updateCategory(ctx *fiber.Ctx) error {
 		Category:        categoryFromRequest(id, request),
 		ExpectedVersion: version,
 	}
-	category, err := handler.services.Structure.UpdateCategory(ctx.Context(), command)
+	category, err := handler.services.Structure.UpdateCategory(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -104,7 +104,7 @@ func (handler handler) deleteCategory(ctx *fiber.Ctx) error {
 		ID:              id,
 		ExpectedVersion: version,
 	}
-	if err := handler.services.Structure.DeleteCategory(ctx.Context(), command); err != nil {
+	if err := handler.services.Structure.DeleteCategory(ctx.UserContext(), command); err != nil {
 		return shared.HandleError(ctx, err)
 	}
 	return shared.WriteNoContent(ctx)
@@ -127,7 +127,7 @@ func (handler handler) reorderCategories(ctx *fiber.Ctx) error {
 		ActorUserID: actor,
 		Items:       request.Items,
 	}
-	if err := handler.services.Structure.ReorderCategories(ctx.Context(), command); err != nil {
+	if err := handler.services.Structure.ReorderCategories(ctx.UserContext(), command); err != nil {
 		return shared.HandleError(ctx, err)
 	}
 	return shared.WriteNoContent(ctx)

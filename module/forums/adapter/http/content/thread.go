@@ -24,7 +24,7 @@ func (handler handler) createThread(ctx *fiber.Ctx) error {
 	if err := shared.DecodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	thread, post, err := handler.services.Content.CreateThread(ctx.Context(), port.CreateThreadCommand{
+	thread, post, err := handler.services.Content.CreateThread(ctx.UserContext(), port.CreateThreadCommand{
 		ActorUserID:         actor,
 		ForumID:             forumID,
 		Title:               request.Title,
@@ -62,7 +62,7 @@ func (handler handler) listThreads(ctx *fiber.Ctx) error {
 		Status:  domain.ThreadStatus(ctx.Query("status")),
 		Section: ctx.Query("section"),
 	}
-	result, err := handler.services.Content.ListThreads(ctx.Context(), actor, filter, page)
+	result, err := handler.services.Content.ListThreads(ctx.UserContext(), actor, filter, page)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -82,7 +82,7 @@ func (handler handler) getThread(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	thread, err := handler.services.Content.GetThread(ctx.Context(), actor, id)
+	thread, err := handler.services.Content.GetThread(ctx.UserContext(), actor, id)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -118,7 +118,7 @@ func (handler handler) updateThread(ctx *fiber.Ctx) error {
 		Slug:            request.Slug,
 		ExpectedVersion: version,
 	}
-	thread, err := handler.services.Content.UpdateThreadTitle(ctx.Context(), command)
+	thread, err := handler.services.Content.UpdateThreadTitle(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -148,7 +148,7 @@ func (handler handler) deleteThread(ctx *fiber.Ctx) error {
 		ThreadID:        id,
 		ExpectedVersion: version,
 	}
-	if err := handler.services.Content.DeleteThread(ctx.Context(), command); err != nil {
+	if err := handler.services.Content.DeleteThread(ctx.UserContext(), command); err != nil {
 		return shared.HandleError(ctx, err)
 	}
 	return shared.WriteNoContent(ctx)

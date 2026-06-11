@@ -14,7 +14,7 @@ func (handler handler) tree(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	tree, err := handler.services.Structure.Tree(ctx.Context(), actor)
+	tree, err := handler.services.Structure.Tree(ctx.UserContext(), actor)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -38,7 +38,7 @@ func (handler handler) createForum(ctx *fiber.Ctx) error {
 		ActorUserID: actor,
 		Forum:       forumFromRequest(uuid.Nil, request),
 	}
-	forum, err := handler.services.Structure.CreateForum(ctx.Context(), command)
+	forum, err := handler.services.Structure.CreateForum(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -52,7 +52,7 @@ func (handler handler) getForum(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	forum, err := handler.services.Structure.GetForum(ctx.Context(), id)
+	forum, err := handler.services.Structure.GetForum(ctx.UserContext(), id)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -66,7 +66,7 @@ func (handler handler) listForums(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Structure.ListForums(ctx.Context(), forumFilterFromQuery(ctx), page)
+	result, err := handler.services.Structure.ListForums(ctx.UserContext(), forumFilterFromQuery(ctx), page)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -94,7 +94,7 @@ func (handler handler) updateForum(ctx *fiber.Ctx) error {
 		Forum:           forumFromRequest(id, request),
 		ExpectedVersion: version,
 	}
-	forum, err := handler.services.Structure.UpdateForum(ctx.Context(), command)
+	forum, err := handler.services.Structure.UpdateForum(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -123,7 +123,7 @@ func (handler handler) moveForum(ctx *fiber.Ctx) error {
 		DisplayOrder:    request.DisplayOrder,
 		ExpectedVersion: version,
 	}
-	forum, err := handler.services.Structure.MoveForum(ctx.Context(), command)
+	forum, err := handler.services.Structure.MoveForum(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -145,7 +145,7 @@ func (handler handler) deleteForum(ctx *fiber.Ctx) error {
 		ID:              id,
 		ExpectedVersion: version,
 	}
-	if err := handler.services.Structure.DeleteForum(ctx.Context(), command); err != nil {
+	if err := handler.services.Structure.DeleteForum(ctx.UserContext(), command); err != nil {
 		return shared.HandleError(ctx, err)
 	}
 	return shared.WriteNoContent(ctx)
@@ -168,7 +168,7 @@ func (handler handler) reorderForums(ctx *fiber.Ctx) error {
 		ActorUserID: actor,
 		Items:       request.Items,
 	}
-	if err := handler.services.Structure.ReorderForums(ctx.Context(), command); err != nil {
+	if err := handler.services.Structure.ReorderForums(ctx.UserContext(), command); err != nil {
 		return shared.HandleError(ctx, err)
 	}
 	return shared.WriteNoContent(ctx)

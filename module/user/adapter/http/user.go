@@ -46,7 +46,7 @@ func (handler handler) currentUser(ctx *fiber.Ctx) error {
 	if err != nil {
 		return handleError(ctx, err)
 	}
-	user, err := handler.services.Users.Current(ctx.Context(), current.UserID)
+	user, err := handler.services.Users.Current(ctx.UserContext(), current.UserID)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -55,7 +55,7 @@ func (handler handler) currentUser(ctx *fiber.Ctx) error {
 		response.ProviderClaims = claimsSummary(*user.Claims)
 	}
 	if handler.services.Groups != nil {
-		groups, err := handler.services.Groups.ListUserGroups(ctx.Context(), current.UserID)
+		groups, err := handler.services.Groups.ListUserGroups(ctx.UserContext(), current.UserID)
 		if err != nil {
 			return handleError(ctx, err)
 		}
@@ -83,7 +83,7 @@ func (handler handler) updateCurrentUser(ctx *fiber.Ctx) error {
 		return err
 	}
 	user, err := handler.services.Users.UpdateCurrent(
-		ctx.Context(),
+		ctx.UserContext(),
 		userport.UpdateCurrentCommand{UserID: current.UserID, AvatarAssetID: request.AvatarAssetID, ExpectedVersion: version},
 	)
 	if err != nil {

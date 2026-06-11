@@ -61,11 +61,11 @@ func Register(router fiber.Router, config Config) {
 
 // authenticateBearer validates bearer token and stores a principal.
 func authenticateBearer(ctx *fiber.Ctx, validator *Validator, provisioner Provisioner, raw string) error {
-	token, err := validator.Validate(ctx.Context(), raw)
+	token, err := validator.Validate(ctx.UserContext(), raw)
 	if err != nil {
 		return authProblem(ctx, err)
 	}
-	current, err := provisioner.Provision(ctx.Context(), token.Identity, token)
+	current, err := provisioner.Provision(ctx.UserContext(), token.Identity, token)
 	if err != nil {
 		return authProblem(ctx, err)
 	}
@@ -83,7 +83,7 @@ func authenticateDevelopment(ctx *fiber.Ctx, provisioner Provisioner, log *zap.L
 	if err != nil {
 		return problem.Write(ctx, problem.New(fiber.StatusBadRequest, "invalid_development_user", DevUserIDHeader+" must be a UUID."))
 	}
-	current, err := provisioner.DevelopmentPrincipal(ctx.Context(), userID)
+	current, err := provisioner.DevelopmentPrincipal(ctx.UserContext(), userID)
 	if err != nil {
 		return authProblem(ctx, err)
 	}

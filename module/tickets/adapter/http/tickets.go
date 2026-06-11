@@ -35,7 +35,7 @@ func (handler handler) createTicket(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	ticket, err := handler.services.Tickets.CreateTicket(ctx.Context(), request.command(actor, key))
+	ticket, err := handler.services.Tickets.CreateTicket(ctx.UserContext(), request.command(actor, key))
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -67,7 +67,7 @@ func (handler handler) createTicketWithRequest(ctx *fiber.Ctx, request createTic
 	if err != nil {
 		return err
 	}
-	ticket, err := handler.services.Tickets.CreateTicket(ctx.Context(), request.command(actor, key))
+	ticket, err := handler.services.Tickets.CreateTicket(ctx.UserContext(), request.command(actor, key))
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -85,7 +85,7 @@ func (handler handler) listTickets(ctx *fiber.Ctx) error {
 		return err
 	}
 	filter := ticketFilter(ctx)
-	result, err := handler.services.Tickets.ListTickets(ctx.Context(), filter, page)
+	result, err := handler.services.Tickets.ListTickets(ctx.UserContext(), filter, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -102,7 +102,7 @@ func (handler handler) getTicket(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	ticket, err := handler.services.Tickets.GetTicket(ctx.Context(), id, actor)
+	ticket, err := handler.services.Tickets.GetTicket(ctx.UserContext(), id, actor)
 	if err != nil {
 		return handleError(ctx, err)
 	}

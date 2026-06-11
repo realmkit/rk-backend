@@ -24,7 +24,7 @@ func (handler handler) likePost(ctx *fiber.Ctx) error {
 		ActorUserID: actor,
 		PostID:      postID,
 	}
-	summary, err := handler.services.Interaction.LikePost(ctx.Context(), command)
+	summary, err := handler.services.Interaction.LikePost(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -48,7 +48,7 @@ func (handler handler) unlikePost(ctx *fiber.Ctx) error {
 		ActorUserID: actor,
 		PostID:      postID,
 	}
-	summary, err := handler.services.Interaction.UnlikePost(ctx.Context(), command)
+	summary, err := handler.services.Interaction.UnlikePost(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -79,7 +79,7 @@ func (handler handler) latestPosts(ctx *fiber.Ctx, forumID uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Interaction.ListLatestPosts(ctx.Context(), actor, forumID, page)
+	result, err := handler.services.Interaction.ListLatestPosts(ctx.UserContext(), actor, forumID, page)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -103,7 +103,7 @@ func (handler handler) listMostLikedPosts(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Interaction.ListMostLikedPosts(ctx.Context(), actor, forumID, page)
+	result, err := handler.services.Interaction.ListMostLikedPosts(ctx.UserContext(), actor, forumID, page)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -132,7 +132,7 @@ func (handler handler) markThreadRead(ctx *fiber.Ctx) error {
 			return err
 		}
 	}
-	state, err := handler.services.Interaction.MarkThreadRead(ctx.Context(), port.MarkThreadReadCommand{
+	state, err := handler.services.Interaction.MarkThreadRead(ctx.UserContext(), port.MarkThreadReadCommand{
 		ActorUserID:          actor,
 		ThreadID:             threadID,
 		LastReadPostSequence: request.LastReadPostSequence,
@@ -160,7 +160,7 @@ func (handler handler) markForumRead(ctx *fiber.Ctx) error {
 		ActorUserID: actor,
 		ForumID:     forumID,
 	}
-	if err := handler.services.Interaction.MarkForumRead(ctx.Context(), command); err != nil {
+	if err := handler.services.Interaction.MarkForumRead(ctx.UserContext(), command); err != nil {
 		return shared.HandleError(ctx, err)
 	}
 	return shared.WriteNoContent(ctx)
@@ -172,7 +172,7 @@ func (handler handler) unreadSummary(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	summary, err := handler.services.Interaction.GetUnreadSummary(ctx.Context(), actor)
+	summary, err := handler.services.Interaction.GetUnreadSummary(ctx.UserContext(), actor)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}

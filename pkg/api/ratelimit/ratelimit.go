@@ -91,7 +91,7 @@ func (store *MemoryStore) Allow(_ context.Context, key string, policy Policy) (D
 // Middleware returns Fiber rate limiting middleware.
 func Middleware(store Store, policy Policy) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		decision, err := store.Allow(ctx.Context(), keyFor(ctx), policy)
+		decision, err := store.Allow(ctx.UserContext(), keyFor(ctx), policy)
 		if err != nil {
 			return err
 		}

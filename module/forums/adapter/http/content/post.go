@@ -31,7 +31,7 @@ func (handler handler) createReply(ctx *fiber.Ctx) error {
 		ContentChecksum:     request.ContentChecksum,
 		References:          request.References,
 	}
-	post, err := handler.services.Content.CreateReply(ctx.Context(), command)
+	post, err := handler.services.Content.CreateReply(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -57,7 +57,7 @@ func (handler handler) listPosts(ctx *fiber.Ctx) error {
 		ThreadID:      threadID,
 		IncludeHidden: ctx.QueryBool("include_hidden"),
 	}
-	result, err := handler.services.Content.ListPosts(ctx.Context(), actor, filter, page)
+	result, err := handler.services.Content.ListPosts(ctx.UserContext(), actor, filter, page)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -77,7 +77,7 @@ func (handler handler) getPost(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	post, err := handler.services.Content.GetPost(ctx.Context(), actor, id)
+	post, err := handler.services.Content.GetPost(ctx.UserContext(), actor, id)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -115,7 +115,7 @@ func (handler handler) updatePost(ctx *fiber.Ctx) error {
 		EditReason:          request.EditReason,
 		ExpectedVersion:     version,
 	}
-	post, err := handler.services.Content.UpdatePost(ctx.Context(), command)
+	post, err := handler.services.Content.UpdatePost(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -145,7 +145,7 @@ func (handler handler) deletePost(ctx *fiber.Ctx) error {
 		PostID:          id,
 		ExpectedVersion: version,
 	}
-	if err := handler.services.Content.DeletePost(ctx.Context(), command); err != nil {
+	if err := handler.services.Content.DeletePost(ctx.UserContext(), command); err != nil {
 		return shared.HandleError(ctx, err)
 	}
 	return shared.WriteNoContent(ctx)
@@ -165,7 +165,7 @@ func (handler handler) listPostRevisions(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Content.ListPostRevisions(ctx.Context(), actor, postID, page)
+	result, err := handler.services.Content.ListPostRevisions(ctx.UserContext(), actor, postID, page)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}

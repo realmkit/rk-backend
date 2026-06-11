@@ -33,7 +33,7 @@ func (handler handler) createGroup(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	group, err := handler.services.Groups.Create(ctx.Context(), port.CreateGroupCommand{Group: groupFromRequest(request)})
+	group, err := handler.services.Groups.Create(ctx.UserContext(), port.CreateGroupCommand{Group: groupFromRequest(request)})
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -47,7 +47,7 @@ func (handler handler) listGroups(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Groups.List(ctx.Context(), port.GroupFilter{Status: domain.GroupStatus(ctx.Query("status"))}, page)
+	result, err := handler.services.Groups.List(ctx.UserContext(), port.GroupFilter{Status: domain.GroupStatus(ctx.Query("status"))}, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -60,7 +60,7 @@ func (handler handler) getGroup(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	group, err := handler.services.Groups.Get(ctx.Context(), id)
+	group, err := handler.services.Groups.Get(ctx.UserContext(), id)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -87,7 +87,7 @@ func (handler handler) updateGroup(ctx *fiber.Ctx) error {
 	}
 	group := groupFromRequest(request)
 	group.ID = id
-	updated, err := handler.services.Groups.Update(ctx.Context(), port.UpdateGroupCommand{Group: group, ExpectedVersion: version})
+	updated, err := handler.services.Groups.Update(ctx.UserContext(), port.UpdateGroupCommand{Group: group, ExpectedVersion: version})
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -108,7 +108,7 @@ func (handler handler) deleteGroup(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if err := handler.services.Groups.Delete(ctx.Context(), port.DeleteGroupCommand{ID: id, ExpectedVersion: version}); err != nil {
+	if err := handler.services.Groups.Delete(ctx.UserContext(), port.DeleteGroupCommand{ID: id, ExpectedVersion: version}); err != nil {
 		return handleError(ctx, err)
 	}
 	return writeNoContent(ctx)

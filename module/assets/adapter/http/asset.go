@@ -71,7 +71,7 @@ func (handler handler) createUploadIntent(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	intent, err := handler.services.Assets.CreateUploadIntent(ctx.Context(), port.CreateUploadIntentCommand{
+	intent, err := handler.services.Assets.CreateUploadIntent(ctx.UserContext(), port.CreateUploadIntentCommand{
 		Namespace:       request.Namespace,
 		Path:            request.Path,
 		Filename:        request.Filename,
@@ -107,7 +107,7 @@ func (handler handler) completeUpload(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	asset, err := handler.services.Assets.CompleteUpload(ctx.Context(), port.CompleteUploadCommand{ID: id})
+	asset, err := handler.services.Assets.CompleteUpload(ctx.UserContext(), port.CompleteUploadCommand{ID: id})
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -124,7 +124,7 @@ func (handler handler) getAsset(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	asset, err := handler.services.Assets.Get(ctx.Context(), id)
+	asset, err := handler.services.Assets.Get(ctx.UserContext(), id)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -141,7 +141,7 @@ func (handler handler) getAssetURL(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	url, err := handler.services.Assets.GetURL(ctx.Context(), id, 0)
+	url, err := handler.services.Assets.GetURL(ctx.UserContext(), id, 0)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -158,7 +158,7 @@ func (handler handler) listAssets(ctx *fiber.Ctx) error {
 		return err
 	}
 	filter := assetFilterFromQuery(ctx)
-	result, err := handler.services.Assets.List(ctx.Context(), filter, page)
+	result, err := handler.services.Assets.List(ctx.UserContext(), filter, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -170,7 +170,7 @@ func (handler handler) listFolders(ctx *fiber.Ctx) error {
 	if _, err := currentUserID(ctx); err != nil {
 		return err
 	}
-	folders, err := handler.services.Assets.ListFolders(ctx.Context(), port.FolderFilter{
+	folders, err := handler.services.Assets.ListFolders(ctx.UserContext(), port.FolderFilter{
 		Namespace:  domain.Namespace(ctx.Query("namespace")),
 		PathPrefix: domain.VirtualPath(ctx.Query("path_prefix")),
 	})
@@ -198,7 +198,7 @@ func (handler handler) updateAsset(ctx *fiber.Ctx) error {
 		return err
 	}
 	asset, err := handler.services.Assets.Update(
-		ctx.Context(),
+		ctx.UserContext(),
 		port.UpdateAssetCommand{
 			ID:              id,
 			DisplayName:     request.DisplayName,
@@ -227,7 +227,7 @@ func (handler handler) deleteAsset(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if err := handler.services.Assets.Delete(ctx.Context(), port.DeleteAssetCommand{ID: id, ExpectedVersion: version}); err != nil {
+	if err := handler.services.Assets.Delete(ctx.UserContext(), port.DeleteAssetCommand{ID: id, ExpectedVersion: version}); err != nil {
 		return handleError(ctx, err)
 	}
 	return writeNoContent(ctx)

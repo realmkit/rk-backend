@@ -23,7 +23,7 @@ func (handler handler) checkPermission(ctx *fiber.Ctx) error {
 		return err
 	}
 	decision, err := handler.services.Checker.Check(
-		ctx.Context(),
+		ctx.UserContext(),
 		port.CheckRequest{
 			ActorUserID: request.ActorUserID,
 			Permission:  request.Permission,

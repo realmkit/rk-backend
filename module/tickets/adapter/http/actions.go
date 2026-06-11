@@ -68,7 +68,7 @@ func (handler handler) verifyStats(ctx *fiber.Ctx) error {
 	if _, err := currentUserID(ctx); err != nil {
 		return err
 	}
-	report, err := handler.services.Operations.VerifyStats(ctx.Context())
+	report, err := handler.services.Operations.VerifyStats(ctx.UserContext())
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -80,7 +80,7 @@ func (handler handler) rebuildStats(ctx *fiber.Ctx) error {
 	if _, err := currentUserID(ctx); err != nil {
 		return err
 	}
-	report, err := handler.services.Operations.RebuildStats(ctx.Context())
+	report, err := handler.services.Operations.RebuildStats(ctx.UserContext())
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -97,7 +97,7 @@ func (handler handler) staffAction(ctx *fiber.Ctx, run func(context.Context, por
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	result, err := run(ctx.Context(), port.StaffCommand{
+	result, err := run(ctx.UserContext(), port.StaffCommand{
 		ActorUserID:     actor,
 		TicketID:        ticketID,
 		AssigneeUserID:  request.AssigneeUserID,
@@ -122,7 +122,7 @@ func (handler handler) appealAction(ctx *fiber.Ctx, run func(context.Context, po
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
-	result, err := run(ctx.Context(), port.AppealDecisionCommand{
+	result, err := run(ctx.UserContext(), port.AppealDecisionCommand{
 		ActorUserID:      actor,
 		TicketID:         ticketID,
 		Reason:           request.Reason,

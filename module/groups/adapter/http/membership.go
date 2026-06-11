@@ -34,7 +34,7 @@ func (handler handler) listGroupMembers(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Memberships.ListGroupMembers(ctx.Context(), groupID, page)
+	result, err := handler.services.Memberships.ListGroupMembers(ctx.UserContext(), groupID, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -55,7 +55,7 @@ func (handler handler) assignMembership(ctx *fiber.Ctx) error {
 		return err
 	}
 	membership, err := handler.services.Memberships.Assign(
-		ctx.Context(),
+		ctx.UserContext(),
 		port.AssignMembershipCommand{Membership: membershipFromRequest(groupID, userID, request)},
 	)
 	if err != nil {
@@ -83,7 +83,7 @@ func (handler handler) removeMembership(ctx *fiber.Ctx) error {
 		UserID:          userID,
 		ExpectedVersion: &version,
 	}
-	if err := handler.services.Memberships.Remove(ctx.Context(), command); err != nil {
+	if err := handler.services.Memberships.Remove(ctx.UserContext(), command); err != nil {
 		return handleError(ctx, err)
 	}
 	return writeNoContent(ctx)
@@ -109,7 +109,7 @@ func (handler handler) listCurrentUserGroups(ctx *fiber.Ctx) error {
 
 // writeUserGroups writes user group response.
 func (handler handler) writeUserGroups(ctx *fiber.Ctx, userID uuid.UUID) error {
-	groups, err := handler.services.Memberships.ListUserGroups(ctx.Context(), userID)
+	groups, err := handler.services.Memberships.ListUserGroups(ctx.UserContext(), userID)
 	if err != nil {
 		return handleError(ctx, err)
 	}

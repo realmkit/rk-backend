@@ -40,7 +40,7 @@ func (handler handler) search(ctx *fiber.Ctx, forumID uuid.UUID) error {
 		ForumID:     forumID,
 		Query:       query,
 	}
-	result, err := handler.services.Operations.Search(ctx.Context(), command, page)
+	result, err := handler.services.Operations.Search(ctx.UserContext(), command, page)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}

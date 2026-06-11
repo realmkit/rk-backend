@@ -17,7 +17,7 @@ func (handler handler) getForumSettings(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	settings, err := handler.services.Admin.GetForumSettings(ctx.Context(), actor, id)
+	settings, err := handler.services.Admin.GetForumSettings(ctx.UserContext(), actor, id)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -44,7 +44,7 @@ func (handler handler) updateForumSettings(ctx *fiber.Ctx) error {
 		Settings:        request,
 		ExpectedVersion: version,
 	}
-	settings, err := handler.services.Admin.UpdateForumSettings(ctx.Context(), command)
+	settings, err := handler.services.Admin.UpdateForumSettings(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -62,7 +62,7 @@ func (handler handler) getForumPermissions(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	settings, err := handler.services.Admin.GetForumPermissionSettings(ctx.Context(), actor, id)
+	settings, err := handler.services.Admin.GetForumPermissionSettings(ctx.UserContext(), actor, id)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -91,7 +91,7 @@ func (handler handler) updateForumPermissions(ctx *fiber.Ctx) error {
 		ActorUserID: actor,
 		Settings:    request,
 	}
-	if err := handler.services.Admin.UpdateForumPermissionSettings(ctx.Context(), command); err != nil {
+	if err := handler.services.Admin.UpdateForumPermissionSettings(ctx.UserContext(), command); err != nil {
 		return shared.HandleError(ctx, err)
 	}
 	return shared.WriteNoContent(ctx)
@@ -116,7 +116,7 @@ func (handler handler) simulateForumPermission(ctx *fiber.Ctx) error {
 		ForumID:     id,
 		Request:     request,
 	}
-	result, err := handler.services.Admin.SimulateForumPermission(ctx.Context(), command)
+	result, err := handler.services.Admin.SimulateForumPermission(ctx.UserContext(), command)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
