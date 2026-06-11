@@ -10,12 +10,6 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/api/headers"
 )
 
-// TestServer is the subset of Fiber used by e2e request helpers.
-type TestServer interface {
-	// Test executes an HTTP request against the in-process server.
-	Test(req *http.Request, msTimeout ...int) (*http.Response, error)
-}
-
 // JSONRequest creates a JSON request with the service's common headers.
 func JSONRequest(method string, target string, body string) *http.Request {
 	var reader io.Reader

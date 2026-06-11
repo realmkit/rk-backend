@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/gofiber/fiber/v2"
 	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
 	"github.com/niflaot/gamehub-go/pkg/logger"
 	"github.com/niflaot/gamehub-go/pkg/server"
@@ -16,7 +17,7 @@ import (
 // Ecosystem owns the in-process services used by e2e tests.
 type Ecosystem struct {
 	// App is the Fiber server under test.
-	App TestServer
+	App *fiber.App
 
 	// Database is the migrated local database fixture.
 	Database *Database

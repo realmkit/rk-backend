@@ -10,6 +10,7 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // Database contains the migrated local database fixture.
@@ -25,7 +26,9 @@ type Database struct {
 func NewSQLiteDatabase(t *testing.T) *Database {
 	t.Helper()
 
-	db, err := gorm.Open(sqlite.Open(sqliteDSN()), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(sqliteDSN()), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		t.Fatalf("gorm.Open() error = %v", err)
 	}

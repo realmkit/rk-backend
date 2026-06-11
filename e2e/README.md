@@ -61,19 +61,28 @@ Use numeric prefixes for suite order and stable reading order. File and director
 Recommended root files:
 
 - `00_bootstrap_smoke_test.go`: server and harness smoke checks.
-- `01_core_config_test.go`: config/runtime behavior.
-- `01_core_redis_test.go`: Redis-backed middleware and cache journeys.
+- `01_core_runtime_test.go`: config, CLI, and Redis health behavior.
 - `01_core_logging_test.go`: request IDs, correlation IDs, and structured logs.
+- `01_core_http_contract_test.go`: headers, CORS, and problem responses.
+- `01_core_openapi_test.go`: docs serving and contract coverage.
+
+Recommended package suite directories:
+
+- `02_pkg_api/01_middleware_test.go`
+- `03_pkg_events/01_dispatch_test.go`
+- `04_pkg_cronjob/01_runtime_test.go`
+- `05_pkg_persistence/01_transactions_test.go`
+- `06_pkg_storage/01_memory_store_test.go`
 
 Recommended module suite directories:
 
-- `02_metadata/01_definitions_test.go`
-- `03_users/01_registration_test.go`
-- `04_groups/01_permissions_test.go`
-- `05_assets/01_upload_intent_test.go`
-- `06_forums/01_public_tree_test.go`
-- `07_punishments/01_restrictions_test.go`
-- `08_tickets/01_appeal_flow_test.go`
+- `10_metadata/01_definitions_test.go`
+- `11_users/01_registration_test.go`
+- `12_groups/01_permissions_test.go`
+- `13_assets/01_upload_intent_test.go`
+- `14_forums/01_public_tree_test.go`
+- `15_punishments/01_restrictions_test.go`
+- `16_tickets/01_appeal_flow_test.go`
 
 Package names inside numbered directories should be readable and not numeric:
 
@@ -116,3 +125,14 @@ Prefer full user journeys over low-level assertions:
 3. Send HTTP requests through `ecosystem.Test`.
 4. Assert HTTP status, headers, response body, persisted state, emitted events, and logs when relevant.
 5. Keep PostgreSQL-specific query behavior in adapter tests or a future PostgreSQL-fidelity e2e tier.
+
+Use `harness.NewSteps(t)` in every scenario that has more than one action. Step logs must describe observable work, not implementation trivia:
+
+```go
+steps := harness.NewSteps(t)
+steps.Log("start server with cron routes")
+steps.Log("trigger cron job through HTTP")
+steps.Log("verify run history through HTTP")
+```
+
+With `go test -v`, the e2e output should read like a short operator runbook.
