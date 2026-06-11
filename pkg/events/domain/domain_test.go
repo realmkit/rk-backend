@@ -53,28 +53,23 @@ func TestScopeValidatePermissionRules(t *testing.T) {
 	}
 }
 
-// TestCatalogContainsPlannedModuleEvents verifies catalog coverage.
-func TestCatalogContainsPlannedModuleEvents(t *testing.T) {
-	required := map[EventKey]bool{
-		EventUsersUserProvisioned:             false,
-		EventAssetsAssetUploadCompleted:       false,
-		EventGroupsMembershipAdded:            false,
-		EventForumsThreadCreated:              false,
-		EventPunishmentsPunishmentIssued:      false,
-		EventTicketsTicketCreated:             false,
-		EventTicketsMessageCreated:            false,
-		EventCronjobRunCompleted:              false,
-		EventNotificationsNotificationCreated: false,
-		EventMessagesMessageSent:              false,
+// TestSharedEventVocabularyValidates verifies stable producer event keys.
+func TestSharedEventVocabularyValidates(t *testing.T) {
+	keys := []EventKey{
+		EventUsersUserProvisioned,
+		EventAssetsAssetUploadCompleted,
+		EventGroupsMembershipAdded,
+		EventForumsThreadCreated,
+		EventPunishmentsPunishmentIssued,
+		EventTicketsTicketCreated,
+		EventTicketsMessageCreated,
+		EventCronjobRunCompleted,
+		EventNotificationsNotificationCreated,
+		EventMessagesMessageSent,
 	}
-	for _, descriptor := range Catalog() {
-		if _, ok := required[descriptor.Key]; ok {
-			required[descriptor.Key] = true
-		}
-	}
-	for key, found := range required {
-		if !found {
-			t.Fatalf("catalog missing %s", key)
+	for _, key := range keys {
+		if violations := ValidateEventKey("key", key); len(violations) > 0 {
+			t.Fatalf("%s ValidateEventKey() violations = %+v", key, violations)
 		}
 	}
 	if err := (Scope{Type: ScopeTicket, ID: "ticket-1"}).Validate(); err != nil {

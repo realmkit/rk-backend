@@ -6,6 +6,7 @@ import (
 	"time"
 
 	cronapp "github.com/niflaot/gamehub-go/pkg/cronjob/application"
+	crondefaults "github.com/niflaot/gamehub-go/pkg/cronjob/defaults"
 	cronDomain "github.com/niflaot/gamehub-go/pkg/cronjob/domain"
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 	"github.com/spf13/cobra"
@@ -126,8 +127,18 @@ func runCronAction(ctx context.Context, activeLogger **zap.Logger, deps commandD
 	forums := forumsService(db, client, nil, punishments, events)
 	tickets := ticketsService(db, client, nil, punishments, events)
 	service := cronService(db, events, forums, punishments, tickets)
-	if err := service.EnsureDefinitions(ctx, cronDomain.DefaultDefinitions(time.Now().UTC())); err != nil {
+	if err := service.EnsureDefinitions(ctx, cronDefinitions(time.Now().UTC())); err != nil {
 		return err
 	}
 	return action(ctx, service)
+}
+
+// cronDefinitions composes startup-owned cron defaults.
+func cronDefinitions(now time.Time) []cronDomain.Definition {
+	definitions := crondefaults.EventDefinitions(now)
+	definitions = append(definitions, crondefaults.ForumDefinitions(now)...)
+	definitions = append(definitions, crondefaults.PunishmentDefinitions(now)...)
+	definitions = append(definitions, crondefaults.TicketDefinitions(now)...)
+	definitions = append(definitions, crondefaults.MaintenanceDefinitions(now)...)
+	return definitions
 }

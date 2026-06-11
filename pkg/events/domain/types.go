@@ -21,6 +21,76 @@ type Status string
 type ScopeType string
 
 const (
+	// ProducerUsers identifies user/auth events.
+	ProducerUsers Producer = "users"
+
+	// ProducerAssets identifies asset events.
+	ProducerAssets Producer = "assets"
+
+	// ProducerMetadata identifies metadata events.
+	ProducerMetadata Producer = "metadata"
+
+	// ProducerGroups identifies groups events.
+	ProducerGroups Producer = "groups"
+
+	// ProducerForums identifies forums events.
+	ProducerForums Producer = "forums"
+
+	// ProducerPunishments identifies punishment events.
+	ProducerPunishments Producer = "punishments"
+
+	// ProducerTickets identifies ticket and appeal events.
+	ProducerTickets Producer = "tickets"
+
+	// ProducerCronjob identifies cronjob events.
+	ProducerCronjob Producer = "cronjob"
+
+	// ProducerNotifications identifies notification events.
+	ProducerNotifications Producer = "notifications"
+
+	// ProducerMessages identifies messaging events.
+	ProducerMessages Producer = "messages"
+)
+
+const (
+	// EventUsersUserProvisioned is emitted when a user is provisioned.
+	EventUsersUserProvisioned EventKey = "users.user.provisioned"
+
+	// EventAssetsAssetUploadCompleted is emitted when an asset upload finishes.
+	EventAssetsAssetUploadCompleted EventKey = "assets.asset.upload_completed"
+
+	// EventMetadataMetafieldSet is emitted when a metafield is set.
+	EventMetadataMetafieldSet EventKey = "metadata.metafield.set"
+
+	// EventGroupsMembershipAdded is emitted when group membership is added.
+	EventGroupsMembershipAdded EventKey = "groups.membership.added"
+
+	// EventForumsThreadCreated is emitted when a forum thread is created.
+	EventForumsThreadCreated EventKey = "forums.thread.created"
+
+	// EventForumsPostCreated is emitted when a forum post is created.
+	EventForumsPostCreated EventKey = "forums.post.created"
+
+	// EventPunishmentsPunishmentIssued is emitted when a punishment is issued.
+	EventPunishmentsPunishmentIssued EventKey = "punishments.punishment.issued"
+
+	// EventTicketsTicketCreated is emitted when a ticket is opened.
+	EventTicketsTicketCreated EventKey = "tickets.ticket.created"
+
+	// EventTicketsMessageCreated is emitted when a ticket message is added.
+	EventTicketsMessageCreated EventKey = "tickets.message.created"
+
+	// EventCronjobRunCompleted is emitted when a cron job run succeeds.
+	EventCronjobRunCompleted EventKey = "cronjob.run.completed"
+
+	// EventNotificationsNotificationCreated is emitted for a notification.
+	EventNotificationsNotificationCreated EventKey = "notifications.notification.created"
+
+	// EventMessagesMessageSent is emitted when a message is sent.
+	EventMessagesMessageSent EventKey = "messages.message.sent"
+)
+
+const (
 	// StatusPending means the event is ready to be claimed.
 	StatusPending Status = "pending"
 

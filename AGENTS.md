@@ -19,6 +19,7 @@ The Next.js frontend lives in the separate `gamehub-frontend` repository.
 - Use Go style, Unix style, and idiomatic formatting.
 - Keep code easy to read, professional, reusable, and focused on single responsibility.
 - Avoid registry-style types or global service containers unless they are clearly necessary.
+- Do not create `catalog.go`, `registry.go`, or similar central list files that collect unrelated module definitions, events, jobs, permissions, routes, handlers, or schemas. Keep definitions owned by the feature/package that produces them, and compose them only at the application composition root when wiring is required.
 - Prefer small, explicit interfaces owned by the consumer package.
 - Keep interfaces, services, and files focused on one concern. Do not create god interfaces or god services that mix unrelated workflows such as structure admin, content, interactions, operations, and configuration.
 - Keep production Go files at or below 250 lines whenever practical. If a package needs more than 6 production files or cannot stay readable within that limit, split it into smaller concern-owned packages.

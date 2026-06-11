@@ -15,6 +15,47 @@ type RunStatus string
 type TriggerType string
 
 const (
+	// JobEventsDispatchPending dispatches pending event outbox rows.
+	JobEventsDispatchPending = "events.dispatch-pending"
+
+	// JobForumsFlushThreadViews flushes buffered forum view counters.
+	JobForumsFlushThreadViews = "forums.flush-thread-views"
+
+	// JobForumsVerifyStats verifies forum stats counters.
+	JobForumsVerifyStats = "forums.verify-stats"
+
+	// JobForumsVerifyLikes verifies forum like counters.
+	JobForumsVerifyLikes = "forums.verify-likes"
+
+	// JobPunishmentsExpireActive expires active punishments.
+	JobPunishmentsExpireActive = "punishments.expire-active"
+
+	// JobPunishmentsVerifyRestrictions verifies punishment restrictions.
+	JobPunishmentsVerifyRestrictions = "punishments.verify-restrictions"
+
+	// JobPunishmentsRebuildRestrictions rebuilds punishment restrictions.
+	JobPunishmentsRebuildRestrictions = "punishments.rebuild-restrictions"
+
+	// JobTicketsDetectSLABreaches emits events for overdue ticket work.
+	JobTicketsDetectSLABreaches = "tickets.detect-sla-breaches"
+
+	// JobTicketsCloseStale closes stale submitter-blocked tickets.
+	JobTicketsCloseStale = "tickets.close-stale"
+
+	// JobTicketsVerifyStats verifies ticket counters.
+	JobTicketsVerifyStats = "tickets.verify-stats"
+
+	// JobTicketsRebuildStats rebuilds ticket counters.
+	JobTicketsRebuildStats = "tickets.rebuild-stats"
+
+	// JobAssetsExpireUploadIntents expires stale upload intents.
+	JobAssetsExpireUploadIntents = "assets.expire-upload-intents"
+
+	// JobUsersCleanupIdentityClaims cleans stale identity claims.
+	JobUsersCleanupIdentityClaims = "users.cleanup-identity-claims"
+)
+
+const (
 	// ScheduleInterval means schedule expression is a duration.
 	ScheduleInterval ScheduleKind = "interval"
 
