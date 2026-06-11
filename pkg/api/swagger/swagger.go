@@ -2,7 +2,7 @@ package swagger
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/api/openapi"
+	"github.com/realmkit/rk-backend/pkg/api/openapi"
 )
 
 // DocsPath is the Swagger UI route.
@@ -39,7 +39,7 @@ func swaggerHTML() string {
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>GameHub API Docs</title>
+  <title>RealmKit API Docs</title>
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
 </head>
 <body>

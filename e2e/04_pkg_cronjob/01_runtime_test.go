@@ -7,13 +7,13 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	cronhttp "github.com/niflaot/gamehub-go/pkg/cronjob/adapter/http"
-	cronpostgres "github.com/niflaot/gamehub-go/pkg/cronjob/adapter/postgres"
-	cronapp "github.com/niflaot/gamehub-go/pkg/cronjob/application"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/port"
-	"github.com/niflaot/gamehub-go/pkg/server"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	cronhttp "github.com/realmkit/rk-backend/pkg/cronjob/adapter/http"
+	cronpostgres "github.com/realmkit/rk-backend/pkg/cronjob/adapter/postgres"
+	cronapp "github.com/realmkit/rk-backend/pkg/cronjob/application"
+	"github.com/realmkit/rk-backend/pkg/cronjob/domain"
+	"github.com/realmkit/rk-backend/pkg/cronjob/port"
+	"github.com/realmkit/rk-backend/pkg/server"
 )
 
 // TestCronjobManualRunThroughHTTP verifies cron HTTP execution.

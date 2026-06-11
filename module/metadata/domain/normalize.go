@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// OwnerReference points to another supported GameHub owner.
+// OwnerReference points to another supported RealmKit owner.
 type OwnerReference struct {
 	// Type is the referenced owner type.
 	Type OwnerType `json:"type"`

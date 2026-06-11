@@ -12,11 +12,11 @@ import (
 var ErrMissing = errors.New("principal missing")
 
 // LocalKey is the Fiber local key for principals.
-const LocalKey = "gamehub.principal"
+const LocalKey = "realmkit.principal"
 
 // Principal contains provider-neutral authenticated actor data.
 type Principal struct {
-	// UserID is the local GameHub user identifier.
+	// UserID is the local RealmKit user identifier.
 	UserID uuid.UUID `json:"user_id"`
 
 	// Issuer is the trusted issuer.

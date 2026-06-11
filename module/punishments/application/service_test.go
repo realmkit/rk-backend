@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/punishments/domain"
-	"github.com/niflaot/gamehub-go/module/punishments/port"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/punishments/domain"
+	"github.com/realmkit/rk-backend/module/punishments/port"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // TestIssuePunishmentCreatesRestrictionAndEvent verifies issue orchestration.
@@ -310,7 +310,7 @@ func (fake *eventFake) Publish(_ context.Context, draft eventdomain.Draft) (even
 func testDefinition() domain.Definition {
 	action := domain.ActionTemplate{
 		ID:                uuid.New(),
-		TargetSystem:      domain.TargetGameHub,
+		TargetSystem:      domain.TargetRealmKit,
 		ActionKey:         domain.ActionForumsReply,
 		Effect:            domain.EffectRestrict,
 		ConfigurationJSON: []byte(`{}`),

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/assets/domain"
+	"github.com/realmkit/rk-backend/module/assets/domain"
 )
 
 // CreateUploadIntentCommand requests an asset row and signed upload URL.

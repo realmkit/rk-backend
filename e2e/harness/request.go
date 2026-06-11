@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
 )
 
 // JSONRequest creates a JSON request with the service's common headers.

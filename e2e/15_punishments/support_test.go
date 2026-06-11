@@ -12,18 +12,18 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	punishmentshttp "github.com/niflaot/gamehub-go/module/punishments/adapter/http"
-	punishmentspostgres "github.com/niflaot/gamehub-go/module/punishments/adapter/postgres"
-	punishmentsredis "github.com/niflaot/gamehub-go/module/punishments/adapter/redis"
-	punishmentsapplication "github.com/niflaot/gamehub-go/module/punishments/application"
-	punishmentsdomain "github.com/niflaot/gamehub-go/module/punishments/domain"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/openapi"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
-	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
-	"github.com/niflaot/gamehub-go/pkg/server"
-	"github.com/niflaot/gamehub-go/pkg/transaction"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	punishmentshttp "github.com/realmkit/rk-backend/module/punishments/adapter/http"
+	punishmentspostgres "github.com/realmkit/rk-backend/module/punishments/adapter/postgres"
+	punishmentsredis "github.com/realmkit/rk-backend/module/punishments/adapter/redis"
+	punishmentsapplication "github.com/realmkit/rk-backend/module/punishments/application"
+	punishmentsdomain "github.com/realmkit/rk-backend/module/punishments/domain"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/openapi"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
+	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
+	"github.com/realmkit/rk-backend/pkg/server"
+	"github.com/realmkit/rk-backend/pkg/transaction"
 	goredis "github.com/redis/go-redis/v9"
 )
 
@@ -123,7 +123,7 @@ func definitionBody(key string, actions ...string) string {
 		if index > 0 {
 			rawActions += ","
 		}
-		rawActions += `{"target_system":"gamehub","action_key":"` + action +
+		rawActions += `{"target_system":"realmkit","action_key":"` + action +
 			`","effect":"restrict","configuration_json":{},"display_order":` +
 			strconv.Itoa(index+1) + `,"status":"active"}`
 	}
@@ -146,7 +146,7 @@ func issueBody(definitionID uuid.UUID, targetID uuid.UUID, expiresAt *time.Time)
 // withPunishmentUser adds the current-user header.
 func withPunishmentUser(userID uuid.UUID) func(*http.Request) {
 	return func(request *http.Request) {
-		request.Header.Set("X-GameHub-User-Id", userID.String())
+		request.Header.Set("X-RealmKit-User-Id", userID.String())
 	}
 }
 

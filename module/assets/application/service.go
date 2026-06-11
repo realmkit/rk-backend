@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/assets/domain"
-	"github.com/niflaot/gamehub-go/module/assets/port"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
-	"github.com/niflaot/gamehub-go/pkg/storage"
+	"github.com/realmkit/rk-backend/module/assets/domain"
+	"github.com/realmkit/rk-backend/module/assets/port"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/storage"
 )
 
 // uploadIntentTTL is the default signed upload lifetime.

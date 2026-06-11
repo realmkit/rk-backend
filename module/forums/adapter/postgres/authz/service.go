@@ -5,10 +5,10 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	forumsdomain "github.com/niflaot/gamehub-go/module/forums/domain"
-	"github.com/niflaot/gamehub-go/module/forums/port"
-	groupsdomain "github.com/niflaot/gamehub-go/module/groups/domain"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	forumsdomain "github.com/realmkit/rk-backend/module/forums/domain"
+	"github.com/realmkit/rk-backend/module/forums/port"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // managedForumRelations are relations replaced by forum permission settings.

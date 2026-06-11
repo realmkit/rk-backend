@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
+	"github.com/realmkit/rk-backend/pkg/cronjob/domain"
 )
 
 // TestOwnerDefinitionsValidate verifies code-owned owner defaults.

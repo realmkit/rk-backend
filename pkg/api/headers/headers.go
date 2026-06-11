@@ -17,7 +17,7 @@ const Authorization = "Authorization"
 // ContentType is the HTTP Content-Type header.
 const ContentType = "Content-Type"
 
-// CorrelationID is the GameHub correlation ID header.
+// CorrelationID is the RealmKit correlation ID header.
 const CorrelationID = "X-Correlation-Id"
 
 // ETag is the HTTP ETag header.
@@ -35,7 +35,7 @@ const IfNoneMatch = "If-None-Match"
 // Location is the HTTP Location header.
 const Location = "Location"
 
-// RequestID is the GameHub request ID header.
+// RequestID is the RealmKit request ID header.
 const RequestID = "X-Request-Id"
 
 // RetryAfter is the HTTP Retry-After header.
@@ -51,10 +51,10 @@ const RateLimitRemaining = "RateLimit-Remaining"
 const RateLimitReset = "RateLimit-Reset"
 
 // RequestIDLocal is the Fiber local key for request IDs.
-const RequestIDLocal = "gamehub.request_id"
+const RequestIDLocal = "realmkit.request_id"
 
 // CorrelationIDLocal is the Fiber local key for correlation IDs.
-const CorrelationIDLocal = "gamehub.correlation_id"
+const CorrelationIDLocal = "realmkit.correlation_id"
 
 // Middleware preserves or creates request and correlation IDs.
 func Middleware() fiber.Handler {

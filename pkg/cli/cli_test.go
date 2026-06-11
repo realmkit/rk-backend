@@ -11,13 +11,13 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/config"
-	"github.com/niflaot/gamehub-go/pkg/logger"
-	"github.com/niflaot/gamehub-go/pkg/postgres"
-	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
-	gamehubredis "github.com/niflaot/gamehub-go/pkg/redis"
-	"github.com/niflaot/gamehub-go/pkg/server"
-	"github.com/niflaot/gamehub-go/pkg/storage"
+	"github.com/realmkit/rk-backend/pkg/config"
+	"github.com/realmkit/rk-backend/pkg/logger"
+	"github.com/realmkit/rk-backend/pkg/postgres"
+	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
+	realmkitredis "github.com/realmkit/rk-backend/pkg/redis"
+	"github.com/realmkit/rk-backend/pkg/server"
+	"github.com/realmkit/rk-backend/pkg/storage"
 	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
@@ -201,7 +201,7 @@ func TestForumCacheClearCommandUsesRedis(t *testing.T) {
 	server := miniredis.RunT(t)
 	db := newCommandDB(t)
 	deps := testCommandDepsWithDB(t, db)
-	deps.openRedis = func(context.Context, gamehubredis.Config) (*goredis.Client, error) {
+	deps.openRedis = func(context.Context, realmkitredis.Config) (*goredis.Client, error) {
 		return goredis.NewClient(&goredis.Options{Addr: server.Addr()}), nil
 	}
 	if _, err := executeCommand(t, []string{"migrate", "up"}, deps); err != nil {
@@ -267,7 +267,7 @@ func TestRunStartLogsStartup(t *testing.T) {
 	if err := execute(&activeLogger, []string{"start"}, deps); err != nil {
 		t.Fatalf("execute() error = %v", err)
 	}
-	if !bytes.Contains(output.Bytes(), []byte("starting gamehub backend")) {
+	if !bytes.Contains(output.Bytes(), []byte("starting realmkit backend")) {
 		t.Fatalf("output = %q, want startup log", output.String())
 	}
 }
@@ -281,10 +281,10 @@ func TestRunStartUsesRedisStores(t *testing.T) {
 	deps.loadConfig = func() (config.Config, error) {
 		return config.Config{
 			Logging: logger.Config{Level: "info"},
-			Redis:   gamehubredis.Config{Address: "localhost:6379"},
+			Redis:   realmkitredis.Config{Address: "localhost:6379"},
 		}, nil
 	}
-	deps.openRedis = func(context.Context, gamehubredis.Config) (*goredis.Client, error) {
+	deps.openRedis = func(context.Context, realmkitredis.Config) (*goredis.Client, error) {
 		opened = true
 		return goredis.NewClient(&goredis.Options{Addr: "localhost:6379"}), nil
 	}
@@ -312,7 +312,7 @@ func TestRunStartReturnsRedisErrors(t *testing.T) {
 	activeLogger := zap.NewNop()
 	want := errors.New("redis failed")
 	deps := testCommandDeps(t)
-	deps.openRedis = func(context.Context, gamehubredis.Config) (*goredis.Client, error) {
+	deps.openRedis = func(context.Context, realmkitredis.Config) (*goredis.Client, error) {
 		return nil, want
 	}
 	deps.newServer = func(*zap.Logger, bool, ...server.Option) *fiber.App {
@@ -354,9 +354,9 @@ func TestRunStartLogsDependencyConnectionsInDevelopment(t *testing.T) {
 		return config.Config{
 			Runtime:  config.Runtime{Environment: "development"},
 			Logging:  logger.Config{Level: "info"},
-			Postgres: postgres.Config{Host: "localhost", Port: 5432, Database: "gamehub"},
-			Redis:    gamehubredis.Config{Address: "localhost:6379"},
-			Storage:  storage.Config{Bucket: "gamehub-assets", Endpoint: "http://localhost:9000"},
+			Postgres: postgres.Config{Host: "localhost", Port: 5432, Database: "realmkit"},
+			Redis:    realmkitredis.Config{Address: "localhost:6379"},
+			Storage:  storage.Config{Bucket: "realmkit-assets", Endpoint: "http://localhost:9000"},
 		}, nil
 	}
 	deps.newLogger = func(logger.Config) (*zap.Logger, error) {
@@ -398,7 +398,7 @@ func testCommandDeps(t *testing.T) commandDeps {
 		closePostgres: func(*gorm.DB) error {
 			return nil
 		},
-		openRedis: func(context.Context, gamehubredis.Config) (*goredis.Client, error) {
+		openRedis: func(context.Context, realmkitredis.Config) (*goredis.Client, error) {
 			return goredis.NewClient(&goredis.Options{Addr: "localhost:6379"}), nil
 		},
 		closeRedis: func(*goredis.Client) error {

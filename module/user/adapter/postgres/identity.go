@@ -3,9 +3,9 @@ package postgres
 import (
 	"context"
 
-	"github.com/niflaot/gamehub-go/module/user/domain"
-	"github.com/niflaot/gamehub-go/module/user/port"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/realmkit/rk-backend/module/user/domain"
+	"github.com/realmkit/rk-backend/module/user/port"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // IdentityLinkRepository stores provider identity links.

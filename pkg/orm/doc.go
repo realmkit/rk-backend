@@ -1,2 +1,2 @@
-// Package orm provides small composable GORM helpers for GameHub adapters.
+// Package orm provides small composable GORM helpers for RealmKit adapters.
 package orm

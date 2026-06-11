@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	"github.com/niflaot/gamehub-go/pkg/cli"
-	"github.com/niflaot/gamehub-go/pkg/config"
-	pkgredis "github.com/niflaot/gamehub-go/pkg/redis"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/pkg/cli"
+	"github.com/realmkit/rk-backend/pkg/config"
+	pkgredis "github.com/realmkit/rk-backend/pkg/redis"
 	"go.uber.org/zap"
 )
 
@@ -37,7 +37,7 @@ func TestCoreConfigLoadsRuntimeSettings(t *testing.T) {
 	if loaded.Runtime.Environment != "test" {
 		t.Fatalf("environment = %q, want test", loaded.Runtime.Environment)
 	}
-	if loaded.Postgres.Database != "gamehub_e2e" || loaded.Storage.Bucket != "gamehub-e2e" {
+	if loaded.Postgres.Database != "realmkit_e2e" || loaded.Storage.Bucket != "realmkit-e2e" {
 		t.Fatalf("config = %+v, want configured database and bucket", loaded)
 	}
 }
@@ -62,16 +62,16 @@ func TestCoreRedisHealth(t *testing.T) {
 // setRequiredConfig sets mandatory configuration values.
 func setRequiredConfig(t *testing.T) {
 	t.Helper()
-	t.Setenv("GAMEHUB_ENVIRONMENT", "test")
-	t.Setenv("GAMEHUB_POSTGRES_DATABASE", "gamehub_e2e")
-	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "gamehub")
-	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "secret")
-	t.Setenv("GAMEHUB_REDIS_ADDRESS", "127.0.0.1:6379")
-	t.Setenv("GAMEHUB_STORAGE_BUCKET", "gamehub-e2e")
-	t.Setenv("GAMEHUB_STORAGE_ENDPOINT", "https://storage.e2e")
-	t.Setenv("GAMEHUB_STORAGE_ACCESS_KEY_ID", "access")
-	t.Setenv("GAMEHUB_STORAGE_SECRET_ACCESS_KEY", "secret")
-	t.Setenv("GAMEHUB_AUTH_ISSUER_URL", "https://auth.e2e")
-	t.Setenv("GAMEHUB_AUTH_AUDIENCE", "gamehub")
-	t.Setenv("GAMEHUB_AUTH_CLIENT_ID", "frontend")
+	t.Setenv("REALMKIT_ENVIRONMENT", "test")
+	t.Setenv("REALMKIT_POSTGRES_DATABASE", "realmkit_e2e")
+	t.Setenv("REALMKIT_POSTGRES_USERNAME", "realmkit")
+	t.Setenv("REALMKIT_POSTGRES_PASSWORD", "secret")
+	t.Setenv("REALMKIT_REDIS_ADDRESS", "127.0.0.1:6379")
+	t.Setenv("REALMKIT_STORAGE_BUCKET", "realmkit-e2e")
+	t.Setenv("REALMKIT_STORAGE_ENDPOINT", "https://storage.e2e")
+	t.Setenv("REALMKIT_STORAGE_ACCESS_KEY_ID", "access")
+	t.Setenv("REALMKIT_STORAGE_SECRET_ACCESS_KEY", "secret")
+	t.Setenv("REALMKIT_AUTH_ISSUER_URL", "https://auth.e2e")
+	t.Setenv("REALMKIT_AUTH_AUDIENCE", "realmkit")
+	t.Setenv("REALMKIT_AUTH_CLIENT_ID", "frontend")
 }

@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/problem"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/port"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/cronjob/domain"
+	"github.com/realmkit/rk-backend/pkg/cronjob/port"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // writeJSON writes a JSON response.

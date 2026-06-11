@@ -9,14 +9,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	groupsdomain "github.com/niflaot/gamehub-go/module/groups/domain"
-	groupsport "github.com/niflaot/gamehub-go/module/groups/port"
-	punishmentsdomain "github.com/niflaot/gamehub-go/module/punishments/domain"
-	punishmentsport "github.com/niflaot/gamehub-go/module/punishments/port"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/openapi"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
+	punishmentsdomain "github.com/realmkit/rk-backend/module/punishments/domain"
+	punishmentsport "github.com/realmkit/rk-backend/module/punishments/port"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/openapi"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
 )
 
 // createTicketDefinition creates one definition.
@@ -99,7 +99,7 @@ func appealPunishmentDefinition(target uuid.UUID) punishmentsdomain.Definition {
 		Color: "#aa0000", Severity: 10, Status: punishmentsdomain.DefinitionActive,
 		AllowPermanent: true, RequiresReason: true,
 		Actions: []punishmentsdomain.ActionTemplate{{
-			ID: uuid.New(), TargetSystem: punishmentsdomain.TargetGameHub,
+			ID: uuid.New(), TargetSystem: punishmentsdomain.TargetRealmKit,
 			ActionKey: punishmentsdomain.ActionForumsReply, Effect: punishmentsdomain.EffectRestrict,
 			Status: punishmentsdomain.DefinitionActive,
 		}},
@@ -117,7 +117,7 @@ func configureTicketRequest(request *http.Request, configs ...func(*http.Request
 // withTicketUser adds the current-user header.
 func withTicketUser(userID uuid.UUID) func(*http.Request) {
 	return func(request *http.Request) {
-		request.Header.Set("X-GameHub-User-Id", userID.String())
+		request.Header.Set("X-RealmKit-User-Id", userID.String())
 	}
 }
 

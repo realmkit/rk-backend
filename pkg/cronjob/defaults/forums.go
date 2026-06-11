@@ -3,7 +3,7 @@ package defaults
 import (
 	"time"
 
-	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
+	"github.com/realmkit/rk-backend/pkg/cronjob/domain"
 )
 
 // ForumDefinitions returns forum operational cron definitions.

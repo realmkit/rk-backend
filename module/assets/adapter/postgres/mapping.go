@@ -1,8 +1,8 @@
 package postgres
 
 import (
-	"github.com/niflaot/gamehub-go/module/assets/domain"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/realmkit/rk-backend/module/assets/domain"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // assetModelFromDomain maps domain asset to persistence.

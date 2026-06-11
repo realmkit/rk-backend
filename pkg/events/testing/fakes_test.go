@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/events/domain"
 )
 
 // TestRecorderStoresDrafts verifies the reusable publisher fake.

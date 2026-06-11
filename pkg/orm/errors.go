@@ -20,7 +20,7 @@ var ErrUnavailable = errors.New("persistence unavailable")
 // PostgresUniqueViolationCode is the PostgreSQL unique violation SQLSTATE.
 const PostgresUniqueViolationCode = "23505"
 
-// TranslateError maps common GORM and PostgreSQL errors to GameHub errors.
+// TranslateError maps common GORM and PostgreSQL errors to RealmKit errors.
 func TranslateError(err error) error {
 	if err == nil {
 		return nil

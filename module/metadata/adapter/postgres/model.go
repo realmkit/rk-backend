@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // JSON stores JSON values in SQL.

@@ -3,7 +3,7 @@ package postgres
 import (
 	"encoding/json"
 
-	"github.com/niflaot/gamehub-go/module/metadata/domain"
+	"github.com/realmkit/rk-backend/module/metadata/domain"
 )
 
 // definitionModelFromDomain maps domain definition to persistence.

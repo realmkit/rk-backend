@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/assets/domain"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/assets/domain"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // Service manages assets.

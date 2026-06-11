@@ -7,14 +7,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/principal"
-	"github.com/niflaot/gamehub-go/pkg/api/problem"
-	"github.com/niflaot/gamehub-go/pkg/identity"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/identity"
 	"go.uber.org/zap"
 )
 
-// Provisioner resolves validated identities into GameHub principals.
+// Provisioner resolves validated identities into RealmKit principals.
 type Provisioner interface {
 	// Provision resolves or creates the local user for identity.
 	Provision(ctx context.Context, external identity.ExternalIdentity, token Token) (principal.Principal, error)

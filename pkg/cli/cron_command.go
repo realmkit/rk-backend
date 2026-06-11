@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	cronapp "github.com/niflaot/gamehub-go/pkg/cronjob/application"
-	crondefaults "github.com/niflaot/gamehub-go/pkg/cronjob/defaults"
-	cronDomain "github.com/niflaot/gamehub-go/pkg/cronjob/domain"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	cronapp "github.com/realmkit/rk-backend/pkg/cronjob/application"
+	crondefaults "github.com/realmkit/rk-backend/pkg/cronjob/defaults"
+	cronDomain "github.com/realmkit/rk-backend/pkg/cronjob/domain"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )

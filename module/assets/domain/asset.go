@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Asset stores one logical file managed by GameHub.
+// Asset stores one logical file managed by RealmKit.
 type Asset struct {
 	// ID is the asset identifier.
 	ID uuid.UUID `json:"id"`

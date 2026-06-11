@@ -3,8 +3,8 @@ package postgres
 import (
 	"encoding/json"
 
-	"github.com/niflaot/gamehub-go/module/tickets/domain"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/realmkit/rk-backend/module/tickets/domain"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // definitionModel maps a domain definition into persistence state.

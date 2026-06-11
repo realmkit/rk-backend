@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/user/domain"
-	"github.com/niflaot/gamehub-go/module/user/port"
-	"github.com/niflaot/gamehub-go/pkg/api/auth"
-	"github.com/niflaot/gamehub-go/pkg/api/principal"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
-	"github.com/niflaot/gamehub-go/pkg/transaction"
+	"github.com/realmkit/rk-backend/module/user/domain"
+	"github.com/realmkit/rk-backend/module/user/port"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/pkg/transaction"
 )
 
 // Dependencies contains user service dependencies.

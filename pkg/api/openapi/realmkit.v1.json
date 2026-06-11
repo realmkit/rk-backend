@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "GameHub API",
+    "title": "RealmKit API",
     "version": "1.0.0"
   },
   "servers": [
@@ -34,7 +34,7 @@
     },
     {
       "name": "users",
-      "description": "Local GameHub users and current-user profile routes."
+      "description": "Local RealmKit users and current-user profile routes."
     },
     {
       "name": "forum-categories",
@@ -90,7 +90,7 @@
     },
     {
       "name": "punishment-restrictions",
-      "description": "Active GameHub action restrictions caused by punishments."
+      "description": "Active RealmKit action restrictions caused by punishments."
     },
     {
       "name": "ticket-definitions",
@@ -2115,7 +2115,7 @@
           "groups"
         ],
         "summary": "List current user groups",
-        "description": "Uses X-GameHub-User-Id until bearer authentication is implemented.",
+        "description": "Uses X-RealmKit-User-Id until bearer authentication is implemented.",
         "security": [],
         "parameters": [
           {
@@ -2257,7 +2257,7 @@
           "users"
         ],
         "summary": "Get current user",
-        "description": "Requires bearer authentication. In development only, X-GameHub-Dev-User-ID can be used when development bypass is enabled.",
+        "description": "Requires bearer authentication. In development only, X-RealmKit-Dev-User-ID can be used when development bypass is enabled.",
         "security": [
           {
             "BearerAuth": []
@@ -2310,7 +2310,7 @@
           "users"
         ],
         "summary": "Update current user local settings",
-        "description": "Updates local GameHub user settings only. Provider-owned username, email, credentials, MFA, and login identifiers cannot be updated here.",
+        "description": "Updates local RealmKit user settings only. Provider-owned username, email, credentials, MFA, and login identifiers cannot be updated here.",
         "security": [
           {
             "BearerAuth": []
@@ -2396,7 +2396,7 @@
           "users"
         ],
         "summary": "Get provider account URL",
-        "description": "Returns a provider account settings URL when supported by the configured provider. GameHub does not update provider-owned identity fields directly.",
+        "description": "Returns a provider account settings URL when supported by the configured provider. RealmKit does not update provider-owned identity fields directly.",
         "security": [
           {
             "BearerAuth": []
@@ -7839,7 +7839,7 @@
         "tags": [
           "punishment-restrictions"
         ],
-        "summary": "Check whether a GameHub action is restricted",
+        "summary": "Check whether a RealmKit action is restricted",
         "responses": {
           "200": {
             "description": "OK",
@@ -7982,7 +7982,7 @@
         "tags": [
           "punishment-restrictions"
         ],
-        "summary": "List active GameHub action restrictions for a user",
+        "summary": "List active RealmKit action restrictions for a user",
         "responses": {
           "200": {
             "description": "OK",
@@ -9604,7 +9604,7 @@
         }
       },
       "CurrentUserHeader": {
-        "name": "X-GameHub-User-Id",
+        "name": "X-RealmKit-User-Id",
         "in": "header",
         "required": true,
         "schema": {
@@ -9622,7 +9622,7 @@
         "description": "Bearer access token."
       },
       "DevUserIDHeader": {
-        "name": "X-GameHub-Dev-User-ID",
+        "name": "X-RealmKit-Dev-User-ID",
         "in": "header",
         "required": false,
         "schema": {

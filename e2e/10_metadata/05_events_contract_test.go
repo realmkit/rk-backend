@@ -5,10 +5,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	"github.com/niflaot/gamehub-go/module/metadata/domain"
-	"github.com/niflaot/gamehub-go/pkg/api/openapi"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/module/metadata/domain"
+	"github.com/realmkit/rk-backend/pkg/api/openapi"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
 )
 
 // TestMetadataEmitsDefinitionValueAndMetaobjectEvents verifies event facts.

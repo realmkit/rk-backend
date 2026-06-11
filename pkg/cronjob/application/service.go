@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/port"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/cronjob/domain"
+	"github.com/realmkit/rk-backend/pkg/cronjob/port"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // Dependencies contains scheduler dependencies.
@@ -55,7 +55,7 @@ func NewService(deps Dependencies, handlers map[string]port.Handler) Service {
 		service.clock = systemClock{}
 	}
 	if service.workerID == "" {
-		service.workerID = "gamehub-cron"
+		service.workerID = "realmkit-cron"
 	}
 	if service.lockDuration <= 0 {
 		service.lockDuration = 5 * time.Minute

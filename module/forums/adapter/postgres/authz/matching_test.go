@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	forumsdomain "github.com/niflaot/gamehub-go/module/forums/domain"
-	groupsdomain "github.com/niflaot/gamehub-go/module/groups/domain"
+	forumsdomain "github.com/realmkit/rk-backend/module/forums/domain"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 )
 
 // TestTupleMatchingCoversSupportedSubjectTypes verifies visibility grant matching.

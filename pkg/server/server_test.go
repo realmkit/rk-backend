@@ -10,26 +10,26 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
-	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
-	groupspostgres "github.com/niflaot/gamehub-go/module/groups/adapter/postgres"
-	groupsapplication "github.com/niflaot/gamehub-go/module/groups/application"
-	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
-	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
-	metadataapplication "github.com/niflaot/gamehub-go/module/metadata/application"
-	userhttp "github.com/niflaot/gamehub-go/module/user/adapter/http"
-	userpostgres "github.com/niflaot/gamehub-go/module/user/adapter/postgres"
-	userapplication "github.com/niflaot/gamehub-go/module/user/application"
-	"github.com/niflaot/gamehub-go/pkg/api/auth"
-	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
-	"github.com/niflaot/gamehub-go/pkg/api/openapi"
-	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
-	"github.com/niflaot/gamehub-go/pkg/api/swagger"
-	"github.com/niflaot/gamehub-go/pkg/logger"
-	"github.com/niflaot/gamehub-go/pkg/orm"
-	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
-	"github.com/niflaot/gamehub-go/pkg/transaction"
+	groupshttp "github.com/realmkit/rk-backend/module/groups/adapter/http"
+	groupspostgres "github.com/realmkit/rk-backend/module/groups/adapter/postgres"
+	groupsapplication "github.com/realmkit/rk-backend/module/groups/application"
+	metadatahttp "github.com/realmkit/rk-backend/module/metadata/adapter/http"
+	metadatapostgres "github.com/realmkit/rk-backend/module/metadata/adapter/postgres"
+	metadataapplication "github.com/realmkit/rk-backend/module/metadata/application"
+	userhttp "github.com/realmkit/rk-backend/module/user/adapter/http"
+	userpostgres "github.com/realmkit/rk-backend/module/user/adapter/postgres"
+	userapplication "github.com/realmkit/rk-backend/module/user/application"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
+	realmkitcors "github.com/realmkit/rk-backend/pkg/api/cors"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/idempotency"
+	"github.com/realmkit/rk-backend/pkg/api/openapi"
+	"github.com/realmkit/rk-backend/pkg/api/ratelimit"
+	"github.com/realmkit/rk-backend/pkg/api/swagger"
+	"github.com/realmkit/rk-backend/pkg/logger"
+	"github.com/realmkit/rk-backend/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
+	"github.com/realmkit/rk-backend/pkg/transaction"
 	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
@@ -106,7 +106,7 @@ func TestNewServesHealth(t *testing.T) {
 	}
 }
 
-// TestNewRejectsGatewayVersionPrefix verifies GameHub does not own public version prefixes.
+// TestNewRejectsGatewayVersionPrefix verifies RealmKit does not own public version prefixes.
 func TestNewRejectsGatewayVersionPrefix(t *testing.T) {
 	app := newApp(t, nil, false)
 	req := httptest.NewRequest(fiber.MethodGet, "/api"+"/v1/health", nil)
@@ -146,7 +146,7 @@ func TestNewWritesRequestHeaders(t *testing.T) {
 
 // TestNewAppliesCORS verifies configured browser origins are allowed.
 func TestNewAppliesCORS(t *testing.T) {
-	app := newApp(t, nil, false, WithCORS(gamehubcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000"}))
+	app := newApp(t, nil, false, WithCORS(realmkitcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000"}))
 	req := httptest.NewRequest(fiber.MethodOptions, "/health", nil)
 	req.Header.Set("Origin", "http://localhost:3000")
 	req.Header.Set("Access-Control-Request-Method", fiber.MethodGet)
@@ -423,8 +423,8 @@ func newUserServices(t *testing.T) (auth.Config, userapplication.Service, userht
 	config := auth.Config{
 		Provider:          "generic_oidc",
 		IssuerURL:         "http://localhost:3001",
-		Audience:          "gamehub-api",
-		ClientID:          "gamehub-frontend",
+		Audience:          "realmkit-api",
+		ClientID:          "realmkit-frontend",
 		Scopes:            "openid profile email",
 		DevelopmentBypass: true,
 	}

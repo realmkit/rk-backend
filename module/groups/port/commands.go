@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/groups/domain"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/groups/domain"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // CreateGroupCommand creates a group.

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
+	"github.com/realmkit/rk-backend/pkg/cronjob/domain"
 )
 
 // definitionToModel maps domain definition to model.

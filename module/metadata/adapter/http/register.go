@@ -3,7 +3,7 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/module/metadata/port"
+	"github.com/realmkit/rk-backend/module/metadata/port"
 )
 
 // Services contains metadata application services used by handlers.

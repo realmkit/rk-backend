@@ -2,11 +2,11 @@ package domain
 
 import "slices"
 
-// Status is the local GameHub user lifecycle state.
+// Status is the local RealmKit user lifecycle state.
 type Status string
 
 const (
-	// StatusActive means the user can authenticate and use GameHub.
+	// StatusActive means the user can authenticate and use RealmKit.
 	StatusActive Status = "active"
 
 	// StatusDisabled means the user exists but cannot authenticate.

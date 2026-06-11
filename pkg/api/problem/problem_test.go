@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
 )
 
 // TestHandlerWritesFiberErrors verifies Fiber errors become problem responses.

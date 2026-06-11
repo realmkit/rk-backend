@@ -5,10 +5,10 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/metadata/domain"
-	"github.com/niflaot/gamehub-go/module/metadata/port"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/module/metadata/domain"
+	"github.com/realmkit/rk-backend/module/metadata/port"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
 )
 
 // Dependencies contains metadata service collaborators.

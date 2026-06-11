@@ -16,7 +16,7 @@ func TestNewWritesJSON(t *testing.T) {
 		t.Fatalf("New() error = %v", err)
 	}
 
-	log.Info("gamehub started", zap.String("component", "test"))
+	log.Info("realmkit started", zap.String("component", "test"))
 	if err := log.Sync(); err != nil {
 		t.Fatalf("Sync() error = %v", err)
 	}
@@ -28,8 +28,8 @@ func TestNewWritesJSON(t *testing.T) {
 	if entry["level"] != "info" {
 		t.Fatalf("level = %v, want %v", entry["level"], "info")
 	}
-	if entry["message"] != "gamehub started" {
-		t.Fatalf("message = %v, want %v", entry["message"], "gamehub started")
+	if entry["message"] != "realmkit started" {
+		t.Fatalf("message = %v, want %v", entry["message"], "realmkit started")
 	}
 	if entry["component"] != "test" {
 		t.Fatalf("component = %v, want %v", entry["component"], "test")

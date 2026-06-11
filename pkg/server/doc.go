@@ -1,2 +1,2 @@
-// Package server creates the GameHub Fiber HTTP server.
+// Package server creates the RealmKit Fiber HTTP server.
 package server

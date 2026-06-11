@@ -7,8 +7,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	groupsdomain "github.com/niflaot/gamehub-go/module/groups/domain"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 )
 
 func TestForumStructureLifecycleAndVisibleTree(t *testing.T) {

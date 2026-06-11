@@ -7,11 +7,11 @@ import (
 )
 
 // DocumentFile is the embedded OpenAPI document path.
-const DocumentFile = "gamehub.v1.json"
+const DocumentFile = "realmkit.v1.json"
 
-// document contains the GameHub v1 OpenAPI contract.
+// document contains the RealmKit v1 OpenAPI contract.
 //
-//go:embed gamehub.v1.json
+//go:embed realmkit.v1.json
 var document []byte
 
 // Document returns the embedded OpenAPI document bytes.

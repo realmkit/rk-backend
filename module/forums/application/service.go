@@ -2,14 +2,14 @@
 package application
 
 import (
-	adminapp "github.com/niflaot/gamehub-go/module/forums/application/admin"
-	contentapp "github.com/niflaot/gamehub-go/module/forums/application/content"
-	interactionapp "github.com/niflaot/gamehub-go/module/forums/application/interaction"
-	operationsapp "github.com/niflaot/gamehub-go/module/forums/application/operations"
-	structureapp "github.com/niflaot/gamehub-go/module/forums/application/structure"
-	"github.com/niflaot/gamehub-go/module/forums/port"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
-	"github.com/niflaot/gamehub-go/pkg/transaction"
+	adminapp "github.com/realmkit/rk-backend/module/forums/application/admin"
+	contentapp "github.com/realmkit/rk-backend/module/forums/application/content"
+	interactionapp "github.com/realmkit/rk-backend/module/forums/application/interaction"
+	operationsapp "github.com/realmkit/rk-backend/module/forums/application/operations"
+	structureapp "github.com/realmkit/rk-backend/module/forums/application/structure"
+	"github.com/realmkit/rk-backend/module/forums/port"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/pkg/transaction"
 )
 
 // Structure exposes structure use cases through the facade.

@@ -7,10 +7,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	"github.com/niflaot/gamehub-go/module/groups/domain"
-	punishmentsdomain "github.com/niflaot/gamehub-go/module/punishments/domain"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/module/groups/domain"
+	punishmentsdomain "github.com/realmkit/rk-backend/module/punishments/domain"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
 )
 
 // TestAppealsAndStaffWorkflows verifies moderation ticket actions.

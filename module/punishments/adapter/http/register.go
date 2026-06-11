@@ -3,7 +3,7 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/module/punishments/port"
+	"github.com/realmkit/rk-backend/module/punishments/port"
 )
 
 // Services contains punishment HTTP dependencies.

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/forums/domain"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/forums/domain"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // ErrNotFound reports that a forum resource was not found.

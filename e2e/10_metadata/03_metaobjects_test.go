@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/e2e/harness"
+	"github.com/realmkit/rk-backend/e2e/harness"
 )
 
 // TestMetaobjectDefinitionLifecycle verifies metaobject definition behavior.

@@ -9,7 +9,7 @@ import (
 
 // TestLoadUsesTaggedDefaults verifies Load returns tag defaults when no external configuration exists.
 func TestLoadUsesTaggedDefaults(t *testing.T) {
-	clearGameHubEnv(t)
+	clearRealmKitEnv(t)
 	setRequiredRootEnv(t)
 
 	cfg, err := Load(WithEnvFile(filepath.Join(t.TempDir(), ".env")))
@@ -35,8 +35,8 @@ func TestLoadUsesTaggedDefaults(t *testing.T) {
 	if cfg.Postgres.Port != 5432 {
 		t.Fatalf("Postgres.Port = %d, want %d", cfg.Postgres.Port, 5432)
 	}
-	if cfg.Postgres.Database != "gamehub" {
-		t.Fatalf("Postgres.Database = %q, want %q", cfg.Postgres.Database, "gamehub")
+	if cfg.Postgres.Database != "realmkit" {
+		t.Fatalf("Postgres.Database = %q, want %q", cfg.Postgres.Database, "realmkit")
 	}
 	if cfg.Redis.Address != "localhost:6379" {
 		t.Fatalf("Redis.Address = %q, want %q", cfg.Redis.Address, "localhost:6379")
@@ -52,13 +52,13 @@ func TestLoadUsesTaggedDefaults(t *testing.T) {
 	}
 }
 
-// TestLoadReadsGameHubEnvFile verifies GAMEHUB-prefixed values are loaded from .env files.
-func TestLoadReadsGameHubEnvFile(t *testing.T) {
-	clearGameHubEnv(t)
+// TestLoadReadsRealmKitEnvFile verifies REALMKIT-prefixed values are loaded from .env files.
+func TestLoadReadsRealmKitEnvFile(t *testing.T) {
+	clearRealmKitEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
 	content := []byte(
-		"GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=test\nGAMEHUB_LOG_LEVEL=debug\nGAMEHUB_POSTGRES_HOST=db\nGAMEHUB_POSTGRES_PORT=5433\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_POSTGRES_SSL_MODE=require\nGAMEHUB_REDIS_ADDRESS=redis:6379\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\nGAMEHUB_CORS_ALLOW_ORIGINS=https://admin.gamehub.test\nGAMEHUB_AUTH_ISSUER_URL=https://auth.example.test\nGAMEHUB_AUTH_AUDIENCE=file-api\nGAMEHUB_AUTH_CLIENT_ID=file-frontend\n",
+		"REALMKIT_HOST=127.0.0.1\nREALMKIT_PORT=9090\nREALMKIT_ENVIRONMENT=test\nREALMKIT_LOG_LEVEL=debug\nREALMKIT_POSTGRES_HOST=db\nREALMKIT_POSTGRES_PORT=5433\nREALMKIT_POSTGRES_DATABASE=filedb\nREALMKIT_POSTGRES_USERNAME=fileuser\nREALMKIT_POSTGRES_PASSWORD=filepass\nREALMKIT_POSTGRES_SSL_MODE=require\nREALMKIT_REDIS_ADDRESS=redis:6379\nREALMKIT_STORAGE_BUCKET=file-bucket\nREALMKIT_STORAGE_ENDPOINT=http://storage:9000\nREALMKIT_STORAGE_ACCESS_KEY_ID=file-access\nREALMKIT_STORAGE_SECRET_ACCESS_KEY=file-secret\nREALMKIT_CORS_ALLOW_ORIGINS=https://admin.realmkit.test\nREALMKIT_AUTH_ISSUER_URL=https://auth.example.test\nREALMKIT_AUTH_AUDIENCE=file-api\nREALMKIT_AUTH_CLIENT_ID=file-frontend\n",
 	)
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
@@ -96,7 +96,7 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 	if cfg.Storage.Bucket != "file-bucket" {
 		t.Fatalf("Storage.Bucket = %q, want file-bucket", cfg.Storage.Bucket)
 	}
-	if cfg.CORS.AllowOrigins != "https://admin.gamehub.test" {
+	if cfg.CORS.AllowOrigins != "https://admin.realmkit.test" {
 		t.Fatalf("CORS.AllowOrigins = %q, want configured origin", cfg.CORS.AllowOrigins)
 	}
 	if cfg.Auth.IssuerURL != "https://auth.example.test" {
@@ -106,26 +106,26 @@ func TestLoadReadsGameHubEnvFile(t *testing.T) {
 
 // TestLoadEnvironmentOverridesEnvFile verifies operating system environment values have highest precedence.
 func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
-	clearGameHubEnv(t)
+	clearRealmKitEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
 	content := []byte(
-		"GAMEHUB_HOST=127.0.0.1\nGAMEHUB_PORT=9090\nGAMEHUB_ENVIRONMENT=file\nGAMEHUB_LOG_LEVEL=info\nGAMEHUB_POSTGRES_DATABASE=filedb\nGAMEHUB_POSTGRES_USERNAME=fileuser\nGAMEHUB_POSTGRES_PASSWORD=filepass\nGAMEHUB_STORAGE_BUCKET=file-bucket\nGAMEHUB_STORAGE_ENDPOINT=http://storage:9000\nGAMEHUB_STORAGE_ACCESS_KEY_ID=file-access\nGAMEHUB_STORAGE_SECRET_ACCESS_KEY=file-secret\nGAMEHUB_AUTH_ISSUER_URL=https://file-auth.example.test\nGAMEHUB_AUTH_AUDIENCE=file-api\nGAMEHUB_AUTH_CLIENT_ID=file-frontend\n",
+		"REALMKIT_HOST=127.0.0.1\nREALMKIT_PORT=9090\nREALMKIT_ENVIRONMENT=file\nREALMKIT_LOG_LEVEL=info\nREALMKIT_POSTGRES_DATABASE=filedb\nREALMKIT_POSTGRES_USERNAME=fileuser\nREALMKIT_POSTGRES_PASSWORD=filepass\nREALMKIT_STORAGE_BUCKET=file-bucket\nREALMKIT_STORAGE_ENDPOINT=http://storage:9000\nREALMKIT_STORAGE_ACCESS_KEY_ID=file-access\nREALMKIT_STORAGE_SECRET_ACCESS_KEY=file-secret\nREALMKIT_AUTH_ISSUER_URL=https://file-auth.example.test\nREALMKIT_AUTH_AUDIENCE=file-api\nREALMKIT_AUTH_CLIENT_ID=file-frontend\n",
 	)
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
 
-	t.Setenv("GAMEHUB_HOST", "localhost")
-	t.Setenv("GAMEHUB_PORT", "7070")
-	t.Setenv("GAMEHUB_ENVIRONMENT", "test")
-	t.Setenv("GAMEHUB_LOG_LEVEL", "warn")
-	t.Setenv("GAMEHUB_POSTGRES_DATABASE", "envdb")
-	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "envuser")
-	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "envpass")
-	t.Setenv("GAMEHUB_REDIS_DATABASE", "3")
-	t.Setenv("GAMEHUB_STORAGE_BUCKET", "env-bucket")
-	t.Setenv("GAMEHUB_AUTH_AUDIENCE", "env-api")
+	t.Setenv("REALMKIT_HOST", "localhost")
+	t.Setenv("REALMKIT_PORT", "7070")
+	t.Setenv("REALMKIT_ENVIRONMENT", "test")
+	t.Setenv("REALMKIT_LOG_LEVEL", "warn")
+	t.Setenv("REALMKIT_POSTGRES_DATABASE", "envdb")
+	t.Setenv("REALMKIT_POSTGRES_USERNAME", "envuser")
+	t.Setenv("REALMKIT_POSTGRES_PASSWORD", "envpass")
+	t.Setenv("REALMKIT_REDIS_DATABASE", "3")
+	t.Setenv("REALMKIT_STORAGE_BUCKET", "env-bucket")
+	t.Setenv("REALMKIT_AUTH_AUDIENCE", "env-api")
 
 	cfg, err := Load(WithEnvFile(path))
 	if err != nil {
@@ -160,7 +160,7 @@ func TestLoadEnvironmentOverridesEnvFile(t *testing.T) {
 
 // TestLoadWithDisabledEnvFile verifies the loader can run without reading any .env file.
 func TestLoadWithDisabledEnvFile(t *testing.T) {
-	clearGameHubEnv(t)
+	clearRealmKitEnv(t)
 	setRequiredRootEnv(t)
 
 	cfg, err := Load(WithEnvFile(""))
@@ -175,7 +175,7 @@ func TestLoadWithDisabledEnvFile(t *testing.T) {
 
 // TestLoadReadsUnprefixedEnvFileKeys verifies .env files may use config keys directly.
 func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
-	clearGameHubEnv(t)
+	clearRealmKitEnv(t)
 
 	path := filepath.Join(t.TempDir(), ".env")
 	content := []byte(
@@ -212,7 +212,7 @@ func TestLoadReadsUnprefixedEnvFileKeys(t *testing.T) {
 
 // TestLoadReturnsEnvFileReadErrors verifies invalid .env paths return useful errors.
 func TestLoadReturnsEnvFileReadErrors(t *testing.T) {
-	clearGameHubEnv(t)
+	clearRealmKitEnv(t)
 	setRequiredRootEnv(t)
 
 	if _, err := Load(WithEnvFile(t.TempDir())); err == nil {
@@ -222,7 +222,7 @@ func TestLoadReturnsEnvFileReadErrors(t *testing.T) {
 
 // TestSchemaRequiresFieldsWithoutDefaults verifies a field without a default tag is mandatory.
 func TestSchemaRequiresFieldsWithoutDefaults(t *testing.T) {
-	clearGameHubEnv(t)
+	clearRealmKitEnv(t)
 
 	type requiredConfig struct {
 		Token string `mapstructure:"token"`
@@ -267,56 +267,56 @@ func TestValidateRequiredAcceptsPresentValues(t *testing.T) {
 	}
 }
 
-// clearGameHubEnv clears GAMEHUB variables that can affect loader tests.
-func clearGameHubEnv(t *testing.T) {
+// clearRealmKitEnv clears REALMKIT variables that can affect loader tests.
+func clearRealmKitEnv(t *testing.T) {
 	t.Helper()
-	t.Setenv("GAMEHUB_HOST", "")
-	t.Setenv("GAMEHUB_PORT", "")
-	t.Setenv("GAMEHUB_ENVIRONMENT", "")
-	t.Setenv("GAMEHUB_LOG_LEVEL", "")
-	t.Setenv("GAMEHUB_TOKEN", "")
-	t.Setenv("GAMEHUB_ENABLED", "")
-	t.Setenv("GAMEHUB_POSTGRES_HOST", "")
-	t.Setenv("GAMEHUB_POSTGRES_PORT", "")
-	t.Setenv("GAMEHUB_POSTGRES_DATABASE", "")
-	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "")
-	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "")
-	t.Setenv("GAMEHUB_POSTGRES_SSL_MODE", "")
-	t.Setenv("GAMEHUB_REDIS_ADDRESS", "")
-	t.Setenv("GAMEHUB_REDIS_PASSWORD", "")
-	t.Setenv("GAMEHUB_REDIS_DATABASE", "")
-	t.Setenv("GAMEHUB_STORAGE_BUCKET", "")
-	t.Setenv("GAMEHUB_STORAGE_REGION", "")
-	t.Setenv("GAMEHUB_STORAGE_ENDPOINT", "")
-	t.Setenv("GAMEHUB_STORAGE_ACCESS_KEY_ID", "")
-	t.Setenv("GAMEHUB_STORAGE_SECRET_ACCESS_KEY", "")
-	t.Setenv("GAMEHUB_STORAGE_PUBLIC_BASE_URL", "")
-	t.Setenv("GAMEHUB_CORS_ENABLED", "")
-	t.Setenv("GAMEHUB_CORS_ALLOW_ORIGINS", "")
-	t.Setenv("GAMEHUB_AUTH_PROVIDER", "")
-	t.Setenv("GAMEHUB_AUTH_ISSUER_URL", "")
-	t.Setenv("GAMEHUB_AUTH_AUDIENCE", "")
-	t.Setenv("GAMEHUB_AUTH_CLIENT_ID", "")
-	t.Setenv("GAMEHUB_AUTH_SCOPES", "")
-	t.Setenv("GAMEHUB_AUTH_DEVELOPMENT_BYPASS", "")
+	t.Setenv("REALMKIT_HOST", "")
+	t.Setenv("REALMKIT_PORT", "")
+	t.Setenv("REALMKIT_ENVIRONMENT", "")
+	t.Setenv("REALMKIT_LOG_LEVEL", "")
+	t.Setenv("REALMKIT_TOKEN", "")
+	t.Setenv("REALMKIT_ENABLED", "")
+	t.Setenv("REALMKIT_POSTGRES_HOST", "")
+	t.Setenv("REALMKIT_POSTGRES_PORT", "")
+	t.Setenv("REALMKIT_POSTGRES_DATABASE", "")
+	t.Setenv("REALMKIT_POSTGRES_USERNAME", "")
+	t.Setenv("REALMKIT_POSTGRES_PASSWORD", "")
+	t.Setenv("REALMKIT_POSTGRES_SSL_MODE", "")
+	t.Setenv("REALMKIT_REDIS_ADDRESS", "")
+	t.Setenv("REALMKIT_REDIS_PASSWORD", "")
+	t.Setenv("REALMKIT_REDIS_DATABASE", "")
+	t.Setenv("REALMKIT_STORAGE_BUCKET", "")
+	t.Setenv("REALMKIT_STORAGE_REGION", "")
+	t.Setenv("REALMKIT_STORAGE_ENDPOINT", "")
+	t.Setenv("REALMKIT_STORAGE_ACCESS_KEY_ID", "")
+	t.Setenv("REALMKIT_STORAGE_SECRET_ACCESS_KEY", "")
+	t.Setenv("REALMKIT_STORAGE_PUBLIC_BASE_URL", "")
+	t.Setenv("REALMKIT_CORS_ENABLED", "")
+	t.Setenv("REALMKIT_CORS_ALLOW_ORIGINS", "")
+	t.Setenv("REALMKIT_AUTH_PROVIDER", "")
+	t.Setenv("REALMKIT_AUTH_ISSUER_URL", "")
+	t.Setenv("REALMKIT_AUTH_AUDIENCE", "")
+	t.Setenv("REALMKIT_AUTH_CLIENT_ID", "")
+	t.Setenv("REALMKIT_AUTH_SCOPES", "")
+	t.Setenv("REALMKIT_AUTH_DEVELOPMENT_BYPASS", "")
 }
 
 // setRequiredRootEnv sets required root variables for root config tests.
 func setRequiredRootEnv(t *testing.T) {
 	t.Helper()
-	t.Setenv("GAMEHUB_POSTGRES_DATABASE", "gamehub")
-	t.Setenv("GAMEHUB_POSTGRES_USERNAME", "gamehub")
-	t.Setenv("GAMEHUB_POSTGRES_PASSWORD", "gamehub")
-	t.Setenv("GAMEHUB_STORAGE_BUCKET", "gamehub-assets")
-	t.Setenv("GAMEHUB_STORAGE_ENDPOINT", "http://localhost:9000")
-	t.Setenv("GAMEHUB_STORAGE_ACCESS_KEY_ID", "gamehub")
-	t.Setenv("GAMEHUB_STORAGE_SECRET_ACCESS_KEY", "gamehub")
-	t.Setenv("GAMEHUB_AUTH_ISSUER_URL", "http://localhost:3001")
-	t.Setenv("GAMEHUB_AUTH_AUDIENCE", "gamehub-api")
-	t.Setenv("GAMEHUB_AUTH_CLIENT_ID", "gamehub-frontend")
+	t.Setenv("REALMKIT_POSTGRES_DATABASE", "realmkit")
+	t.Setenv("REALMKIT_POSTGRES_USERNAME", "realmkit")
+	t.Setenv("REALMKIT_POSTGRES_PASSWORD", "realmkit")
+	t.Setenv("REALMKIT_STORAGE_BUCKET", "realmkit-assets")
+	t.Setenv("REALMKIT_STORAGE_ENDPOINT", "http://localhost:9000")
+	t.Setenv("REALMKIT_STORAGE_ACCESS_KEY_ID", "realmkit")
+	t.Setenv("REALMKIT_STORAGE_SECRET_ACCESS_KEY", "realmkit")
+	t.Setenv("REALMKIT_AUTH_ISSUER_URL", "http://localhost:3001")
+	t.Setenv("REALMKIT_AUTH_AUDIENCE", "realmkit-api")
+	t.Setenv("REALMKIT_AUTH_CLIENT_ID", "realmkit-frontend")
 }
 
-// TestSchemaCollectsSquashedFields verifies squashed structs expose root-level GAMEHUB variables.
+// TestSchemaCollectsSquashedFields verifies squashed structs expose root-level REALMKIT variables.
 func TestSchemaCollectsSquashedFields(t *testing.T) {
 	fields, err := schemaFor(Config{})
 	if err != nil {
@@ -382,7 +382,7 @@ func TestSchemaRejectsNonStructs(t *testing.T) {
 // TestSchemaCollectsNestedAndSkippedFields verifies nested structs, skipped tags, and fallback names.
 func TestSchemaCollectsNestedAndSkippedFields(t *testing.T) {
 	type databaseConfig struct {
-		URL     string `mapstructure:"url" default:"postgres://localhost/gamehub"`
+		URL     string `mapstructure:"url" default:"postgres://localhost/realmkit"`
 		NoTag   string `                   default:"fallback"`
 		Ignored string `mapstructure:"-"`
 	}
@@ -404,7 +404,7 @@ func TestSchemaCollectsNestedAndSkippedFields(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fields = %v, want %v", got, want)
 	}
-	if fields[0].env(defaultPrefix) != "GAMEHUB_DATABASE_URL" {
-		t.Fatalf("env = %q, want %q", fields[0].env(defaultPrefix), "GAMEHUB_DATABASE_URL")
+	if fields[0].env(defaultPrefix) != "REALMKIT_DATABASE_URL" {
+		t.Fatalf("env = %q, want %q", fields[0].env(defaultPrefix), "REALMKIT_DATABASE_URL")
 	}
 }

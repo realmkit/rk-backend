@@ -7,8 +7,8 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/forums/domain"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/forums/domain"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 	goredis "github.com/redis/go-redis/v9"
 )
 

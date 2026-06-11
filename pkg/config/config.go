@@ -3,21 +3,21 @@ package config
 import (
 	"strings"
 
-	"github.com/niflaot/gamehub-go/pkg/api/auth"
-	"github.com/niflaot/gamehub-go/pkg/api/cors"
-	"github.com/niflaot/gamehub-go/pkg/logger"
-	"github.com/niflaot/gamehub-go/pkg/postgres"
-	"github.com/niflaot/gamehub-go/pkg/redis"
-	"github.com/niflaot/gamehub-go/pkg/server"
-	"github.com/niflaot/gamehub-go/pkg/storage"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
+	"github.com/realmkit/rk-backend/pkg/api/cors"
+	"github.com/realmkit/rk-backend/pkg/logger"
+	"github.com/realmkit/rk-backend/pkg/postgres"
+	"github.com/realmkit/rk-backend/pkg/redis"
+	"github.com/realmkit/rk-backend/pkg/server"
+	"github.com/realmkit/rk-backend/pkg/storage"
 )
 
-// Config contains the GameHub backend runtime configuration.
+// Config contains the RealmKit backend runtime configuration.
 type Config struct {
 	// Server contains Fiber HTTP server settings.
 	Server server.Config `mapstructure:",squash"`
 
-	// Runtime contains the root GAMEHUB runtime settings.
+	// Runtime contains the root REALMKIT runtime settings.
 	Runtime Runtime `mapstructure:",squash"`
 
 	// Logging contains JSON logger settings.
@@ -39,7 +39,7 @@ type Config struct {
 	Auth auth.Config `mapstructure:"auth"`
 }
 
-// Runtime contains the essential runtime settings required to start GameHub.
+// Runtime contains the essential runtime settings required to start RealmKit.
 type Runtime struct {
 	// Environment is the named runtime environment.
 	Environment string `mapstructure:"environment" default:"development"`

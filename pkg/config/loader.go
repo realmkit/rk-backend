@@ -14,7 +14,7 @@ const (
 	defaultEnvFile = ".env"
 
 	// defaultPrefix is the environment variable prefix used by Load.
-	defaultPrefix = "GAMEHUB"
+	defaultPrefix = "REALMKIT"
 )
 
 // Option changes the behavior of the configuration loader.
@@ -26,7 +26,7 @@ type loader struct {
 	prefix  string
 }
 
-// Load reads GameHub configuration from defaults, .env, and environment variables.
+// Load reads RealmKit configuration from defaults, .env, and environment variables.
 func Load(options ...Option) (Config, error) {
 	settings := loader{
 		envFile: defaultEnvFile,
@@ -106,7 +106,7 @@ func applyEnvFile(source *viper.Viper, fields []fieldSpec, settings loader) erro
 	return nil
 }
 
-// newViper creates a Viper instance configured for GAMEHUB-style env keys.
+// newViper creates a Viper instance configured for REALMKIT-style env keys.
 func newViper(prefix string) *viper.Viper {
 	source := viper.New()
 	source.SetEnvPrefix(prefix)

@@ -4,19 +4,19 @@ import (
 	"context"
 
 	"github.com/gofiber/fiber/v2"
-	assetspostgres "github.com/niflaot/gamehub-go/module/assets/adapter/postgres"
-	assetsapp "github.com/niflaot/gamehub-go/module/assets/application"
-	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
-	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
-	"github.com/niflaot/gamehub-go/pkg/config"
-	eventshttp "github.com/niflaot/gamehub-go/pkg/events/adapter/http"
-	"github.com/niflaot/gamehub-go/pkg/logger"
-	"github.com/niflaot/gamehub-go/pkg/orm"
-	"github.com/niflaot/gamehub-go/pkg/postgres"
-	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
-	gamehubredis "github.com/niflaot/gamehub-go/pkg/redis"
-	"github.com/niflaot/gamehub-go/pkg/server"
-	"github.com/niflaot/gamehub-go/pkg/storage"
+	assetspostgres "github.com/realmkit/rk-backend/module/assets/adapter/postgres"
+	assetsapp "github.com/realmkit/rk-backend/module/assets/application"
+	"github.com/realmkit/rk-backend/pkg/api/idempotency"
+	"github.com/realmkit/rk-backend/pkg/api/ratelimit"
+	"github.com/realmkit/rk-backend/pkg/config"
+	eventshttp "github.com/realmkit/rk-backend/pkg/events/adapter/http"
+	"github.com/realmkit/rk-backend/pkg/logger"
+	"github.com/realmkit/rk-backend/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/postgres"
+	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
+	realmkitredis "github.com/realmkit/rk-backend/pkg/redis"
+	"github.com/realmkit/rk-backend/pkg/server"
+	"github.com/realmkit/rk-backend/pkg/storage"
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -31,13 +31,13 @@ type commandDeps struct {
 	listenServer  func(*fiber.App, string) error
 	openPostgres  func(context.Context, postgres.Config) (*gorm.DB, error)
 	closePostgres func(*gorm.DB) error
-	openRedis     func(context.Context, gamehubredis.Config) (*goredis.Client, error)
+	openRedis     func(context.Context, realmkitredis.Config) (*goredis.Client, error)
 	closeRedis    func(*goredis.Client) error
 	newStorage    func(context.Context, storage.Config) (storage.Store, error)
 	newRunner     func(*gorm.DB, *zap.Logger) migrations.Runner
 }
 
-// Run executes the GameHub CLI.
+// Run executes the RealmKit CLI.
 func Run(args []string, activeLogger **zap.Logger) error {
 	return execute(activeLogger, args, defaultCommandDeps())
 }
@@ -59,16 +59,16 @@ func defaultCommandDeps() commandDeps {
 			return postgres.Open(ctx, cfg)
 		},
 		closePostgres: postgres.Close,
-		openRedis: func(ctx context.Context, cfg gamehubredis.Config) (*goredis.Client, error) {
-			return gamehubredis.Open(ctx, cfg)
+		openRedis: func(ctx context.Context, cfg realmkitredis.Config) (*goredis.Client, error) {
+			return realmkitredis.Open(ctx, cfg)
 		},
-		closeRedis: gamehubredis.Close,
+		closeRedis: realmkitredis.Close,
 		newStorage: func(ctx context.Context, cfg storage.Config) (storage.Store, error) {
 			store, err := storage.NewS3Store(ctx, cfg)
 			return store, err
 		},
 		newRunner: func(db *gorm.DB, log *zap.Logger) migrations.Runner {
-			return migrations.NewRunner(db, migrations.DefaultSource(), migrations.WithLogger(log), migrations.WithExecutor("gamehub-cli"))
+			return migrations.NewRunner(db, migrations.DefaultSource(), migrations.WithLogger(log), migrations.WithExecutor("realmkit-cli"))
 		},
 	}
 }
@@ -80,11 +80,11 @@ func execute(activeLogger **zap.Logger, args []string, deps commandDeps) error {
 	return cmd.Execute()
 }
 
-// newRootCommand creates the GameHub CLI root command.
+// newRootCommand creates the RealmKit CLI root command.
 func newRootCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "gamehub",
-		Short:         "GameHub backend",
+		Use:           "realmkit",
+		Short:         "RealmKit backend",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -127,7 +127,7 @@ func runStart(ctx context.Context, activeLogger **zap.Logger, deps commandDeps) 
 	development := cfg.Runtime.IsDevelopment()
 	app := deps.newServer(log, development, options...)
 	address := cfg.Server.Address()
-	log.Info("starting gamehub backend", zap.String("address", address))
+	log.Info("starting realmkit backend", zap.String("address", address))
 	return deps.listenServer(app, address)
 }
 

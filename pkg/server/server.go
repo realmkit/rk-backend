@@ -6,22 +6,22 @@ import (
 	"github.com/gofiber/contrib/fiberzap/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	assetshttp "github.com/niflaot/gamehub-go/module/assets/adapter/http"
-	forumshttp "github.com/niflaot/gamehub-go/module/forums/adapter/http"
-	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
-	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
-	punishmentshttp "github.com/niflaot/gamehub-go/module/punishments/adapter/http"
-	ticketshttp "github.com/niflaot/gamehub-go/module/tickets/adapter/http"
-	userhttp "github.com/niflaot/gamehub-go/module/user/adapter/http"
-	"github.com/niflaot/gamehub-go/pkg/api/auth"
-	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
-	"github.com/niflaot/gamehub-go/pkg/api/problem"
-	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
-	"github.com/niflaot/gamehub-go/pkg/api/swagger"
-	cronhttp "github.com/niflaot/gamehub-go/pkg/cronjob/adapter/http"
-	eventshttp "github.com/niflaot/gamehub-go/pkg/events/adapter/http"
+	assetshttp "github.com/realmkit/rk-backend/module/assets/adapter/http"
+	forumshttp "github.com/realmkit/rk-backend/module/forums/adapter/http"
+	groupshttp "github.com/realmkit/rk-backend/module/groups/adapter/http"
+	metadatahttp "github.com/realmkit/rk-backend/module/metadata/adapter/http"
+	punishmentshttp "github.com/realmkit/rk-backend/module/punishments/adapter/http"
+	ticketshttp "github.com/realmkit/rk-backend/module/tickets/adapter/http"
+	userhttp "github.com/realmkit/rk-backend/module/user/adapter/http"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
+	realmkitcors "github.com/realmkit/rk-backend/pkg/api/cors"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/idempotency"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/api/ratelimit"
+	"github.com/realmkit/rk-backend/pkg/api/swagger"
+	cronhttp "github.com/realmkit/rk-backend/pkg/cronjob/adapter/http"
+	eventshttp "github.com/realmkit/rk-backend/pkg/events/adapter/http"
 	"go.uber.org/zap"
 )
 
@@ -33,7 +33,7 @@ type Option func(*options)
 
 // options contains optional server modules.
 type options struct {
-	cors                  gamehubcors.Config
+	cors                  realmkitcors.Config
 	idempotencyConfigured bool
 	idempotencyStore      idempotency.Store
 	assets                *assetshttp.Services
@@ -65,7 +65,7 @@ func WithCron(services cronhttp.Services) Option {
 }
 
 // WithCORS configures browser cross-origin middleware.
-func WithCORS(cfg gamehubcors.Config) Option {
+func WithCORS(cfg realmkitcors.Config) Option {
 	return func(options *options) {
 		options.cors = cfg
 	}
@@ -156,7 +156,7 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	})
 	app.Use(recover.New())
 	app.Use(headers.Middleware())
-	app.Use(gamehubcors.New(options.cors))
+	app.Use(realmkitcors.New(options.cors))
 	app.Use(fiberzap.New(fiberzap.Config{
 		Logger: log,
 	}))
@@ -219,7 +219,7 @@ func health(ctx *fiber.Ctx) error {
 // optionsFrom applies server options.
 func optionsFrom(opts []Option) options {
 	options := options{
-		cors:           gamehubcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000,http://127.0.0.1:3000"},
+		cors:           realmkitcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000,http://127.0.0.1:3000"},
 		rateLimitStore: ratelimit.NewMemoryStore(),
 	}
 	for _, opt := range opts {

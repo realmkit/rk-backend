@@ -1,2 +1,2 @@
-// Package headers defines and manages GameHub HTTP headers.
+// Package headers defines and manages RealmKit HTTP headers.
 package headers

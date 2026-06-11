@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/forums/domain"
-	"github.com/niflaot/gamehub-go/module/forums/port"
+	"github.com/realmkit/rk-backend/module/forums/domain"
+	"github.com/realmkit/rk-backend/module/forums/port"
 )
 
 // authorPostEditWindow is the default author self-edit window before admin configuration exists.
@@ -132,7 +132,7 @@ func (service Service) requireThreadCreate(
 	if err := decisionError(allowed, err); err != nil {
 		return err
 	}
-	return service.requireUnrestricted(ctx, actorUserID, "gamehub.forums.create_thread")
+	return service.requireUnrestricted(ctx, actorUserID, "realmkit.forums.create_thread")
 }
 
 func (service Service) requireReply(
@@ -144,7 +144,7 @@ func (service Service) requireReply(
 	if err := decisionError(allowed, err); err != nil {
 		return err
 	}
-	return service.requireUnrestricted(ctx, actorUserID, "gamehub.forums.reply")
+	return service.requireUnrestricted(ctx, actorUserID, "realmkit.forums.reply")
 }
 
 func (service Service) requireLikePosts(

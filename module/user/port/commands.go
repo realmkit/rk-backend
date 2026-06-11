@@ -2,7 +2,7 @@ package port
 
 import (
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/user/domain"
+	"github.com/realmkit/rk-backend/module/user/domain"
 )
 
 // UpdateCurrentCommand updates local current-user settings.

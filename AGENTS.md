@@ -1,10 +1,10 @@
 # AGENTS.md
 
-This file describes how coding agents must work in the GameHub Go backend repository.
+This file describes how coding agents must work in the RealmKit Go backend repository.
 
 ## Project Overview
 
-GameHub is a configurable game community forum and platform. It supports user systems, forums, moderation sanctions, appeals, staff pages, friends, messages, statistics, and game-specific integrations such as Minecraft minigames and inventories or SAMP money, inventories, and factions.
+RealmKit is a configurable game community forum and platform. It supports user systems, forums, moderation sanctions, appeals, staff pages, friends, messages, statistics, and game-specific integrations such as Minecraft minigames and inventories or SAMP money, inventories, and factions.
 
 This repository contains only the Go backend:
 
@@ -12,7 +12,7 @@ This repository contains only the Go backend:
 - `module/` contains business and application-specific modules.
 - `plan/` is reserved for local planning notes and must not be committed.
 
-The Next.js frontend lives in the separate `gamehub-frontend` repository.
+The Next.js frontend lives in the separate `realmkit-frontend` repository.
 
 ## Global Rules
 
@@ -54,15 +54,15 @@ The Next.js frontend lives in the separate `gamehub-frontend` repository.
 - Use PostgreSQL as the primary durable database.
 - Use GORM for database access.
 - Use Redis for caching, rate limiting, and distributed coordination when appropriate.
-- Use Zap for structured JSON logging, with the log level controlled by `GAMEHUB_LOG_LEVEL`.
+- Use Zap for structured JSON logging, with the log level controlled by `REALMKIT_LOG_LEVEL`.
 - Use Fiber for HTTP serving and FiberZap for structured request logging.
-- Startup logging must use Zap and must emit the GameHub startup message in every environment.
+- Startup logging must use Zap and must emit the RealmKit startup message in every environment.
 - Fiber's startup/welcome message must be enabled only in the `development` environment.
 - Entrypoints must centralize final error handling through one deferred finalizer that logs with Zap, syncs the logger, and exits nonzero when an error is present.
 - Entrypoints must return errors explicitly from setup steps instead of repeating fatal logging at each dependency initialization site.
 - Define HTTP contracts through OpenAPI before or alongside handlers.
 - Use OpenAPI 3.1 for HTTP contracts.
-- GameHub service routes must not include public version prefixes such as `/api/v1`; public API versioning belongs at the API gateway, which rewrites versioned external URLs to unversioned service routes.
+- RealmKit service routes must not include public version prefixes such as `/api/v1`; public API versioning belongs at the API gateway, which rewrites versioned external URLs to unversioned service routes.
 - Every Fiber route must have a corresponding OpenAPI operation before it is considered complete.
 - Every OpenAPI operation must document request headers, path/query parameters, request bodies, response headers, success responses, and all expected error responses.
 - Every OpenAPI operation must document authentication, authorization, idempotency behavior, rate limit behavior, pagination behavior, and concurrency headers when applicable.

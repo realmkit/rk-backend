@@ -2,9 +2,9 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
-	contentroutes "github.com/niflaot/gamehub-go/module/forums/adapter/http/content"
-	structureroutes "github.com/niflaot/gamehub-go/module/forums/adapter/http/structure"
-	"github.com/niflaot/gamehub-go/module/forums/port"
+	contentroutes "github.com/realmkit/rk-backend/module/forums/adapter/http/content"
+	structureroutes "github.com/realmkit/rk-backend/module/forums/adapter/http/structure"
+	"github.com/realmkit/rk-backend/module/forums/port"
 )
 
 // Services contains forum application services used by handlers.

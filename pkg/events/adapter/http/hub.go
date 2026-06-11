@@ -7,8 +7,8 @@ import (
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/events/domain"
-	"github.com/niflaot/gamehub-go/pkg/events/port"
+	"github.com/realmkit/rk-backend/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/events/port"
 )
 
 // Hub stores active local WebSocket clients.
@@ -163,7 +163,7 @@ func scopeKey(scope domain.Scope) string {
 
 // socketUserID extracts the authenticated user ID made available to the socket.
 func socketUserID(conn *websocket.Conn) uuid.UUID {
-	value := conn.Headers("X-GameHub-User-Id")
+	value := conn.Headers("X-RealmKit-User-Id")
 	if value == "" {
 		value = conn.Query("user_id")
 	}

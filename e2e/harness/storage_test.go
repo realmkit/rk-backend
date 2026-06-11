@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/niflaot/gamehub-go/pkg/storage"
+	"github.com/realmkit/rk-backend/pkg/storage"
 )
 
 // TestMemoryStoragePutHeadAndDelete verifies in-memory object lifecycle behavior.

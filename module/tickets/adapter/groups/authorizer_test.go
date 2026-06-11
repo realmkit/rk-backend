@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	groupsdomain "github.com/niflaot/gamehub-go/module/groups/domain"
-	groupsport "github.com/niflaot/gamehub-go/module/groups/port"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 )
 
 // TestAuthorizerChecksTicketAndPunishmentPermissions verifies permission translation.

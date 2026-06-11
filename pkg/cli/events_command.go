@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	forumsapp "github.com/niflaot/gamehub-go/module/forums/application"
-	forumsdomain "github.com/niflaot/gamehub-go/module/forums/domain"
-	"github.com/niflaot/gamehub-go/pkg/events/application"
-	gamehubredis "github.com/niflaot/gamehub-go/pkg/redis"
+	forumsapp "github.com/realmkit/rk-backend/module/forums/application"
+	forumsdomain "github.com/realmkit/rk-backend/module/forums/domain"
+	"github.com/realmkit/rk-backend/pkg/events/application"
+	realmkitredis "github.com/realmkit/rk-backend/pkg/redis"
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -44,7 +44,7 @@ func newEventsDispatchCommand(activeLogger **zap.Logger, deps commandDeps) *cobr
 				ticker := time.NewTicker(time.Second)
 				defer ticker.Stop()
 				for {
-					if _, err := service.DispatchOnce(ctx, "gamehub-cli"); err != nil {
+					if _, err := service.DispatchOnce(ctx, "realmkit-cli"); err != nil {
 						return err
 					}
 					select {
@@ -71,7 +71,7 @@ func newEventsDispatchOnceCommand(activeLogger **zap.Logger, deps commandDeps) *
 				activeLogger,
 				deps,
 				func(ctx context.Context, service application.Service) (application.DispatchResult, error) {
-					return service.DispatchOnce(ctx, "gamehub-cli")
+					return service.DispatchOnce(ctx, "realmkit-cli")
 				},
 			)
 			if err != nil {
@@ -215,7 +215,7 @@ func runForumAction(
 func optionalRedis(
 	ctx context.Context,
 	deps commandDeps,
-	cfg gamehubredis.Config,
+	cfg realmkitredis.Config,
 	enabled bool,
 ) (*goredis.Client, func(*zap.Logger), error) {
 	if !enabled {

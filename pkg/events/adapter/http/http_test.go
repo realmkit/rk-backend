@@ -7,12 +7,12 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/api/problem"
-	"github.com/niflaot/gamehub-go/pkg/events/adapter/postgres"
-	"github.com/niflaot/gamehub-go/pkg/events/application"
-	"github.com/niflaot/gamehub-go/pkg/events/domain"
-	"github.com/niflaot/gamehub-go/pkg/events/port"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/events/adapter/postgres"
+	"github.com/realmkit/rk-backend/pkg/events/application"
+	"github.com/realmkit/rk-backend/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/events/port"
+	"github.com/realmkit/rk-backend/pkg/orm"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

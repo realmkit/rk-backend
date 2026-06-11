@@ -180,8 +180,8 @@ func (action ActionTemplate) Validate() error {
 	violations = append(violations, ValidateEffect("effect", action.Effect)...)
 	violations = append(violations, ValidateActionKey("action_key", action.ActionKey)...)
 	violations = append(violations, ValidateDefinitionStatus("status", action.Status)...)
-	if action.TargetSystem != TargetGameHub && action.Effect == EffectRestrict {
-		violations = AddViolation(violations, "effect", "restrict is only valid for gamehub")
+	if action.TargetSystem != TargetRealmKit && action.Effect == EffectRestrict {
+		violations = AddViolation(violations, "effect", "restrict is only valid for realmkit")
 	}
 	if !json.Valid(action.ConfigurationJSON) {
 		violations = AddViolation(violations, "configuration_json", "must be valid JSON")

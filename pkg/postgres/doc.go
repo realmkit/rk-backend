@@ -1,2 +1,2 @@
-// Package postgres configures and opens GameHub PostgreSQL connections.
+// Package postgres configures and opens RealmKit PostgreSQL connections.
 package postgres

@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/orm"
-	"github.com/niflaot/gamehub-go/pkg/postgres"
-	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
+	"github.com/realmkit/rk-backend/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/postgres"
+	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

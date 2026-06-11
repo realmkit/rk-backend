@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/port"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/cronjob/domain"
+	"github.com/realmkit/rk-backend/pkg/cronjob/port"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // TestAdminUseCasesCoverDefinitionAndRunOperations verifies admin-facing service methods.
@@ -84,7 +84,7 @@ func TestTriggerMissingHandlerReturnsConflict(t *testing.T) {
 // TestDefaultServiceSettingsUseSystemClock covers default worker and clock branches.
 func TestDefaultServiceSettingsUseSystemClock(t *testing.T) {
 	service := NewService(Dependencies{Repository: newMemoryCron()}, nil)
-	if service.workerID != "gamehub-cron" {
+	if service.workerID != "realmkit-cron" {
 		t.Fatalf("workerID = %q, want default", service.workerID)
 	}
 	if service.lockDuration == 0 {

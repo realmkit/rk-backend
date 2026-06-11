@@ -1,2 +1,2 @@
-// Package identity maps provider-specific token claims into GameHub identities.
+// Package identity maps provider-specific token claims into RealmKit identities.
 package identity

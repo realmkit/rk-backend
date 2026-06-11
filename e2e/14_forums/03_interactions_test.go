@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
+	"github.com/realmkit/rk-backend/e2e/harness"
 )
 
 func TestForumInteractionsWidgetsAndReadState(t *testing.T) {
@@ -109,7 +109,7 @@ func TestForumInteractionsWidgetsAndReadState(t *testing.T) {
 
 	steps.Do("punishment restriction seam blocks forum action keys", func() {
 		fixture.restrictions.blocked[fixture.member] = map[string]bool{
-			"gamehub.forums.like_posts": true,
+			"realmkit.forums.like_posts": true,
 		}
 		response := fixture.do(t, forumRequest(
 			fiber.MethodPut, "/posts/"+forumID(t, opener, "id").String()+"/like", "",

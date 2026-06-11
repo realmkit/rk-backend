@@ -5,7 +5,7 @@ import (
 	"slices"
 
 	"github.com/google/uuid"
-	groupsdomain "github.com/niflaot/gamehub-go/module/groups/domain"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 )
 
 // activeMemberships returns actor group memberships that can grant permissions.

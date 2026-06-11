@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/assets/domain"
-	"github.com/niflaot/gamehub-go/module/assets/port"
-	"github.com/niflaot/gamehub-go/pkg/orm"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
-	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
+	"github.com/realmkit/rk-backend/module/assets/domain"
+	"github.com/realmkit/rk-backend/module/assets/port"
+	"github.com/realmkit/rk-backend/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -129,7 +129,7 @@ func testAsset() domain.Asset {
 		Visibility:  domain.VisibilityPublic,
 		Status:      domain.StatusPendingUpload,
 		StorageKey:  "assets/community/2026/06/" + uuid.NewString() + "/logo.png",
-		Bucket:      "gamehub-assets",
+		Bucket:      "realmkit-assets",
 		ContentType: "image/png",
 		SizeBytes:   512,
 		Version:     1,

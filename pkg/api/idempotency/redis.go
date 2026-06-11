@@ -17,7 +17,7 @@ const (
 	DefaultRedisScope = "global"
 
 	// redisKeyPrefix is the stable Redis key namespace.
-	redisKeyPrefix = "gamehub:idempotency"
+	redisKeyPrefix = "realmkit:idempotency"
 )
 
 // ErrEntryExpired reports that an idempotency entry expired before completion.

@@ -14,7 +14,7 @@ type Surface struct {
 	Prefix string
 }
 
-// Service is the GameHub route surface behind the API gateway.
+// Service is the RealmKit route surface behind the API gateway.
 var Service = Surface{Name: "gateway-owned", Prefix: ServicePrefix}
 
 // Group returns a Fiber router scoped to the service prefix.

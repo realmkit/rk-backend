@@ -1,2 +1,2 @@
-// Package logger creates the GameHub structured Zap logger.
+// Package logger creates the RealmKit structured Zap logger.
 package logger

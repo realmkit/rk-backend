@@ -13,14 +13,14 @@ func TestConfigDSN(t *testing.T) {
 	cfg := Config{
 		Host:     "db.local",
 		Port:     5433,
-		Database: "gamehub",
-		Username: "game hub",
+		Database: "realmkit",
+		Username: "realm kit",
 		Password: "secret/value",
 		SSLMode:  "require",
 	}
 
 	got := cfg.DSN()
-	want := "postgres://game%20hub:secret%2Fvalue@db.local:5433/gamehub?sslmode=require"
+	want := "postgres://realm%20kit:secret%2Fvalue@db.local:5433/realmkit?sslmode=require"
 	if got != want {
 		t.Fatalf("DSN() = %q, want %q", got, want)
 	}
@@ -72,7 +72,7 @@ func TestOpenAcceptsGormConfig(t *testing.T) {
 
 // TestOpenReturnsDialectorErrors verifies Open wraps GORM open failures.
 func TestOpenReturnsDialectorErrors(t *testing.T) {
-	if _, err := Open(context.Background(), Config{}, WithDialector(sqlite.Open("/missing/gamehub/test.db"))); err == nil {
+	if _, err := Open(context.Background(), Config{}, WithDialector(sqlite.Open("/missing/realmkit/test.db"))); err == nil {
 		t.Fatalf("Open() error = nil, want error")
 	}
 }

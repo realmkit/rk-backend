@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/tickets/domain"
-	"github.com/niflaot/gamehub-go/module/tickets/port"
+	"github.com/realmkit/rk-backend/module/tickets/domain"
+	"github.com/realmkit/rk-backend/module/tickets/port"
 )
 
 // AssignTicket assigns a ticket to a user.

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/forums/domain/shared"
+	"github.com/realmkit/rk-backend/module/forums/domain/shared"
 )
 
 // TestThreadNormalizeValidateAndStateRules covers thread defaults and reader rules.

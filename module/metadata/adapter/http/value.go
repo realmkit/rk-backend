@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/module/metadata/domain"
-	"github.com/niflaot/gamehub-go/module/metadata/port"
+	"github.com/realmkit/rk-backend/module/metadata/domain"
+	"github.com/realmkit/rk-backend/module/metadata/port"
 )
 
 // valueRequest contains an owner metafield value.

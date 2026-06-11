@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/forums/domain"
-	"github.com/niflaot/gamehub-go/module/forums/port"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/forums/domain"
+	"github.com/realmkit/rk-backend/module/forums/port"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // LikePost likes one post idempotently.
@@ -26,7 +26,7 @@ func (service Service) LikePost(
 	if err := service.requireLikePosts(ctx, command.ActorUserID, post.ForumID); err != nil {
 		return domain.PostLikeSummary{}, err
 	}
-	if err := service.requireUnrestricted(ctx, command.ActorUserID, "gamehub.forums.like_posts"); err != nil {
+	if err := service.requireUnrestricted(ctx, command.ActorUserID, "realmkit.forums.like_posts"); err != nil {
 		return domain.PostLikeSummary{}, err
 	}
 	like := newPostLike(post, command.ActorUserID)
@@ -66,7 +66,7 @@ func (service Service) UnlikePost(
 	if err := service.requireLikePosts(ctx, command.ActorUserID, post.ForumID); err != nil {
 		return domain.PostLikeSummary{}, err
 	}
-	if err := service.requireUnrestricted(ctx, command.ActorUserID, "gamehub.forums.like_posts"); err != nil {
+	if err := service.requireUnrestricted(ctx, command.ActorUserID, "realmkit.forums.like_posts"); err != nil {
 		return domain.PostLikeSummary{}, err
 	}
 	changed, err := service.interactions.UnlikePost(ctx, post.ID, command.ActorUserID)

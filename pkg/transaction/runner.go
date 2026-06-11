@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/orm"
 	"gorm.io/gorm"
 )
 

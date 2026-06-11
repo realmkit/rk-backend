@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/events/domain"
 	goredis "github.com/redis/go-redis/v9"
 )
 

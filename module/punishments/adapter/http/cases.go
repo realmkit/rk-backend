@@ -3,8 +3,8 @@ package http
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/punishments/domain"
-	"github.com/niflaot/gamehub-go/module/punishments/port"
+	"github.com/realmkit/rk-backend/module/punishments/domain"
+	"github.com/realmkit/rk-backend/module/punishments/port"
 )
 
 func (handler handler) issuePunishment(ctx *fiber.Ctx) error {

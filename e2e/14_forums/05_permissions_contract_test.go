@@ -7,9 +7,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	groupsdomain "github.com/niflaot/gamehub-go/module/groups/domain"
-	groupsport "github.com/niflaot/gamehub-go/module/groups/port"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 )
 
 func TestForumPermissionSubjectsAndDeleteGates(t *testing.T) {

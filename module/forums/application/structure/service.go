@@ -4,9 +4,9 @@ package structure
 import (
 	"time"
 
-	"github.com/niflaot/gamehub-go/module/forums/port"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
-	"github.com/niflaot/gamehub-go/pkg/transaction"
+	"github.com/realmkit/rk-backend/module/forums/port"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/pkg/transaction"
 )
 
 // treeCacheTTL is the visible forum tree cache lifetime.

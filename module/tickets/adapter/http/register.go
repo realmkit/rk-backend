@@ -3,7 +3,7 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/module/tickets/port"
+	"github.com/realmkit/rk-backend/module/tickets/port"
 )
 
 // Services contains ticket route dependencies.

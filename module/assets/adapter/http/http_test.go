@@ -11,11 +11,11 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/assets/domain"
-	"github.com/niflaot/gamehub-go/module/assets/port"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/problem"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/assets/domain"
+	"github.com/realmkit/rk-backend/module/assets/port"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // TestCreateUploadIntentRequiresIdempotency verifies upload intent idempotency headers.
@@ -239,7 +239,7 @@ func testHTTPAsset() domain.Asset {
 		Visibility:  domain.VisibilityPublic,
 		Status:      domain.StatusAvailable,
 		StorageKey:  "assets/logo.png",
-		Bucket:      "gamehub-assets",
+		Bucket:      "realmkit-assets",
 		ContentType: "image/png",
 		SizeBytes:   512,
 		Version:     1,

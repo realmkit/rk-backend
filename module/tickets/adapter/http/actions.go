@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/tickets/port"
+	"github.com/realmkit/rk-backend/module/tickets/port"
 )
 
 // staffRequest is the common staff workflow DTO.

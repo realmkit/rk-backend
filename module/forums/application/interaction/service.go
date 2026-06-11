@@ -4,8 +4,8 @@ package interaction
 import (
 	"time"
 
-	"github.com/niflaot/gamehub-go/module/forums/port"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/module/forums/port"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
 )
 
 // widgetCacheTTL is the forum widget cache lifetime.

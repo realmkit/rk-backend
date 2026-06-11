@@ -1,2 +1,2 @@
-// Package cors provides GameHub CORS middleware configuration.
+// Package cors provides RealmKit CORS middleware configuration.
 package cors

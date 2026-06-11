@@ -39,8 +39,8 @@ const (
 )
 
 const (
-	// TargetGameHub applies inside GameHub.
-	TargetGameHub TargetSystem = "gamehub"
+	// TargetRealmKit applies inside RealmKit.
+	TargetRealmKit TargetSystem = "realmkit"
 	// TargetMinecraft is a Minecraft integration target.
 	TargetMinecraft TargetSystem = "minecraft"
 	// TargetSAMP is a SAMP integration target.
@@ -52,7 +52,7 @@ const (
 )
 
 const (
-	// EffectRestrict denies a GameHub action while active.
+	// EffectRestrict denies a RealmKit action while active.
 	EffectRestrict Effect = "restrict"
 	// EffectNotify emits a notification-oriented event.
 	EffectNotify Effect = "notify"
@@ -61,7 +61,7 @@ const (
 )
 
 const (
-	// IssuerUser is a local GameHub user.
+	// IssuerUser is a local RealmKit user.
 	IssuerUser IssuerType = "user"
 	// IssuerSystem is internal automation.
 	IssuerSystem IssuerType = "system"
@@ -90,17 +90,17 @@ const (
 
 const (
 	// ActionForumsCreateThread denies forum thread creation.
-	ActionForumsCreateThread = "gamehub.forums.create_thread"
+	ActionForumsCreateThread = "realmkit.forums.create_thread"
 	// ActionForumsReply denies forum replies.
-	ActionForumsReply = "gamehub.forums.reply"
+	ActionForumsReply = "realmkit.forums.reply"
 	// ActionForumsLikePosts denies forum likes.
-	ActionForumsLikePosts = "gamehub.forums.like_posts"
+	ActionForumsLikePosts = "realmkit.forums.like_posts"
 	// ActionMessagesSend denies sending messages.
-	ActionMessagesSend = "gamehub.messages.send"
+	ActionMessagesSend = "realmkit.messages.send"
 	// ActionAssetsUpload denies asset uploads.
-	ActionAssetsUpload = "gamehub.assets.upload"
+	ActionAssetsUpload = "realmkit.assets.upload"
 	// ActionProfileUpdate denies profile updates.
-	ActionProfileUpdate = "gamehub.profile.update"
+	ActionProfileUpdate = "realmkit.profile.update"
 )
 
 var (
@@ -175,7 +175,7 @@ func ValidateDefinitionStatus(field string, status DefinitionStatus) []Violation
 
 // ValidateTargetSystem validates target system.
 func ValidateTargetSystem(field string, target TargetSystem) []Violation {
-	if slices.Contains([]TargetSystem{TargetGameHub, TargetMinecraft, TargetSAMP, TargetDiscord, TargetCustom}, target) {
+	if slices.Contains([]TargetSystem{TargetRealmKit, TargetMinecraft, TargetSAMP, TargetDiscord, TargetCustom}, target) {
 		return nil
 	}
 	return []Violation{{Field: field, Message: "is not supported"}}

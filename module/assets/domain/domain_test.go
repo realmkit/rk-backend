@@ -88,7 +88,7 @@ func validAsset() Asset {
 		Visibility:  VisibilityPublic,
 		Status:      StatusPendingUpload,
 		StorageKey:  "assets/community/2026/06/id/logo.png",
-		Bucket:      "gamehub-assets",
+		Bucket:      "realmkit-assets",
 		ContentType: "image/png",
 		SizeBytes:   128,
 		Version:     1,

@@ -1,8 +1,8 @@
-# GameHub Go
+# RealmKit Go
 
-GameHub Go is the backend for GameHub, a configurable game community platform for forums, user accounts, moderation workflows, appeals, staff pages, friends, messages, statistics, and game-specific integrations.
+RealmKit Go is the backend for RealmKit, a configurable game community platform for forums, user accounts, moderation workflows, appeals, staff pages, friends, messages, statistics, and game-specific integrations.
 
-The frontend lives in the separate `gamehub-frontend` repository.
+The frontend lives in the separate `realmkit-frontend` repository.
 
 ## Backend Direction
 
@@ -16,20 +16,20 @@ The Go backend uses:
 - OpenAPI and Swagger specifications for HTTP contracts.
 - Telemetry, tracing, metrics, and structured logs as first-class concerns.
 
-The module path is `github.com/niflaot/gamehub-go`.
+The module path is `github.com/realmkit/rk-backend`.
 
-Runtime configuration is loaded by `pkg/config` through Viper using `.env` files and `GAMEHUB_` environment variables:
+Runtime configuration is loaded by `pkg/config` through Viper using `.env` files and `REALMKIT_` environment variables:
 
-- `GAMEHUB_HOST`, default `0.0.0.0`
-- `GAMEHUB_PORT`, default `8080`
-- `GAMEHUB_ENVIRONMENT`, default `development`
-- `GAMEHUB_LOG_LEVEL`, default `info`
-- `GAMEHUB_POSTGRES_HOST`, default `localhost`
-- `GAMEHUB_POSTGRES_PORT`, default `5432`
-- `GAMEHUB_POSTGRES_DATABASE`, required
-- `GAMEHUB_POSTGRES_USERNAME`, required
-- `GAMEHUB_POSTGRES_PASSWORD`, required
-- `GAMEHUB_POSTGRES_SSL_MODE`, default `disable`
+- `REALMKIT_HOST`, default `0.0.0.0`
+- `REALMKIT_PORT`, default `8080`
+- `REALMKIT_ENVIRONMENT`, default `development`
+- `REALMKIT_LOG_LEVEL`, default `info`
+- `REALMKIT_POSTGRES_HOST`, default `localhost`
+- `REALMKIT_POSTGRES_PORT`, default `5432`
+- `REALMKIT_POSTGRES_DATABASE`, required
+- `REALMKIT_POSTGRES_USERNAME`, required
+- `REALMKIT_POSTGRES_PASSWORD`, required
+- `REALMKIT_POSTGRES_SSL_MODE`, default `disable`
 
 ## Repository Layout
 
@@ -62,6 +62,6 @@ go run ./pkg/cmd
 
 ## API
 
-GameHub exposes unversioned service routes such as `/forums/tree`, `/assets`, and `/users/me`. Public API versioning is owned by the API gateway, which should publish versioned external paths and rewrite them to the service routes.
+RealmKit exposes unversioned service routes such as `/forums/tree`, `/assets`, and `/users/me`. Public API versioning is owned by the API gateway, which should publish versioned external paths and rewrite them to the service routes.
 
-OpenAPI is embedded from `pkg/api/openapi/gamehub.v1.json`. In development, Swagger UI is served at `/docs` and the raw OpenAPI contract is served at `/docs/openapi.json`.
+OpenAPI is embedded from `pkg/api/openapi/realmkit.v1.json`. In development, Swagger UI is served at `/docs` and the raw OpenAPI contract is served at `/docs/openapi.json`.

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	punishmentsport "github.com/niflaot/gamehub-go/module/punishments/port"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	punishmentsport "github.com/realmkit/rk-backend/module/punishments/port"
 )
 
 // TestOperationsExpireVerifyAndRebuild verifies operator punishment paths.

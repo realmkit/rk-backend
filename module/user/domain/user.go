@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// User is the local GameHub account anchor.
+// User is the local RealmKit account anchor.
 type User struct {
 	// ID is the local user identifier.
 	ID uuid.UUID `json:"id"`
@@ -14,7 +14,7 @@ type User struct {
 	// Status is the local lifecycle state.
 	Status Status `json:"status"`
 
-	// AvatarAssetID is the optional GameHub avatar asset.
+	// AvatarAssetID is the optional RealmKit avatar asset.
 	AvatarAssetID *uuid.UUID `json:"avatar_asset_id,omitempty"`
 
 	// FirstSeenAt is the first authentication timestamp.

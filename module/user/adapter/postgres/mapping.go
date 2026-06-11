@@ -1,8 +1,8 @@
 package postgres
 
 import (
-	"github.com/niflaot/gamehub-go/module/user/domain"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/realmkit/rk-backend/module/user/domain"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // userModelFromDomain maps domain user to persistence.

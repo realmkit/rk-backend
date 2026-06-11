@@ -1,6 +1,6 @@
 package domain
 
-import structuremodel "github.com/niflaot/gamehub-go/module/forums/domain/structure"
+import structuremodel "github.com/realmkit/rk-backend/module/forums/domain/structure"
 
 // ForumStats stores denormalized forum counters and latest post summary.
 type ForumStats = structuremodel.ForumStats

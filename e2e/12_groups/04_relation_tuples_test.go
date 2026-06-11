@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	"github.com/niflaot/gamehub-go/module/groups/domain"
-	"github.com/niflaot/gamehub-go/module/groups/port"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/module/groups/domain"
+	"github.com/realmkit/rk-backend/module/groups/port"
 )
 
 // TestGroupsRelationTupleLifecycle verifies tuple create, duplicate, delete, and recreate behavior.

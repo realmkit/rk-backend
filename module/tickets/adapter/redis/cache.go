@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/tickets/port"
+	"github.com/realmkit/rk-backend/module/tickets/port"
 	goredis "github.com/redis/go-redis/v9"
 )
 

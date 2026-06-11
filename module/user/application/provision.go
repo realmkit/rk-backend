@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/user/domain"
-	"github.com/niflaot/gamehub-go/module/user/port"
-	"github.com/niflaot/gamehub-go/pkg/api/auth"
-	"github.com/niflaot/gamehub-go/pkg/api/principal"
-	"github.com/niflaot/gamehub-go/pkg/identity"
+	"github.com/realmkit/rk-backend/module/user/domain"
+	"github.com/realmkit/rk-backend/module/user/port"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
+	"github.com/realmkit/rk-backend/pkg/identity"
 )
 
 // Provision resolves or creates the local user for identity.
@@ -52,7 +52,7 @@ func (service Service) DevelopmentPrincipal(ctx context.Context, userID uuid.UUI
 	}
 	return principal.Principal{
 		UserID:            user.ID,
-		Issuer:            "gamehub-development",
+		Issuer:            "realmkit-development",
 		SubjectHash:       "dev:" + user.ID.String(),
 		Scopes:            []string{"development"},
 		DevelopmentBypass: true,

@@ -3,11 +3,11 @@ package postgres
 import (
 	"encoding/json"
 
-	forumsauthz "github.com/niflaot/gamehub-go/module/forums/adapter/postgres/authz"
-	forumsinteraction "github.com/niflaot/gamehub-go/module/forums/adapter/postgres/interaction"
-	forumsoperations "github.com/niflaot/gamehub-go/module/forums/adapter/postgres/operations"
-	"github.com/niflaot/gamehub-go/module/forums/domain"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	forumsauthz "github.com/realmkit/rk-backend/module/forums/adapter/postgres/authz"
+	forumsinteraction "github.com/realmkit/rk-backend/module/forums/adapter/postgres/interaction"
+	forumsoperations "github.com/realmkit/rk-backend/module/forums/adapter/postgres/operations"
+	"github.com/realmkit/rk-backend/module/forums/domain"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // forumModelFromDomain maps forum to persistence.

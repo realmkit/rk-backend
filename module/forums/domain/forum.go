@@ -2,8 +2,8 @@ package domain
 
 import (
 	"github.com/google/uuid"
-	adminmodel "github.com/niflaot/gamehub-go/module/forums/domain/admin"
-	structuremodel "github.com/niflaot/gamehub-go/module/forums/domain/structure"
+	adminmodel "github.com/realmkit/rk-backend/module/forums/domain/admin"
+	structuremodel "github.com/realmkit/rk-backend/module/forums/domain/structure"
 )
 
 // Forum is a discussion board, container, or utility link.

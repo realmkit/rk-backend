@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/e2e/harness"
+	"github.com/realmkit/rk-backend/e2e/harness"
 )
 
 // TestCoreRequestLogging verifies request logs are structured and readable.

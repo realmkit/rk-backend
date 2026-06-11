@@ -6,10 +6,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	"github.com/niflaot/gamehub-go/module/groups/domain"
-	"github.com/niflaot/gamehub-go/module/groups/port"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/module/groups/domain"
+	"github.com/realmkit/rk-backend/module/groups/port"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
 )
 
 // TestGroupsEmitLifecycleEvents verifies group, membership, and tuple event facts.

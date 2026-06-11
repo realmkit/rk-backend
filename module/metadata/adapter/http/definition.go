@@ -3,8 +3,8 @@ package http
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/metadata/domain"
-	"github.com/niflaot/gamehub-go/module/metadata/port"
+	"github.com/realmkit/rk-backend/module/metadata/domain"
+	"github.com/realmkit/rk-backend/module/metadata/port"
 )
 
 // definitionRequest contains metafield definition input.

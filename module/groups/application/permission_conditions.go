@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/groups/domain"
-	"github.com/niflaot/gamehub-go/module/groups/port"
+	"github.com/realmkit/rk-backend/module/groups/domain"
+	"github.com/realmkit/rk-backend/module/groups/port"
 )
 
 // conditionsMatch reports whether all policy conditions pass.

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// OwnerType identifies a GameHub model that can receive metadata.
+// OwnerType identifies a RealmKit model that can receive metadata.
 type OwnerType string
 
 // Namespace identifies a logical metadata group.

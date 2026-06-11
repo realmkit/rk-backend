@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/module/groups/port"
+	"github.com/realmkit/rk-backend/module/groups/port"
 )
 
 // Services contains groups application services used by handlers.

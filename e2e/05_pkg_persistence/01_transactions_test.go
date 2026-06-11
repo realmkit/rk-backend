@@ -6,10 +6,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	"github.com/niflaot/gamehub-go/pkg/orm"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
-	"github.com/niflaot/gamehub-go/pkg/transaction"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/transaction"
 )
 
 // TestPersistenceTransactionsCommitAndRollback verifies transaction boundaries.

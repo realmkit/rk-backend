@@ -1,7 +1,7 @@
 // Package domain contains forum entities, value objects, and validation rules.
 package domain
 
-import contentmodel "github.com/niflaot/gamehub-go/module/forums/domain/content"
+import contentmodel "github.com/realmkit/rk-backend/module/forums/domain/content"
 
 // Thread is a forum conversation timeline.
 type Thread = contentmodel.Thread

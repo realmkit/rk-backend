@@ -6,12 +6,12 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/niflaot/gamehub-go/pkg/cli"
-	"github.com/niflaot/gamehub-go/pkg/logger"
+	"github.com/realmkit/rk-backend/pkg/cli"
+	"github.com/realmkit/rk-backend/pkg/logger"
 	"go.uber.org/zap"
 )
 
-// main starts the GameHub backend process.
+// main starts the RealmKit backend process.
 func main() {
 	activeLogger, loggerErr := logger.New(logger.Config{Level: "info"})
 	if loggerErr != nil {
@@ -31,14 +31,14 @@ func main() {
 func finish(log *zap.Logger, err error, exit func(int)) {
 	logged := false
 	if err != nil {
-		log.Error("gamehub backend failed", zap.Error(err))
+		log.Error("realmkit backend failed", zap.Error(err))
 		logged = true
 	}
 
 	if syncErr := syncLogger(log); syncErr != nil {
 		err = errors.Join(err, syncErr)
 		if !logged {
-			log.Error("gamehub backend failed", zap.Error(err))
+			log.Error("realmkit backend failed", zap.Error(err))
 			_ = syncLogger(log)
 		}
 	}

@@ -10,21 +10,21 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	forumshttp "github.com/niflaot/gamehub-go/module/forums/adapter/http"
-	forumspostgres "github.com/niflaot/gamehub-go/module/forums/adapter/postgres"
-	forumsredis "github.com/niflaot/gamehub-go/module/forums/adapter/redis"
-	forumsapplication "github.com/niflaot/gamehub-go/module/forums/application"
-	forumsdomain "github.com/niflaot/gamehub-go/module/forums/domain"
-	groupspostgres "github.com/niflaot/gamehub-go/module/groups/adapter/postgres"
-	groupsapplication "github.com/niflaot/gamehub-go/module/groups/application"
-	groupsdomain "github.com/niflaot/gamehub-go/module/groups/domain"
-	groupsport "github.com/niflaot/gamehub-go/module/groups/port"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/openapi"
-	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
-	"github.com/niflaot/gamehub-go/pkg/server"
-	"github.com/niflaot/gamehub-go/pkg/transaction"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	forumshttp "github.com/realmkit/rk-backend/module/forums/adapter/http"
+	forumspostgres "github.com/realmkit/rk-backend/module/forums/adapter/postgres"
+	forumsredis "github.com/realmkit/rk-backend/module/forums/adapter/redis"
+	forumsapplication "github.com/realmkit/rk-backend/module/forums/application"
+	forumsdomain "github.com/realmkit/rk-backend/module/forums/domain"
+	groupspostgres "github.com/realmkit/rk-backend/module/groups/adapter/postgres"
+	groupsapplication "github.com/realmkit/rk-backend/module/groups/application"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/openapi"
+	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
+	"github.com/realmkit/rk-backend/pkg/server"
+	"github.com/realmkit/rk-backend/pkg/transaction"
 	goredis "github.com/redis/go-redis/v9"
 )
 
@@ -127,7 +127,7 @@ func forumRequest(method string, path string, body string, opts ...func(*http.Re
 }
 
 func forumUser(userID uuid.UUID) func(*http.Request) {
-	return func(request *http.Request) { request.Header.Set("X-GameHub-User-Id", userID.String()) }
+	return func(request *http.Request) { request.Header.Set("X-RealmKit-User-Id", userID.String()) }
 }
 
 func forumIdempotency(key string) func(*http.Request) {

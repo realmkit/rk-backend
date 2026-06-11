@@ -3,8 +3,8 @@ package postgres
 import (
 	"encoding/json"
 
-	"github.com/niflaot/gamehub-go/module/groups/domain"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/realmkit/rk-backend/module/groups/domain"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // groupModelFromDomain maps domain group to persistence.

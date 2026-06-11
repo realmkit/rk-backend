@@ -2,7 +2,7 @@ package storage
 
 // Config contains S3-compatible object storage settings.
 type Config struct {
-	// Bucket is the S3 bucket where GameHub stores assets.
+	// Bucket is the S3 bucket where RealmKit stores assets.
 	Bucket string `mapstructure:"bucket"`
 
 	// Region is the S3 region.

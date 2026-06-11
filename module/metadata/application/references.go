@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/metadata/domain"
-	"github.com/niflaot/gamehub-go/module/metadata/port"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/metadata/domain"
+	"github.com/realmkit/rk-backend/module/metadata/port"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // ListMetaobjectEntries returns metaobject entries.

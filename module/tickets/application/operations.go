@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/tickets/domain"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/module/tickets/domain"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
 )
 
 // VerifyStats reports ticket counter drift.

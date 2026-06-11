@@ -17,8 +17,8 @@ func TestDefinitionValidationRequiresAction(t *testing.T) {
 	}
 }
 
-// TestActionValidationRejectsNonGameHubRestrict verifies restrict stays GameHub-owned.
-func TestActionValidationRejectsNonGameHubRestrict(t *testing.T) {
+// TestActionValidationRejectsNonRealmKitRestrict verifies restrict stays RealmKit-owned.
+func TestActionValidationRejectsNonRealmKitRestrict(t *testing.T) {
 	action := validAction()
 	action.TargetSystem = TargetMinecraft
 
@@ -42,8 +42,8 @@ func TestIssueDurationValidationEnforcesDefinitionLimits(t *testing.T) {
 	}
 }
 
-// TestRestrictionFromSnapshotBuildsGameHubProjection verifies active restrictions.
-func TestRestrictionFromSnapshotBuildsGameHubProjection(t *testing.T) {
+// TestRestrictionFromSnapshotBuildsRealmKitProjection verifies active restrictions.
+func TestRestrictionFromSnapshotBuildsRealmKitProjection(t *testing.T) {
 	punishment := validPunishment()
 	snapshot := SnapshotFromTemplate(punishment.ID, validAction())
 
@@ -85,7 +85,7 @@ func validAction() ActionTemplate {
 	return ActionTemplate{
 		ID:                uuid.New(),
 		DefinitionID:      uuid.New(),
-		TargetSystem:      TargetGameHub,
+		TargetSystem:      TargetRealmKit,
 		ActionKey:         ActionForumsReply,
 		Effect:            EffectRestrict,
 		ConfigurationJSON: []byte(`{}`),

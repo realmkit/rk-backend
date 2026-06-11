@@ -1,2 +1,2 @@
-// Package openapi embeds the GameHub OpenAPI contract.
+// Package openapi embeds the RealmKit OpenAPI contract.
 package openapi

@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/punishments/domain"
-	"github.com/niflaot/gamehub-go/module/punishments/port"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/punishments/domain"
+	"github.com/realmkit/rk-backend/module/punishments/port"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 const restrictionCacheTTL = 30 * time.Second

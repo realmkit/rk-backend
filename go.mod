@@ -1,4 +1,4 @@
-module github.com/niflaot/gamehub-go
+module github.com/realmkit/rk-backend
 
 go 1.26.1
 

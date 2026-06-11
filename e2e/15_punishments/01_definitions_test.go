@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
+	"github.com/realmkit/rk-backend/e2e/harness"
 )
 
 // TestDefinitionLifecycle verifies punishment definition administration.
@@ -30,7 +30,7 @@ func TestDefinitionLifecycle(t *testing.T) {
 	})
 
 	steps.Do("definition can be created, listed, updated, reordered, and deleted", func() {
-		created := fixture.createDefinition(t, actor, "forum_mute", "gamehub.forums.reply", "gamehub.messages.send")
+		created := fixture.createDefinition(t, actor, "forum_mute", "realmkit.forums.reply", "realmkit.messages.send")
 		id := idFrom(t, created, "id")
 		version := versionFrom(created)
 		if created["color"] != "#ff5555" {

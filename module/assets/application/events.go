@@ -3,9 +3,9 @@ package application
 import (
 	"context"
 
-	"github.com/niflaot/gamehub-go/module/assets/domain"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/module/assets/domain"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
 )
 
 const (

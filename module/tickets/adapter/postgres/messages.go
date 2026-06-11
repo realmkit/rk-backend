@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/tickets/domain"
-	"github.com/niflaot/gamehub-go/pkg/orm"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/tickets/domain"
+	"github.com/realmkit/rk-backend/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 	"gorm.io/gorm"
 )
 

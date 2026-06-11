@@ -2,7 +2,7 @@ package migrations
 
 import "embed"
 
-// Files contains embedded GameHub SQL migrations.
+// Files contains embedded RealmKit SQL migrations.
 //
 //go:embed migrations/*.sql
 var Files embed.FS

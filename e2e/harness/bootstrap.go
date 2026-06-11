@@ -1,4 +1,4 @@
-// Package harness provides shared fixtures for GameHub e2e tests.
+// Package harness provides shared fixtures for RealmKit e2e tests.
 package harness
 
 import (
@@ -7,9 +7,9 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/api/idempotency"
-	"github.com/niflaot/gamehub-go/pkg/logger"
-	"github.com/niflaot/gamehub-go/pkg/server"
+	"github.com/realmkit/rk-backend/pkg/api/idempotency"
+	"github.com/realmkit/rk-backend/pkg/logger"
+	"github.com/realmkit/rk-backend/pkg/server"
 	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
@@ -81,7 +81,7 @@ func WithStorage(store *MemoryStorage, bucket string) Option {
 	}
 }
 
-// New starts an isolated GameHub server for e2e tests.
+// New starts an isolated RealmKit server for e2e tests.
 func New(t *testing.T, opts ...Option) *Ecosystem {
 	t.Helper()
 
@@ -149,6 +149,6 @@ func newOptions(t *testing.T) *options {
 		log:           log,
 		logBuffer:     logBuffer,
 		storage:       NewMemoryStorage(),
-		storageBucket: "gamehub-e2e",
+		storageBucket: "realmkit-e2e",
 	}
 }

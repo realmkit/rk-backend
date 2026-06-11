@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	forumsdomain "github.com/niflaot/gamehub-go/module/forums/domain"
-	groupsdomain "github.com/niflaot/gamehub-go/module/groups/domain"
+	forumsdomain "github.com/realmkit/rk-backend/module/forums/domain"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 )
 
 // addGrantToSettings appends grant to the relation bucket it belongs to.

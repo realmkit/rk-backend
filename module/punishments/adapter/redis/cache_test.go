@@ -7,7 +7,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/punishments/domain"
+	"github.com/realmkit/rk-backend/module/punishments/domain"
 	goredis "github.com/redis/go-redis/v9"
 )
 

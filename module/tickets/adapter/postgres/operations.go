@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/niflaot/gamehub-go/module/tickets/domain"
+	"github.com/realmkit/rk-backend/module/tickets/domain"
 )
 
 // VerifyStats reports ticket counter drift without mutating rows.

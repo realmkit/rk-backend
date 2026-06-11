@@ -2,8 +2,8 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
-	groupsport "github.com/niflaot/gamehub-go/module/groups/port"
-	userport "github.com/niflaot/gamehub-go/module/user/port"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
+	userport "github.com/realmkit/rk-backend/module/user/port"
 )
 
 // Services contains user route dependencies.

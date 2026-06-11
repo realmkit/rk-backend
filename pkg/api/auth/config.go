@@ -3,7 +3,7 @@ package auth
 import "strings"
 
 // DevUserIDHeader is the development-only local user bypass header.
-const DevUserIDHeader = "X-GameHub-Dev-User-ID"
+const DevUserIDHeader = "X-RealmKit-Dev-User-ID"
 
 // Config contains OAuth and OIDC settings.
 type Config struct {

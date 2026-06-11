@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/forums/domain"
+	"github.com/realmkit/rk-backend/module/forums/domain"
 )
 
 func checksum(provided string, content []byte) string {

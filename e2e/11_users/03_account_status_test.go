@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	"github.com/niflaot/gamehub-go/module/user/domain"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/module/user/domain"
 )
 
 // TestUsersDisabledUserCannotAuthenticate verifies disabled account enforcement.

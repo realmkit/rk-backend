@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // AssetModel is the GORM model for assets.

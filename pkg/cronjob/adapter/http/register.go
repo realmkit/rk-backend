@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/application"
+	"github.com/realmkit/rk-backend/pkg/cronjob/application"
 )
 
 // Services contains cron HTTP services.

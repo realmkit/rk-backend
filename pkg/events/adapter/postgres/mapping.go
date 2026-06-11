@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/events/domain"
 )
 
 // eventFromModel maps persistence rows to a domain event.

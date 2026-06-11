@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	"github.com/niflaot/gamehub-go/pkg/storage"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/pkg/storage"
 )
 
 // TestStorageStoreContract verifies the e2e store satisfies storage behavior.

@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/niflaot/gamehub-go/pkg/storage"
+	"github.com/realmkit/rk-backend/pkg/storage"
 )
 
 // MemoryStorage stores S3-compatible objects in memory for e2e tests.

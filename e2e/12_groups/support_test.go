@@ -10,16 +10,16 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
-	groupspostgres "github.com/niflaot/gamehub-go/module/groups/adapter/postgres"
-	groupsapplication "github.com/niflaot/gamehub-go/module/groups/application"
-	groupsdomain "github.com/niflaot/gamehub-go/module/groups/domain"
-	groupsport "github.com/niflaot/gamehub-go/module/groups/port"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/openapi"
-	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
-	"github.com/niflaot/gamehub-go/pkg/server"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	groupshttp "github.com/realmkit/rk-backend/module/groups/adapter/http"
+	groupspostgres "github.com/realmkit/rk-backend/module/groups/adapter/postgres"
+	groupsapplication "github.com/realmkit/rk-backend/module/groups/application"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/openapi"
+	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
+	"github.com/realmkit/rk-backend/pkg/server"
 )
 
 // groupsFixture contains groups e2e wiring.
@@ -126,7 +126,7 @@ func withGroupsIfMatch(version uint64) func(*http.Request) {
 // withCurrentGroupUser adds the temporary current-user header.
 func withCurrentGroupUser(userID uuid.UUID) func(*http.Request) {
 	return func(request *http.Request) {
-		request.Header.Set("X-GameHub-User-Id", userID.String())
+		request.Header.Set("X-RealmKit-User-Id", userID.String())
 	}
 }
 

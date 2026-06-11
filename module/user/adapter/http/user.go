@@ -5,10 +5,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/groups/port"
-	"github.com/niflaot/gamehub-go/module/user/domain"
-	userport "github.com/niflaot/gamehub-go/module/user/port"
-	"github.com/niflaot/gamehub-go/pkg/api/principal"
+	"github.com/realmkit/rk-backend/module/groups/port"
+	"github.com/realmkit/rk-backend/module/user/domain"
+	userport "github.com/realmkit/rk-backend/module/user/port"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
 )
 
 // updateCurrentRequest is the local current-user update body.

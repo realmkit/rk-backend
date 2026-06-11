@@ -15,10 +15,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/principal"
-	"github.com/niflaot/gamehub-go/pkg/api/problem"
-	"github.com/niflaot/gamehub-go/pkg/identity"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/identity"
 )
 
 // TestConfigPublicSplitsScopes verifies public auth config mapping.
@@ -132,7 +132,7 @@ func TestValidatorValidatesRS256Token(t *testing.T) {
 		jwt.MapClaims{
 			"iss":                issuer,
 			"sub":                "subject",
-			"aud":                "gamehub-api",
+			"aud":                "realmkit-api",
 			"exp":                time.Now().Add(time.Hour).Unix(),
 			"scope":              "openid profile",
 			"preferred_username": "ian",
@@ -144,7 +144,7 @@ func TestValidatorValidatesRS256Token(t *testing.T) {
 		t.Fatalf("SignedString() error = %v", err)
 	}
 
-	validated, err := NewValidator(Config{IssuerURL: issuer, Audience: "gamehub-api"}).Validate(context.Background(), raw)
+	validated, err := NewValidator(Config{IssuerURL: issuer, Audience: "realmkit-api"}).Validate(context.Background(), raw)
 	if err != nil {
 		t.Fatalf("Validate() error = %v", err)
 	}

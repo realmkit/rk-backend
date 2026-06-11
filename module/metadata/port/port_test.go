@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/metadata/domain"
+	"github.com/realmkit/rk-backend/module/metadata/domain"
 )
 
 // TestAllowAllPolicyAllowsEveryOperation verifies the local development policy.

@@ -1,6 +1,6 @@
 # E2E Ecosystem
 
-This directory owns GameHub's end-to-end test ecosystem.
+This directory owns RealmKit's end-to-end test ecosystem.
 
 The goal is to test real HTTP journeys through the monolith while keeping setup explicit, small, and readable. The first layer is intentionally local and fast: it starts the real Fiber server in process, uses a migrated in-memory database fixture, uses `miniredis` for Redis-dependent middleware, captures Zap JSON logs, and uses an in-memory S3-compatible storage fixture.
 

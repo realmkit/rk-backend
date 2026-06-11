@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	punishmentdomain "github.com/niflaot/gamehub-go/module/punishments/domain"
-	punishmentport "github.com/niflaot/gamehub-go/module/punishments/port"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	punishmentdomain "github.com/realmkit/rk-backend/module/punishments/domain"
+	punishmentport "github.com/realmkit/rk-backend/module/punishments/port"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // TestResolverMapsAndRevokesPunishments verifies appeal integration.

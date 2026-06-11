@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/realmkit/rk-backend/pkg/events/domain"
 )
 
 // Publisher stores one event draft.

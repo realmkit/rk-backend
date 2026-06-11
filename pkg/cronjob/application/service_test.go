@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/port"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
-	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/cronjob/domain"
+	"github.com/realmkit/rk-backend/pkg/cronjob/port"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
+	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // TestRunOnceExecutesDueHandler verifies due job execution.

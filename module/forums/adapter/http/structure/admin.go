@@ -2,9 +2,9 @@ package structure
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/module/forums/adapter/http/shared"
-	"github.com/niflaot/gamehub-go/module/forums/domain"
-	"github.com/niflaot/gamehub-go/module/forums/port"
+	"github.com/realmkit/rk-backend/module/forums/adapter/http/shared"
+	"github.com/realmkit/rk-backend/module/forums/domain"
+	"github.com/realmkit/rk-backend/module/forums/port"
 )
 
 // getForumSettings returns admin forum settings.

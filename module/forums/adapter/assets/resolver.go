@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	assetport "github.com/niflaot/gamehub-go/module/assets/port"
-	forumsport "github.com/niflaot/gamehub-go/module/forums/port"
+	assetport "github.com/realmkit/rk-backend/module/assets/port"
+	forumsport "github.com/realmkit/rk-backend/module/forums/port"
 )
 
 // Resolver validates forum attachment references through the assets service.

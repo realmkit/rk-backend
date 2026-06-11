@@ -5,8 +5,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	punishmentport "github.com/niflaot/gamehub-go/module/punishments/port"
-	ticketport "github.com/niflaot/gamehub-go/module/tickets/port"
+	punishmentport "github.com/realmkit/rk-backend/module/punishments/port"
+	ticketport "github.com/realmkit/rk-backend/module/tickets/port"
 )
 
 // Resolver resolves and mutates punishments for appeals.

@@ -1,6 +1,6 @@
 package application
 
-import "github.com/niflaot/gamehub-go/module/groups/domain"
+import "github.com/realmkit/rk-backend/module/groups/domain"
 
 // staticPermissionRule defines built-in fallback policy rules.
 type staticPermissionRule struct {

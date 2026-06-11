@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/punishments/domain"
-	"github.com/niflaot/gamehub-go/pkg/orm"
-	"github.com/niflaot/gamehub-go/pkg/postgres/migrations"
+	"github.com/realmkit/rk-backend/module/punishments/domain"
+	"github.com/realmkit/rk-backend/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -107,7 +107,7 @@ func newRepositories(t *testing.T) (DefinitionRepository, CaseRepository, *gorm.
 func testDefinition() domain.Definition {
 	action := domain.ActionTemplate{
 		ID:                uuid.New(),
-		TargetSystem:      domain.TargetGameHub,
+		TargetSystem:      domain.TargetRealmKit,
 		ActionKey:         domain.ActionForumsReply,
 		Effect:            domain.EffectRestrict,
 		ConfigurationJSON: []byte(`{}`),

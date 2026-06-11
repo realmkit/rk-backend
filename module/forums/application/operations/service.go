@@ -2,8 +2,8 @@
 package operations
 
 import (
-	"github.com/niflaot/gamehub-go/module/forums/port"
-	"github.com/niflaot/gamehub-go/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/module/forums/port"
+	"github.com/realmkit/rk-backend/pkg/events/emitter"
 )
 
 // Service manages forum operational use cases.

@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// TestServiceDefinesUnversionedPrefix verifies GameHub does not own public version prefixes.
+// TestServiceDefinesUnversionedPrefix verifies RealmKit does not own public version prefixes.
 func TestServiceDefinesUnversionedPrefix(t *testing.T) {
 	if Service.Name != "gateway-owned" {
 		t.Fatalf("Name = %q, want %q", Service.Name, "gateway-owned")

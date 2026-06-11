@@ -15,7 +15,7 @@ const (
 	DefaultRedisScope = "global"
 
 	// redisKeyPrefix is the stable Redis rate limit namespace.
-	redisKeyPrefix = "gamehub:ratelimit"
+	redisKeyPrefix = "realmkit:ratelimit"
 )
 
 // RedisStore stores rate limit windows in Redis.

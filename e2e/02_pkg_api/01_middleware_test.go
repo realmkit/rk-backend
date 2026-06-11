@@ -11,14 +11,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	"github.com/niflaot/gamehub-go/pkg/api/auth"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/principal"
-	"github.com/niflaot/gamehub-go/pkg/api/problem"
-	"github.com/niflaot/gamehub-go/pkg/api/ratelimit"
-	"github.com/niflaot/gamehub-go/pkg/identity"
-	"github.com/niflaot/gamehub-go/pkg/server"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/api/ratelimit"
+	"github.com/realmkit/rk-backend/pkg/identity"
+	"github.com/realmkit/rk-backend/pkg/server"
 )
 
 // TestAPIIdempotencyReplayAndConflict verifies POST replay behavior.

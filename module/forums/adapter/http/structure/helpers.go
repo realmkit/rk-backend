@@ -3,8 +3,8 @@ package structure
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/forums/adapter/http/shared"
-	"github.com/niflaot/gamehub-go/module/forums/domain"
+	"github.com/realmkit/rk-backend/module/forums/adapter/http/shared"
+	"github.com/realmkit/rk-backend/module/forums/domain"
 )
 
 // writeActorObjectVersion reads the common actor, object ID, and expected version values.

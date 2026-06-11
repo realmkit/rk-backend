@@ -8,14 +8,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/punishments/domain"
-	"github.com/niflaot/gamehub-go/module/punishments/port"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/problem"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/punishments/domain"
+	"github.com/realmkit/rk-backend/module/punishments/port"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
-const currentUserIDHeader = "X-GameHub-User-Id"
+const currentUserIDHeader = "X-RealmKit-User-Id"
 
 // decodeJSON decodes a strict JSON request body.
 func decodeJSON(ctx *fiber.Ctx, target any) error {

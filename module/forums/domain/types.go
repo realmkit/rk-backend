@@ -2,7 +2,7 @@ package domain
 
 import (
 	"github.com/google/uuid"
-	shared "github.com/niflaot/gamehub-go/module/forums/domain/shared"
+	shared "github.com/realmkit/rk-backend/module/forums/domain/shared"
 )
 
 // Key is a stable forum machine key.

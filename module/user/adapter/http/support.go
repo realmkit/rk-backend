@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/module/user/domain"
-	"github.com/niflaot/gamehub-go/module/user/port"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	"github.com/niflaot/gamehub-go/pkg/api/principal"
-	"github.com/niflaot/gamehub-go/pkg/api/problem"
+	"github.com/realmkit/rk-backend/module/user/domain"
+	"github.com/realmkit/rk-backend/module/user/port"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
 )
 
 // errAccountURLUnavailable reports that provider account URL is not available.

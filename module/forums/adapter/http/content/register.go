@@ -3,7 +3,7 @@ package content
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/module/forums/port"
+	"github.com/realmkit/rk-backend/module/forums/port"
 )
 
 // Services contains content route dependencies.

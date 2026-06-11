@@ -102,7 +102,7 @@ func SnapshotFromTemplate(punishmentID uuid.UUID, action ActionTemplate) ActionS
 
 // RestrictionFromSnapshot creates an active restriction when applicable.
 func RestrictionFromSnapshot(punishment Punishment, snapshot ActionSnapshot) (ActiveRestriction, bool) {
-	if snapshot.TargetSystem != TargetGameHub || snapshot.Effect != EffectRestrict {
+	if snapshot.TargetSystem != TargetRealmKit || snapshot.Effect != EffectRestrict {
 		return ActiveRestriction{}, false
 	}
 	return ActiveRestriction{

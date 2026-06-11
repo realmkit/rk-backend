@@ -4,7 +4,7 @@ package content
 import (
 	"encoding/json"
 
-	shared "github.com/niflaot/gamehub-go/module/forums/domain/shared"
+	shared "github.com/realmkit/rk-backend/module/forums/domain/shared"
 )
 
 // Slug is a URL-friendly forum slug.

@@ -10,14 +10,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
-	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
-	metadataapplication "github.com/niflaot/gamehub-go/module/metadata/application"
-	"github.com/niflaot/gamehub-go/module/metadata/domain"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
-	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
-	"github.com/niflaot/gamehub-go/pkg/server"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	metadatahttp "github.com/realmkit/rk-backend/module/metadata/adapter/http"
+	metadatapostgres "github.com/realmkit/rk-backend/module/metadata/adapter/postgres"
+	metadataapplication "github.com/realmkit/rk-backend/module/metadata/application"
+	"github.com/realmkit/rk-backend/module/metadata/domain"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
+	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
+	"github.com/realmkit/rk-backend/pkg/server"
 )
 
 // metadataFixture contains the metadata e2e module wiring.

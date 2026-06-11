@@ -16,7 +16,7 @@ func TestNewSQLiteDatabaseRunsMigrations(t *testing.T) {
 	}
 
 	var count int64
-	if err := database.DB.Table("gamehub_schema_migrations").Count(&count).Error; err != nil {
+	if err := database.DB.Table("realmkit_schema_migrations").Count(&count).Error; err != nil {
 		t.Fatalf("Count() error = %v", err)
 	}
 	if count == 0 {

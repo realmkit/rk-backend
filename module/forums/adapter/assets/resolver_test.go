@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	assetdomain "github.com/niflaot/gamehub-go/module/assets/domain"
-	assetport "github.com/niflaot/gamehub-go/module/assets/port"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	assetdomain "github.com/realmkit/rk-backend/module/assets/domain"
+	assetport "github.com/realmkit/rk-backend/module/assets/port"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // TestResolverReportsExistingAndMissingAssets verifies asset existence mapping.

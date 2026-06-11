@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
+	"github.com/realmkit/rk-backend/e2e/harness"
 )
 
 // TestTicketDefinitionLifecycle verifies ticket definition administration.

@@ -8,19 +8,19 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/assets/domain"
-	"github.com/niflaot/gamehub-go/module/assets/port"
-	eventdomain "github.com/niflaot/gamehub-go/pkg/events/domain"
-	eventtesting "github.com/niflaot/gamehub-go/pkg/events/testing"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
-	"github.com/niflaot/gamehub-go/pkg/storage"
+	"github.com/realmkit/rk-backend/module/assets/domain"
+	"github.com/realmkit/rk-backend/module/assets/port"
+	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
+	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
+	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/storage"
 )
 
 // TestServiceCreateUploadIntentCreatesAssetAndSignedURL verifies intent creation.
 func TestServiceCreateUploadIntentCreatesAssetAndSignedURL(t *testing.T) {
 	repository := newMemoryRepository()
 	store := &memoryStore{}
-	service := NewService(repository, store, "gamehub-assets")
+	service := NewService(repository, store, "realmkit-assets")
 
 	intent, err := service.CreateUploadIntent(context.Background(), validCommand())
 	if err != nil {
@@ -38,7 +38,7 @@ func TestServiceCreateUploadIntentCreatesAssetAndSignedURL(t *testing.T) {
 func TestServiceCompleteUploadConfirmsStorageObject(t *testing.T) {
 	repository := newMemoryRepository()
 	store := &memoryStore{}
-	service := NewService(repository, store, "gamehub-assets")
+	service := NewService(repository, store, "realmkit-assets")
 	intent, err := service.CreateUploadIntent(context.Background(), validCommand())
 	if err != nil {
 		t.Fatalf("CreateUploadIntent() error = %v", err)
@@ -58,7 +58,7 @@ func TestServiceCompleteUploadConfirmsStorageObject(t *testing.T) {
 func TestServiceCompleteUploadIsIdempotentForAvailableAsset(t *testing.T) {
 	repository := newMemoryRepository()
 	store := &memoryStore{}
-	service := NewService(repository, store, "gamehub-assets")
+	service := NewService(repository, store, "realmkit-assets")
 	intent, err := service.CreateUploadIntent(context.Background(), validCommand())
 	if err != nil {
 		t.Fatalf("CreateUploadIntent() error = %v", err)
@@ -80,7 +80,7 @@ func TestServiceCompleteUploadIsIdempotentForAvailableAsset(t *testing.T) {
 func TestServiceCompleteUploadRejectsMismatchedObject(t *testing.T) {
 	repository := newMemoryRepository()
 	store := &memoryStore{info: storage.ObjectInfo{ContentType: "image/png", SizeBytes: 1}}
-	service := NewService(repository, store, "gamehub-assets")
+	service := NewService(repository, store, "realmkit-assets")
 	intent, err := service.CreateUploadIntent(context.Background(), validCommand())
 	if err != nil {
 		t.Fatalf("CreateUploadIntent() error = %v", err)
@@ -96,7 +96,7 @@ func TestServiceCompleteUploadRejectsMismatchedObject(t *testing.T) {
 func TestServiceGetURLRequiresAvailableAsset(t *testing.T) {
 	repository := newMemoryRepository()
 	store := &memoryStore{}
-	service := NewService(repository, store, "gamehub-assets")
+	service := NewService(repository, store, "realmkit-assets")
 	intent, err := service.CreateUploadIntent(context.Background(), validCommand())
 	if err != nil {
 		t.Fatalf("CreateUploadIntent() error = %v", err)
@@ -112,7 +112,7 @@ func TestServiceGetURLRequiresAvailableAsset(t *testing.T) {
 func TestServiceMutableOperationsUseRepository(t *testing.T) {
 	repository := newMemoryRepository()
 	store := &memoryStore{}
-	service := NewService(repository, store, "gamehub-assets")
+	service := NewService(repository, store, "realmkit-assets")
 	intent, err := service.CreateUploadIntent(context.Background(), validCommand())
 	if err != nil {
 		t.Fatalf("CreateUploadIntent() error = %v", err)
@@ -164,7 +164,7 @@ func TestServicePublishesAssetLifecycleEvents(t *testing.T) {
 	events := &eventtesting.PublisherRecorder{}
 	repository := newMemoryRepository()
 	store := &memoryStore{}
-	service := NewService(repository, store, "gamehub-assets").WithEvents(events)
+	service := NewService(repository, store, "realmkit-assets").WithEvents(events)
 	intent, err := service.CreateUploadIntent(context.Background(), validCommand())
 	if err != nil {
 		t.Fatalf("CreateUploadIntent() error = %v", err)

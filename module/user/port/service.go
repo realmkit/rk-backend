@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/user/domain"
+	"github.com/realmkit/rk-backend/module/user/domain"
 )
 
 // Service manages local users.

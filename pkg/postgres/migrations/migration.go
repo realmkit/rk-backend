@@ -1,4 +1,4 @@
-// Package migrations manages global GameHub PostgreSQL schema migrations.
+// Package migrations manages global RealmKit PostgreSQL schema migrations.
 package migrations
 
 import (
@@ -194,7 +194,7 @@ func transactionEnabled(script string) bool {
 		if line == "" {
 			continue
 		}
-		return line != "-- gamehub:transaction false"
+		return line != "-- realmkit:transaction false"
 	}
 	return true
 }

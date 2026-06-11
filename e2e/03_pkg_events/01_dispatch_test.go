@@ -5,11 +5,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/niflaot/gamehub-go/e2e/harness"
-	eventshttp "github.com/niflaot/gamehub-go/pkg/events/adapter/http"
-	eventspostgres "github.com/niflaot/gamehub-go/pkg/events/adapter/postgres"
-	eventsapplication "github.com/niflaot/gamehub-go/pkg/events/application"
-	"github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/realmkit/rk-backend/e2e/harness"
+	eventshttp "github.com/realmkit/rk-backend/pkg/events/adapter/http"
+	eventspostgres "github.com/realmkit/rk-backend/pkg/events/adapter/postgres"
+	eventsapplication "github.com/realmkit/rk-backend/pkg/events/application"
+	"github.com/realmkit/rk-backend/pkg/events/domain"
 )
 
 // TestEventsPublishAndDispatch verifies outbox persistence and dispatch.

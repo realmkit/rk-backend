@@ -3,8 +3,8 @@ package http
 import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/events/application"
-	"github.com/niflaot/gamehub-go/pkg/events/port"
+	"github.com/realmkit/rk-backend/pkg/events/application"
+	"github.com/realmkit/rk-backend/pkg/events/port"
 )
 
 // Services contains event HTTP dependencies.

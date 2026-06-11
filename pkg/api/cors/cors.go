@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	fibercors "github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
 )
 
 // New returns the configured CORS middleware.

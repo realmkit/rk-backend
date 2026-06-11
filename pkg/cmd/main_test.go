@@ -6,7 +6,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/niflaot/gamehub-go/pkg/logger"
+	"github.com/realmkit/rk-backend/pkg/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -48,7 +48,7 @@ func TestFinishLogsAndExitsOnError(t *testing.T) {
 	if code != 1 {
 		t.Fatalf("exit code = %d, want %d", code, 1)
 	}
-	if !bytes.Contains(output.Bytes(), []byte("gamehub backend failed")) {
+	if !bytes.Contains(output.Bytes(), []byte("realmkit backend failed")) {
 		t.Fatalf("output = %q, want failure log", output.String())
 	}
 	if !bytes.Contains(output.Bytes(), []byte("boom")) {

@@ -160,5 +160,5 @@ func defaultExecutor() string {
 	if hostname, err := os.Hostname(); err == nil && hostname != "" {
 		return hostname
 	}
-	return "gamehub"
+	return "realmkit"
 }

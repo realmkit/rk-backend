@@ -130,7 +130,7 @@ func (store Store) Repair(ctx context.Context, version int64, checksum string, r
 
 // Delete removes an applied migration record after a down migration succeeds.
 func (store Store) Delete(ctx context.Context, version int64) error {
-	return store.db.WithContext(ctx).Exec("DELETE FROM gamehub_schema_migrations WHERE version = ?", version).Error
+	return store.db.WithContext(ctx).Exec("DELETE FROM realmkit_schema_migrations WHERE version = ?", version).Error
 }
 
 // historyRow is the database representation of a migration record.
@@ -196,26 +196,26 @@ const (
 	appliedSQL = `
 SELECT version, name, direction, checksum, started_at, finished_at, duration_ms,
 	success, error, executor, app_version, dirty
-FROM gamehub_schema_migrations
+FROM realmkit_schema_migrations
 ORDER BY version ASC`
 
 	startSQL = `
-INSERT INTO gamehub_schema_migrations(
+INSERT INTO realmkit_schema_migrations(
 	version, name, direction, checksum, started_at, success, error, executor, app_version, dirty
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	finishSQL = `
-UPDATE gamehub_schema_migrations
+UPDATE realmkit_schema_migrations
 SET finished_at = ?, duration_ms = ?, success = ?, error = ?, dirty = ?
 WHERE version = ?`
 
 	repairSQL = `
-UPDATE gamehub_schema_migrations
+UPDATE realmkit_schema_migrations
 SET checksum = ?, error = ?, dirty = ?, success = ?
 WHERE version = ? AND dirty = ?`
 
 	sqliteHistoryTableSQL = `
-CREATE TABLE IF NOT EXISTS gamehub_schema_migrations (
+CREATE TABLE IF NOT EXISTS realmkit_schema_migrations (
 	version INTEGER PRIMARY KEY,
 	name TEXT NOT NULL,
 	direction TEXT NOT NULL,
@@ -231,7 +231,7 @@ CREATE TABLE IF NOT EXISTS gamehub_schema_migrations (
 )`
 
 	postgresHistoryTableSQL = `
-CREATE TABLE IF NOT EXISTS gamehub_schema_migrations (
+CREATE TABLE IF NOT EXISTS realmkit_schema_migrations (
 	version BIGINT PRIMARY KEY,
 	name TEXT NOT NULL,
 	direction TEXT NOT NULL,

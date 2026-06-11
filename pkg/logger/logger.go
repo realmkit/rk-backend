@@ -65,7 +65,7 @@ func levelFor(value string) (zapcore.Level, error) {
 	return level, nil
 }
 
-// encoderConfig returns the JSON encoder settings used by GameHub logs.
+// encoderConfig returns the JSON encoder settings used by RealmKit logs.
 func encoderConfig() zapcore.EncoderConfig {
 	return zapcore.EncoderConfig{
 		TimeKey:        "time",

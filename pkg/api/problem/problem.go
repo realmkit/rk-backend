@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
 )
 
 // ContentType is the problem response media type.
@@ -22,7 +22,7 @@ type FieldError struct {
 	Message string `json:"message"`
 }
 
-// Problem describes a GameHub HTTP error response.
+// Problem describes a RealmKit HTTP error response.
 type Problem struct {
 	// Type is the stable problem type URI.
 	Type string `json:"type"`
@@ -66,7 +66,7 @@ func (err Error) Error() string {
 // New creates a Problem payload.
 func New(status int, code string, detail string) Problem {
 	return Problem{
-		Type:   fmt.Sprintf("https://gamehub.dev/problems/%s", code),
+		Type:   fmt.Sprintf("https://realmkit.dev/problems/%s", code),
 		Title:  titleFor(status),
 		Status: status,
 		Detail: detail,

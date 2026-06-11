@@ -3,7 +3,7 @@ package content
 import (
 	"encoding/json"
 
-	"github.com/niflaot/gamehub-go/module/forums/domain"
+	"github.com/realmkit/rk-backend/module/forums/domain"
 )
 
 // contentRequest is a post content write request.

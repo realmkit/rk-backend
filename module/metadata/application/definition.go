@@ -3,8 +3,8 @@ package application
 import (
 	"context"
 
-	"github.com/niflaot/gamehub-go/module/metadata/port"
-	"github.com/niflaot/gamehub-go/pkg/pagination"
+	"github.com/realmkit/rk-backend/module/metadata/port"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // CreateDefinition creates a metafield definition.

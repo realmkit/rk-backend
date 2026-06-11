@@ -95,7 +95,7 @@ func TestActionSnapshotAndRestrictionRules(t *testing.T) {
 
 	restriction, ok := RestrictionFromSnapshot(punishment, SnapshotFromTemplate(punishment.ID, validAction()))
 	if !ok {
-		t.Fatalf("expected gamehub restrict action to create restriction")
+		t.Fatalf("expected realmkit restrict action to create restriction")
 	}
 	if !restriction.ActiveAt(punishment.StartsAt.Add(time.Second)) {
 		t.Fatalf("expected restriction active during window")

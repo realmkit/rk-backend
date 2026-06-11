@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/niflaot/gamehub-go/pkg/identity"
+	"github.com/realmkit/rk-backend/pkg/identity"
 )
 
 // Token contains validated access token data.

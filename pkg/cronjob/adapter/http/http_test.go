@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/pkg/api/problem"
-	cronpostgres "github.com/niflaot/gamehub-go/pkg/cronjob/adapter/postgres"
-	cronapp "github.com/niflaot/gamehub-go/pkg/cronjob/application"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/domain"
-	"github.com/niflaot/gamehub-go/pkg/cronjob/port"
-	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	cronpostgres "github.com/realmkit/rk-backend/pkg/cronjob/adapter/postgres"
+	cronapp "github.com/realmkit/rk-backend/pkg/cronjob/application"
+	"github.com/realmkit/rk-backend/pkg/cronjob/domain"
+	"github.com/realmkit/rk-backend/pkg/cronjob/port"
+	"github.com/realmkit/rk-backend/pkg/orm"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

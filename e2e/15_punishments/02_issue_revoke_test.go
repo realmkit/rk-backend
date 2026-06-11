@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/e2e/harness"
+	"github.com/realmkit/rk-backend/e2e/harness"
 )
 
 // TestIssueUpdateAndRevoke verifies active punishment lifecycle behavior.
@@ -91,7 +91,7 @@ func TestIssueUpdateAndRevoke(t *testing.T) {
 			harness.JSONRequest(
 				fiber.MethodPost,
 				"/punishments/restrictions/check",
-				`{"user_id":"`+revokeTarget.String()+`","action_key":"gamehub.forums.reply"}`,
+				`{"user_id":"`+revokeTarget.String()+`","action_key":"realmkit.forums.reply"}`,
 			),
 			withPunishmentUser(actor),
 		))
@@ -133,8 +133,8 @@ func TestIssueUpdateAndRevoke(t *testing.T) {
 func createRawDefinition(t *testing.T, fixture punishmentsFixture, actor uuid.UUID, key string, override string) map[string]any {
 	t.Helper()
 	body := `{"key":"` + key + `","name":"` + key + `","color":"#ff5555","severity":1,` +
-		override + `,"requires_reason":true,"actions":[{"target_system":"gamehub",` +
-		`"action_key":"gamehub.forums.reply","effect":"restrict","status":"active"}]}`
+		override + `,"requires_reason":true,"actions":[{"target_system":"realmkit",` +
+		`"action_key":"realmkit.forums.reply","effect":"restrict","status":"active"}]}`
 	response := fixture.do(t, configureRequest(
 		harness.JSONRequest(fiber.MethodPost, "/punishment-definitions", body),
 		withPunishmentUser(actor),

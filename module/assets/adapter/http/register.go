@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/niflaot/gamehub-go/module/assets/port"
+	"github.com/realmkit/rk-backend/module/assets/port"
 )
 
 // Services contains assets application services used by handlers.

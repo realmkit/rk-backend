@@ -8,8 +8,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/niflaot/gamehub-go/module/forums/port"
-	"github.com/niflaot/gamehub-go/pkg/api/headers"
+	"github.com/realmkit/rk-backend/module/forums/port"
+	"github.com/realmkit/rk-backend/pkg/api/headers"
 )
 
 // TestSupportHelpersCoverTransportBranches verifies shared HTTP helper behavior.
