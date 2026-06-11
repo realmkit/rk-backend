@@ -4,11 +4,8 @@ import (
 	"context"
 	"time"
 
-	assetshttp "github.com/niflaot/gamehub-go/module/assets/adapter/http"
-	assetsapp "github.com/niflaot/gamehub-go/module/assets/application"
 	assetsport "github.com/niflaot/gamehub-go/module/assets/port"
 	forumsassets "github.com/niflaot/gamehub-go/module/forums/adapter/assets"
-	forumshttp "github.com/niflaot/gamehub-go/module/forums/adapter/http"
 	forumspostgres "github.com/niflaot/gamehub-go/module/forums/adapter/postgres"
 	forumsredis "github.com/niflaot/gamehub-go/module/forums/adapter/redis"
 	forumsapp "github.com/niflaot/gamehub-go/module/forums/application"
@@ -19,7 +16,6 @@ import (
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
 	metadatapostgres "github.com/niflaot/gamehub-go/module/metadata/adapter/postgres"
 	metadataapp "github.com/niflaot/gamehub-go/module/metadata/application"
-	punishmentshttp "github.com/niflaot/gamehub-go/module/punishments/adapter/http"
 	punishmentspostgres "github.com/niflaot/gamehub-go/module/punishments/adapter/postgres"
 	punishmentsredis "github.com/niflaot/gamehub-go/module/punishments/adapter/redis"
 	punishmentsapp "github.com/niflaot/gamehub-go/module/punishments/application"
@@ -46,17 +42,12 @@ import (
 )
 
 // infrastructureOptions creates server options for shared infrastructure.
-func infrastructureOptions(_ context.Context, db *gorm.DB, events eventsapp.Service, hub *eventshttp.Hub, forums forumsapp.Service, punishments punishmentsapp.Service) ([]server.Option, error) {
-	cron := cronService(db, events, forums, punishments)
+func infrastructureOptions(_ context.Context, db *gorm.DB, events eventsapp.Service, hub *eventshttp.Hub, forums forumsapp.Service, punishments punishmentsapp.Service, tickets ticketOperations) ([]server.Option, error) {
+	cron := cronService(db, events, forums, punishments, tickets)
 	return []server.Option{
 		server.WithEvents(eventshttp.Services{Events: events, Hub: hub}),
 		server.WithCron(cronhttp.Services{Cron: cron}),
 	}, nil
-}
-
-// assetshttpServices creates HTTP services for assets.
-func assetshttpServices(assetService assetsapp.Service) assetshttp.Services {
-	return assetshttp.Services{Assets: assetService}
 }
 
 // forumsService creates forums application service.
@@ -104,22 +95,6 @@ func punishmentsService(db *gorm.DB, client *goredis.Client, events eventsapp.Se
 		Transactions: transaction.New(db),
 		Events:       events,
 	})
-}
-
-// punishmentshttpServices creates HTTP services for punishments.
-func punishmentshttpServices(service punishmentsapp.Service) punishmentshttp.Services {
-	return punishmentshttp.Services{Punishments: service}
-}
-
-// forumshttpServices creates HTTP services for forums.
-func forumshttpServices(forumService forumsapp.Service) forumshttp.Services {
-	return forumshttp.Services{
-		Structure:   forumService,
-		Content:     forumService,
-		Interaction: forumService,
-		Operations:  forumService,
-		Admin:       forumService,
-	}
 }
 
 // groupsService creates groups application service.
@@ -194,7 +169,7 @@ func eventsService(db *gorm.DB, client *goredis.Client, broker eventsport.Broker
 }
 
 // cronService creates the cron application service.
-func cronService(db *gorm.DB, events eventsapp.Service, forums forumsapp.Service, punishments punishmentsapp.Service) cronapp.Service {
+func cronService(db *gorm.DB, events eventsapp.Service, forums forumsapp.Service, punishments punishmentsapp.Service, tickets ticketOperations) cronapp.Service {
 	handlers := map[string]cronport.Handler{
 		cronDomain.JobEventsDispatchPending: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
 			result, err := events.DispatchOnce(ctx, "cron-events-dispatch")
@@ -222,6 +197,22 @@ func cronService(db *gorm.DB, events eventsapp.Service, forums forumsapp.Service
 		}),
 		cronDomain.JobPunishmentsRebuildRestrictions: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
 			report, err := punishments.RebuildRestrictions(ctx)
+			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches)), ChangedCount: int64(len(report.Mismatches))}, err
+		}),
+		cronDomain.JobTicketsDetectSLABreaches: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+			count, err := tickets.DetectSLABreaches(ctx)
+			return cronDomain.Result{ProcessedCount: count}, err
+		}),
+		cronDomain.JobTicketsCloseStale: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+			count, err := tickets.CloseStaleTickets(ctx)
+			return cronDomain.Result{ProcessedCount: count, ChangedCount: count}, err
+		}),
+		cronDomain.JobTicketsVerifyStats: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+			report, err := tickets.VerifyStats(ctx)
+			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches))}, err
+		}),
+		cronDomain.JobTicketsRebuildStats: cronport.HandlerFunc(func(ctx context.Context, _ cronport.RunContext) (cronDomain.Result, error) {
+			report, err := tickets.RebuildStats(ctx)
 			return cronDomain.Result{ProcessedCount: int64(len(report.Mismatches)), ChangedCount: int64(len(report.Mismatches))}, err
 		}),
 		cronDomain.JobAssetsExpireUploadIntents:  noopHandler(),

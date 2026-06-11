@@ -24,6 +24,18 @@ const (
 	// JobPunishmentsRebuildRestrictions rebuilds punishment restrictions.
 	JobPunishmentsRebuildRestrictions = "punishments.rebuild-restrictions"
 
+	// JobTicketsDetectSLABreaches emits events for overdue ticket work.
+	JobTicketsDetectSLABreaches = "tickets.detect-sla-breaches"
+
+	// JobTicketsCloseStale closes stale submitter-blocked tickets.
+	JobTicketsCloseStale = "tickets.close-stale"
+
+	// JobTicketsVerifyStats verifies ticket counters.
+	JobTicketsVerifyStats = "tickets.verify-stats"
+
+	// JobTicketsRebuildStats rebuilds ticket counters.
+	JobTicketsRebuildStats = "tickets.rebuild-stats"
+
 	// JobAssetsExpireUploadIntents expires stale upload intents.
 	JobAssetsExpireUploadIntents = "assets.expire-upload-intents"
 
@@ -41,6 +53,10 @@ func DefaultDefinitions(now time.Time) []Definition {
 		interval(JobPunishmentsExpireActive, "Expire active punishments", 5*time.Minute, now),
 		interval(JobPunishmentsVerifyRestrictions, "Verify punishment restrictions", 24*time.Hour, now),
 		manual(JobPunishmentsRebuildRestrictions, "Rebuild punishment restrictions", now),
+		interval(JobTicketsDetectSLABreaches, "Detect ticket SLA breaches", 15*time.Minute, now),
+		interval(JobTicketsCloseStale, "Close stale tickets", 24*time.Hour, now),
+		interval(JobTicketsVerifyStats, "Verify ticket stats", 24*time.Hour, now),
+		manual(JobTicketsRebuildStats, "Rebuild ticket stats", now),
 		interval(JobAssetsExpireUploadIntents, "Expire upload intents", 30*time.Minute, now),
 		interval(JobUsersCleanupIdentityClaims, "Cleanup identity claims", 24*time.Hour, now),
 	}

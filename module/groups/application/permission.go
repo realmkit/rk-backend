@@ -59,6 +59,22 @@ var staticPermissionRules = map[domain.Permission]staticPermissionRule{
 	domain.PermissionPunishmentsManageIntegrations: {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
 	domain.PermissionPunishmentsViewEvents:         {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
 	domain.PermissionPunishmentsReplayEvents:       {objectType: domain.ObjectPunishment, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsView:                   {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationSubmitter, domain.RelationAssignee, domain.RelationTeamMember, domain.RelationViewer, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsViewPrivate:            {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsCreate:                 {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationCreator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsReply:                  {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationSubmitter, domain.RelationAssignee, domain.RelationTeamMember, domain.RelationReplyer, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsReplyStaffOnly:         {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsAddEvidence:            {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationSubmitter, domain.RelationAssignee, domain.RelationTeamMember, domain.RelationEditor, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsAssign:                 {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsEscalate:               {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsClose:                  {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationSubmitter, domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsReopen:                 {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsManage:                 {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsManageDefinitions:      {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsPerformActions:         {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsAcceptAppeal:           {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsRejectAppeal:           {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
+	domain.PermissionTicketsLinkPunishment:         {objectType: domain.ObjectTicket, relations: []domain.Relation{domain.RelationAssignee, domain.RelationTeamMember, domain.RelationModerator, domain.RelationManager, domain.RelationOwner}},
 }
 
 // Check returns an authorization decision.

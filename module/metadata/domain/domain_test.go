@@ -51,6 +51,15 @@ func TestAllowedOwnerTypesIncludeForumOwners(t *testing.T) {
 	}
 }
 
+// TestAllowedOwnerTypesIncludeTicketOwners verifies ticket metadata ownership.
+func TestAllowedOwnerTypesIncludeTicketOwners(t *testing.T) {
+	for _, ownerType := range []OwnerType{OwnerTicketDefinition, OwnerTicket} {
+		if violations := ValidateOwnerType("owner_type", ownerType); len(violations) != 0 {
+			t.Fatalf("ValidateOwnerType(%q) violations = %+v, want none", ownerType, violations)
+		}
+	}
+}
+
 // TestFieldDefinitionValidateRejectsInvalidRuleCombination verifies rule compatibility.
 func TestFieldDefinitionValidateRejectsInvalidRuleCombination(t *testing.T) {
 	precision := 10

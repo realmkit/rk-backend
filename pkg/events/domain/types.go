@@ -68,6 +68,9 @@ const (
 	// ScopePunishment addresses one punishment.
 	ScopePunishment ScopeType = "punishment"
 
+	// ScopeTicket addresses one ticket.
+	ScopeTicket ScopeType = "ticket"
+
 	// ScopeStaff addresses staff-only subscribers.
 	ScopeStaff ScopeType = "staff"
 
@@ -104,7 +107,7 @@ func ValidateStatus(field string, value Status) []Violation {
 func ValidateScopeType(field string, value ScopeType) []Violation {
 	switch value {
 	case ScopeGlobal, ScopeUser, ScopeGroup, ScopePermission, ScopeForum,
-		ScopeThread, ScopePost, ScopeAsset, ScopePunishment, ScopeStaff,
+		ScopeThread, ScopePost, ScopeAsset, ScopePunishment, ScopeTicket, ScopeStaff,
 		ScopeSystem:
 		return nil
 	default:

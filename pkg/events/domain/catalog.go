@@ -37,6 +37,9 @@ const (
 	// ProducerPunishments identifies punishment events.
 	ProducerPunishments Producer = "punishments"
 
+	// ProducerTickets identifies ticket and appeal events.
+	ProducerTickets Producer = "tickets"
+
 	// ProducerCronjob identifies cronjob events.
 	ProducerCronjob Producer = "cronjob"
 
@@ -68,6 +71,12 @@ const (
 
 	// EventPunishmentsPunishmentIssued is emitted when a punishment is issued.
 	EventPunishmentsPunishmentIssued EventKey = "punishments.punishment.issued"
+
+	// EventTicketsTicketCreated is emitted when a ticket is opened.
+	EventTicketsTicketCreated EventKey = "tickets.ticket.created"
+
+	// EventTicketsMessageCreated is emitted when a ticket message is added.
+	EventTicketsMessageCreated EventKey = "tickets.message.created"
 
 	// EventCronjobRunCompleted is emitted when a cron job run succeeds.
 	EventCronjobRunCompleted EventKey = "cronjob.run.completed"
@@ -149,6 +158,20 @@ func Catalog() []Descriptor {
 		{Key: "punishments.integration.requested", SchemaVersion: 1, Producer: ProducerPunishments, AggregateType: "punishment", Private: true},
 		{Key: "punishments.integration.completed", SchemaVersion: 1, Producer: ProducerPunishments, AggregateType: "punishment", Private: true},
 		{Key: "punishments.integration.failed", SchemaVersion: 1, Producer: ProducerPunishments, AggregateType: "punishment", Private: true},
+		{Key: "tickets.definition.created", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket_definition", Private: true},
+		{Key: "tickets.definition.updated", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket_definition", Private: true},
+		{Key: "tickets.definition.deleted", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket_definition", Private: true},
+		{Key: "tickets.ticket.created", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket", Private: true},
+		{Key: "tickets.ticket.assigned", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket", Private: true},
+		{Key: "tickets.ticket.escalated", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket", Private: true},
+		{Key: "tickets.ticket.closed", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket", Private: true},
+		{Key: "tickets.ticket.reopened", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket", Private: true},
+		{Key: "tickets.appeal.accepted", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket", Private: true},
+		{Key: "tickets.appeal.rejected", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket", Private: true},
+		{Key: "tickets.message.created", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket_message", Private: true},
+		{Key: "tickets.evidence.added", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket_evidence", Private: true},
+		{Key: "tickets.sla.breached", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket", Private: true},
+		{Key: "tickets.stats.rebuilt", SchemaVersion: 1, Producer: ProducerTickets, AggregateType: "ticket_stats", Private: true},
 		{Key: "cronjob.run.started", SchemaVersion: 1, Producer: ProducerCronjob, AggregateType: "cronjob_run", Private: true},
 		{Key: "cronjob.run.completed", SchemaVersion: 1, Producer: ProducerCronjob, AggregateType: "cronjob_run", Private: true},
 		{Key: "cronjob.run.failed", SchemaVersion: 1, Producer: ProducerCronjob, AggregateType: "cronjob_run", Private: true},

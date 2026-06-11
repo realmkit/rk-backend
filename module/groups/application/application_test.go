@@ -163,6 +163,34 @@ func TestServiceCheckAllowsDirectUserTuple(t *testing.T) {
 	}
 }
 
+// TestServiceCheckAllowsTicketSubmitter verifies ticket permission vocabulary.
+func TestServiceCheckAllowsTicketSubmitter(t *testing.T) {
+	service, _, _, tuples := newTestService()
+	userID := uuid.New()
+	ticketID := uuid.New()
+	tuples.items[uuid.New()] = domain.RelationTuple{
+		ID:          uuid.New(),
+		ObjectType:  domain.ObjectTicket,
+		ObjectID:    ticketID,
+		Relation:    domain.RelationSubmitter,
+		SubjectType: domain.SubjectUser,
+		SubjectID:   userID,
+	}
+
+	decision, err := service.Check(context.Background(), port.CheckRequest{
+		ActorUserID: userID,
+		Permission:  domain.PermissionTicketsView,
+		ObjectType:  domain.ObjectTicket,
+		ObjectID:    ticketID,
+	})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !decision.Allowed || decision.MatchedRelation != domain.RelationSubmitter {
+		t.Fatalf("Decision = %+v, want allowed submitter", decision)
+	}
+}
+
 // TestServiceCheckAllowsGroupSubjectMember verifies group subject relation decisions.
 func TestServiceCheckAllowsGroupSubjectMember(t *testing.T) {
 	service, groups, memberships, tuples := newTestService()

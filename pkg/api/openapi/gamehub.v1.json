@@ -91,6 +91,26 @@
     {
       "name": "punishment-restrictions",
       "description": "Active GameHub action restrictions caused by punishments."
+    },
+    {
+      "name": "ticket-definitions",
+      "description": "Ticket workflow definitions and intake configuration."
+    },
+    {
+      "name": "tickets",
+      "description": "Ticket intake and queue reads."
+    },
+    {
+      "name": "ticket-conversation",
+      "description": "Ticket messages and evidence."
+    },
+    {
+      "name": "ticket-actions",
+      "description": "Ticket assignment, escalation, closure, and appeal decisions."
+    },
+    {
+      "name": "ticket-operations",
+      "description": "Ticket repair and operational tasks."
     }
   ],
   "paths": {
@@ -7199,6 +7219,754 @@
           }
         ]
       }
+    },
+    "/ticket-definitions": {
+      "post": {
+        "tags": [
+          "ticket-definitions"
+        ],
+        "operationId": "createTicketDefinition",
+        "summary": "Create ticket definition",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDefinition"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketDefinitionRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "ticket-definitions"
+        ],
+        "operationId": "listTicketDefinitions",
+        "summary": "List ticket definitions",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TicketDefinition"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ticket-definitions/{definition_id}": {
+      "get": {
+        "tags": [
+          "ticket-definitions"
+        ],
+        "operationId": "getTicketDefinition",
+        "summary": "Get ticket definition",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDefinition"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "definition_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "ticket-definitions"
+        ],
+        "operationId": "updateTicketDefinition",
+        "summary": "Update ticket definition",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDefinition"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketDefinitionRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "definition_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "ticket-definitions"
+        ],
+        "operationId": "deleteTicketDefinition",
+        "summary": "Delete ticket definition",
+        "responses": {
+          "204": {
+            "description": "Success"
+          }
+        },
+        "parameters": [
+          {
+            "name": "definition_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets": {
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "operationId": "createTicket",
+        "summary": "Create ticket",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketCreateRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "operationId": "listTickets",
+        "summary": "List tickets",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Ticket"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/punishments/{punishment_id}/appeals": {
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "operationId": "createPunishmentAppeal",
+        "summary": "Create punishment appeal",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketCreateRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "punishment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets/{ticket_id}": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "operationId": "getTicket",
+        "summary": "Get ticket",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets/{ticket_id}/messages": {
+      "get": {
+        "tags": [
+          "ticket-conversation"
+        ],
+        "operationId": "listTicketMessages",
+        "summary": "List ticket messages",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TicketMessage"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "ticket-conversation"
+        ],
+        "operationId": "createTicketMessage",
+        "summary": "Create ticket message",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketMessage"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketMessageRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets/{ticket_id}/evidence": {
+      "get": {
+        "tags": [
+          "ticket-conversation"
+        ],
+        "operationId": "listTicketEvidence",
+        "summary": "List ticket evidence",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TicketEvidence"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "ticket-conversation"
+        ],
+        "operationId": "addTicketEvidence",
+        "summary": "Add ticket evidence",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketEvidence"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketEvidenceRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets/{ticket_id}/assign": {
+      "post": {
+        "tags": [
+          "ticket-actions"
+        ],
+        "operationId": "assignTicket",
+        "summary": "AssignTicket",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets/{ticket_id}/escalate": {
+      "post": {
+        "tags": [
+          "ticket-actions"
+        ],
+        "operationId": "escalateTicket",
+        "summary": "EscalateTicket",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets/{ticket_id}/close": {
+      "post": {
+        "tags": [
+          "ticket-actions"
+        ],
+        "operationId": "closeTicket",
+        "summary": "CloseTicket",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets/{ticket_id}/reopen": {
+      "post": {
+        "tags": [
+          "ticket-actions"
+        ],
+        "operationId": "reopenTicket",
+        "summary": "ReopenTicket",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStaffRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets/{ticket_id}/appeal/accept": {
+      "post": {
+        "tags": [
+          "ticket-actions"
+        ],
+        "operationId": "acceptTicketAppeal",
+        "summary": "Accept ticket appeal",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketAppealDecisionRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets/{ticket_id}/appeal/reject": {
+      "post": {
+        "tags": [
+          "ticket-actions"
+        ],
+        "operationId": "rejectTicketAppeal",
+        "summary": "Reject ticket appeal",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketAppealDecisionRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/tickets/operations/stats/verify": {
+      "post": {
+        "tags": [
+          "ticket-operations"
+        ],
+        "operationId": "verifyTicketStats",
+        "summary": "Verify ticket stats",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDriftReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/operations/stats/rebuild": {
+      "post": {
+        "tags": [
+          "ticket-operations"
+        ],
+        "operationId": "rebuildTicketStats",
+        "summary": "Rebuild ticket stats",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDriftReport"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -11635,6 +12403,516 @@
           },
           "action_key": {
             "type": "string"
+          }
+        }
+      },
+      "TicketDefinition": {
+        "type": "object",
+        "required": [
+          "id",
+          "key",
+          "name",
+          "kind",
+          "status",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "appeal",
+              "report",
+              "support",
+              "application",
+              "bug",
+              "payment",
+              "custom"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled",
+              "archived"
+            ]
+          },
+          "default_team_group_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "default_assignee_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "submitter_can_close": {
+            "type": "boolean"
+          },
+          "submitter_can_reopen": {
+            "type": "boolean"
+          },
+          "allow_anonymous_submitter": {
+            "type": "boolean"
+          },
+          "requires_target_user": {
+            "type": "boolean"
+          },
+          "requires_punishment": {
+            "type": "boolean"
+          },
+          "requires_evidence": {
+            "type": "boolean"
+          },
+          "max_open_per_submitter": {
+            "type": "integer"
+          },
+          "reopen_window_seconds": {
+            "type": "integer"
+          },
+          "sla_first_response_seconds": {
+            "type": "integer"
+          },
+          "sla_resolution_seconds": {
+            "type": "integer"
+          },
+          "metadata_schema_key": {
+            "type": "string"
+          },
+          "display_order": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TicketDefinitionRequest": {
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "kind"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "default_team_group_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "default_assignee_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "submitter_can_close": {
+            "type": "boolean"
+          },
+          "submitter_can_reopen": {
+            "type": "boolean"
+          },
+          "allow_anonymous_submitter": {
+            "type": "boolean"
+          },
+          "requires_target_user": {
+            "type": "boolean"
+          },
+          "requires_punishment": {
+            "type": "boolean"
+          },
+          "requires_evidence": {
+            "type": "boolean"
+          },
+          "max_open_per_submitter": {
+            "type": "integer"
+          },
+          "reopen_window_seconds": {
+            "type": "integer"
+          },
+          "sla_first_response_seconds": {
+            "type": "integer"
+          },
+          "sla_resolution_seconds": {
+            "type": "integer"
+          },
+          "metadata_schema_key": {
+            "type": "string"
+          },
+          "display_order": {
+            "type": "integer"
+          }
+        }
+      },
+      "Ticket": {
+        "type": "object",
+        "required": [
+          "id",
+          "definition_id",
+          "title",
+          "kind",
+          "status",
+          "priority",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "definition_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "submitter_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "target_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "punishment_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "current_team_group_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "assignee_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "message_count": {
+            "type": "integer"
+          },
+          "staff_message_count": {
+            "type": "integer"
+          },
+          "evidence_count": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TicketCreateRequest": {
+        "type": "object",
+        "required": [
+          "definition_id",
+          "title",
+          "content_document_json",
+          "content_text"
+        ],
+        "properties": {
+          "definition_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "submitter_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "target_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "punishment_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "content_document_json": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "content_text": {
+            "type": "string"
+          },
+          "evidence_asset_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "TicketMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticket_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "author_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "author_role": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "content_format": {
+            "type": "string"
+          },
+          "content_document_json": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "content_text": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TicketMessageRequest": {
+        "type": "object",
+        "required": [
+          "content_document_json",
+          "content_text"
+        ],
+        "properties": {
+          "visibility": {
+            "type": "string"
+          },
+          "content_document_json": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "content_text": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketEvidence": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticket_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "asset_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "external_url": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TicketEvidenceRequest": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "asset_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "external_url": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketStaffRequest": {
+        "type": "object",
+        "properties": {
+          "assignee_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "team_group_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketAppealDecisionRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "revoke_punishment": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TicketDriftReport": {
+        "type": "object",
+        "properties": {
+          "mismatches": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "repaired": {
+            "type": "boolean"
           }
         }
       }

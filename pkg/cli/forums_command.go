@@ -6,11 +6,28 @@ import (
 	"io"
 	"strconv"
 
+	assetshttp "github.com/niflaot/gamehub-go/module/assets/adapter/http"
+	assetsport "github.com/niflaot/gamehub-go/module/assets/port"
+	forumsassets "github.com/niflaot/gamehub-go/module/forums/adapter/assets"
+	forumshttp "github.com/niflaot/gamehub-go/module/forums/adapter/http"
 	forumsapp "github.com/niflaot/gamehub-go/module/forums/application"
 	forumsdomain "github.com/niflaot/gamehub-go/module/forums/domain"
+	punishmentshttp "github.com/niflaot/gamehub-go/module/punishments/adapter/http"
+	punishmentsport "github.com/niflaot/gamehub-go/module/punishments/port"
+	ticketshttp "github.com/niflaot/gamehub-go/module/tickets/adapter/http"
+	ticketspostgres "github.com/niflaot/gamehub-go/module/tickets/adapter/postgres"
+	ticketpunishments "github.com/niflaot/gamehub-go/module/tickets/adapter/punishments"
+	ticketsredis "github.com/niflaot/gamehub-go/module/tickets/adapter/redis"
+	ticketsapp "github.com/niflaot/gamehub-go/module/tickets/application"
+	ticketsdomain "github.com/niflaot/gamehub-go/module/tickets/domain"
+	ticketsport "github.com/niflaot/gamehub-go/module/tickets/port"
+	eventsapp "github.com/niflaot/gamehub-go/pkg/events/application"
+	"github.com/niflaot/gamehub-go/pkg/orm"
+	"github.com/niflaot/gamehub-go/pkg/transaction"
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 // newForumsCommand creates the forums operational command group.
@@ -160,5 +177,68 @@ func writeForumReport(output io.Writer, report forumsdomain.CounterDriftReport) 
 	fmt.Fprintf(output, "mismatches=%d repaired=%s\n", len(report.Mismatches), strconv.FormatBool(report.Repaired))
 	for _, mismatch := range report.Mismatches {
 		fmt.Fprintf(output, "drift object_type=%s object_id=%s field=%s expected=%d actual=%d\n", mismatch.ObjectType, mismatch.ObjectID, mismatch.Field, mismatch.Expected, mismatch.Actual)
+	}
+}
+
+// assetshttpServices creates HTTP services for assets.
+func assetshttpServices(assetService assetsport.Service) assetshttp.Services {
+	return assetshttp.Services{Assets: assetService}
+}
+
+// forumshttpServices creates HTTP services for forums.
+func forumshttpServices(forumService forumsapp.Service) forumshttp.Services {
+	return forumshttp.Services{
+		Structure:   forumService,
+		Content:     forumService,
+		Interaction: forumService,
+		Operations:  forumService,
+		Admin:       forumService,
+	}
+}
+
+// punishmentshttpServices creates HTTP services for punishments.
+func punishmentshttpServices(service punishmentsport.Service) punishmentshttp.Services {
+	return punishmentshttp.Services{Punishments: service}
+}
+
+// ticketOperations is the ticket surface used by cron wiring.
+type ticketOperations interface {
+	DetectSLABreaches(context.Context) (int64, error)
+	CloseStaleTickets(context.Context) (int64, error)
+	VerifyStats(context.Context) (ticketsdomain.DriftReport, error)
+	RebuildStats(context.Context) (ticketsdomain.DriftReport, error)
+}
+
+// ticketsService creates tickets application service.
+func ticketsService(
+	db *gorm.DB,
+	client *goredis.Client,
+	assets assetsport.Service,
+	punishments punishmentsport.Service,
+	events eventsapp.Service,
+) ticketsapp.Service {
+	store := orm.NewStore(db)
+	var cache ticketsport.Cache
+	if client != nil {
+		cache = ticketsredis.NewCache(client)
+	}
+	return ticketsapp.NewService(ticketsapp.Dependencies{
+		Definitions:  ticketspostgres.NewDefinitionRepository(store),
+		Tickets:      ticketspostgres.NewTicketRepository(store),
+		Punishments:  ticketpunishments.NewResolver(punishments),
+		Assets:       forumsassets.NewResolver(assets),
+		Cache:        cache,
+		Transactions: transaction.New(db),
+		Events:       events,
+	})
+}
+
+// ticketshttpServices creates HTTP services for tickets.
+func ticketshttpServices(service ticketsapp.Service) ticketshttp.Services {
+	return ticketshttp.Services{
+		Definitions:  service,
+		Tickets:      service,
+		Conversation: service,
+		Operations:   service,
 	}
 }

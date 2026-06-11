@@ -88,6 +88,9 @@ const (
 
 	// ObjectPunishment is a punishment authorization object.
 	ObjectPunishment ObjectType = "punishment"
+
+	// ObjectTicket is a ticket authorization object.
+	ObjectTicket ObjectType = "ticket"
 )
 
 const (
@@ -143,6 +146,15 @@ const (
 
 	// RelationTarget is a target relation.
 	RelationTarget Relation = "target"
+
+	// RelationSubmitter is the user who opened a ticket.
+	RelationSubmitter Relation = "submitter"
+
+	// RelationAssignee is the staff user assigned to a ticket.
+	RelationAssignee Relation = "assignee"
+
+	// RelationTeamMember is a group member handling a ticket queue.
+	RelationTeamMember Relation = "team_member"
 )
 
 const (
@@ -250,6 +262,54 @@ const (
 
 	// PermissionPunishmentsReplayEvents allows replaying punishment events.
 	PermissionPunishmentsReplayEvents Permission = "punishments.replay_events"
+
+	// PermissionTicketsView allows reading tickets.
+	PermissionTicketsView Permission = "tickets.view"
+
+	// PermissionTicketsViewPrivate allows reading staff-only ticket content.
+	PermissionTicketsViewPrivate Permission = "tickets.view_private"
+
+	// PermissionTicketsCreate allows opening tickets.
+	PermissionTicketsCreate Permission = "tickets.create"
+
+	// PermissionTicketsReply allows replying to tickets.
+	PermissionTicketsReply Permission = "tickets.reply"
+
+	// PermissionTicketsReplyStaffOnly allows adding staff-only ticket messages.
+	PermissionTicketsReplyStaffOnly Permission = "tickets.reply_staff_only"
+
+	// PermissionTicketsAddEvidence allows adding ticket evidence.
+	PermissionTicketsAddEvidence Permission = "tickets.add_evidence"
+
+	// PermissionTicketsAssign allows assigning tickets.
+	PermissionTicketsAssign Permission = "tickets.assign"
+
+	// PermissionTicketsEscalate allows escalating tickets to another team.
+	PermissionTicketsEscalate Permission = "tickets.escalate"
+
+	// PermissionTicketsClose allows closing tickets.
+	PermissionTicketsClose Permission = "tickets.close"
+
+	// PermissionTicketsReopen allows reopening tickets.
+	PermissionTicketsReopen Permission = "tickets.reopen"
+
+	// PermissionTicketsManage allows managing ticket queues.
+	PermissionTicketsManage Permission = "tickets.manage"
+
+	// PermissionTicketsManageDefinitions allows managing ticket definitions.
+	PermissionTicketsManageDefinitions Permission = "tickets.manage_definitions"
+
+	// PermissionTicketsPerformActions allows executing ticket side effects.
+	PermissionTicketsPerformActions Permission = "tickets.perform_actions"
+
+	// PermissionTicketsAcceptAppeal allows accepting punishment appeals.
+	PermissionTicketsAcceptAppeal Permission = "tickets.accept_appeal"
+
+	// PermissionTicketsRejectAppeal allows rejecting punishment appeals.
+	PermissionTicketsRejectAppeal Permission = "tickets.reject_appeal"
+
+	// PermissionTicketsLinkPunishment allows linking tickets to punishments.
+	PermissionTicketsLinkPunishment Permission = "tickets.link_punishment"
 )
 
 const (

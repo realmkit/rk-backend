@@ -49,6 +49,12 @@ const (
 
 	// OwnerPunishment attaches metadata to punishments.
 	OwnerPunishment OwnerType = "punishment"
+
+	// OwnerTicketDefinition attaches metadata to ticket definitions.
+	OwnerTicketDefinition OwnerType = "ticket_definition"
+
+	// OwnerTicket attaches metadata to tickets.
+	OwnerTicket OwnerType = "ticket"
 )
 
 // Supported value types.
@@ -79,6 +85,8 @@ func AllowedOwnerTypes() []OwnerType {
 		OwnerForumThread,
 		OwnerPunishmentDefinition,
 		OwnerPunishment,
+		OwnerTicketDefinition,
+		OwnerTicket,
 	}
 }
 

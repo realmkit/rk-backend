@@ -153,6 +153,120 @@ func TestPunishmentOperationsUseConcernTags(t *testing.T) {
 	}
 }
 
+// TestTicketOperationsExist verifies ticket routes are documented.
+func TestTicketOperationsExist(t *testing.T) {
+	tests := []struct {
+		method string
+		path   string
+	}{
+		{method: "POST", path: "/ticket-definitions"},
+		{method: "GET", path: "/ticket-definitions"},
+		{method: "GET", path: "/ticket-definitions/:definition_id"},
+		{method: "PATCH", path: "/ticket-definitions/:definition_id"},
+		{method: "DELETE", path: "/ticket-definitions/:definition_id"},
+		{method: "POST", path: "/tickets"},
+		{method: "GET", path: "/tickets"},
+		{method: "POST", path: "/punishments/:punishment_id/appeals"},
+		{method: "GET", path: "/tickets/:ticket_id"},
+		{method: "GET", path: "/tickets/:ticket_id/messages"},
+		{method: "POST", path: "/tickets/:ticket_id/messages"},
+		{method: "GET", path: "/tickets/:ticket_id/evidence"},
+		{method: "POST", path: "/tickets/:ticket_id/evidence"},
+		{method: "POST", path: "/tickets/:ticket_id/assign"},
+		{method: "POST", path: "/tickets/:ticket_id/escalate"},
+		{method: "POST", path: "/tickets/:ticket_id/close"},
+		{method: "POST", path: "/tickets/:ticket_id/reopen"},
+		{method: "POST", path: "/tickets/:ticket_id/appeal/accept"},
+		{method: "POST", path: "/tickets/:ticket_id/appeal/reject"},
+		{method: "POST", path: "/tickets/operations/stats/verify"},
+		{method: "POST", path: "/tickets/operations/stats/rebuild"},
+	}
+
+	for _, tt := range tests {
+		ok, err := OperationExists(tt.method, tt.path)
+		if err != nil {
+			t.Fatalf("OperationExists(%q, %q) error = %v", tt.method, tt.path, err)
+		}
+		if !ok {
+			t.Fatalf("OperationExists(%q, %q) = false, want true", tt.method, tt.path)
+		}
+	}
+}
+
+// TestTicketOperationsUseConcernTags verifies ticket routes stay grouped.
+func TestTicketOperationsUseConcernTags(t *testing.T) {
+	expected := map[string]string{
+		"acceptTicketAppeal":     "ticket-actions",
+		"addTicketEvidence":      "ticket-conversation",
+		"assignTicket":           "ticket-actions",
+		"closeTicket":            "ticket-actions",
+		"createPunishmentAppeal": "tickets",
+		"createTicket":           "tickets",
+		"createTicketDefinition": "ticket-definitions",
+		"createTicketMessage":    "ticket-conversation",
+		"deleteTicketDefinition": "ticket-definitions",
+		"escalateTicket":         "ticket-actions",
+		"getTicket":              "tickets",
+		"getTicketDefinition":    "ticket-definitions",
+		"listTicketDefinitions":  "ticket-definitions",
+		"listTicketEvidence":     "ticket-conversation",
+		"listTicketMessages":     "ticket-conversation",
+		"listTickets":            "tickets",
+		"rebuildTicketStats":     "ticket-operations",
+		"rejectTicketAppeal":     "ticket-actions",
+		"reopenTicket":           "ticket-actions",
+		"updateTicketDefinition": "ticket-definitions",
+		"verifyTicketStats":      "ticket-operations",
+	}
+	var contract struct {
+		Tags []struct {
+			Name string `json:"name"`
+		} `json:"tags"`
+		Paths map[string]map[string]struct {
+			OperationID string   `json:"operationId"`
+			Tags        []string `json:"tags"`
+		} `json:"paths"`
+		Components struct {
+			Schemas map[string]struct {
+				Properties map[string]any `json:"properties"`
+			} `json:"schemas"`
+		} `json:"components"`
+	}
+	if err := json.Unmarshal(Document(), &contract); err != nil {
+		t.Fatalf("Unmarshal() error = %v", err)
+	}
+	declared := map[string]bool{}
+	for _, tag := range contract.Tags {
+		declared[tag.Name] = true
+	}
+	for _, tag := range []string{"ticket-definitions", "tickets", "ticket-conversation", "ticket-actions", "ticket-operations"} {
+		if !declared[tag] {
+			t.Fatalf("ticket tag %q is not declared", tag)
+		}
+	}
+	seen := map[string]bool{}
+	for _, methods := range contract.Paths {
+		for _, operation := range methods {
+			want, ok := expected[operation.OperationID]
+			if !ok {
+				continue
+			}
+			seen[operation.OperationID] = true
+			if len(operation.Tags) != 1 || operation.Tags[0] != want {
+				t.Fatalf("%s tags = %v, want [%s]", operation.OperationID, operation.Tags, want)
+			}
+		}
+	}
+	for operationID := range expected {
+		if !seen[operationID] {
+			t.Fatalf("ticket operation %q was not found", operationID)
+		}
+	}
+	if _, ok := contract.Components.Schemas["TicketDefinition"].Properties["color"]; ok {
+		t.Fatalf("TicketDefinition schema must not expose color")
+	}
+}
+
 // TestForumMilestoneOneOperationsExist verifies forum structure routes are documented.
 func TestForumMilestoneOneOperationsExist(t *testing.T) {
 	tests := []struct {

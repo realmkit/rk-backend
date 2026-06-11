@@ -61,6 +61,8 @@ func TestCatalogContainsPlannedModuleEvents(t *testing.T) {
 		EventGroupsMembershipAdded:            false,
 		EventForumsThreadCreated:              false,
 		EventPunishmentsPunishmentIssued:      false,
+		EventTicketsTicketCreated:             false,
+		EventTicketsMessageCreated:            false,
 		EventCronjobRunCompleted:              false,
 		EventNotificationsNotificationCreated: false,
 		EventMessagesMessageSent:              false,
@@ -74,5 +76,8 @@ func TestCatalogContainsPlannedModuleEvents(t *testing.T) {
 		if !found {
 			t.Fatalf("catalog missing %s", key)
 		}
+	}
+	if err := (Scope{Type: ScopeTicket, ID: "ticket-1"}).Validate(); err != nil {
+		t.Fatalf("ticket scope Validate() error = %v", err)
 	}
 }

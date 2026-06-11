@@ -48,4 +48,20 @@ func TestDefaultDefinitionsValidate(t *testing.T) {
 			t.Fatalf("%s Validate() error = %v", definition.Key, err)
 		}
 	}
+	required := map[string]bool{
+		JobTicketsDetectSLABreaches: false,
+		JobTicketsCloseStale:        false,
+		JobTicketsVerifyStats:       false,
+		JobTicketsRebuildStats:      false,
+	}
+	for _, definition := range definitions {
+		if _, ok := required[definition.Key]; ok {
+			required[definition.Key] = true
+		}
+	}
+	for key, found := range required {
+		if !found {
+			t.Fatalf("DefaultDefinitions() missing %s", key)
+		}
+	}
 }

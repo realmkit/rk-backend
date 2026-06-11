@@ -167,9 +167,10 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 	groupService := groupsService(db, eventService)
 	punishmentService := punishmentsService(db, client, eventService)
 	forumService := forumsService(db, client, assetService, punishmentService, eventService)
+	ticketService := ticketsService(db, client, assetService, punishmentService, eventService)
 	userService := usersService(db, cfg, eventService)
 	metadataService := metadataService(db, eventService)
-	infraOptions, err := infrastructureOptions(ctx, db, eventService, eventHub, forumService, punishmentService)
+	infraOptions, err := infrastructureOptions(ctx, db, eventService, eventHub, forumService, punishmentService, ticketService)
 	if err != nil {
 		closeDatabase(zap.NewNop(), deps.closePostgres, db)
 		deps.closeRedis(client)
@@ -184,6 +185,7 @@ func runtimeServerOptions(ctx context.Context, cfg config.Config, log *zap.Logge
 		server.WithForums(forumshttpServices(forumService)),
 		server.WithMetadata(metadatahttpServices(metadataService)),
 		server.WithPunishments(punishmentshttpServices(punishmentService)),
+		server.WithTickets(ticketshttpServices(ticketService)),
 		server.WithUsers(usershttpServices(userService, groupService)),
 	)
 	options = append(options, infraOptions...)

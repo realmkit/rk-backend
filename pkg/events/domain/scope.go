@@ -34,7 +34,7 @@ func (scope Scope) Validate() error {
 func requiresScopeID(value ScopeType) bool {
 	switch value {
 	case ScopeUser, ScopeGroup, ScopeForum, ScopeThread, ScopePost,
-		ScopeAsset, ScopePunishment:
+		ScopeAsset, ScopePunishment, ScopeTicket:
 		return true
 	default:
 		return false

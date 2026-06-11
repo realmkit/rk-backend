@@ -11,6 +11,7 @@ import (
 	groupshttp "github.com/niflaot/gamehub-go/module/groups/adapter/http"
 	metadatahttp "github.com/niflaot/gamehub-go/module/metadata/adapter/http"
 	punishmentshttp "github.com/niflaot/gamehub-go/module/punishments/adapter/http"
+	ticketshttp "github.com/niflaot/gamehub-go/module/tickets/adapter/http"
 	userhttp "github.com/niflaot/gamehub-go/module/user/adapter/http"
 	"github.com/niflaot/gamehub-go/pkg/api/auth"
 	gamehubcors "github.com/niflaot/gamehub-go/pkg/api/cors"
@@ -45,6 +46,7 @@ type options struct {
 	metadata              *metadatahttp.Services
 	punishments           *punishmentshttp.Services
 	rateLimitStore        ratelimit.Store
+	tickets               *ticketshttp.Services
 	users                 *userhttp.Services
 }
 
@@ -127,6 +129,13 @@ func WithPunishments(services punishmentshttp.Services) Option {
 	}
 }
 
+// WithTickets registers ticket routes with services.
+func WithTickets(services ticketshttp.Services) Option {
+	return func(options *options) {
+		options.tickets = &services
+	}
+}
+
 // WithRateLimitStore configures the rate limit store.
 func WithRateLimitStore(store ratelimit.Store) Option {
 	return func(options *options) {
@@ -195,6 +204,9 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	}
 	if options.punishments != nil {
 		punishmentshttp.Register(api, *options.punishments)
+	}
+	if options.tickets != nil {
+		ticketshttp.Register(api, *options.tickets)
 	}
 	return app
 }
