@@ -76,7 +76,7 @@ func (fixture ticketsFixture) grantPunishmentRevoke(t *testing.T, punishmentID u
 // issueAppealablePunishment creates one punishment through the service.
 func (fixture ticketsFixture) issueAppealablePunishment(t *testing.T, actor uuid.UUID, target uuid.UUID) uuid.UUID {
 	t.Helper()
-	definition, err := fixture.punishments.CreateDefinition(context.Background(), appealPunishmentDefinition())
+	definition, err := fixture.punishments.CreateDefinition(context.Background(), appealPunishmentDefinition(target))
 	if err != nil {
 		t.Fatalf("CreateDefinition() error = %v", err)
 	}
@@ -93,9 +93,9 @@ func (fixture ticketsFixture) issueAppealablePunishment(t *testing.T, actor uuid
 }
 
 // appealPunishmentDefinition returns one punishment definition for appeal tests.
-func appealPunishmentDefinition() punishmentsdomain.Definition {
+func appealPunishmentDefinition(target uuid.UUID) punishmentsdomain.Definition {
 	return punishmentsdomain.Definition{
-		ID: uuid.New(), Key: "ticket_appeal_ban", Name: "Ticket Appeal Ban",
+		ID: uuid.New(), Key: punishmentsdomain.Key("ticket_appeal_ban_" + target.String()[:8]), Name: "Ticket Appeal Ban",
 		Color: "#aa0000", Severity: 10, Status: punishmentsdomain.DefinitionActive,
 		AllowPermanent: true, RequiresReason: true,
 		Actions: []punishmentsdomain.ActionTemplate{{

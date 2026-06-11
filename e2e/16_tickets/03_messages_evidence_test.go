@@ -1,6 +1,7 @@
 package tickets_e2e
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,6 +16,7 @@ func TestMessagesAndEvidence(t *testing.T) {
 	fixture := newTicketsFixture(t)
 	submitter := uuid.New()
 	staff := uuid.New()
+	outsider := uuid.New()
 	definition := fixture.createTicketDefinition(t, staff, "conversation_support", "support")
 	definitionID := ticketIDFrom(t, definition, "id")
 	fixture.grantTicketRelation(t, definitionID, domain.RelationCreator, submitter)
@@ -51,6 +53,9 @@ func TestMessagesAndEvidence(t *testing.T) {
 			withTicketUser(submitter),
 		))
 		assertTicketStatus(t, visibleToSubmitter, fiber.StatusOK)
+		if count := messageItemCount(t, visibleToSubmitter); count != 2 {
+			t.Fatalf("submitter visible messages = %d, want opener plus public reply", count)
+		}
 
 		visibleToStaff := fixture.do(t, configureTicketRequest(
 			harness.JSONRequest(
@@ -61,6 +66,37 @@ func TestMessagesAndEvidence(t *testing.T) {
 			withTicketUser(staff),
 		))
 		assertTicketStatus(t, visibleToStaff, fiber.StatusOK)
+		if count := messageItemCount(t, visibleToStaff); count != 3 {
+			t.Fatalf("staff visible messages = %d, want all messages", count)
+		}
+
+		submitterStaffRead := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(
+				fiber.MethodGet,
+				"/tickets/"+ticketID.String()+"/messages?include_staff_only=true",
+				"",
+			),
+			withTicketUser(submitter),
+		))
+		assertTicketStatus(t, submitterStaffRead, fiber.StatusForbidden)
+
+		submitterStaffWrite := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(
+				fiber.MethodPost,
+				"/tickets/"+ticketID.String()+"/messages",
+				messageBody("private attempt", "staff_only"),
+			),
+			withTicketUser(submitter),
+			withTicketIdempotency("message-submit-staff-only"),
+		))
+		assertTicketStatus(t, submitterStaffWrite, fiber.StatusForbidden)
+
+		outsiderWrite := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(fiber.MethodPost, "/tickets/"+ticketID.String()+"/messages", messageBody("nope", "")),
+			withTicketUser(outsider),
+			withTicketIdempotency("message-outsider"),
+		))
+		assertTicketStatus(t, outsiderWrite, fiber.StatusForbidden)
 	})
 
 	steps.Do("evidence supports URLs and validates assets", func() {
@@ -105,6 +141,17 @@ func TestMessagesAndEvidence(t *testing.T) {
 			withTicketUser(submitter),
 		))
 		assertTicketStatus(t, list, fiber.StatusOK)
+
+		staffOnlyEvidence := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(
+				fiber.MethodPost,
+				"/tickets/"+ticketID.String()+"/evidence",
+				`{"external_url":"https://example.test/private","label":"private","visibility":"staff_only"}`,
+			),
+			withTicketUser(submitter),
+			withTicketIdempotency("evidence-submit-staff-only"),
+		))
+		assertTicketStatus(t, staffOnlyEvidence, fiber.StatusForbidden)
 	})
 }
 
@@ -115,4 +162,17 @@ func messageBody(text string, visibility string) string {
 		prefix += `,"visibility":"` + visibility + `"`
 	}
 	return prefix + `}`
+}
+
+// messageItemCount returns the number of paginated message items.
+func messageItemCount(t *testing.T, response *http.Response) int {
+	t.Helper()
+	payload := decodeTicketObject(t, response)
+	for _, key := range []string{"items", "Items"} {
+		if items, ok := payload[key].([]any); ok {
+			return len(items)
+		}
+	}
+	t.Fatalf("message list payload missing items: %+v", payload)
+	return 0
 }

@@ -82,6 +82,35 @@ func TestTicketDefinitionLifecycle(t *testing.T) {
 		))
 		assertTicketStatus(t, response, fiber.StatusUnprocessableEntity)
 	})
+
+	steps.Do("invalid and duplicate definitions fail clearly", func() {
+		invalidReport := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(
+				fiber.MethodPost,
+				"/ticket-definitions",
+				`{"key":"bad_report","name":"Bad","kind":"report","status":"active"}`,
+			),
+			withTicketUser(actor),
+		))
+		assertTicketStatus(t, invalidReport, fiber.StatusUnprocessableEntity)
+
+		_ = fixture.createTicketDefinition(t, actor, "duplicate_support", "support")
+		duplicate := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(
+				fiber.MethodPost,
+				"/ticket-definitions",
+				`{"key":"duplicate_support","name":"Duplicate","kind":"support","status":"active"}`,
+			),
+			withTicketUser(actor),
+		))
+		assertTicketStatus(t, duplicate, fiber.StatusConflict)
+
+		missing := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(fiber.MethodGet, "/ticket-definitions/"+uuid.NewString(), ""),
+			withTicketUser(actor),
+		))
+		assertTicketStatus(t, missing, fiber.StatusNotFound)
+	})
 }
 
 // definitionUpdateBody returns a valid update body.

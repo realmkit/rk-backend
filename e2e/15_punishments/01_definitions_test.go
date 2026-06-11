@@ -97,4 +97,34 @@ func TestDefinitionLifecycle(t *testing.T) {
 		))
 		assertPunishmentStatus(t, response, fiber.StatusConflict)
 	})
+
+	steps.Do("invalid definitions and missing resources map to problems", func() {
+		invalid := fixture.do(t, configureRequest(
+			harness.JSONRequest(
+				fiber.MethodPost,
+				"/punishment-definitions",
+				`{"key":"Bad Key","name":"","color":"red","status":"active","actions":[]}`,
+			),
+			withPunishmentUser(actor),
+			withPunishmentIdempotency("invalid-definition"),
+		))
+		assertPunishmentStatus(t, invalid, fiber.StatusUnprocessableEntity)
+
+		unknownField := fixture.do(t, configureRequest(
+			harness.JSONRequest(
+				fiber.MethodPost,
+				"/punishment-definitions",
+				`{"key":"unknown_field","name":"Unknown","status":"active","actions":[],"extra":true}`,
+			),
+			withPunishmentUser(actor),
+			withPunishmentIdempotency("unknown-field"),
+		))
+		assertPunishmentStatus(t, unknownField, fiber.StatusBadRequest)
+
+		missing := fixture.do(t, configureRequest(
+			harness.JSONRequest(fiber.MethodGet, "/punishment-definitions/"+uuid.NewString(), ""),
+			withPunishmentUser(actor),
+		))
+		assertPunishmentStatus(t, missing, fiber.StatusNotFound)
+	})
 }

@@ -100,4 +100,46 @@ func TestIssueUpdateAndRevoke(t *testing.T) {
 			t.Fatalf("allowed = %v, want true after revoke", allowed)
 		}
 	})
+
+	steps.Do("issue validation rejects disabled definitions and missing required fields", func() {
+		disabled := createRawDefinition(t, fixture, actor, "disabled_mute", `"status":"disabled"`)
+		conflict := fixture.do(t, configureRequest(
+			harness.JSONRequest(fiber.MethodPost, "/punishments", issueBody(idFrom(t, disabled, "id"), uuid.New(), nil)),
+			withPunishmentUser(actor),
+			withPunishmentIdempotency("issue-disabled-definition"),
+		))
+		assertPunishmentStatus(t, conflict, fiber.StatusConflict)
+
+		ipRequired := createRawDefinition(t, fixture, actor, "ip_required", `"requires_target_ip":true`)
+		expiresAt := time.Now().UTC().Add(time.Hour)
+		missingIP := fixture.do(t, configureRequest(
+			harness.JSONRequest(fiber.MethodPost, "/punishments", issueBody(idFrom(t, ipRequired, "id"), uuid.New(), &expiresAt)),
+			withPunishmentUser(actor),
+			withPunishmentIdempotency("issue-missing-ip"),
+		))
+		assertPunishmentStatus(t, missingIP, fiber.StatusUnprocessableEntity)
+
+		temporaryOnly := createRawDefinition(t, fixture, actor, "temporary_only", `"allow_permanent":false`)
+		permanent := fixture.do(t, configureRequest(
+			harness.JSONRequest(fiber.MethodPost, "/punishments", issueBody(idFrom(t, temporaryOnly, "id"), uuid.New(), nil)),
+			withPunishmentUser(actor),
+			withPunishmentIdempotency("issue-permanent-denied"),
+		))
+		assertPunishmentStatus(t, permanent, fiber.StatusUnprocessableEntity)
+	})
+}
+
+// createRawDefinition creates a definition with one overridden JSON field.
+func createRawDefinition(t *testing.T, fixture punishmentsFixture, actor uuid.UUID, key string, override string) map[string]any {
+	t.Helper()
+	body := `{"key":"` + key + `","name":"` + key + `","color":"#ff5555","severity":1,` +
+		override + `,"requires_reason":true,"actions":[{"target_system":"gamehub",` +
+		`"action_key":"gamehub.forums.reply","effect":"restrict","status":"active"}]}`
+	response := fixture.do(t, configureRequest(
+		harness.JSONRequest(fiber.MethodPost, "/punishment-definitions", body),
+		withPunishmentUser(actor),
+		withPunishmentIdempotency("definition-"+key),
+	))
+	assertPunishmentStatus(t, response, fiber.StatusCreated)
+	return decodePunishmentObject(t, response)
 }

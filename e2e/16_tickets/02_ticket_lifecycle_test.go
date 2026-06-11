@@ -67,4 +67,43 @@ func TestTicketLifecycle(t *testing.T) {
 		))
 		assertTicketStatus(t, list, fiber.StatusOK)
 	})
+
+	steps.Do("ticket intake rejects missing permission and required fields", func() {
+		noGrantDefinition := fixture.createTicketDefinition(t, staff, "no_grant_support", "support")
+		noGrantID := ticketIDFrom(t, noGrantDefinition, "id")
+		forbidden := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(fiber.MethodPost, "/tickets", ticketBody(noGrantID, "No grant")),
+			withTicketUser(submitter),
+			withTicketIdempotency("ticket-no-grant"),
+		))
+		assertTicketStatus(t, forbidden, fiber.StatusForbidden)
+
+		reportBody := `{"key":"player_report","name":"Report","kind":"report",` +
+			`"status":"active","requires_target_user":true}`
+		report := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(fiber.MethodPost, "/ticket-definitions", reportBody),
+			withTicketUser(staff),
+		))
+		assertTicketStatus(t, report, fiber.StatusCreated)
+		reportID := ticketIDFrom(t, decodeTicketObject(t, report), "id")
+		fixture.grantTicketRelation(t, reportID, domain.RelationCreator, submitter)
+
+		missingTarget := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(fiber.MethodPost, "/tickets", ticketBody(reportID, "Missing target")),
+			withTicketUser(submitter),
+			withTicketIdempotency("ticket-missing-target"),
+		))
+		assertTicketStatus(t, missingTarget, fiber.StatusUnprocessableEntity)
+
+		assetID := uuid.New()
+		evidenceBody := ticketBody(reportID, "Missing asset")
+		evidenceBody = evidenceBody[:len(evidenceBody)-1] + `,"target_user_id":"` +
+			uuid.NewString() + `","evidence_asset_ids":["` + assetID.String() + `"]}`
+		missingAsset := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(fiber.MethodPost, "/tickets", evidenceBody),
+			withTicketUser(submitter),
+			withTicketIdempotency("ticket-missing-asset"),
+		))
+		assertTicketStatus(t, missingAsset, fiber.StatusNotFound)
+	})
 }

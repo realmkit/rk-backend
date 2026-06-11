@@ -31,6 +31,9 @@ func (service Service) CreateMessage(ctx context.Context, command port.MessageCo
 	if message.Visibility == "" {
 		message.Visibility = domain.VisibilityParticipants
 	}
+	if err := service.requirePrivateVisibility(ctx, command.ActorUserID, command.TicketID, message.Visibility); err != nil {
+		return domain.Message{}, err
+	}
 	if err := message.Validate(); err != nil {
 		return domain.Message{}, err
 	}
@@ -57,6 +60,11 @@ func (service Service) ListMessages(
 		return service.authorizer.CanView(ctx, actorUserID, ticketID)
 	}); err != nil {
 		return pagination.Result[domain.Message]{}, err
+	}
+	if includeStaffOnly {
+		if err := service.requirePrivateVisibility(ctx, actorUserID, ticketID, domain.VisibilityStaffOnly); err != nil {
+			return pagination.Result[domain.Message]{}, err
+		}
 	}
 	return service.tickets.ListMessages(ctx, ticketID, includeStaffOnly, page)
 }
@@ -95,6 +103,9 @@ func (service Service) AddEvidence(ctx context.Context, command port.EvidenceCom
 	if evidence.Visibility == "" {
 		evidence.Visibility = domain.VisibilityParticipants
 	}
+	if err := service.requirePrivateVisibility(ctx, command.ActorUserID, command.TicketID, evidence.Visibility); err != nil {
+		return domain.Evidence{}, err
+	}
 	if err := evidence.Validate(); err != nil {
 		return domain.Evidence{}, err
 	}
@@ -121,7 +132,26 @@ func (service Service) ListEvidence(
 	}); err != nil {
 		return nil, err
 	}
+	if includeStaffOnly {
+		if err := service.requirePrivateVisibility(ctx, actorUserID, ticketID, domain.VisibilityStaffOnly); err != nil {
+			return nil, err
+		}
+	}
 	return service.tickets.ListEvidence(ctx, ticketID, includeStaffOnly)
+}
+
+func (service Service) requirePrivateVisibility(
+	ctx context.Context,
+	actorUserID uuid.UUID,
+	ticketID uuid.UUID,
+	visibility domain.MessageVisibility,
+) error {
+	if visibility == "" || visibility == domain.VisibilityParticipants {
+		return nil
+	}
+	return can(func() (bool, error) {
+		return service.authorizer.CanStaffAction(ctx, actorUserID, ticketID)
+	})
 }
 
 func messageFromCommand(ticketID uuid.UUID, actorUserID uuid.UUID, document json.RawMessage, text string) domain.Message {

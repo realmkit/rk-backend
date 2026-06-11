@@ -21,11 +21,27 @@ func TestAppealsAndStaffWorkflows(t *testing.T) {
 	staff := uuid.New()
 
 	steps.Do("staff can assign, escalate, close, and reopen tickets", func() {
+		outsider := uuid.New()
 		definition := fixture.createTicketDefinition(t, staff, "workflow_support", "support")
 		definitionID := ticketIDFrom(t, definition, "id")
 		fixture.grantTicketRelation(t, definitionID, domain.RelationCreator, submitter)
 		ticket := fixture.createTicket(t, submitter, staff, definitionID, "workflow-ticket")
 		ticketID := ticketIDFrom(t, ticket, "id")
+
+		missingMatch := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(fiber.MethodPost, "/tickets/"+ticketID.String()+"/assign", `{"reason":"missing"}`),
+			withTicketUser(staff),
+			withTicketIdempotency("workflow-missing-match"),
+		))
+		assertTicketStatus(t, missingMatch, fiber.StatusPreconditionRequired)
+
+		denied := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(fiber.MethodPost, "/tickets/"+ticketID.String()+"/assign", `{"reason":"denied"}`),
+			withTicketUser(outsider),
+			withTicketIdempotency("workflow-outsider"),
+			withTicketIfMatch(ticketVersionFrom(ticket)),
+		))
+		assertTicketStatus(t, denied, fiber.StatusForbidden)
 
 		assignBody := `{"assignee_user_id":"` + staff.String() + `","reason":"take"}`
 		assigned := workflow(t, fixture, staff, ticketID, "assign", ticketVersionFrom(ticket), assignBody)
@@ -54,6 +70,21 @@ func TestAppealsAndStaffWorkflows(t *testing.T) {
 	})
 
 	steps.Do("appeal acceptance can revoke linked punishment", func() {
+		wrongTargetPunishment := fixture.issueAppealablePunishment(t, staff, uuid.New())
+		wrongDefinition := fixture.createTicketDefinition(t, staff, "wrong_ban_appeal", "appeal")
+		wrongDefinitionID := ticketIDFrom(t, wrongDefinition, "id")
+		fixture.grantTicketRelation(t, wrongDefinitionID, domain.RelationCreator, submitter)
+		wrongAppeal := fixture.do(t, configureTicketRequest(
+			harness.JSONRequest(
+				fiber.MethodPost,
+				"/punishments/"+wrongTargetPunishment.String()+"/appeals",
+				ticketBody(wrongDefinitionID, "Wrong target"),
+			),
+			withTicketUser(submitter),
+			withTicketIdempotency("wrong-target-appeal"),
+		))
+		assertTicketStatus(t, wrongAppeal, fiber.StatusForbidden)
+
 		punishmentID := fixture.issueAppealablePunishment(t, staff, submitter)
 		definition := fixture.createTicketDefinition(t, staff, "ban_appeal", "appeal")
 		definitionID := ticketIDFrom(t, definition, "id")
