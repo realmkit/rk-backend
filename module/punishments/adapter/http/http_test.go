@@ -147,19 +147,31 @@ func newTestApp(service httpService) *fiber.App {
 
 type httpService struct {
 	denied bool
+	err    error
 }
 
 func (service httpService) CreateDefinition(context.Context, domain.Definition) (domain.Definition, error) {
+	if service.err != nil {
+		return domain.Definition{}, service.err
+	}
 	return domain.Definition{ID: uuid.New(), Version: 1}, nil
 }
 
 func (service httpService) UpdateDefinition(context.Context, domain.Definition, uint64) (domain.Definition, error) {
+	if service.err != nil {
+		return domain.Definition{}, service.err
+	}
 	return domain.Definition{ID: uuid.New(), Version: 2}, nil
 }
 
-func (service httpService) DeleteDefinition(context.Context, uuid.UUID, uint64) error { return nil }
+func (service httpService) DeleteDefinition(context.Context, uuid.UUID, uint64) error {
+	return service.err
+}
 
 func (service httpService) GetDefinition(context.Context, uuid.UUID) (domain.Definition, error) {
+	if service.err != nil {
+		return domain.Definition{}, service.err
+	}
 	return domain.Definition{ID: uuid.New(), Version: 1}, nil
 }
 
@@ -168,24 +180,38 @@ func (service httpService) ListDefinitions(
 	port.DefinitionFilter,
 	pagination.Page,
 ) (pagination.Result[domain.Definition], error) {
+	if service.err != nil {
+		return pagination.Result[domain.Definition]{}, service.err
+	}
 	return pagination.Result[domain.Definition]{}, nil
 }
 
 func (service httpService) ReorderDefinitionActions(context.Context, uuid.UUID, []uuid.UUID) error {
-	return nil
+	return service.err
 }
 
 func (service httpService) IssuePunishment(context.Context, port.IssueCommand) (domain.Punishment, error) {
+	if service.err != nil {
+		return domain.Punishment{}, service.err
+	}
 	return domain.Punishment{ID: uuid.New(), Version: 1}, nil
 }
 
 func (service httpService) UpdatePunishment(context.Context, port.UpdateCommand) (domain.Punishment, error) {
+	if service.err != nil {
+		return domain.Punishment{}, service.err
+	}
 	return domain.Punishment{ID: uuid.New(), Version: 2}, nil
 }
 
-func (service httpService) RevokePunishment(context.Context, port.RevokeCommand) error { return nil }
+func (service httpService) RevokePunishment(context.Context, port.RevokeCommand) error {
+	return service.err
+}
 
 func (service httpService) GetPunishment(context.Context, uuid.UUID) (domain.Punishment, error) {
+	if service.err != nil {
+		return domain.Punishment{}, service.err
+	}
 	return domain.Punishment{ID: uuid.New(), Version: 1}, nil
 }
 
@@ -194,14 +220,23 @@ func (service httpService) ListPunishments(
 	port.PunishmentFilter,
 	pagination.Page,
 ) (pagination.Result[domain.Punishment], error) {
+	if service.err != nil {
+		return pagination.Result[domain.Punishment]{}, service.err
+	}
 	return pagination.Result[domain.Punishment]{}, nil
 }
 
 func (service httpService) CheckRestriction(context.Context, port.CheckCommand) (domain.CheckResult, error) {
+	if service.err != nil {
+		return domain.CheckResult{}, service.err
+	}
 	return domain.CheckResult{Allowed: !service.denied}, nil
 }
 
 func (service httpService) ListActiveRestrictions(context.Context, uuid.UUID) ([]domain.ActiveRestriction, error) {
+	if service.err != nil {
+		return nil, service.err
+	}
 	return nil, nil
 }
 
@@ -210,10 +245,16 @@ func (service httpService) ExpirePunishments(context.Context) (int64, error) {
 }
 
 func (service httpService) VerifyRestrictions(context.Context) (domain.DriftReport, error) {
+	if service.err != nil {
+		return domain.DriftReport{}, service.err
+	}
 	return domain.DriftReport{}, nil
 }
 
 func (service httpService) RebuildRestrictions(context.Context) (domain.DriftReport, error) {
+	if service.err != nil {
+		return domain.DriftReport{}, service.err
+	}
 	return domain.DriftReport{Repaired: true}, nil
 }
 

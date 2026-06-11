@@ -128,21 +128,28 @@ func TestIssuePunishmentRequiresDefinitionTargetIP(t *testing.T) {
 
 type definitionFake struct {
 	definition domain.Definition
+	deletedID  uuid.UUID
+	reordered  []uuid.UUID
 }
 
 func newDefinitionFake(definition domain.Definition) *definitionFake {
 	return &definitionFake{definition: definition}
 }
 
-func (fake *definitionFake) Create(context.Context, domain.Definition) (domain.Definition, error) {
+func (fake *definitionFake) Create(_ context.Context, definition domain.Definition) (domain.Definition, error) {
+	fake.definition = definition
 	return fake.definition, nil
 }
 
-func (fake *definitionFake) Update(context.Context, domain.Definition, uint64) (domain.Definition, error) {
+func (fake *definitionFake) Update(_ context.Context, definition domain.Definition, _ uint64) (domain.Definition, error) {
+	fake.definition = definition
 	return fake.definition, nil
 }
 
-func (fake *definitionFake) Delete(context.Context, uuid.UUID, uint64) error { return nil }
+func (fake *definitionFake) Delete(_ context.Context, id uuid.UUID, _ uint64) error {
+	fake.deletedID = id
+	return nil
+}
 
 func (fake *definitionFake) FindByID(context.Context, uuid.UUID) (domain.Definition, error) {
 	return fake.definition, nil
@@ -152,13 +159,19 @@ func (fake *definitionFake) List(context.Context, port.DefinitionFilter, paginat
 	return pagination.Result[domain.Definition]{Items: []domain.Definition{fake.definition}}, nil
 }
 
-func (fake *definitionFake) ReorderActions(context.Context, uuid.UUID, []uuid.UUID) error { return nil }
+func (fake *definitionFake) ReorderActions(_ context.Context, _ uuid.UUID, actionIDs []uuid.UUID) error {
+	fake.reordered = actionIDs
+	return nil
+}
 
 type caseFake struct {
-	definitionID uuid.UUID
-	punishments  map[uuid.UUID]domain.Punishment
-	idempotency  map[string]uuid.UUID
-	restrictions []domain.ActiveRestriction
+	definitionID  uuid.UUID
+	punishments   map[uuid.UUID]domain.Punishment
+	idempotency   map[string]uuid.UUID
+	restrictions  []domain.ActiveRestriction
+	expireCount   int64
+	verifyReport  domain.DriftReport
+	rebuildReport domain.DriftReport
 }
 
 func newCaseFake() *caseFake {
@@ -193,7 +206,9 @@ func (fake *caseFake) Revoke(_ context.Context, punishment domain.Punishment, _ 
 	return nil
 }
 
-func (fake *caseFake) ExpireDue(context.Context, time.Time) (int64, error) { return 0, nil }
+func (fake *caseFake) ExpireDue(context.Context, time.Time) (int64, error) {
+	return fake.expireCount, nil
+}
 
 func (fake *caseFake) FindByID(_ context.Context, id uuid.UUID) (domain.Punishment, error) {
 	punishment, ok := fake.punishments[id]
@@ -211,8 +226,16 @@ func (fake *caseFake) FindByIdempotencyKey(_ context.Context, key string) (domai
 	return fake.punishments[id], nil
 }
 
-func (fake *caseFake) List(context.Context, port.PunishmentFilter, pagination.Page) (pagination.Result[domain.Punishment], error) {
-	return pagination.Result[domain.Punishment]{}, nil
+func (fake *caseFake) List(
+	context.Context,
+	port.PunishmentFilter,
+	pagination.Page,
+) (pagination.Result[domain.Punishment], error) {
+	items := make([]domain.Punishment, 0, len(fake.punishments))
+	for _, punishment := range fake.punishments {
+		items = append(items, punishment)
+	}
+	return pagination.Result[domain.Punishment]{Items: items}, nil
 }
 
 func (fake *caseFake) ActiveRestriction(
@@ -234,15 +257,20 @@ func (fake *caseFake) ListActiveRestrictions(context.Context, uuid.UUID, time.Ti
 }
 
 func (fake *caseFake) VerifyRestrictions(context.Context, time.Time) (domain.DriftReport, error) {
-	return domain.DriftReport{}, nil
+	return fake.verifyReport, nil
 }
 
 func (fake *caseFake) RebuildRestrictions(context.Context, time.Time) (domain.DriftReport, error) {
+	if len(fake.rebuildReport.Mismatches) > 0 {
+		return fake.rebuildReport, nil
+	}
 	return domain.DriftReport{Repaired: true}, nil
 }
 
 type cacheFake struct {
-	values map[string]domain.CheckResult
+	values       map[string]domain.CheckResult
+	clearedUsers []uuid.UUID
+	clearAllHits int
 }
 
 func (fake *cacheFake) Get(_ context.Context, _ uuid.UUID, actionKey string) (domain.CheckResult, bool, error) {
@@ -258,16 +286,24 @@ func (fake *cacheFake) Set(_ context.Context, _ uuid.UUID, actionKey string, res
 	return nil
 }
 
-func (fake *cacheFake) ClearUser(context.Context, uuid.UUID) error { return nil }
+func (fake *cacheFake) ClearUser(_ context.Context, userID uuid.UUID) error {
+	fake.clearedUsers = append(fake.clearedUsers, userID)
+	return nil
+}
 
-func (fake *cacheFake) ClearAll(context.Context) error { return nil }
+func (fake *cacheFake) ClearAll(context.Context) error {
+	fake.clearAllHits++
+	return nil
+}
 
 type eventFake struct {
-	types []string
+	types  []string
+	drafts []eventdomain.Draft
 }
 
 func (fake *eventFake) Publish(_ context.Context, draft eventdomain.Draft) (eventdomain.Event, error) {
 	fake.types = append(fake.types, string(draft.Key))
+	fake.drafts = append(fake.drafts, draft)
 	return eventdomain.Event{ID: uuid.New(), Key: draft.Key}, nil
 }
 

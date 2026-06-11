@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -240,5 +241,40 @@ func TestThreadReadStateValidateRejectsAnonymousOrEmptySequence(t *testing.T) {
 	err := state.Validate()
 	if err == nil {
 		t.Fatalf("Validate() error = nil, want validation error")
+	}
+}
+
+// TestValidationForwardersCoverCompatibilityLayer verifies parent-domain helper wrappers.
+func TestValidationForwardersCoverCompatibilityLayer(t *testing.T) {
+	validations := [][]Violation{
+		ValidateKey("key", "forum_news"),
+		ValidateSlug("slug", "forum-news"),
+		ValidateName("name", "News"),
+		ValidateDescription("description", "Updates"),
+		ValidateDisplayOrder("display_order", 0),
+		ValidateCategoryStatus("status", CategoryStatusActive),
+		ValidateForumKind("kind", ForumKindDiscussion),
+		ValidateForumStatus("status", ForumStatusActive),
+		ValidateThreadVisibilityMode("visibility", ThreadVisibilityAllThreads),
+		ValidateThreadStatus("status", ThreadStatusOpen),
+		ValidateStickyState("sticky", StickyStateNormal),
+		ValidatePostStatus("status", PostStatusVisible),
+		ValidateContentFormat("format", ContentFormatProseMirror),
+		ValidateReferenceType("reference", ReferenceLink),
+		ValidatePermissionSubjectType("subject", PermissionSubjectPublic),
+		ValidateExternalURL("url", "https://example.com"),
+		ValidateTitle("title", "Valid title"),
+		ValidateContentDocument("document", json.RawMessage(`{"type":"doc"}`)),
+		ValidateContentText("text", "hello"),
+	}
+	for _, violations := range validations {
+		if len(violations) != 0 {
+			t.Fatalf("expected wrapper validation to pass: %#v", violations)
+		}
+	}
+
+	err := NewValidationError(AppendViolation(nil, "field", "message"))
+	if !errors.Is(err, ErrInvalid) {
+		t.Fatalf("NewValidationError() = %v, want ErrInvalid", err)
 	}
 }
