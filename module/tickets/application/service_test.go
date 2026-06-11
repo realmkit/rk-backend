@@ -87,6 +87,7 @@ func TestCreateTicketCreatesOpenerEvidenceAndIsIdempotent(t *testing.T) {
 // TestAcceptAppealRevokesPunishmentAndClearsCache verifies accepted appeal effects.
 func TestAcceptAppealRevokesPunishmentAndClearsCache(t *testing.T) {
 	service, fakes := newTestService()
+	fakes.authorizer.revokePunishment = true
 	punishmentID := uuid.New()
 	ticket := domain.Ticket{
 		ID:           uuid.New(),
@@ -119,6 +120,82 @@ func TestAcceptAppealRevokesPunishmentAndClearsCache(t *testing.T) {
 	}
 	if fakes.cache.ticketClears != 1 || fakes.cache.queueClears != 1 {
 		t.Fatalf("cache clears = ticket:%d queue:%d", fakes.cache.ticketClears, fakes.cache.queueClears)
+	}
+}
+
+// TestAcceptAppealRequiresPunishmentRevocationPermission verifies cross-module appeal effects are separately authorized.
+func TestAcceptAppealRequiresPunishmentRevocationPermission(t *testing.T) {
+	service, fakes := newTestService()
+	fakes.authorizer.revokePunishment = false
+	punishmentID := uuid.New()
+	ticket := domain.Ticket{
+		ID:           uuid.New(),
+		DefinitionID: uuid.New(),
+		Title:        "Appeal",
+		Kind:         domain.KindAppeal,
+		Status:       domain.StatusOpen,
+		PunishmentID: &punishmentID,
+		OpenedAt:     time.Now().UTC(),
+		Version:      3,
+	}.Normalize()
+	fakes.tickets.items[ticket.ID] = ticket
+	_, err := service.AcceptAppeal(context.Background(), port.AppealDecisionCommand{
+		ActorUserID:      uuid.New(),
+		TicketID:         ticket.ID,
+		Reason:           "accepted",
+		RevokePunishment: true,
+		ExpectedVersion:  3,
+		IdempotencyKey:   "accept-denied",
+	})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("AcceptAppeal() error = %v, want forbidden", err)
+	}
+	if fakes.punishments.revoked != uuid.Nil {
+		t.Fatalf("revoked = %s, want no punishment revocation", fakes.punishments.revoked)
+	}
+	if fakes.tickets.items[ticket.ID].Status != domain.StatusOpen {
+		t.Fatalf("ticket status = %s, want unchanged open", fakes.tickets.items[ticket.ID].Status)
+	}
+}
+
+// TestTicketServiceFailsClosedWithoutAuthorizer verifies private ticket workflows require an authorizer dependency.
+func TestTicketServiceFailsClosedWithoutAuthorizer(t *testing.T) {
+	service, fakes := newTestService()
+	service.authorizer = nil
+	definition := appealDefinition()
+	definition.RequiresEvidence = false
+	fakes.definitions.items[definition.ID] = definition
+	submitter := uuid.New()
+	punishmentID := uuid.New()
+	fakes.punishments.summary = port.PunishmentSummary{
+		ID:           punishmentID,
+		TargetUserID: submitter,
+	}
+	_, err := service.CreateTicket(context.Background(), port.CreateTicketCommand{
+		ActorUserID:         submitter,
+		DefinitionID:        definition.ID,
+		Title:               "Appeal",
+		SubmitterUserID:     &submitter,
+		PunishmentID:        &punishmentID,
+		ContentDocumentJSON: []byte(`{"type":"doc"}`),
+		ContentText:         "please review",
+		IdempotencyKey:      "appeal-no-authz",
+	})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("CreateTicket() error = %v, want forbidden", err)
+	}
+	_, err = service.GetTicket(context.Background(), uuid.New(), submitter)
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("GetTicket() error = %v, want forbidden", err)
+	}
+	_, err = service.CreateMessage(context.Background(), port.MessageCommand{
+		ActorUserID:         submitter,
+		TicketID:            uuid.New(),
+		ContentDocumentJSON: []byte(`{"type":"doc"}`),
+		ContentText:         "hello",
+	})
+	if !errors.Is(err, port.ErrForbidden) {
+		t.Fatalf("CreateMessage() error = %v, want forbidden", err)
 	}
 }
 
@@ -289,7 +366,13 @@ func newTestService() (Service, testFakes) {
 		cache:       &cacheFake{},
 		assets:      &assetFake{exists: map[uuid.UUID]bool{}},
 		punishments: &punishmentFake{},
-		authorizer:  &authorizerFake{create: true, view: true, reply: true, staff: true},
+		authorizer: &authorizerFake{
+			create:           true,
+			view:             true,
+			reply:            true,
+			staff:            true,
+			revokePunishment: true,
+		},
 	}
 	service := NewService(Dependencies{
 		Definitions: fakes.definitions,

@@ -8,6 +8,9 @@ import (
 
 // listEvents lists durable events.
 func (handler handler) listEvents(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -27,6 +30,9 @@ func (handler handler) listEvents(ctx *fiber.Ctx) error {
 
 // getEvent returns one durable event.
 func (handler handler) getEvent(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "event_id")
 	if err != nil {
 		return err
@@ -40,6 +46,9 @@ func (handler handler) getEvent(ctx *fiber.Ctx) error {
 
 // replayEvent requeues one event.
 func (handler handler) replayEvent(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "event_id")
 	if err != nil {
 		return err
@@ -52,6 +61,9 @@ func (handler handler) replayEvent(ctx *fiber.Ctx) error {
 
 // cancelEvent cancels one event.
 func (handler handler) cancelEvent(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "event_id")
 	if err != nil {
 		return err

@@ -53,6 +53,9 @@ func TestCreateUploadIntentReturnsCreated(t *testing.T) {
 	if service.created == 0 {
 		t.Fatalf("created = 0, want service call")
 	}
+	if service.createCommand.CreatedByUserID == nil {
+		t.Fatalf("CreatedByUserID missing")
+	}
 }
 
 // TestUpdateAssetRequiresIfMatch verifies optimistic concurrency header is required.
@@ -163,6 +166,33 @@ func TestAssetRoutesExerciseReadAndMutationPaths(t *testing.T) {
 	}
 }
 
+// TestPrivateAssetRoutesRequireUser verifies asset metadata and signed URLs are not anonymous.
+func TestPrivateAssetRoutesRequireUser(t *testing.T) {
+	assetID := testHTTPAsset().ID.String()
+	app := testApp(&httpService{asset: testHTTPAsset()})
+	for _, req := range []*http.Request{
+		rawRequest(t, http.MethodPost, "/assets/upload-intents", `{}`),
+		rawRequest(t, http.MethodPost, "/assets/"+assetID+"/complete", ``),
+		rawRequest(t, http.MethodGet, "/assets/"+assetID, ``),
+		rawRequest(t, http.MethodGet, "/assets/"+assetID+"/url", ``),
+		rawRequest(t, http.MethodGet, "/assets", ``),
+		rawRequest(t, http.MethodGet, "/assets/folders", ``),
+		rawRequest(t, http.MethodPatch, "/assets/"+assetID, `{}`),
+		rawRequest(t, http.MethodDelete, "/assets/"+assetID, ``),
+	} {
+		req.Header.Set(headers.ContentType, "application/json")
+		req.Header.Set(headers.IdempotencyKey, "asset-security")
+		req.Header.Set(headers.IfMatch, `"1"`)
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("%s %s error = %v", req.Method, req.URL.Path, err)
+		}
+		if resp.StatusCode != fiber.StatusUnauthorized {
+			t.Fatalf("%s %s status = %d, want 401", req.Method, req.URL.Path, resp.StatusCode)
+		}
+	}
+}
+
 // testApp creates an assets HTTP test app.
 func testApp(service port.Service) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
@@ -178,8 +208,22 @@ func httptestRequest(method string, target string, body string) *http.Request {
 	}
 	req, _ := http.NewRequest(method, target, reader)
 	req.Header.Set(headers.Accept, "application/json")
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
 	if body != "" {
 		req.Header.Set(headers.ContentType, "application/json")
+	}
+	return req
+}
+
+func rawRequest(t *testing.T, method string, target string, body string) *http.Request {
+	t.Helper()
+	var reader io.Reader
+	if body != "" {
+		reader = strings.NewReader(body)
+	}
+	req, err := http.NewRequest(method, target, reader)
+	if err != nil {
+		t.Fatalf("NewRequest() error = %v", err)
 	}
 	return req
 }
@@ -204,15 +248,20 @@ func testHTTPAsset() domain.Asset {
 
 // httpService is a fake assets service.
 type httpService struct {
-	asset   domain.Asset
-	folders []string
-	err     error
-	created int
+	asset         domain.Asset
+	folders       []string
+	err           error
+	created       int
+	createCommand port.CreateUploadIntentCommand
 }
 
 // CreateUploadIntent creates an asset and presigned upload URL.
-func (service *httpService) CreateUploadIntent(context.Context, port.CreateUploadIntentCommand) (port.UploadIntent, error) {
+func (service *httpService) CreateUploadIntent(
+	_ context.Context,
+	command port.CreateUploadIntentCommand,
+) (port.UploadIntent, error) {
 	service.created++
+	service.createCommand = command
 	if service.err != nil {
 		return port.UploadIntent{}, service.err
 	}

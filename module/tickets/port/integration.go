@@ -45,4 +45,5 @@ type Authorizer interface {
 	CanView(context.Context, uuid.UUID, uuid.UUID) (bool, error)
 	CanReply(context.Context, uuid.UUID, uuid.UUID) (bool, error)
 	CanStaffAction(context.Context, uuid.UUID, uuid.UUID) (bool, error)
+	CanRevokePunishmentFromAppeal(context.Context, uuid.UUID, uuid.UUID, uuid.UUID) (bool, error)
 }

@@ -54,6 +54,17 @@ func (service Service) ReopenTicket(ctx context.Context, command port.StaffComma
 
 // AcceptAppeal accepts an appeal and optionally revokes its punishment.
 func (service Service) AcceptAppeal(ctx context.Context, command port.AppealDecisionCommand) (domain.Ticket, error) {
+	if command.RevokePunishment {
+		current, err := service.tickets.FindByID(ctx, command.TicketID)
+		if err != nil {
+			return domain.Ticket{}, err
+		}
+		if current.PunishmentID != nil {
+			if err := service.requireAppealPunishmentRevoke(ctx, command, *current.PunishmentID); err != nil {
+				return domain.Ticket{}, err
+			}
+		}
+	}
 	ticket, err := service.staffTransition(ctx, port.StaffCommand{
 		ActorUserID:     command.ActorUserID,
 		TicketID:        command.TicketID,
@@ -99,12 +110,13 @@ func (service Service) staffTransition(
 	actionType domain.ActionType,
 	apply func(domain.Ticket) domain.Ticket,
 ) (domain.Ticket, error) {
-	if service.authorizer != nil {
-		if err := can(func() (bool, error) {
-			return service.authorizer.CanStaffAction(ctx, command.ActorUserID, command.TicketID)
-		}); err != nil {
-			return domain.Ticket{}, err
-		}
+	if err := service.requireAuthorizer(); err != nil {
+		return domain.Ticket{}, err
+	}
+	if err := can(func() (bool, error) {
+		return service.authorizer.CanStaffAction(ctx, command.ActorUserID, command.TicketID)
+	}); err != nil {
+		return domain.Ticket{}, err
 	}
 	current, err := service.tickets.FindByID(ctx, command.TicketID)
 	if err != nil {
@@ -131,6 +143,24 @@ func (service Service) staffTransition(
 		return domain.Ticket{}, err
 	}
 	return updated, service.publishTicket(ctx, "tickets.ticket.status_changed", updated)
+}
+
+func (service Service) requireAppealPunishmentRevoke(
+	ctx context.Context,
+	command port.AppealDecisionCommand,
+	punishmentID uuid.UUID,
+) error {
+	if err := service.requireAuthorizer(); err != nil {
+		return err
+	}
+	return can(func() (bool, error) {
+		return service.authorizer.CanRevokePunishmentFromAppeal(
+			ctx,
+			command.ActorUserID,
+			command.TicketID,
+			punishmentID,
+		)
+	})
 }
 
 func action(command port.StaffCommand, actionType domain.ActionType) domain.Action {

@@ -13,12 +13,13 @@ import (
 
 // CreateMessage creates one ticket message.
 func (service Service) CreateMessage(ctx context.Context, command port.MessageCommand) (domain.Message, error) {
-	if service.authorizer != nil {
-		if err := can(func() (bool, error) {
-			return service.authorizer.CanReply(ctx, command.ActorUserID, command.TicketID)
-		}); err != nil {
-			return domain.Message{}, err
-		}
+	if err := service.requireAuthorizer(); err != nil {
+		return domain.Message{}, err
+	}
+	if err := can(func() (bool, error) {
+		return service.authorizer.CanReply(ctx, command.ActorUserID, command.TicketID)
+	}); err != nil {
+		return domain.Message{}, err
 	}
 	message := messageFromCommand(
 		command.TicketID,
@@ -49,18 +50,27 @@ func (service Service) ListMessages(
 	includeStaffOnly bool,
 	page pagination.Page,
 ) (pagination.Result[domain.Message], error) {
-	if service.authorizer != nil {
-		if err := can(func() (bool, error) {
-			return service.authorizer.CanView(ctx, actorUserID, ticketID)
-		}); err != nil {
-			return pagination.Result[domain.Message]{}, err
-		}
+	if err := service.requireAuthorizer(); err != nil {
+		return pagination.Result[domain.Message]{}, err
+	}
+	if err := can(func() (bool, error) {
+		return service.authorizer.CanView(ctx, actorUserID, ticketID)
+	}); err != nil {
+		return pagination.Result[domain.Message]{}, err
 	}
 	return service.tickets.ListMessages(ctx, ticketID, includeStaffOnly, page)
 }
 
 // AddEvidence adds asset or external URL evidence.
 func (service Service) AddEvidence(ctx context.Context, command port.EvidenceCommand) (domain.Evidence, error) {
+	if err := service.requireAuthorizer(); err != nil {
+		return domain.Evidence{}, err
+	}
+	if err := can(func() (bool, error) {
+		return service.authorizer.CanReply(ctx, command.ActorUserID, command.TicketID)
+	}); err != nil {
+		return domain.Evidence{}, err
+	}
 	if command.AssetID != nil && service.assets != nil {
 		exists, err := service.assets.AssetExists(ctx, *command.AssetID)
 		if err != nil {
@@ -103,12 +113,13 @@ func (service Service) ListEvidence(
 	actorUserID uuid.UUID,
 	includeStaffOnly bool,
 ) ([]domain.Evidence, error) {
-	if service.authorizer != nil {
-		if err := can(func() (bool, error) {
-			return service.authorizer.CanView(ctx, actorUserID, ticketID)
-		}); err != nil {
-			return nil, err
-		}
+	if err := service.requireAuthorizer(); err != nil {
+		return nil, err
+	}
+	if err := can(func() (bool, error) {
+		return service.authorizer.CanView(ctx, actorUserID, ticketID)
+	}); err != nil {
+		return nil, err
 	}
 	return service.tickets.ListEvidence(ctx, ticketID, includeStaffOnly)
 }

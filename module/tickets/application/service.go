@@ -78,7 +78,15 @@ func (service Service) clearTicket(ctx context.Context, ticketID uuid.UUID) erro
 	return service.cache.ClearQueues(ctx)
 }
 
-// can reports true when authorizer is missing or check allows.
+// requireAuthorizer reports forbidden when a security-sensitive path lacks an authorizer.
+func (service Service) requireAuthorizer() error {
+	if service.authorizer == nil {
+		return port.ErrForbidden
+	}
+	return nil
+}
+
+// can reports true when check allows.
 func can(check func() (bool, error)) error {
 	allowed, err := check()
 	if err != nil {

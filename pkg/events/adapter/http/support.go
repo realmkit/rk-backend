@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -12,10 +13,29 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 )
 
+const currentUserIDHeader = "X-GameHub-User-Id"
+
 // writeJSON writes a JSON response.
 func writeJSON(ctx *fiber.Ctx, status int, payload any) error {
 	ctx.Set(headers.ContentType, "application/json")
 	return ctx.Status(status).JSON(payload)
+}
+
+// currentUserID parses the authenticated user propagated by the gateway.
+func currentUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
+	value := strings.TrimSpace(ctx.Get(currentUserIDHeader))
+	if value == "" {
+		return uuid.Nil, problem.Error{
+			Problem: problem.New(fiber.StatusUnauthorized, "unauthenticated", currentUserIDHeader+" is required."),
+		}
+	}
+	id, err := uuid.Parse(value)
+	if err != nil {
+		return uuid.Nil, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_current_user", currentUserIDHeader+" must be a UUID."),
+		}
+	}
+	return id, nil
 }
 
 // idFromParam parses a UUID route parameter.

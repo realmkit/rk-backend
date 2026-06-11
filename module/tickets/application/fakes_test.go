@@ -239,10 +239,11 @@ func (fake *punishmentFake) RevokePunishment(_ context.Context, id uuid.UUID, _ 
 
 // authorizerFake returns configured permission decisions.
 type authorizerFake struct {
-	create bool
-	view   bool
-	reply  bool
-	staff  bool
+	create           bool
+	view             bool
+	reply            bool
+	staff            bool
+	revokePunishment bool
 }
 
 // CanCreate reports fake create access.
@@ -263,4 +264,14 @@ func (fake *authorizerFake) CanReply(context.Context, uuid.UUID, uuid.UUID) (boo
 // CanStaffAction reports fake staff action access.
 func (fake *authorizerFake) CanStaffAction(context.Context, uuid.UUID, uuid.UUID) (bool, error) {
 	return fake.staff, nil
+}
+
+// CanRevokePunishmentFromAppeal reports fake cross-module punishment action access.
+func (fake *authorizerFake) CanRevokePunishmentFromAppeal(
+	context.Context,
+	uuid.UUID,
+	uuid.UUID,
+	uuid.UUID,
+) (bool, error) {
+	return fake.revokePunishment, nil
 }

@@ -84,6 +84,7 @@ func TestCheckRestrictionReturnsDenied(t *testing.T) {
 		bytes.NewBufferString(body),
 	)
 	req.Header.Set(headers.ContentType, "application/json")
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
 
 	resp, err := app.Test(req)
 	if err != nil {
@@ -92,6 +93,50 @@ func TestCheckRestrictionReturnsDenied(t *testing.T) {
 	if resp.StatusCode != fiber.StatusOK {
 		t.Fatalf("status = %d, want %d", resp.StatusCode, fiber.StatusOK)
 	}
+}
+
+// TestPrivatePunishmentRoutesRequireUser verifies moderation state is not anonymously readable.
+func TestPrivatePunishmentRoutesRequireUser(t *testing.T) {
+	app := newTestApp(httpService{})
+	id := uuid.NewString()
+	userID := uuid.NewString()
+	for _, req := range []*http.Request{
+		newHTTPTestRequest(t, http.MethodPost, "/punishment-definitions", `{}`),
+		newHTTPTestRequest(t, http.MethodGet, "/punishment-definitions", ``),
+		newHTTPTestRequest(t, http.MethodGet, "/punishment-definitions/"+id, ``),
+		newHTTPTestRequest(t, http.MethodPatch, "/punishment-definitions/"+id, `{}`),
+		newHTTPTestRequest(t, http.MethodDelete, "/punishment-definitions/"+id, ``),
+		newHTTPTestRequest(t, http.MethodPost, "/punishment-definitions/"+id+"/actions/reorder", `{}`),
+		newHTTPTestRequest(t, http.MethodPost, "/punishments", `{}`),
+		newHTTPTestRequest(t, http.MethodGet, "/punishments", ``),
+		newHTTPTestRequest(t, http.MethodGet, "/punishments/"+id, ``),
+		newHTTPTestRequest(t, http.MethodPatch, "/punishments/"+id, `{}`),
+		newHTTPTestRequest(t, http.MethodPost, "/punishments/"+id+"/revoke", `{}`),
+		newHTTPTestRequest(t, http.MethodGet, "/users/"+userID+"/punishments", ``),
+		newHTTPTestRequest(t, http.MethodGet, "/users/"+userID+"/punishments/active", ``),
+		newHTTPTestRequest(t, http.MethodPost, "/punishments/restrictions/check", `{}`),
+		newHTTPTestRequest(t, http.MethodGet, "/users/"+userID+"/punishments/restrictions", ``),
+	} {
+		req.Header.Set(headers.ContentType, "application/json")
+		req.Header.Set(headers.IdempotencyKey, "punishment-security")
+		req.Header.Set(headers.IfMatch, `"1"`)
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("%s %s error = %v", req.Method, req.URL.Path, err)
+		}
+		if resp.StatusCode != fiber.StatusUnauthorized {
+			t.Fatalf("%s %s status = %d, want 401", req.Method, req.URL.Path, resp.StatusCode)
+		}
+	}
+}
+
+func newHTTPTestRequest(t *testing.T, method string, path string, body string) *http.Request {
+	t.Helper()
+	req, err := http.NewRequest(method, path, bytes.NewBufferString(body))
+	if err != nil {
+		t.Fatalf("NewRequest() error = %v", err)
+	}
+	return req
 }
 
 func newTestApp(service httpService) *fiber.App {

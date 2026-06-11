@@ -32,6 +32,9 @@ type definitionRequest struct {
 
 // createDefinition handles ticket definition creation.
 func (handler handler) createDefinition(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	var request definitionRequest
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
@@ -46,6 +49,9 @@ func (handler handler) createDefinition(ctx *fiber.Ctx) error {
 
 // listDefinitions handles definition list reads.
 func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -63,6 +69,9 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 
 // getDefinition handles one definition read.
 func (handler handler) getDefinition(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
 		return err
@@ -77,6 +86,9 @@ func (handler handler) getDefinition(ctx *fiber.Ctx) error {
 
 // updateDefinition handles definition updates.
 func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
 		return err
@@ -99,6 +111,9 @@ func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
 
 // deleteDefinition handles definition soft deletion.
 func (handler handler) deleteDefinition(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
 		return err

@@ -65,6 +65,9 @@ func (handler handler) rejectAppeal(ctx *fiber.Ctx) error {
 
 // verifyStats handles ticket stat verification.
 func (handler handler) verifyStats(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	report, err := handler.services.Operations.VerifyStats(ctx.Context())
 	if err != nil {
 		return handleError(ctx, err)
@@ -74,6 +77,9 @@ func (handler handler) verifyStats(ctx *fiber.Ctx) error {
 
 // rebuildStats handles ticket stat rebuild.
 func (handler handler) rebuildStats(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	report, err := handler.services.Operations.RebuildStats(ctx.Context())
 	if err != nil {
 		return handleError(ctx, err)

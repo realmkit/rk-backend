@@ -12,6 +12,7 @@ import (
 	forumsdomain "github.com/niflaot/gamehub-go/module/forums/domain"
 	punishmentshttp "github.com/niflaot/gamehub-go/module/punishments/adapter/http"
 	punishmentsport "github.com/niflaot/gamehub-go/module/punishments/port"
+	ticketsgroups "github.com/niflaot/gamehub-go/module/tickets/adapter/groups"
 	ticketshttp "github.com/niflaot/gamehub-go/module/tickets/adapter/http"
 	ticketspostgres "github.com/niflaot/gamehub-go/module/tickets/adapter/postgres"
 	ticketpunishments "github.com/niflaot/gamehub-go/module/tickets/adapter/punishments"
@@ -225,6 +226,7 @@ func ticketsService(
 		Tickets:      ticketspostgres.NewTicketRepository(store),
 		Punishments:  ticketpunishments.NewResolver(punishments),
 		Assets:       forumsassets.NewResolver(assets),
+		Authorizer:   ticketsgroups.NewAuthorizer(groupsService(db, events)),
 		Cache:        cache,
 		Transactions: transaction.New(db),
 		Events:       events,

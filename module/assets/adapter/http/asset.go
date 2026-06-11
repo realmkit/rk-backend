@@ -60,6 +60,10 @@ type assetURLResponse struct {
 
 // createUploadIntent creates an upload intent.
 func (handler handler) createUploadIntent(ctx *fiber.Ctx) error {
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
 	if err := requireIdempotency(ctx); err != nil {
 		return err
 	}
@@ -75,7 +79,7 @@ func (handler handler) createUploadIntent(ctx *fiber.Ctx) error {
 		Visibility:      request.Visibility,
 		ContentType:     request.ContentType,
 		SizeBytes:       request.SizeBytes,
-		CreatedByUserID: request.CreatedByUserID,
+		CreatedByUserID: &actor,
 	})
 	if err != nil {
 		return handleError(ctx, err)
@@ -93,6 +97,9 @@ func (handler handler) createUploadIntent(ctx *fiber.Ctx) error {
 
 // completeUpload completes an upload intent.
 func (handler handler) completeUpload(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	if err := requireIdempotency(ctx); err != nil {
 		return err
 	}
@@ -110,6 +117,9 @@ func (handler handler) completeUpload(ctx *fiber.Ctx) error {
 
 // getAsset returns one asset.
 func (handler handler) getAsset(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "asset_id")
 	if err != nil {
 		return err
@@ -124,6 +134,9 @@ func (handler handler) getAsset(ctx *fiber.Ctx) error {
 
 // getAssetURL returns a signed read URL.
 func (handler handler) getAssetURL(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "asset_id")
 	if err != nil {
 		return err
@@ -137,6 +150,9 @@ func (handler handler) getAssetURL(ctx *fiber.Ctx) error {
 
 // listAssets lists assets.
 func (handler handler) listAssets(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -151,6 +167,9 @@ func (handler handler) listAssets(ctx *fiber.Ctx) error {
 
 // listFolders lists virtual folders.
 func (handler handler) listFolders(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	folders, err := handler.services.Assets.ListFolders(ctx.Context(), port.FolderFilter{
 		Namespace:  domain.Namespace(ctx.Query("namespace")),
 		PathPrefix: domain.VirtualPath(ctx.Query("path_prefix")),
@@ -163,6 +182,9 @@ func (handler handler) listFolders(ctx *fiber.Ctx) error {
 
 // updateAsset updates mutable asset fields.
 func (handler handler) updateAsset(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "asset_id")
 	if err != nil {
 		return err
@@ -194,6 +216,9 @@ func (handler handler) updateAsset(ctx *fiber.Ctx) error {
 
 // deleteAsset deletes an asset.
 func (handler handler) deleteAsset(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "asset_id")
 	if err != nil {
 		return err

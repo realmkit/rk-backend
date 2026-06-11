@@ -77,6 +77,9 @@ func (handler handler) createTicketWithRequest(ctx *fiber.Ctx, request createTic
 
 // listTickets handles queue and personal ticket reads.
 func (handler handler) listTickets(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err

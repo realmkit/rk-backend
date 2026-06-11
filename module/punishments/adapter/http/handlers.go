@@ -28,6 +28,9 @@ type definitionRequest struct {
 }
 
 func (handler handler) createDefinition(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	if err := requireIdempotency(ctx); err != nil {
 		return err
 	}
@@ -44,6 +47,9 @@ func (handler handler) createDefinition(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -60,6 +66,9 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) getDefinition(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
 		return err
@@ -73,6 +82,9 @@ func (handler handler) getDefinition(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
 		return err
@@ -94,6 +106,9 @@ func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) deleteDefinition(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
 		return err
@@ -109,6 +124,9 @@ func (handler handler) deleteDefinition(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) reorderActions(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	if err := requireIdempotency(ctx); err != nil {
 		return err
 	}

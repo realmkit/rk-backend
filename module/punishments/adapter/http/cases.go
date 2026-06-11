@@ -28,6 +28,9 @@ func (handler handler) issuePunishment(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) listPunishments(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -40,6 +43,9 @@ func (handler handler) listPunishments(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) getPunishment(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	id, err := idFromParam(ctx, "punishment_id")
 	if err != nil {
 		return err
@@ -119,6 +125,9 @@ func (handler handler) revokePunishment(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) listUserPunishments(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	userID, err := idFromParam(ctx, "user_id")
 	if err != nil {
 		return err
@@ -139,6 +148,9 @@ func (handler handler) listUserPunishments(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) checkRestriction(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	var request struct {
 		UserID    uuid.UUID `json:"user_id"`
 		ActionKey string    `json:"action_key"`
@@ -157,6 +169,9 @@ func (handler handler) checkRestriction(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) listRestrictions(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
 	userID, err := idFromParam(ctx, "user_id")
 	if err != nil {
 		return err

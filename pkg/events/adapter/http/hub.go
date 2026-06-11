@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
 	"github.com/niflaot/gamehub-go/pkg/events/domain"
+	"github.com/niflaot/gamehub-go/pkg/events/port"
 )
 
 // Hub stores active local WebSocket clients.
@@ -63,6 +64,7 @@ func (handler handler) webSocket(conn *websocket.Conn) {
 		conn:   conn,
 		userID: socketUserID(conn),
 		scopes: map[string]domain.Scope{},
+		authz:  handler.services.ScopeAuthorizer,
 	}
 	hub.add(client)
 	defer hub.remove(client.id)
@@ -82,6 +84,7 @@ type client struct {
 	conn   *websocket.Conn
 	userID uuid.UUID
 	scopes map[string]domain.Scope
+	authz  port.ScopeAuthorizer
 }
 
 // handle handles one client message.
@@ -128,8 +131,17 @@ func (client *client) canSubscribe(scope domain.Scope) bool {
 		return true
 	case domain.ScopeUser:
 		return client.userID != uuid.Nil && scope.ID == client.userID.String()
-	default:
+	case domain.ScopeSystem:
 		return false
+	default:
+		if client.userID == uuid.Nil || client.authz == nil {
+			return false
+		}
+		allowed, err := client.authz.CanSubscribe(context.Background(), port.Principal{
+			UserID:    client.userID,
+			Anonymous: false,
+		}, scope)
+		return err == nil && allowed
 	}
 }
 

@@ -165,6 +165,7 @@ func TestDefinitionRoutes(t *testing.T) {
 	body := `{"key":"support","name":"Support","kind":"support","status":"active"}`
 	req := httptest.NewRequest(http.MethodPost, "/ticket-definitions", bytes.NewBufferString(body))
 	req.Header.Set(headers.ContentType, "application/json")
+	req.Header.Set(currentUserIDHeader, uuid.New().String())
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("create definition error = %v", err)
@@ -186,6 +187,7 @@ func TestDefinitionRoutes(t *testing.T) {
 	} {
 		req := httptest.NewRequest(tt.method, tt.path, bytes.NewBufferString(tt.body))
 		req.Header.Set(headers.ContentType, "application/json")
+		req.Header.Set(currentUserIDHeader, uuid.New().String())
 		if tt.method == http.MethodPatch || tt.method == http.MethodDelete {
 			req.Header.Set(headers.IfMatch, `"1"`)
 		}
@@ -227,12 +229,48 @@ func TestActionAndOperationRoutes(t *testing.T) {
 	}
 	for _, path := range []string{"/tickets/operations/stats/verify", "/tickets/operations/stats/rebuild"} {
 		req := httptest.NewRequest(http.MethodPost, path, nil)
+		req.Header.Set(currentUserIDHeader, uuid.New().String())
 		resp, err := app.Test(req)
 		if err != nil {
 			t.Fatalf("%s error = %v", path, err)
 		}
 		if resp.StatusCode != fiber.StatusOK {
 			t.Fatalf("%s status = %d, want 200", path, resp.StatusCode)
+		}
+	}
+}
+
+// TestPrivateTicketRoutesRequireUser verifies the HTTP edge rejects anonymous private access.
+func TestPrivateTicketRoutesRequireUser(t *testing.T) {
+	app, _ := newApp()
+	ticketID := uuid.New().String()
+	definitionID := uuid.New().String()
+	for _, req := range []*http.Request{
+		httptest.NewRequest(http.MethodPost, "/ticket-definitions", bytes.NewBufferString(`{}`)),
+		httptest.NewRequest(http.MethodGet, "/ticket-definitions", nil),
+		httptest.NewRequest(http.MethodGet, "/ticket-definitions/"+definitionID, nil),
+		httptest.NewRequest(http.MethodPatch, "/ticket-definitions/"+definitionID, bytes.NewBufferString(`{}`)),
+		httptest.NewRequest(http.MethodDelete, "/ticket-definitions/"+definitionID, nil),
+		httptest.NewRequest(http.MethodPost, "/tickets", bytes.NewBufferString(`{}`)),
+		httptest.NewRequest(http.MethodGet, "/tickets", nil),
+		httptest.NewRequest(http.MethodGet, "/tickets/"+ticketID, nil),
+		httptest.NewRequest(http.MethodPost, "/tickets/"+ticketID+"/messages", bytes.NewBufferString(`{}`)),
+		httptest.NewRequest(http.MethodGet, "/tickets/"+ticketID+"/messages", nil),
+		httptest.NewRequest(http.MethodPost, "/tickets/"+ticketID+"/evidence", bytes.NewBufferString(`{}`)),
+		httptest.NewRequest(http.MethodGet, "/tickets/"+ticketID+"/evidence", nil),
+		httptest.NewRequest(http.MethodPost, "/tickets/"+ticketID+"/assign", bytes.NewBufferString(`{}`)),
+		httptest.NewRequest(http.MethodPost, "/tickets/"+ticketID+"/appeal/accept", bytes.NewBufferString(`{}`)),
+		httptest.NewRequest(http.MethodPost, "/tickets/operations/stats/verify", nil),
+	} {
+		req.Header.Set(headers.ContentType, "application/json")
+		req.Header.Set(headers.IdempotencyKey, "security-matrix")
+		req.Header.Set(headers.IfMatch, `"1"`)
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("%s %s error = %v", req.Method, req.URL.Path, err)
+		}
+		if resp.StatusCode != fiber.StatusUnauthorized {
+			t.Fatalf("%s %s status = %d, want 401", req.Method, req.URL.Path, resp.StatusCode)
 		}
 	}
 }

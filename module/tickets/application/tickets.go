@@ -42,12 +42,13 @@ func (service Service) CreateTicket(ctx context.Context, command port.CreateTick
 
 // GetTicket returns one ticket if actor may view it.
 func (service Service) GetTicket(ctx context.Context, ticketID uuid.UUID, actorUserID uuid.UUID) (domain.Ticket, error) {
-	if service.authorizer != nil {
-		if err := can(func() (bool, error) {
-			return service.authorizer.CanView(ctx, actorUserID, ticketID)
-		}); err != nil {
-			return domain.Ticket{}, err
-		}
+	if err := service.requireAuthorizer(); err != nil {
+		return domain.Ticket{}, err
+	}
+	if err := can(func() (bool, error) {
+		return service.authorizer.CanView(ctx, actorUserID, ticketID)
+	}); err != nil {
+		return domain.Ticket{}, err
 	}
 	return service.tickets.FindByID(ctx, ticketID)
 }
@@ -62,12 +63,13 @@ func (service Service) ListTickets(
 }
 
 func (service Service) validateIntake(ctx context.Context, command port.CreateTicketCommand, definition domain.Definition) error {
-	if service.authorizer != nil {
-		if err := can(func() (bool, error) {
-			return service.authorizer.CanCreate(ctx, command.ActorUserID, definition.ID)
-		}); err != nil {
-			return err
-		}
+	if err := service.requireAuthorizer(); err != nil {
+		return err
+	}
+	if err := can(func() (bool, error) {
+		return service.authorizer.CanCreate(ctx, command.ActorUserID, definition.ID)
+	}); err != nil {
+		return err
 	}
 	if definition.RequiresTargetUser && command.TargetUserID == nil {
 		return domain.NewValidationError([]domain.Violation{{Field: "target_user_id", Message: "is required"}})

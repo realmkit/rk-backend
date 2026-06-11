@@ -15,6 +15,8 @@ import (
 	"github.com/niflaot/gamehub-go/pkg/pagination"
 )
 
+const currentUserIDHeader = "X-GameHub-User-Id"
+
 // decodeJSON decodes the request body into target.
 func decodeJSON(ctx *fiber.Ctx, target any) error {
 	decoder := json.NewDecoder(strings.NewReader(string(ctx.Body())))
@@ -71,6 +73,23 @@ func idFromParam(ctx *fiber.Ctx, name string) (uuid.UUID, error) {
 	id, err := uuid.Parse(ctx.Params(name))
 	if err != nil {
 		return uuid.Nil, problem.Error{Problem: problem.New(fiber.StatusBadRequest, "invalid_path_parameter", name+" must be a UUID.")}
+	}
+	return id, nil
+}
+
+// currentUserID parses the authenticated user propagated by the gateway.
+func currentUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
+	value := strings.TrimSpace(ctx.Get(currentUserIDHeader))
+	if value == "" {
+		return uuid.Nil, problem.Error{
+			Problem: problem.New(fiber.StatusUnauthorized, "unauthenticated", currentUserIDHeader+" is required."),
+		}
+	}
+	id, err := uuid.Parse(value)
+	if err != nil {
+		return uuid.Nil, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_current_user", currentUserIDHeader+" must be a UUID."),
+		}
 	}
 	return id, nil
 }
