@@ -184,6 +184,55 @@ func TestTicketRepositoryUpdateFilterAndOperationalQueries(t *testing.T) {
 	}
 }
 
+// TestTicketRepositoryListPagesAreBounded verifies ticket queues and child timelines page safely.
+func TestTicketRepositoryListPagesAreBounded(t *testing.T) {
+	db := newDB(t)
+	repo := NewTicketRepository(orm.NewStore(db))
+	for index := 0; index < 2; index++ {
+		ticket := validTicket()
+		if _, err := repo.Create(context.Background(), ticket, validMessage(ticket.ID, "opener"), nil); err != nil {
+			t.Fatalf("Create(%d) error = %v", index, err)
+		}
+	}
+	tickets, err := repo.List(context.Background(), port.TicketFilter{}, pagination.Page{Limit: 1})
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(tickets.Items) != 1 || tickets.NextCursor == "" {
+		t.Fatalf("tickets page = %+v, want one item and next cursor", tickets)
+	}
+
+	ticket := validTicket()
+	if _, err := repo.Create(context.Background(), ticket, validMessage(ticket.ID, "opener"), nil); err != nil {
+		t.Fatalf("Create message ticket error = %v", err)
+	}
+	if _, err := repo.AddMessage(context.Background(), validMessage(ticket.ID, "reply")); err != nil {
+		t.Fatalf("AddMessage() error = %v", err)
+	}
+	messages, err := repo.ListMessages(context.Background(), ticket.ID, false, pagination.Page{Limit: 1})
+	if err != nil {
+		t.Fatalf("ListMessages() error = %v", err)
+	}
+	if len(messages.Items) != 1 || messages.NextCursor == "" {
+		t.Fatalf("messages page = %+v, want one item and next cursor", messages)
+	}
+
+	for index := 0; index < 2; index++ {
+		action := testAction(ticket.ID)
+		action.IdempotencyKey = uuid.NewString()
+		if _, err := repo.AddAction(context.Background(), action); err != nil {
+			t.Fatalf("AddAction(%d) error = %v", index, err)
+		}
+	}
+	actions, err := repo.ListActions(context.Background(), ticket.ID, pagination.Page{Limit: 1})
+	if err != nil {
+		t.Fatalf("ListActions() error = %v", err)
+	}
+	if len(actions.Items) != 1 || actions.NextCursor == "" {
+		t.Fatalf("actions page = %+v, want one item and next cursor", actions)
+	}
+}
+
 // newDB creates an in-memory database.
 func newDB(t *testing.T) *gorm.DB {
 	t.Helper()
@@ -244,5 +293,17 @@ func validMessage(ticketID uuid.UUID, text string) domain.Message {
 		Version:             1,
 		CreatedAt:           time.Now().UTC(),
 		UpdatedAt:           time.Now().UTC(),
+	}
+}
+
+// testAction returns a persisted-ready action.
+func testAction(ticketID uuid.UUID) domain.Action {
+	return domain.Action{
+		ID:          uuid.New(),
+		TicketID:    ticketID,
+		Type:        domain.ActionEscalate,
+		Status:      domain.ActionCompleted,
+		PayloadJSON: []byte(`{}`),
+		CreatedAt:   time.Now().UTC(),
 	}
 }

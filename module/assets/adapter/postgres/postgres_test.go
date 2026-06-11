@@ -79,6 +79,32 @@ func TestAssetRepositoryRejectsStaleVersion(t *testing.T) {
 	}
 }
 
+// TestAssetRepositoryListIsBounded verifies hot asset lists do not return unbounded rows.
+func TestAssetRepositoryListIsBounded(t *testing.T) {
+	repository := newAssetRepository(t)
+	for index := 0; index < 3; index++ {
+		asset := testAsset()
+		asset.ID = uuid.New()
+		asset.Filename = domain.Filename(uuid.NewString() + ".png")
+		asset.StorageKey = "assets/community/" + uuid.NewString() + "/logo.png"
+		if _, err := repository.Create(context.Background(), asset); err != nil {
+			t.Fatalf("Create(%d) error = %v", index, err)
+		}
+	}
+
+	list, err := repository.List(
+		context.Background(),
+		port.AssetFilter{Namespace: "community"},
+		pagination.Page{Limit: 1},
+	)
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(list.Items) != 1 || list.NextCursor == "" {
+		t.Fatalf("List() = %+v, want one bounded item and next cursor", list)
+	}
+}
+
 // newAssetRepository creates a migrated repository.
 func newAssetRepository(t *testing.T) AssetRepository {
 	t.Helper()

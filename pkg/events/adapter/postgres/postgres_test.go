@@ -37,6 +37,28 @@ func TestRepositoryPublishGetAndList(t *testing.T) {
 	}
 }
 
+// TestRepositoryListIsBounded verifies operator event lists cannot return unbounded rows.
+func TestRepositoryListIsBounded(t *testing.T) {
+	repo := newEventRepository(t)
+	for index := 0; index < 3; index++ {
+		draft := testEventDraft()
+		id := uuid.New()
+		draft.AggregateID = &id
+		draft.Payload = map[string]any{"thread_id": id.String()}
+		if _, err := repo.Publish(context.Background(), draft, testEventNow().Add(time.Duration(index)*time.Second)); err != nil {
+			t.Fatalf("Publish(%d) error = %v", index, err)
+		}
+	}
+
+	list, err := repo.List(context.Background(), port.ListFilter{}, pagination.Page{Limit: 2})
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(list.Items) != 2 {
+		t.Fatalf("List() items = %d, want bounded limit 2", len(list.Items))
+	}
+}
+
 // TestRepositoryClaimAndStatusUpdates verifies dispatch state transitions.
 func TestRepositoryClaimAndStatusUpdates(t *testing.T) {
 	repo := newEventRepository(t)
@@ -58,6 +80,25 @@ func TestRepositoryClaimAndStatusUpdates(t *testing.T) {
 	}
 	if processed.Status != domain.StatusProcessed {
 		t.Fatalf("status = %s, want processed", processed.Status)
+	}
+}
+
+// TestRepositoryClaimDoesNotReclaimProcessingEvent verifies retry workers cannot double-claim one event.
+func TestRepositoryClaimDoesNotReclaimProcessingEvent(t *testing.T) {
+	repo := newEventRepository(t)
+	if _, err := repo.Publish(context.Background(), testEventDraft(), testEventNow()); err != nil {
+		t.Fatalf("Publish() error = %v", err)
+	}
+	if _, err := repo.Claim(context.Background(), "worker-1", 1, testEventNow(), testEventNow().Add(time.Minute)); err != nil {
+		t.Fatalf("Claim() error = %v", err)
+	}
+
+	claimed, err := repo.Claim(context.Background(), "worker-2", 1, testEventNow(), testEventNow().Add(time.Minute))
+	if err != nil {
+		t.Fatalf("Claim() second error = %v", err)
+	}
+	if len(claimed) != 0 {
+		t.Fatalf("claimed second = %+v, want no duplicate claim", claimed)
 	}
 }
 

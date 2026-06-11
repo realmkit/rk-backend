@@ -380,6 +380,9 @@
         "security": [],
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
             "$ref": "#/components/parameters/DefinitionIdPath"
           },
           {
@@ -609,6 +612,9 @@
         "summary": "Delete one owner metafield value",
         "security": [],
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
           {
             "$ref": "#/components/parameters/OwnerTypePath"
           },
@@ -869,6 +875,9 @@
         "security": [],
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
             "$ref": "#/components/parameters/DefinitionIdPath"
           },
           {
@@ -1125,6 +1134,9 @@
         "security": [],
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
             "$ref": "#/components/parameters/DefinitionIdPath"
           },
           {
@@ -1172,7 +1184,7 @@
           "assets"
         ],
         "summary": "Create an asset upload intent",
-        "description": "Requires Idempotency-Key. The returned signed URL is used by the client to upload directly to S3-compatible storage.",
+        "description": "Requires Idempotency-Key. The returned signed URL is used by the client to upload directly to S3-compatible storage. Requires Idempotency-Key; repeated requests with the same key must not double-apply state.",
         "security": [],
         "parameters": [
           {
@@ -1282,7 +1294,8 @@
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       }
     },
     "/assets/folders": {
@@ -1440,7 +1453,8 @@
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires If-Match for optimistic concurrency."
       },
       "delete": {
         "operationId": "deleteAsset",
@@ -1488,7 +1502,8 @@
           "500": {
             "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires If-Match for optimistic concurrency."
       }
     },
     "/assets/{asset_id}/url": {
@@ -1545,7 +1560,7 @@
           "assets"
         ],
         "summary": "Complete an asset upload",
-        "description": "Requires Idempotency-Key. Confirms the object exists in storage and transitions the asset to available.",
+        "description": "Requires Idempotency-Key. Confirms the object exists in storage and transitions the asset to available. Requires Idempotency-Key; repeated requests with the same key must not double-apply state.",
         "security": [],
         "parameters": [
           {
@@ -2517,6 +2532,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       },
@@ -2527,6 +2545,12 @@
         ],
         "summary": "Create forum category",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/AcceptHeader"
           },
@@ -2577,8 +2601,12 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/forum-categories/reorder": {
@@ -2589,6 +2617,12 @@
         ],
         "summary": "Reorder forum categories",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/AcceptHeader"
           },
@@ -2624,8 +2658,12 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/forum-categories/{category_id}": {
@@ -2636,6 +2674,12 @@
         ],
         "summary": "Get forum category",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "category_id",
             "in": "path",
@@ -2662,6 +2706,12 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       },
@@ -2672,6 +2722,18 @@
         ],
         "summary": "Update forum category",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "category_id",
             "in": "path",
@@ -2717,8 +2779,15 @@
           },
           "428": {
             "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       },
       "delete": {
         "operationId": "deleteForumCategory",
@@ -2727,6 +2796,15 @@
         ],
         "summary": "Delete forum category",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "category_id",
             "in": "path",
@@ -2755,8 +2833,15 @@
           },
           "428": {
             "$ref": "#/components/responses/PreconditionRequired"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/forums": {
@@ -2787,8 +2872,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ]
       },
       "post": {
         "operationId": "createForum",
@@ -2797,6 +2899,18 @@
         ],
         "summary": "Create forum",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/IdempotencyKeyHeader"
           },
@@ -2830,8 +2944,15 @@
           },
           "422": {
             "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/forums/reorder": {
@@ -2842,6 +2963,18 @@
         ],
         "summary": "Reorder forums",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/IdempotencyKeyHeader"
           },
@@ -2862,8 +2995,15 @@
         "responses": {
           "204": {
             "$ref": "#/components/responses/NoContent"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/forums/{forum_id}": {
@@ -2874,6 +3014,15 @@
         ],
         "summary": "Get forum",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "forum_id",
             "in": "path",
@@ -2897,6 +3046,12 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       },
@@ -2907,6 +3062,18 @@
         ],
         "summary": "Update forum",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "forum_id",
             "in": "path",
@@ -2949,8 +3116,15 @@
           },
           "412": {
             "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       },
       "delete": {
         "operationId": "deleteForum",
@@ -2959,6 +3133,15 @@
         ],
         "summary": "Delete forum",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "forum_id",
             "in": "path",
@@ -2981,8 +3164,15 @@
         "responses": {
           "204": {
             "$ref": "#/components/responses/NoContent"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/forums/{forum_id}/move": {
@@ -2993,6 +3183,18 @@
         ],
         "summary": "Move forum",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "forum_id",
             "in": "path",
@@ -3038,8 +3240,15 @@
           },
           "412": {
             "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/forums/{forum_id}/threads": {
@@ -3050,6 +3259,15 @@
         ],
         "summary": "List forum threads",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ForumIdPath"
           },
@@ -3101,6 +3319,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       },
@@ -3111,6 +3332,18 @@
         ],
         "summary": "Create forum thread",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ForumIdPath"
           },
@@ -3162,8 +3395,12 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/threads/{thread_id}": {
@@ -3174,6 +3411,15 @@
         ],
         "summary": "Get thread",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ThreadIdPath"
           }
@@ -3200,6 +3446,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       },
@@ -3210,6 +3459,18 @@
         ],
         "summary": "Update thread",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ThreadIdPath"
           },
@@ -3267,8 +3528,12 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       },
       "delete": {
         "operationId": "deleteThread",
@@ -3277,6 +3542,15 @@
         ],
         "summary": "Delete thread",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ThreadIdPath"
           },
@@ -3314,8 +3588,12 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/threads/{thread_id}/posts": {
@@ -3326,6 +3604,15 @@
         ],
         "summary": "List thread posts",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ThreadIdPath"
           },
@@ -3366,6 +3653,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       },
@@ -3376,6 +3666,18 @@
         ],
         "summary": "Create thread reply",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ThreadIdPath"
           },
@@ -3427,8 +3729,12 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/posts/{post_id}": {
@@ -3439,6 +3745,15 @@
         ],
         "summary": "Get post",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/PostIdPath"
           }
@@ -3465,6 +3780,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       },
@@ -3475,6 +3793,18 @@
         ],
         "summary": "Update post",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/PostIdPath"
           },
@@ -3532,8 +3862,12 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       },
       "delete": {
         "operationId": "deletePost",
@@ -3542,6 +3876,15 @@
         ],
         "summary": "Delete post",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/PostIdPath"
           },
@@ -3579,8 +3922,12 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/posts/{post_id}/revisions": {
@@ -3591,6 +3938,15 @@
         ],
         "summary": "List post revisions",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/PostIdPath"
           },
@@ -3629,6 +3985,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -3640,8 +3999,17 @@
           "forum-interactions"
         ],
         "summary": "Like a post",
-        "description": "Auth: required. Idempotency-Key: required.",
+        "description": "Auth: required. Idempotency-Key: required. Requires Idempotency-Key; repeated requests with the same key must not double-apply state.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/PostIdPath"
           },
@@ -3689,6 +4057,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       },
@@ -3698,8 +4069,17 @@
           "forum-interactions"
         ],
         "summary": "Unlike a post",
-        "description": "Auth: required. Idempotency-Key: required.",
+        "description": "Auth: required. Idempotency-Key: required. Requires Idempotency-Key; repeated requests with the same key must not double-apply state.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/PostIdPath"
           },
@@ -3747,6 +4127,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -3760,6 +4143,15 @@
         "summary": "List latest forum posts",
         "description": "Auth: optional.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/PageSizeQuery"
           },
@@ -3807,6 +4199,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -3820,6 +4215,15 @@
         "summary": "List latest posts in one forum",
         "description": "Auth: optional.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ForumIdPath"
           },
@@ -3870,6 +4274,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -3883,6 +4290,15 @@
         "summary": "List most-liked posts in one forum",
         "description": "Auth: optional.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ForumIdPath"
           },
@@ -3933,6 +4349,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -3944,8 +4363,20 @@
           "forum-interactions"
         ],
         "summary": "Mark a thread read",
-        "description": "Auth: required. Idempotency-Key: required.",
+        "description": "Auth: required. Idempotency-Key: required. Requires Idempotency-Key; repeated requests with the same key must not double-apply state.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ThreadIdPath"
           },
@@ -3993,6 +4424,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -4014,8 +4448,17 @@
           "forum-interactions"
         ],
         "summary": "Mark a forum read",
-        "description": "Auth: required. Idempotency-Key: required.",
+        "description": "Auth: required. Idempotency-Key: required. Requires Idempotency-Key; repeated requests with the same key must not double-apply state.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ForumIdPath"
           },
@@ -4056,6 +4499,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -4069,6 +4515,15 @@
         "summary": "Get forum unread summary",
         "description": "Auth: required.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/DevUserIDHeader"
           }
@@ -4110,6 +4565,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -4123,6 +4581,15 @@
         "summary": "Search visible forum content",
         "description": "Auth: optional. Results are filtered to forums visible to the actor.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ForumSearchQuery"
           },
@@ -4173,6 +4640,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -4186,6 +4656,15 @@
         "summary": "Search visible content in one forum",
         "description": "Auth: optional. Results are returned only when the forum is visible to the actor.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "$ref": "#/components/parameters/ForumIdPath"
           },
@@ -4239,6 +4718,9 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -4252,6 +4734,12 @@
         "summary": "Get forum settings",
         "description": "Requires forums.manage_forum for the target forum. Returns behavior settings used by backend enforcement.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "forum_id",
             "in": "path",
@@ -4310,6 +4798,12 @@
         "summary": "Update forum settings",
         "description": "Requires forums.manage_forum, Idempotency-Key, and If-Match. Changing visibility or policy settings clears forum read caches.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "forum_id",
             "in": "path",
@@ -4396,6 +4890,12 @@
         "description": "Requires forums.manage_forum. Returns relation grants that power forum visibility and actions.",
         "parameters": [
           {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "forum_id",
             "in": "path",
             "required": true,
@@ -4453,6 +4953,12 @@
         "summary": "Replace forum permission settings",
         "description": "Requires forums.manage_forum and Idempotency-Key. Empty grant arrays disable that relation. User and group grants are validated before storage.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "forum_id",
             "in": "path",
@@ -4522,6 +5028,12 @@
         "summary": "Simulate forum permission",
         "description": "Requires forums.manage_forum. Explains whether the selected actor would be allowed by current forum relation grants.",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "forum_id",
             "in": "path",
@@ -4595,6 +5107,15 @@
         "summary": "List durable events",
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "status",
             "in": "query",
             "schema": {
@@ -4666,7 +5187,8 @@
           "500": {
             "description": "Internal server error"
           }
-        }
+        },
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       }
     },
     "/events/ws": {
@@ -4688,8 +5210,25 @@
           },
           "403": {
             "description": "Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ]
       }
     },
     "/events/{event_id}": {
@@ -4700,6 +5239,15 @@
         "operationId": "getEvent",
         "summary": "Get one durable event",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "event_id",
             "in": "path",
@@ -4751,6 +5299,15 @@
         "summary": "Replay one event",
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "event_id",
             "in": "path",
             "required": true,
@@ -4785,6 +5342,9 @@
           },
           "429": {
             "description": "Rate limited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -4798,6 +5358,15 @@
         "summary": "Cancel one event",
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "event_id",
             "in": "path",
             "required": true,
@@ -4832,6 +5401,9 @@
           },
           "429": {
             "description": "Rate limited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         }
       }
@@ -4844,6 +5416,15 @@
         "operationId": "listCronJobs",
         "summary": "List cron jobs",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "page_size",
             "in": "query",
@@ -4888,7 +5469,8 @@
           "500": {
             "description": "Internal server error"
           }
-        }
+        },
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       }
     },
     "/cronjobs/locks/repair": {
@@ -4927,7 +5509,18 @@
           "500": {
             "description": "Internal server error"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ]
       }
     },
     "/cronjobs/{job_key}": {
@@ -4938,6 +5531,15 @@
         "operationId": "getCronJob",
         "summary": "Get one cron job",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "job_key",
             "in": "path",
@@ -4987,6 +5589,15 @@
         "operationId": "listCronJobRuns",
         "summary": "List cron job runs",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "job_key",
             "in": "path",
@@ -5039,7 +5650,8 @@
           "500": {
             "description": "Internal server error"
           }
-        }
+        },
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       }
     },
     "/cronjobs/{job_key}/run": {
@@ -5050,6 +5662,15 @@
         "operationId": "runCronJobNow",
         "summary": "Run cron job now",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "job_key",
             "in": "path",
@@ -5107,6 +5728,15 @@
         "summary": "Pause cron job",
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "job_key",
             "in": "path",
             "required": true,
@@ -5128,6 +5758,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
         ],
         "responses": {
@@ -5154,8 +5787,12 @@
           },
           "429": {
             "description": "Rate limited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires If-Match for optimistic concurrency."
       }
     },
     "/cronjobs/{job_key}/resume": {
@@ -5167,6 +5804,15 @@
         "summary": "Resume cron job",
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "job_key",
             "in": "path",
             "required": true,
@@ -5188,6 +5834,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
         ],
         "responses": {
@@ -5214,8 +5863,12 @@
           },
           "429": {
             "description": "Rate limited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "description": "Requires If-Match for optimistic concurrency."
       }
     },
     "/punishment-definitions": {
@@ -5325,6 +5978,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -5333,6 +5989,15 @@
           }
         ],
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "status",
             "in": "query",
@@ -5357,7 +6022,8 @@
               "type": "string"
             }
           }
-        ]
+        ],
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       },
       "post": {
         "operationId": "createPunishmentDefinition",
@@ -5472,6 +6138,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -5488,7 +6157,25 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          }
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/punishment-definitions/{definition_id}": {
@@ -5598,6 +6285,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -5606,6 +6296,15 @@
           }
         ],
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "definition_id",
             "in": "path",
@@ -5723,6 +6422,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -5732,6 +6434,18 @@
         ],
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "definition_id",
             "in": "path",
             "required": true,
@@ -5739,6 +6453,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
         ],
         "requestBody": {
@@ -5750,7 +6467,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Requires If-Match for optimistic concurrency."
       },
       "delete": {
         "operationId": "deletePunishmentDefinition",
@@ -5851,6 +6569,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -5860,6 +6581,15 @@
         ],
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "definition_id",
             "in": "path",
             "required": true,
@@ -5867,8 +6597,12 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
-        ]
+        ],
+        "description": "Requires If-Match for optimistic concurrency."
       }
     },
     "/punishment-definitions/{definition_id}/actions/reorder": {
@@ -5978,6 +6712,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -5987,6 +6724,18 @@
         ],
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "definition_id",
             "in": "path",
             "required": true,
@@ -5994,6 +6743,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
           }
         ],
         "requestBody": {
@@ -6005,7 +6757,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/punishments": {
@@ -6115,6 +6868,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -6123,6 +6879,15 @@
           }
         ],
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "target_user_id",
             "in": "query",
@@ -6155,7 +6920,8 @@
               "type": "string"
             }
           }
-        ]
+        ],
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       },
       "post": {
         "operationId": "issuePunishment",
@@ -6270,6 +7036,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -6286,7 +7055,25 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          }
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/punishments/{punishment_id}": {
@@ -6396,6 +7183,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -6404,6 +7194,15 @@
           }
         ],
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "punishment_id",
             "in": "path",
@@ -6521,6 +7320,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -6530,6 +7332,18 @@
         ],
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "punishment_id",
             "in": "path",
             "required": true,
@@ -6537,6 +7351,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
         ],
         "requestBody": {
@@ -6548,7 +7365,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Requires If-Match for optimistic concurrency."
       }
     },
     "/punishments/{punishment_id}/revoke": {
@@ -6651,6 +7469,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -6660,6 +7481,18 @@
         ],
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "punishment_id",
             "in": "path",
             "required": true,
@@ -6667,6 +7500,12 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
         ],
         "requestBody": {
@@ -6678,7 +7517,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/users/{user_id}/punishments": {
@@ -6788,6 +7628,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -6796,6 +7639,15 @@
           }
         ],
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "user_id",
             "in": "path",
@@ -6821,7 +7673,8 @@
               "type": "string"
             }
           }
-        ]
+        ],
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       }
     },
     "/users/{user_id}/punishments/active": {
@@ -6931,6 +7784,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -6939,6 +7795,15 @@
           }
         ],
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "user_id",
             "in": "path",
@@ -6964,7 +7829,8 @@
               "type": "string"
             }
           }
-        ]
+        ],
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       }
     },
     "/punishments/restrictions/check": {
@@ -7074,6 +7940,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -7090,7 +7959,21 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ]
       }
     },
     "/users/{user_id}/punishments/restrictions": {
@@ -7200,6 +8083,9 @@
                 }
               }
             }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "security": [
@@ -7208,6 +8094,15 @@
           }
         ],
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "user_id",
             "in": "path",
@@ -7237,6 +8132,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7248,7 +8149,21 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -7277,8 +8192,32 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
+          }
+        ],
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       }
     },
     "/ticket-definitions/{definition_id}": {
@@ -7298,9 +8237,24 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "definition_id",
             "in": "path",
@@ -7328,6 +8282,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7342,6 +8302,18 @@
         },
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "definition_id",
             "in": "path",
             "required": true,
@@ -7349,8 +8321,12 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
-        ]
+        ],
+        "description": "Requires If-Match for optimistic concurrency."
       },
       "delete": {
         "tags": [
@@ -7361,9 +8337,24 @@
         "responses": {
           "204": {
             "description": "Success"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "definition_id",
             "in": "path",
@@ -7372,8 +8363,12 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
-        ]
+        ],
+        "description": "Requires If-Match for optimistic concurrency."
       }
     },
     "/tickets": {
@@ -7393,6 +8388,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7404,7 +8405,25 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          }
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       },
       "get": {
         "tags": [
@@ -7433,8 +8452,32 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
+          }
+        ],
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       }
     },
     "/punishments/{punishment_id}/appeals": {
@@ -7454,6 +8497,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7468,6 +8517,18 @@
         },
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "punishment_id",
             "in": "path",
             "required": true,
@@ -7475,8 +8536,12 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
           }
-        ]
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/tickets/{ticket_id}": {
@@ -7496,9 +8561,24 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "ticket_id",
             "in": "path",
@@ -7539,9 +8619,24 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "ticket_id",
             "in": "path",
@@ -7550,8 +8645,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
           }
-        ]
+        ],
+        "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       },
       "post": {
         "tags": [
@@ -7569,6 +8671,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7583,6 +8691,18 @@
         },
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "ticket_id",
             "in": "path",
             "required": true,
@@ -7590,8 +8710,12 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
           }
-        ]
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/tickets/{ticket_id}/evidence": {
@@ -7619,9 +8743,24 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
           {
             "name": "ticket_id",
             "in": "path",
@@ -7649,6 +8788,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7663,6 +8808,18 @@
         },
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "ticket_id",
             "in": "path",
             "required": true,
@@ -7670,8 +8827,12 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
           }
-        ]
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state."
       }
     },
     "/tickets/{ticket_id}/assign": {
@@ -7691,6 +8852,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7705,6 +8872,18 @@
         },
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "ticket_id",
             "in": "path",
             "required": true,
@@ -7712,8 +8891,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
-        ]
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/tickets/{ticket_id}/escalate": {
@@ -7733,6 +8919,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7747,6 +8939,18 @@
         },
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "ticket_id",
             "in": "path",
             "required": true,
@@ -7754,8 +8958,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
-        ]
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/tickets/{ticket_id}/close": {
@@ -7775,6 +8986,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7789,6 +9006,18 @@
         },
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "ticket_id",
             "in": "path",
             "required": true,
@@ -7796,8 +9025,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
-        ]
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/tickets/{ticket_id}/reopen": {
@@ -7817,6 +9053,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7831,6 +9073,18 @@
         },
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "ticket_id",
             "in": "path",
             "required": true,
@@ -7838,8 +9092,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
-        ]
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/tickets/{ticket_id}/appeal/accept": {
@@ -7859,6 +9120,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7873,6 +9140,18 @@
         },
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "ticket_id",
             "in": "path",
             "required": true,
@@ -7880,8 +9159,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
-        ]
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/tickets/{ticket_id}/appeal/reject": {
@@ -7901,6 +9187,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
         },
         "requestBody": {
@@ -7915,6 +9207,18 @@
         },
         "parameters": [
           {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
             "name": "ticket_id",
             "in": "path",
             "required": true,
@@ -7922,8 +9226,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
           }
-        ]
+        ],
+        "description": "Requires Idempotency-Key; repeated requests with the same key must not double-apply state. Requires If-Match for optimistic concurrency."
       }
     },
     "/tickets/operations/stats/verify": {
@@ -7943,8 +9254,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ]
       }
     },
     "/tickets/operations/stats/rebuild": {
@@ -7964,8 +9292,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ]
       }
     }
   },

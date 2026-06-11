@@ -40,6 +40,21 @@ func TestDraftValidateRejectsInvalidKeyAndScope(t *testing.T) {
 	}
 }
 
+// TestDraftValidateRejectsMissingProducerAggregateAndScopes verifies required routing metadata.
+func TestDraftValidateRejectsMissingProducerAggregateAndScopes(t *testing.T) {
+	err := Draft{Key: EventTicketsTicketCreated, SchemaVersion: 1}.Validate()
+	validation, ok := err.(ValidationError)
+	if !ok {
+		t.Fatalf("Validate() error = %v, want ValidationError", err)
+	}
+	if len(validation.Violations) != 3 {
+		t.Fatalf("Violations = %+v, want producer, aggregate, and scopes violations", validation.Violations)
+	}
+	if validation.Error() == "" {
+		t.Fatalf("ValidationError.Error() = empty")
+	}
+}
+
 // TestScopeValidatePermissionRules verifies permission scope validation.
 func TestScopeValidatePermissionRules(t *testing.T) {
 	valid := Scope{Type: ScopePermission, Permission: "forums.view"}
@@ -50,6 +65,25 @@ func TestScopeValidatePermissionRules(t *testing.T) {
 	invalid := Scope{Type: ScopeStaff, Permission: "forums.view"}
 	if err := invalid.Validate(); err == nil {
 		t.Fatalf("invalid scope error = nil, want error")
+	}
+}
+
+// TestStatusAndScopeTypeValidation verifies small enum validators.
+func TestStatusAndScopeTypeValidation(t *testing.T) {
+	if violations := ValidateStatus("status", StatusDead); len(violations) != 0 {
+		t.Fatalf("ValidateStatus(dead) = %+v, want none", violations)
+	}
+	if violations := ValidateStatus("status", "lost"); len(violations) != 1 {
+		t.Fatalf("ValidateStatus(lost) = %+v, want one violation", violations)
+	}
+	if violations := ValidateScopeType("scope", ScopeAsset); len(violations) != 0 {
+		t.Fatalf("ValidateScopeType(asset) = %+v, want none", violations)
+	}
+	if err := (Scope{Type: ScopeAsset}).Validate(); err == nil {
+		t.Fatalf("asset scope without id Validate() error = nil, want validation")
+	}
+	if err := (Scope{Type: ScopeGlobal, Permission: "forums.view"}).Validate(); err == nil {
+		t.Fatalf("global scope with permission Validate() error = nil, want validation")
 	}
 }
 

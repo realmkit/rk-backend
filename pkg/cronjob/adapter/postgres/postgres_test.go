@@ -33,6 +33,46 @@ func TestRepositoryDefinitionLifecycle(t *testing.T) {
 	}
 }
 
+// TestRepositoryListsAreBounded verifies cron operator lists honor page limits.
+func TestRepositoryListsAreBounded(t *testing.T) {
+	repo := newCronRepository(t)
+	definition := testDefinition()
+	second := testDefinition()
+	second.Key = domain.JobForumsVerifyStats
+	second.Name = "Verify forum stats"
+	for _, item := range []domain.Definition{definition, second} {
+		if _, err := repo.UpsertDefinition(context.Background(), item); err != nil {
+			t.Fatalf("UpsertDefinition(%s) error = %v", item.Key, err)
+		}
+	}
+
+	list, err := repo.ListDefinitions(context.Background(), pagination.Page{Limit: 1})
+	if err != nil {
+		t.Fatalf("ListDefinitions() error = %v", err)
+	}
+	if len(list.Items) != 1 {
+		t.Fatalf("ListDefinitions() items = %d, want bounded limit 1", len(list.Items))
+	}
+
+	claimed, ok, err := repo.ClaimDue(context.Background(), "worker", testNow(), testNow().Add(time.Minute))
+	if err != nil || !ok {
+		t.Fatalf("ClaimDue() = %+v, %v, %v, want claimed", claimed, ok, err)
+	}
+	if _, err := repo.StartRun(context.Background(), claimed, domain.TriggerManual, "worker", testNow()); err != nil {
+		t.Fatalf("StartRun first error = %v", err)
+	}
+	if _, err := repo.StartRun(context.Background(), claimed, domain.TriggerManual, "worker", testNow().Add(time.Second)); err != nil {
+		t.Fatalf("StartRun second error = %v", err)
+	}
+	runs, err := repo.ListRuns(context.Background(), claimed.Key, pagination.Page{Limit: 1})
+	if err != nil {
+		t.Fatalf("ListRuns() error = %v", err)
+	}
+	if len(runs.Items) != 1 {
+		t.Fatalf("ListRuns() items = %d, want bounded limit 1", len(runs.Items))
+	}
+}
+
 // TestRepositoryClaimRunCompleteAndRepair verifies run lifecycle.
 func TestRepositoryClaimRunCompleteAndRepair(t *testing.T) {
 	repo := newCronRepository(t)

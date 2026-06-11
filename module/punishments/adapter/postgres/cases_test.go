@@ -107,6 +107,20 @@ func TestCaseRepositoryUpdateListRevokeExpireAndIdempotency(t *testing.T) {
 	if len(list.Items) != 1 {
 		t.Fatalf("list count = %d, want 1", len(list.Items))
 	}
+	other, otherRestrictions := testPunishment(definition)
+	other.ID = uuid.New()
+	other.IdempotencyKey = "issue-2"
+	if _, err := cases.Issue(context.Background(), other, otherRestrictions); err != nil {
+		t.Fatalf("Issue second error = %v", err)
+	}
+	page, err := cases.List(context.Background(), port.PunishmentFilter{}, pagination.Page{Limit: 1})
+	if err != nil {
+		t.Fatalf("List bounded error = %v", err)
+	}
+	if len(page.Items) != 1 || page.NextCursor == "" {
+		t.Fatalf("bounded page = %+v, want one item and next cursor", page)
+	}
+
 	active, err := cases.ListActiveRestrictions(context.Background(), stored.TargetUserID, time.Now().UTC())
 	if err != nil {
 		t.Fatalf("ListActiveRestrictions() error = %v", err)

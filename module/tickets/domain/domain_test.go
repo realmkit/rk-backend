@@ -36,6 +36,35 @@ func TestDefinitionValidation(t *testing.T) {
 	}
 }
 
+// TestDefinitionNormalizeAndReportRules verifies defaults, trimming, and report target policy.
+func TestDefinitionNormalizeAndReportRules(t *testing.T) {
+	definition := Definition{
+		Key:                "report",
+		Name:               "  Reports  ",
+		Description:        "  bad behavior  ",
+		Kind:               KindReport,
+		RequiresTargetUser: true,
+		MetadataSchemaKey:  "  report_card  ",
+	}.Normalize()
+	if definition.Name != "Reports" || definition.Description != "bad behavior" {
+		t.Fatalf("Normalize() = %+v, want trimmed strings", definition)
+	}
+	if definition.Status != DefinitionActive || definition.Version != 1 {
+		t.Fatalf("Normalize() status/version = %s/%d, want active/1", definition.Status, definition.Version)
+	}
+	if definition.MetadataSchemaKey != "report_card" {
+		t.Fatalf("MetadataSchemaKey = %q, want trimmed key", definition.MetadataSchemaKey)
+	}
+	if err := definition.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+
+	definition.RequiresTargetUser = false
+	if err := definition.Validate(); err == nil {
+		t.Fatalf("report without target Validate() error = nil, want validation")
+	}
+}
+
 // TestTicketValidationAndNormalize verifies defaulting and required fields.
 func TestTicketValidationAndNormalize(t *testing.T) {
 	ticket := Ticket{DefinitionID: uuid.New(), Title: "  Help  ", Kind: KindSupport, OpenedAt: time.Now()}.Normalize()
@@ -47,6 +76,18 @@ func TestTicketValidationAndNormalize(t *testing.T) {
 	}
 	if err := ticket.Validate(); err != nil {
 		t.Fatalf("Validate() error = %v", err)
+	}
+}
+
+// TestTicketValidationRejectsMissingCoreFields verifies invalid ticket state is reported.
+func TestTicketValidationRejectsMissingCoreFields(t *testing.T) {
+	err := Ticket{Kind: "unknown", Status: "wild"}.Validate()
+	var validation ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("Validate() error = %v, want ValidationError", err)
+	}
+	if len(validation.Violations) < 4 {
+		t.Fatalf("Violations = %+v, want core field violations", validation.Violations)
 	}
 }
 
@@ -75,6 +116,36 @@ func TestMessageAndEvidenceValidation(t *testing.T) {
 	evidence.AssetID = &assetID
 	if err := evidence.Validate(); err != nil {
 		t.Fatalf("evidence Validate() error = %v", err)
+	}
+}
+
+// TestSystemMessageAndActionValidation verifies workflow edge cases.
+func TestSystemMessageAndActionValidation(t *testing.T) {
+	system := Message{
+		TicketID:            uuid.New(),
+		AuthorRole:          RoleSystem,
+		Visibility:          VisibilitySystemOnly,
+		ContentDocumentJSON: json.RawMessage(`{"type":"doc"}`),
+	}
+	if err := system.Validate(); err != nil {
+		t.Fatalf("system message Validate() error = %v", err)
+	}
+	if MessageVisibleToSubmitter(Message{Visibility: VisibilityStaffOnly}) {
+		t.Fatalf("staff-only message unexpectedly visible to submitter")
+	}
+
+	action := Action{
+		TicketID:    uuid.New(),
+		Type:        ActionAssign,
+		Status:      ActionCompleted,
+		PayloadJSON: json.RawMessage(`{"assignee":"mod"}`),
+	}
+	if err := action.Validate(); err != nil {
+		t.Fatalf("action Validate() error = %v", err)
+	}
+	action.PayloadJSON = json.RawMessage(`{`)
+	if err := action.Validate(); err == nil {
+		t.Fatalf("invalid action payload Validate() error = nil, want validation")
 	}
 }
 

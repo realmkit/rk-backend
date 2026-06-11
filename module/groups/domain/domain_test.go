@@ -32,8 +32,12 @@ func TestGroupValidateRejectsInvalidValues(t *testing.T) {
 func TestMembershipActiveAtHonorsStatusAndExpiry(t *testing.T) {
 	now := time.Now().UTC()
 	expiredAt := now.Add(-time.Minute)
+	startsAt := now.Add(time.Minute)
 	if (Membership{Status: MembershipStatusActive, ExpiresAt: &expiredAt}).ActiveAt(now) {
 		t.Fatalf("ActiveAt() = true, want false for expired membership")
+	}
+	if (Membership{Status: MembershipStatusActive, StartsAt: &startsAt}).ActiveAt(now) {
+		t.Fatalf("ActiveAt() = true, want false for future membership")
 	}
 	if (Membership{Status: MembershipStatusDisabled}).ActiveAt(now) {
 		t.Fatalf("ActiveAt() = true, want false for disabled membership")
@@ -71,6 +75,29 @@ func TestDisplayGroupUsesWeightThenCreatedAtThenKey(t *testing.T) {
 	got, ok := DisplayGroup(groups, memberships, now)
 	if !ok || got.ID != vip.ID {
 		t.Fatalf("DisplayGroup() = (%+v, %v), want vip", got, ok)
+	}
+}
+
+// TestDisplayGroupTieBreaksByCreatedAtThenKey verifies deterministic equal-weight selection.
+func TestDisplayGroupTieBreaksByCreatedAtThenKey(t *testing.T) {
+	now := time.Now().UTC()
+	alpha := validGroup("alpha", 10)
+	beta := validGroup("beta", 10)
+	groups := []Group{beta, alpha}
+	memberships := []Membership{
+		{GroupID: beta.ID, Status: MembershipStatusActive, CreatedAt: now},
+		{GroupID: alpha.ID, Status: MembershipStatusActive, CreatedAt: now},
+	}
+
+	got, ok := DisplayGroup(groups, memberships, now)
+	if !ok || got.ID != alpha.ID {
+		t.Fatalf("DisplayGroup() = (%+v, %v), want alpha by key tie-break", got, ok)
+	}
+
+	memberships[0].CreatedAt = now.Add(-time.Hour)
+	got, ok = DisplayGroup(groups, memberships, now)
+	if !ok || got.ID != beta.ID {
+		t.Fatalf("DisplayGroup() = (%+v, %v), want beta by older membership", got, ok)
 	}
 }
 
@@ -134,6 +161,24 @@ func TestPermissionRuleValidateRejectsInvalidConditions(t *testing.T) {
 	}
 	if len(validation.Violations) == 0 {
 		t.Fatalf("Violations = 0, want duration violation")
+	}
+}
+
+// TestPolicyConditionValidationCoversSupportedShapes verifies condition branch validation.
+func TestPolicyConditionValidationCoversSupportedShapes(t *testing.T) {
+	valid := []PolicyCondition{
+		{Type: ConditionEquals, Field: "thread.status", Value: "open"},
+		{Type: ConditionIn, Field: "ticket.status", Values: []string{"open"}},
+		{Type: ConditionFieldEqualsActor, Field: "author_user_id"},
+		{Type: ConditionOlderThan, Field: "created_at", Duration: "24h"},
+	}
+	for index, condition := range valid {
+		if violations := condition.Validate("conditions[" + string(rune('0'+index)) + "]"); len(violations) != 0 {
+			t.Fatalf("condition %d violations = %+v, want none", index, violations)
+		}
+	}
+	if violations := (PolicyCondition{Type: ConditionIn, Field: "status"}).Validate("condition"); len(violations) != 1 {
+		t.Fatalf("ConditionIn without values violations = %+v, want one", violations)
 	}
 }
 
