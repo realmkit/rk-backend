@@ -2115,8 +2115,12 @@
           "groups"
         ],
         "summary": "List current user groups",
-        "description": "Uses X-RealmKit-User-Id until bearer authentication is implemented.",
-        "security": [],
+        "description": "Requires bearer authentication. In development only, X-RealmKit-Dev-User-ID can be used when development bypass is enabled.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "$ref": "#/components/parameters/AcceptHeader"
@@ -2128,7 +2132,10 @@
             "$ref": "#/components/parameters/CorrelationIdHeader"
           },
           {
-            "$ref": "#/components/parameters/CurrentUserHeader"
+            "$ref": "#/components/parameters/AuthorizationHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
           }
         ],
         "responses": {
@@ -9601,15 +9608,6 @@
         "required": false,
         "schema": {
           "$ref": "#/components/schemas/GroupStatus"
-        }
-      },
-      "CurrentUserHeader": {
-        "name": "X-RealmKit-User-Id",
-        "in": "header",
-        "required": true,
-        "schema": {
-          "type": "string",
-          "format": "uuid"
         }
       },
       "AuthorizationHeader": {

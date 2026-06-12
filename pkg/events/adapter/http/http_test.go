@@ -33,6 +33,7 @@ func TestEventHTTPRoutes(t *testing.T) {
 		t.Fatalf("Publish() error = %v", err)
 	}
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
+	useTestPrincipal(app)
 	Register(app, Services{Events: service, Hub: NewHub()})
 
 	for _, req := range []*http.Request{
@@ -56,6 +57,7 @@ func TestEventHTTPRoutes(t *testing.T) {
 func TestEventHTTPInvalidID(t *testing.T) {
 	service := newHTTPEventService(t)
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
+	useTestPrincipal(app)
 	Register(app, Services{Events: service})
 	req := newRequest(t, http.MethodGet, "/events/nope")
 	req.Header.Set(currentUserIDHeader, uuid.NewString())
@@ -72,6 +74,7 @@ func TestEventHTTPInvalidID(t *testing.T) {
 func TestEventAdminRoutesRequireUser(t *testing.T) {
 	service := newHTTPEventService(t)
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
+	useTestPrincipal(app)
 	Register(app, Services{Events: service})
 	id := uuid.NewString()
 	for _, req := range []*http.Request{

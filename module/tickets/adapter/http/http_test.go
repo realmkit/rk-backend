@@ -279,6 +279,7 @@ func TestPrivateTicketRoutesRequireUser(t *testing.T) {
 func newApp() (*fiber.App, *httpService) {
 	service := &httpService{}
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
+	useTestPrincipal(app)
 	Register(app, Services{
 		Definitions:  service,
 		Tickets:      service,

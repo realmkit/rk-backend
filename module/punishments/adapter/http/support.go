@@ -10,12 +10,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/punishments/domain"
 	"github.com/realmkit/rk-backend/module/punishments/port"
+	"github.com/realmkit/rk-backend/pkg/api/authgate"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
 	"github.com/realmkit/rk-backend/pkg/pagination"
 )
-
-const currentUserIDHeader = "X-RealmKit-User-Id"
 
 // decodeJSON decodes a strict JSON request body.
 func decodeJSON(ctx *fiber.Ctx, target any) error {
@@ -114,21 +113,9 @@ func requireIdempotency(ctx *fiber.Ctx) error {
 	}
 }
 
-// currentUserID parses the current authenticated user header.
+// currentUserID returns the authenticated user from the validated principal.
 func currentUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
-	value := strings.TrimSpace(ctx.Get(currentUserIDHeader))
-	if value == "" {
-		return uuid.Nil, problem.Error{
-			Problem: problem.New(fiber.StatusUnauthorized, "unauthenticated", currentUserIDHeader+" is required."),
-		}
-	}
-	id, err := uuid.Parse(value)
-	if err != nil {
-		return uuid.Nil, problem.Error{
-			Problem: problem.New(fiber.StatusBadRequest, "invalid_current_user", currentUserIDHeader+" must be a UUID."),
-		}
-	}
-	return id, nil
+	return authgate.RequireUserID(ctx)
 }
 
 // setETag writes an optimistic concurrency ETag.

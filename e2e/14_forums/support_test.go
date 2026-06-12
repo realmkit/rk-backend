@@ -20,6 +20,7 @@ import (
 	groupsapplication "github.com/realmkit/rk-backend/module/groups/application"
 	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 	groupsport "github.com/realmkit/rk-backend/module/groups/port"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/openapi"
 	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
@@ -69,13 +70,18 @@ func newForumsFixture(t *testing.T) forumsFixture {
 		Transactions: transaction.New(database.DB),
 		Events:       events,
 	})
-	ecosystem := harness.New(t, harness.WithDatabase(database), harness.WithServerOptions(
-		server.WithForums(forumshttp.Services{
-			Structure: service,
-			Content:   service, Interaction: service,
-			Operations: service, Admin: service,
-		}),
-	))
+	ecosystem := harness.New(t,
+		harness.WithDevelopment(true),
+		harness.WithDatabase(database),
+		harness.WithServerOptions(
+			server.WithAuth(auth.Config{DevelopmentBypass: true}, harness.DevProvisioner{}),
+			server.WithForums(forumshttp.Services{
+				Structure: service,
+				Content:   service, Interaction: service,
+				Operations: service, Admin: service,
+			}),
+		),
+	)
 	fixture := forumsFixture{
 		ecosystem: ecosystem, service: service, groups: groups,
 		assets: assets, restrictions: restrictions, events: events,
@@ -127,7 +133,7 @@ func forumRequest(method string, path string, body string, opts ...func(*http.Re
 }
 
 func forumUser(userID uuid.UUID) func(*http.Request) {
-	return func(request *http.Request) { request.Header.Set("X-RealmKit-User-Id", userID.String()) }
+	return func(request *http.Request) { request.Header.Set(auth.DevUserIDHeader, userID.String()) }
 }
 
 func forumIdempotency(key string) func(*http.Request) {

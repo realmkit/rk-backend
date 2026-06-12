@@ -11,13 +11,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/forums/domain"
 	"github.com/realmkit/rk-backend/module/forums/port"
+	"github.com/realmkit/rk-backend/pkg/api/authgate"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
 	"github.com/realmkit/rk-backend/pkg/pagination"
 )
-
-// CurrentUserIDHeader is the temporary debug current user header.
-const CurrentUserIDHeader = "X-RealmKit-User-Id"
 
 // DecodeJSON decodes the request body into target.
 func DecodeJSON(ctx *fiber.Ctx, target any) error {
@@ -119,31 +117,14 @@ func SetETag(ctx *fiber.Ctx, version uint64) {
 	ctx.Set(headers.ETag, `"`+strconv.FormatUint(version, 10)+`"`)
 }
 
-// CurrentUserID returns the required current user ID from the debug header.
+// CurrentUserID returns the required current user ID from the validated principal.
 func CurrentUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
-	id, err := OptionalUserID(ctx)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	if id == uuid.Nil {
-		payload := problem.New(fiber.StatusUnauthorized, "unauthenticated", CurrentUserIDHeader+" is required.")
-		return uuid.Nil, problem.Error{Problem: payload}
-	}
-	return id, nil
+	return authgate.RequireUserID(ctx)
 }
 
-// OptionalUserID returns a current user ID when present.
+// OptionalUserID returns a validated current user ID when present.
 func OptionalUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
-	value := strings.TrimSpace(ctx.Get(CurrentUserIDHeader))
-	if value == "" {
-		return uuid.Nil, nil
-	}
-	id, err := uuid.Parse(value)
-	if err != nil {
-		payload := problem.New(fiber.StatusBadRequest, "invalid_current_user", CurrentUserIDHeader+" must be a UUID.")
-		return uuid.Nil, problem.Error{Problem: payload}
-	}
-	return id, nil
+	return authgate.OptionalUserID(ctx), nil
 }
 
 // writeValidationError writes domain validation errors.

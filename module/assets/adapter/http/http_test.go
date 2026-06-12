@@ -196,6 +196,7 @@ func TestPrivateAssetRoutesRequireUser(t *testing.T) {
 // testApp creates an assets HTTP test app.
 func testApp(service port.Service) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
+	useTestPrincipal(app)
 	Register(app, Services{Assets: service})
 	return app
 }

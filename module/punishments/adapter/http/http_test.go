@@ -141,6 +141,7 @@ func newHTTPTestRequest(t *testing.T, method string, path string, body string) *
 
 func newTestApp(service httpService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
+	useTestPrincipal(app)
 	Register(app, Services{Punishments: service})
 	return app
 }

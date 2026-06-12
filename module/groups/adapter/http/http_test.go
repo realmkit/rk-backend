@@ -155,6 +155,7 @@ func TestGetGroupMapsNotFound(t *testing.T) {
 // testApp creates a groups HTTP app.
 func testApp(service *httpService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
+	useTestPrincipal(app)
 	Register(app, Services{Groups: service, Memberships: service, Tuples: service, Checker: service})
 	return app
 }

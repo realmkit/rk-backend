@@ -14,6 +14,7 @@ import (
 	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	punishmentsdomain "github.com/realmkit/rk-backend/module/punishments/domain"
 	punishmentsport "github.com/realmkit/rk-backend/module/punishments/port"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/openapi"
 	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
@@ -117,7 +118,7 @@ func configureTicketRequest(request *http.Request, configs ...func(*http.Request
 // withTicketUser adds the current-user header.
 func withTicketUser(userID uuid.UUID) func(*http.Request) {
 	return func(request *http.Request) {
-		request.Header.Set("X-RealmKit-User-Id", userID.String())
+		request.Header.Set(auth.DevUserIDHeader, userID.String())
 	}
 }
 

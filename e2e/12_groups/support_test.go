@@ -16,6 +16,7 @@ import (
 	groupsapplication "github.com/realmkit/rk-backend/module/groups/application"
 	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 	groupsport "github.com/realmkit/rk-backend/module/groups/port"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/openapi"
 	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
@@ -44,8 +45,10 @@ func newGroupsFixture(t *testing.T) groupsFixture {
 	).WithEvents(events)
 	ecosystem := harness.New(
 		t,
+		harness.WithDevelopment(true),
 		harness.WithDatabase(database),
 		harness.WithServerOptions(
+			server.WithAuth(auth.Config{DevelopmentBypass: true}, harness.DevProvisioner{}),
 			server.WithGroups(
 				groupshttp.Services{
 					Groups:      service,
@@ -126,7 +129,7 @@ func withGroupsIfMatch(version uint64) func(*http.Request) {
 // withCurrentGroupUser adds the temporary current-user header.
 func withCurrentGroupUser(userID uuid.UUID) func(*http.Request) {
 	return func(request *http.Request) {
-		request.Header.Set("X-RealmKit-User-Id", userID.String())
+		request.Header.Set(auth.DevUserIDHeader, userID.String())
 	}
 }
 

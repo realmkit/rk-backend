@@ -10,13 +10,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/groups/port"
+	"github.com/realmkit/rk-backend/pkg/api/authgate"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
 	"github.com/realmkit/rk-backend/pkg/pagination"
 )
-
-// currentUserIDHeader is the temporary debug current user header.
-const currentUserIDHeader = "X-RealmKit-User-Id"
 
 // decodeJSON decodes the request body into target.
 func decodeJSON(ctx *fiber.Ctx, target any) error {
@@ -119,23 +117,7 @@ func setETag(ctx *fiber.Ctx, version uint64) {
 	ctx.Set(headers.ETag, `"`+strconv.FormatUint(version, 10)+`"`)
 }
 
-// currentUserID returns the current user ID from the temporary debug header.
+// currentUserID returns the current user ID from the validated principal.
 func currentUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
-	value := strings.TrimSpace(ctx.Get(currentUserIDHeader))
-	if value == "" {
-		return uuid.Nil, problem.Error{
-			Problem: problem.New(
-				fiber.StatusUnauthorized,
-				"unauthenticated",
-				currentUserIDHeader+" is required until auth is implemented.",
-			),
-		}
-	}
-	id, err := uuid.Parse(value)
-	if err != nil {
-		return uuid.Nil, problem.Error{
-			Problem: problem.New(fiber.StatusBadRequest, "invalid_current_user", currentUserIDHeader+" must be a UUID."),
-		}
-	}
-	return id, nil
+	return authgate.RequireUserID(ctx)
 }

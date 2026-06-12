@@ -20,6 +20,7 @@ import (
 	ticketpunishments "github.com/realmkit/rk-backend/module/tickets/adapter/punishments"
 	ticketsredis "github.com/realmkit/rk-backend/module/tickets/adapter/redis"
 	ticketsapplication "github.com/realmkit/rk-backend/module/tickets/application"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
 	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
 	"github.com/realmkit/rk-backend/pkg/server"
 	"github.com/realmkit/rk-backend/pkg/transaction"
@@ -75,13 +76,17 @@ func newTicketsFixture(t *testing.T) ticketsFixture {
 	})
 	ecosystem := harness.New(
 		t,
+		harness.WithDevelopment(true),
 		harness.WithDatabase(database),
-		harness.WithServerOptions(server.WithTickets(ticketshttp.Services{
-			Definitions:  service,
-			Tickets:      service,
-			Conversation: service,
-			Operations:   service,
-		})),
+		harness.WithServerOptions(
+			server.WithAuth(auth.Config{DevelopmentBypass: true}, harness.DevProvisioner{}),
+			server.WithTickets(ticketshttp.Services{
+				Definitions:  service,
+				Tickets:      service,
+				Conversation: service,
+				Operations:   service,
+			}),
+		),
 	)
 	return ticketsFixture{
 		ecosystem: ecosystem, service: service, groups: groups,

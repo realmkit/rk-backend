@@ -10,11 +10,26 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/forums/port"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
 )
+
+const testUserIDHeader = "X-RealmKit-Test-User-Id"
 
 // TestSupportHelpersCoverTransportBranches verifies shared HTTP helper behavior.
 func TestSupportHelpersCoverTransportBranches(t *testing.T) {
 	app := fiber.New()
+	app.Use(func(ctx *fiber.Ctx) error {
+		value := ctx.Get(testUserIDHeader)
+		if value == "" {
+			return ctx.Next()
+		}
+		userID, err := uuid.Parse(value)
+		if err != nil {
+			return err
+		}
+		principal.Set(ctx, principal.Principal{UserID: userID, SubjectHash: "test:" + userID.String()})
+		return ctx.Next()
+	})
 	app.Post("/json", func(ctx *fiber.Ctx) error {
 		var payload struct {
 			Name string `json:"name"`
@@ -58,7 +73,7 @@ func TestSupportHelpersCoverTransportBranches(t *testing.T) {
 	assertStatus(t, app, http.MethodGet, "/auth/not-uuid", "", nil, fiber.StatusInternalServerError)
 	assertStatus(t, app, http.MethodGet, "/auth/"+uuid.NewString(), "", nil, fiber.StatusInternalServerError)
 
-	headers := map[string]string{CurrentUserIDHeader: uuid.NewString()}
+	headers := map[string]string{testUserIDHeader: uuid.NewString()}
 	resp := assertStatus(t, app, http.MethodGet, "/auth/"+uuid.NewString(), "", headers, fiber.StatusNoContent)
 	if resp.Header.Get(headerspkgETag()) != `"7"` {
 		t.Fatalf("ETag = %q, want %q", resp.Header.Get(headerspkgETag()), `"7"`)

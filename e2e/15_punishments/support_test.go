@@ -18,6 +18,7 @@ import (
 	punishmentsredis "github.com/realmkit/rk-backend/module/punishments/adapter/redis"
 	punishmentsapplication "github.com/realmkit/rk-backend/module/punishments/application"
 	punishmentsdomain "github.com/realmkit/rk-backend/module/punishments/domain"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/openapi"
 	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
@@ -56,8 +57,10 @@ func newPunishmentsFixture(t *testing.T) punishmentsFixture {
 	})
 	ecosystem := harness.New(
 		t,
+		harness.WithDevelopment(true),
 		harness.WithDatabase(database),
 		harness.WithServerOptions(
+			server.WithAuth(auth.Config{DevelopmentBypass: true}, harness.DevProvisioner{}),
 			server.WithPunishments(punishmentshttp.Services{Punishments: service}),
 		),
 	)
@@ -146,7 +149,7 @@ func issueBody(definitionID uuid.UUID, targetID uuid.UUID, expiresAt *time.Time)
 // withPunishmentUser adds the current-user header.
 func withPunishmentUser(userID uuid.UUID) func(*http.Request) {
 	return func(request *http.Request) {
-		request.Header.Set("X-RealmKit-User-Id", userID.String())
+		request.Header.Set(auth.DevUserIDHeader, userID.String())
 	}
 }
 

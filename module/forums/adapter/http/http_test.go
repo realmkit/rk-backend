@@ -504,6 +504,7 @@ func TestForumHTTPProblemMappingsExerciseSupport(t *testing.T) {
 func newTestApp(service httpService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	app.Use(headers.Middleware())
+	useTestPrincipal(app)
 	v1 := app
 	Register(v1, Services{
 		Structure:   service,

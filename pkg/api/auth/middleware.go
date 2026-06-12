@@ -51,6 +51,25 @@ func Middleware(config Config, validator *Validator, provisioner Provisioner, se
 	}
 }
 
+// OptionalMiddleware validates bearer tokens when present and allows anonymous requests.
+func OptionalMiddleware(config Config, validator *Validator, provisioner Provisioner, settings MiddlewareConfig) fiber.Handler {
+	if validator == nil {
+		validator = NewValidator(config)
+	}
+	if settings.Log == nil {
+		settings.Log = zap.NewNop()
+	}
+	return func(ctx *fiber.Ctx) error {
+		if token := bearerToken(ctx.Get(headers.Authorization)); token != "" {
+			return authenticateBearer(ctx, validator, provisioner, token)
+		}
+		if config.DevelopmentBypass && settings.Development && strings.TrimSpace(ctx.Get(DevUserIDHeader)) != "" {
+			return authenticateDevelopment(ctx, provisioner, settings.Log)
+		}
+		return ctx.Next()
+	}
+}
+
 // Register registers public auth routes.
 func Register(router fiber.Router, config Config) {
 	router.Get("/auth/config", func(ctx *fiber.Ctx) error {

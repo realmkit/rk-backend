@@ -166,47 +166,38 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	swagger.Register(app, development)
 
 	api := app.Group("", headers.RequireJSON())
-	if options.auth != nil {
+	auths := options.authHandlers(log, development)
+	moduleAPI := api
+	if auths.configured {
 		auth.Register(api, *options.auth)
+		moduleAPI = api.Group("", auths.optional)
 	}
 	if options.assets != nil {
-		assetshttp.Register(api, *options.assets)
+		assetshttp.Register(moduleAPI, *options.assets)
 	}
 	if options.events != nil {
-		eventshttp.Register(api, *options.events)
+		eventshttp.Register(moduleAPI, *options.events)
 	}
 	if options.cron != nil {
-		cronhttp.Register(api, *options.cron)
+		cronhttp.Register(moduleAPI, *options.cron)
 	}
 	if options.groups != nil {
-		groupshttp.Register(api, *options.groups)
+		groupshttp.Register(moduleAPI, *options.groups)
 	}
 	if options.forums != nil {
-		forumshttp.Register(api, *options.forums)
+		forumshttp.Register(moduleAPI, *options.forums)
 	}
-	if options.users != nil && options.auth != nil && options.authProvisioner != nil {
-		userhttp.Register(
-			api,
-			*options.users,
-			auth.Middleware(
-				*options.auth,
-				nil,
-				options.authProvisioner,
-				auth.MiddlewareConfig{
-					Development: development,
-					Log:         log,
-				},
-			),
-		)
+	if options.users != nil && auths.configured {
+		userhttp.Register(api, *options.users, auths.required)
 	}
 	if options.metadata != nil {
-		metadatahttp.Register(api, *options.metadata)
+		metadatahttp.Register(moduleAPI, *options.metadata)
 	}
 	if options.punishments != nil {
-		punishmentshttp.Register(api, *options.punishments)
+		punishmentshttp.Register(moduleAPI, *options.punishments)
 	}
 	if options.tickets != nil {
-		ticketshttp.Register(api, *options.tickets)
+		ticketshttp.Register(moduleAPI, *options.tickets)
 	}
 	return app
 }

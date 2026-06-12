@@ -8,16 +8,19 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/realmkit/rk-backend/module/forums/adapter/http/shared"
 	"github.com/realmkit/rk-backend/module/forums/domain"
 	"github.com/realmkit/rk-backend/module/forums/port"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
 	"github.com/realmkit/rk-backend/pkg/pagination"
 )
+
+const testUserIDHeader = "X-RealmKit-Test-User-Id"
 
 // TestContentRoutesExerciseHandlers verifies content route wiring and response codes.
 func TestContentRoutesExerciseHandlers(t *testing.T) {
 	app := fiber.New()
+	useTestPrincipal(app)
 	Register(app, Services{
 		Content:     contentService{},
 		Interaction: interactionService{},
@@ -28,7 +31,7 @@ func TestContentRoutesExerciseHandlers(t *testing.T) {
 		req, _ := http.NewRequest(route.method, route.path, bytes.NewBufferString(route.body))
 		req.Header.Set(headers.ContentType, "application/json")
 		req.Header.Set(headers.Accept, "application/json")
-		req.Header.Set(shared.CurrentUserIDHeader, userID)
+		req.Header.Set(testUserIDHeader, userID)
 		if route.idempotent {
 			req.Header.Set(headers.IdempotencyKey, route.path)
 		}
@@ -43,6 +46,22 @@ func TestContentRoutesExerciseHandlers(t *testing.T) {
 			t.Fatalf("%s %s status = %d, want %d", route.method, route.path, resp.StatusCode, route.status)
 		}
 	}
+}
+
+// useTestPrincipal installs principal locals for route wiring tests.
+func useTestPrincipal(app *fiber.App) {
+	app.Use(func(ctx *fiber.Ctx) error {
+		value := ctx.Get(testUserIDHeader)
+		if value == "" {
+			return ctx.Next()
+		}
+		userID, err := uuid.Parse(value)
+		if err != nil {
+			return err
+		}
+		principal.Set(ctx, principal.Principal{UserID: userID, SubjectHash: "test:" + userID.String()})
+		return ctx.Next()
+	})
 }
 
 // contentRoute describes one route test case.

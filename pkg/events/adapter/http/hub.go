@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
 	"github.com/realmkit/rk-backend/pkg/events/domain"
 	"github.com/realmkit/rk-backend/pkg/events/port"
 )
@@ -161,15 +162,11 @@ func scopeKey(scope domain.Scope) string {
 	return string(scope.Type) + ":" + scope.ID + ":" + scope.Permission
 }
 
-// socketUserID extracts the authenticated user ID made available to the socket.
+// socketUserID extracts the authenticated principal user ID from websocket locals.
 func socketUserID(conn *websocket.Conn) uuid.UUID {
-	value := conn.Headers("X-RealmKit-User-Id")
-	if value == "" {
-		value = conn.Query("user_id")
-	}
-	id, err := uuid.Parse(value)
-	if err != nil {
+	current, ok := conn.Locals(principal.LocalKey).(principal.Principal)
+	if !ok {
 		return uuid.Nil
 	}
-	return id
+	return current.UserID
 }
