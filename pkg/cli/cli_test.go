@@ -15,6 +15,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/logger"
 	"github.com/realmkit/rk-backend/pkg/postgres"
 	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
+	"github.com/realmkit/rk-backend/pkg/postgres/seeding"
 	realmkitredis "github.com/realmkit/rk-backend/pkg/redis"
 	"github.com/realmkit/rk-backend/pkg/server"
 	"github.com/realmkit/rk-backend/pkg/storage"
@@ -37,9 +38,9 @@ func TestRootCommandShowsHelpByDefault(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if !strings.Contains(output.String(), "start") || !strings.Contains(output.String(), "migrate") ||
+	if !strings.Contains(output.String(), "start") || !strings.Contains(output.String(), "seed") ||
 		!strings.Contains(output.String(), "forums") {
-		t.Fatalf("output = %q, want start, migrate, and forums commands", output.String())
+		t.Fatalf("output = %q, want start, seed, and forums commands", output.String())
 	}
 }
 
@@ -176,6 +177,75 @@ func TestMigrateRepairRunsWithFlags(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatalf("repair Execute() error = %v", err)
+	}
+}
+
+// TestSeedCommandsApplyAndValidate verifies stateful data seed commands.
+func TestSeedCommandsApplyAndValidate(t *testing.T) {
+	db := newCommandDB(t)
+	deps := testCommandDepsWithDB(t, db)
+	if _, err := executeCommand(t, []string{"migrate", "up"}, deps); err != nil {
+		t.Fatalf("migrate up error = %v", err)
+	}
+
+	output, err := executeCommand(t, []string{"seed", "up"}, deps)
+	if err != nil {
+		t.Fatalf("seed up error = %v", err)
+	}
+	if !strings.Contains(output, "applied=4 pending=0") {
+		t.Fatalf("seed up output = %q, want applied=4 pending=0", output)
+	}
+
+	output, err = executeCommand(t, []string{"seed", "validate"}, deps)
+	if err != nil {
+		t.Fatalf("seed validate error = %v", err)
+	}
+	if !strings.Contains(output, "applied=4 pending=0") {
+		t.Fatalf("seed validate output = %q, want applied=4 pending=0", output)
+	}
+}
+
+// TestSeedDryRunReportsPendingSeeds verifies dry-run does not apply seeds.
+func TestSeedDryRunReportsPendingSeeds(t *testing.T) {
+	db := newCommandDB(t)
+	deps := testCommandDepsWithDB(t, db)
+	if _, err := executeCommand(t, []string{"migrate", "up"}, deps); err != nil {
+		t.Fatalf("migrate up error = %v", err)
+	}
+
+	output, err := executeCommand(t, []string{"seed", "dry-run"}, deps)
+	if err != nil {
+		t.Fatalf("seed dry-run error = %v", err)
+	}
+	if !strings.Contains(output, "applied=0 pending=4") {
+		t.Fatalf("dry-run output = %q, want pending seeds", output)
+	}
+}
+
+// TestSeedGrantAdminCommandAssignsMembership verifies first-operator grants.
+func TestSeedGrantAdminCommandAssignsMembership(t *testing.T) {
+	db := newCommandDB(t)
+	deps := testCommandDepsWithDB(t, db)
+	userID := "00000000-0000-0000-0000-000000000901"
+	if _, err := executeCommand(t, []string{"migrate", "up"}, deps); err != nil {
+		t.Fatalf("migrate up error = %v", err)
+	}
+	if _, err := executeCommand(t, []string{"seed", "up"}, deps); err != nil {
+		t.Fatalf("seed up error = %v", err)
+	}
+	insertUser := `
+INSERT INTO users(id, status, avatar_asset_id, first_seen_at, last_seen_at, version, created_at, updated_at, deleted_at)
+VALUES(?, 'active', NULL, CURRENT_TIMESTAMP, NULL, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL)`
+	if err := db.Exec(insertUser, userID).Error; err != nil {
+		t.Fatalf("insert user error = %v", err)
+	}
+
+	output, err := executeCommand(t, []string{"seed", "grant-admin", "--user-id", userID}, deps)
+	if err != nil {
+		t.Fatalf("grant-admin error = %v", err)
+	}
+	if !strings.Contains(output, "created=true") {
+		t.Fatalf("grant output = %q, want created=true", output)
 	}
 }
 
@@ -409,6 +479,9 @@ func testCommandDeps(t *testing.T) commandDeps {
 		},
 		newRunner: func(db *gorm.DB, log *zap.Logger) migrations.Runner {
 			return migrations.NewRunner(db, migrations.DefaultSource(), migrations.WithLogger(log))
+		},
+		newSeedRunner: func(db *gorm.DB, log *zap.Logger) seeding.Runner {
+			return seeding.NewRunner(db, seeding.DefaultSource(), seeding.WithLogger(log))
 		},
 	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/orm"
 	"github.com/realmkit/rk-backend/pkg/postgres"
 	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
+	"github.com/realmkit/rk-backend/pkg/postgres/seeding"
 	realmkitredis "github.com/realmkit/rk-backend/pkg/redis"
 	"github.com/realmkit/rk-backend/pkg/server"
 	"github.com/realmkit/rk-backend/pkg/storage"
@@ -35,6 +36,7 @@ type commandDeps struct {
 	closeRedis    func(*goredis.Client) error
 	newStorage    func(context.Context, storage.Config) (storage.Store, error)
 	newRunner     func(*gorm.DB, *zap.Logger) migrations.Runner
+	newSeedRunner func(*gorm.DB, *zap.Logger) seeding.Runner
 }
 
 // Run executes the RealmKit CLI.
@@ -70,6 +72,9 @@ func defaultCommandDeps() commandDeps {
 		newRunner: func(db *gorm.DB, log *zap.Logger) migrations.Runner {
 			return migrations.NewRunner(db, migrations.DefaultSource(), migrations.WithLogger(log), migrations.WithExecutor("realmkit-cli"))
 		},
+		newSeedRunner: func(db *gorm.DB, log *zap.Logger) seeding.Runner {
+			return seeding.NewRunner(db, seeding.DefaultSource(), seeding.WithLogger(log), seeding.WithExecutor("realmkit-cli"))
+		},
 	}
 }
 
@@ -93,6 +98,7 @@ func newRootCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command 
 	}
 	cmd.AddCommand(newStartCommand(activeLogger, deps))
 	cmd.AddCommand(newMigrateCommand(activeLogger, deps))
+	cmd.AddCommand(newSeedCommand(activeLogger, deps))
 	cmd.AddCommand(newEventsCommand(activeLogger, deps))
 	cmd.AddCommand(newCronCommand(activeLogger, deps))
 	cmd.AddCommand(newForumsCommand(activeLogger, deps))
