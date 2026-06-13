@@ -26,6 +26,9 @@ const ETag = "ETag"
 // IdempotencyKey is the idempotency key header.
 const IdempotencyKey = "Idempotency-Key"
 
+// IdentityToken is the optional verified profile token header.
+const IdentityToken = "X-RealmKit-Identity-Token"
+
 // IfMatch is the HTTP If-Match header.
 const IfMatch = "If-Match"
 

@@ -42,7 +42,7 @@ func Middleware(config Config, validator *Validator, provisioner Provisioner, se
 	}
 	return func(ctx *fiber.Ctx) error {
 		if token := bearerToken(ctx.Get(headers.Authorization)); token != "" {
-			return authenticateBearer(ctx, validator, provisioner, token)
+			return authenticateBearer(ctx, validator, provisioner, settings.Log, token)
 		}
 		if config.DevelopmentBypass && settings.Development {
 			return authenticateDevelopment(ctx, provisioner, settings.Log)
@@ -61,7 +61,7 @@ func OptionalMiddleware(config Config, validator *Validator, provisioner Provisi
 	}
 	return func(ctx *fiber.Ctx) error {
 		if token := bearerToken(ctx.Get(headers.Authorization)); token != "" {
-			return authenticateBearer(ctx, validator, provisioner, token)
+			return authenticateBearer(ctx, validator, provisioner, settings.Log, token)
 		}
 		if config.DevelopmentBypass && settings.Development && strings.TrimSpace(ctx.Get(DevUserIDHeader)) != "" {
 			return authenticateDevelopment(ctx, provisioner, settings.Log)
@@ -79,13 +79,30 @@ func Register(router fiber.Router, config Config) {
 }
 
 // authenticateBearer validates bearer token and stores a principal.
-func authenticateBearer(ctx *fiber.Ctx, validator *Validator, provisioner Provisioner, raw string) error {
+func authenticateBearer(
+	ctx *fiber.Ctx,
+	validator *Validator,
+	provisioner Provisioner,
+	log *zap.Logger,
+	raw string,
+) error {
 	token, err := validator.Validate(ctx.UserContext(), raw)
 	if err != nil {
+		log.Warn("bearer token rejected", zap.Error(err))
 		return authProblem(ctx, err)
+	}
+	if identityToken := strings.TrimSpace(ctx.Get(headers.IdentityToken)); identityToken != "" {
+		token, err = validator.MergeIdentityToken(ctx.UserContext(), token, identityToken)
+		if err != nil {
+			log.Warn("identity token rejected", zap.Error(err))
+			return authProblem(ctx, err)
+		}
+	} else {
+		token.Identity = validator.enrichIdentity(ctx.UserContext(), raw, token.Identity)
 	}
 	current, err := provisioner.Provision(ctx.UserContext(), token.Identity, token)
 	if err != nil {
+		log.Warn("bearer principal provisioning failed", zap.Error(err))
 		return authProblem(ctx, err)
 	}
 	principal.Set(ctx, current)

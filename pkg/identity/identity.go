@@ -61,6 +61,30 @@ func FromClaims(claims map[string]any) (ExternalIdentity, error) {
 	}, nil
 }
 
+// Merge fills optional provider profile claims from another identity.
+func (external ExternalIdentity) Merge(other ExternalIdentity) ExternalIdentity {
+	if external.Username == "" {
+		external.Username = other.Username
+	}
+	if external.Email == "" {
+		external.Email = other.Email
+		external.EmailVerified = other.EmailVerified
+	}
+	if external.DisplayName == "" {
+		external.DisplayName = other.DisplayName
+	}
+	if external.PictureURL == "" {
+		external.PictureURL = other.PictureURL
+	}
+	if external.PreferredLocale == "" {
+		external.PreferredLocale = other.PreferredLocale
+	}
+	if other.RawClaimsHash != "" {
+		external.RawClaimsHash = other.RawClaimsHash
+	}
+	return external
+}
+
 // SubjectHash returns a log-safe identity key hash.
 func SubjectHash(issuer string, subject string) string {
 	sum := sha256.Sum256([]byte(strings.TrimSpace(issuer) + "\x00" + strings.TrimSpace(subject)))

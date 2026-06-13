@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
@@ -35,7 +37,7 @@ type jwkSet struct {
 	Keys []jwk `json:"keys"`
 }
 
-// jwk contains one RSA JSON web key.
+// jwk contains one JSON web key.
 type jwk struct {
 	KeyID     string `json:"kid"`
 	KeyType   string `json:"kty"`
@@ -43,6 +45,9 @@ type jwk struct {
 	Use       string `json:"use"`
 	Modulus   string `json:"n"`
 	Exponent  string `json:"e"`
+	Curve     string `json:"crv"`
+	X         string `json:"x"`
+	Y         string `json:"y"`
 }
 
 // newKeySet creates a key cache.
@@ -150,6 +155,9 @@ func (set *keySet) fetchKeys(ctx context.Context, uri string) (map[string]any, e
 		if parsed, ok := key.rsaPublicKey(); ok {
 			keys[key.KeyID] = parsed
 		}
+		if parsed, ok := key.ecdsaPublicKey(); ok {
+			keys[key.KeyID] = parsed
+		}
 	}
 	return keys, nil
 }
@@ -172,4 +180,40 @@ func (key jwk) rsaPublicKey() (*rsa.PublicKey, bool) {
 		value = value<<8 + int(b)
 	}
 	return &rsa.PublicKey{N: new(big.Int).SetBytes(modulus), E: value}, true
+}
+
+// ecdsaPublicKey returns an ECDSA public key from a JWK.
+func (key jwk) ecdsaPublicKey() (*ecdsa.PublicKey, bool) {
+	curve, ok := namedCurve(key.Curve)
+	if key.KeyID == "" || key.KeyType != "EC" || key.X == "" || key.Y == "" || !ok {
+		return nil, false
+	}
+	x, err := base64.RawURLEncoding.DecodeString(key.X)
+	if err != nil {
+		return nil, false
+	}
+	y, err := base64.RawURLEncoding.DecodeString(key.Y)
+	if err != nil {
+		return nil, false
+	}
+	xValue := new(big.Int).SetBytes(x)
+	yValue := new(big.Int).SetBytes(y)
+	if !curve.IsOnCurve(xValue, yValue) {
+		return nil, false
+	}
+	return &ecdsa.PublicKey{Curve: curve, X: xValue, Y: yValue}, true
+}
+
+// namedCurve returns the elliptic curve for a JWK curve name.
+func namedCurve(name string) (elliptic.Curve, bool) {
+	switch name {
+	case "P-256":
+		return elliptic.P256(), true
+	case "P-384":
+		return elliptic.P384(), true
+	case "P-521":
+		return elliptic.P521(), true
+	default:
+		return nil, false
+	}
 }

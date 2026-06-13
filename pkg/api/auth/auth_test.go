@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
@@ -150,6 +152,38 @@ func TestValidatorValidatesRS256Token(t *testing.T) {
 	}
 	if validated.Identity.Subject != "subject" || len(validated.Scopes) != 2 {
 		t.Fatalf("validated = %+v, want subject and scopes", validated)
+	}
+}
+
+// TestValidatorValidatesES384Token verifies EC signing keys are supported.
+func TestValidatorValidatesES384Token(t *testing.T) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	if err != nil {
+		t.Fatalf("GenerateKey() error = %v", err)
+	}
+	validator := NewValidator(Config{IssuerURL: "https://auth.example", Audience: "realmkit-api"})
+	validator.keys.keys["ec-kid"] = &privateKey.PublicKey
+	validator.keys.expires = time.Now().Add(time.Hour)
+	token := jwt.NewWithClaims(
+		jwt.SigningMethodES384,
+		jwt.MapClaims{
+			"iss": "https://auth.example",
+			"sub": "subject",
+			"aud": "realmkit-api",
+			"exp": time.Now().Add(time.Hour).Unix(),
+		},
+	)
+	token.Header["kid"] = "ec-kid"
+	raw, err := token.SignedString(privateKey)
+	if err != nil {
+		t.Fatalf("SignedString() error = %v", err)
+	}
+	validated, err := validator.Validate(context.Background(), raw)
+	if err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+	if validated.Identity.Subject != "subject" {
+		t.Fatalf("Subject = %q, want subject", validated.Identity.Subject)
 	}
 }
 

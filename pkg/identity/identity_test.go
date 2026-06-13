@@ -36,3 +36,26 @@ func TestFromClaimsRequiresIssuerAndSubject(t *testing.T) {
 		t.Fatalf("FromClaims() error = nil, want missing issuer error")
 	}
 }
+
+// TestExternalIdentityMergeFillsOptionalProfileClaims verifies profile enrichment.
+func TestExternalIdentityMergeFillsOptionalProfileClaims(t *testing.T) {
+	external := ExternalIdentity{Issuer: "issuer", Subject: "subject"}
+	enriched := external.Merge(ExternalIdentity{
+		Email:           "ian@example.test",
+		EmailVerified:   true,
+		DisplayName:     "Ian",
+		PictureURL:      "https://example.test/avatar.png",
+		PreferredLocale: "en",
+		RawClaimsHash:   "profile-hash",
+		Username:        "ian",
+	})
+	if enriched.Email != "ian@example.test" || enriched.DisplayName != "Ian" || !enriched.EmailVerified {
+		t.Fatalf("Merge() = %+v, want profile claims", enriched)
+	}
+	if enriched.RawClaimsHash != "profile-hash" {
+		t.Fatalf("RawClaimsHash = %q, want profile hash", enriched.RawClaimsHash)
+	}
+	if enriched.Issuer != "issuer" || enriched.Subject != "subject" {
+		t.Fatalf("Merge() changed identity keys: %+v", enriched)
+	}
+}
