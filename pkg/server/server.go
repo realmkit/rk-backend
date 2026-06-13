@@ -28,6 +28,9 @@ import (
 // DefaultRateLimit is the server's initial local rate limit policy.
 var DefaultRateLimit = ratelimit.Policy{Limit: 1000, Window: time.Minute}
 
+// DefaultReadBufferSize allows local auth cookies and provider headers.
+const DefaultReadBufferSize = 64 * 1024
+
 // Option configures the HTTP server.
 type Option func(*options)
 
@@ -153,6 +156,7 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: !development,
 		ErrorHandler:          problem.Handler,
+		ReadBufferSize:        DefaultReadBufferSize,
 	})
 	app.Use(recover.New())
 	app.Use(headers.Middleware())

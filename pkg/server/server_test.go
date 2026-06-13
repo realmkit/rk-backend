@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -87,6 +88,26 @@ func TestConfigAddress(t *testing.T) {
 
 	if cfg.Address() != "127.0.0.1:9090" {
 		t.Fatalf("Address() = %q, want %q", cfg.Address(), "127.0.0.1:9090")
+	}
+}
+
+// TestNewConfiguresLargeHeaderBuffer verifies auth cookies do not break docs.
+func TestNewConfiguresLargeHeaderBuffer(t *testing.T) {
+	app := newApp(t, nil, true)
+	req := httptest.NewRequest(fiber.MethodGet, swagger.DocsPath, nil)
+	req.Header.Set("Cookie", "realmkit="+strings.Repeat("x", 24*1024))
+
+	res, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	defer res.Body.Close()
+
+	if app.Config().ReadBufferSize != DefaultReadBufferSize {
+		t.Fatalf("ReadBufferSize = %d, want %d", app.Config().ReadBufferSize, DefaultReadBufferSize)
+	}
+	if res.StatusCode != fiber.StatusOK {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusOK)
 	}
 }
 
