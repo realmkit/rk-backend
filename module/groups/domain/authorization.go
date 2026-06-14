@@ -6,19 +6,65 @@ import (
 	"github.com/google/uuid"
 )
 
-// RelationTuple grants a relation on an object to a user or group subject.
-type RelationTuple struct {
-	// ID is the tuple identifier.
+// PermissionAction describes one grantable action.
+type PermissionAction struct {
+	// ID is the action identifier.
 	ID uuid.UUID `json:"id"`
 
-	// ObjectType is the object type.
-	ObjectType ObjectType `json:"object_type"`
+	// Action is the stable dotted action key.
+	Action Action `json:"action"`
 
-	// ObjectID is the object identifier.
-	ObjectID uuid.UUID `json:"object_id"`
+	// Area groups actions for administration screens.
+	Area string `json:"area"`
 
-	// Relation is the granted object relation.
-	Relation Relation `json:"relation"`
+	// ScopeType is the resource type this action applies to.
+	ScopeType ScopeType `json:"scope_type"`
+
+	// Label is the human-readable action name.
+	Label string `json:"label"`
+
+	// Description explains the permission to administrators.
+	Description string `json:"description"`
+
+	// WarningLevel marks risky actions for UI confirmation.
+	WarningLevel WarningLevel `json:"warning_level"`
+
+	// Enabled reports whether grants can allow this action.
+	Enabled bool `json:"enabled"`
+
+	// Version is the optimistic version.
+	Version uint64 `json:"version"`
+
+	// CreatedAt is the creation timestamp.
+	CreatedAt time.Time `json:"created_at"`
+
+	// UpdatedAt is the last update timestamp.
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// Validate validates permission action fields.
+func (action PermissionAction) Validate() error {
+	var violations []Violation
+	violations = append(violations, ValidatePermission("action", action.Action)...)
+	violations = append(violations, ValidateRelationTerm("scope_type", string(action.ScopeType))...)
+	violations = append(violations, requireValue("area", action.Area)...)
+	violations = append(violations, requireValue("label", action.Label)...)
+	if action.ID == uuid.Nil {
+		violations = AppendViolation(violations, "id", "is required")
+	}
+	if action.WarningLevel == "" {
+		violations = AppendViolation(violations, "warning_level", "is required")
+	}
+	if action.Version == 0 {
+		violations = AppendViolation(violations, "version", "is required")
+	}
+	return NewValidationError(violations)
+}
+
+// PermissionGrant allows one subject to perform one action on one scope.
+type PermissionGrant struct {
+	// ID is the grant identifier.
+	ID uuid.UUID `json:"id"`
 
 	// SubjectType is the subject type.
 	SubjectType SubjectType `json:"subject_type"`
@@ -26,8 +72,20 @@ type RelationTuple struct {
 	// SubjectID is the subject identifier.
 	SubjectID uuid.UUID `json:"subject_id"`
 
-	// SubjectRelation is the subject relation required for group subjects.
-	SubjectRelation Relation `json:"subject_relation,omitempty"`
+	// Action is the granted dotted action key.
+	Action Action `json:"action"`
+
+	// ScopeType is the granted resource type.
+	ScopeType ScopeType `json:"scope_type"`
+
+	// ScopeID is the granted resource identifier.
+	ScopeID uuid.UUID `json:"scope_id"`
+
+	// Inherit reports whether descendant scopes inherit this grant.
+	Inherit bool `json:"inherit"`
+
+	// ConditionKey references an optional named runtime condition.
+	ConditionKey string `json:"condition_key,omitempty"`
 
 	// CreatedByUserID is the creator when known.
 	CreatedByUserID *uuid.UUID `json:"created_by_user_id,omitempty"`
@@ -36,18 +94,18 @@ type RelationTuple struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// Validate validates relation tuple fields.
-func (tuple RelationTuple) Validate() error {
+// Validate validates permission grant fields.
+func (grant PermissionGrant) Validate() error {
 	var violations []Violation
-	violations = append(violations, ValidateRelationTerm("object_type", string(tuple.ObjectType))...)
-	if tuple.ObjectID == uuid.Nil {
-		violations = AppendViolation(violations, "object_id", "is required")
+	violations = append(violations, ValidateRelationTerm("subject_type", string(grant.SubjectType))...)
+	violations = append(violations, validateGrantSubject(grant)...)
+	violations = append(violations, ValidatePermission("action", grant.Action)...)
+	violations = append(violations, ValidateRelationTerm("scope_type", string(grant.ScopeType))...)
+	if grant.ID == uuid.Nil {
+		violations = AppendViolation(violations, "id", "is required")
 	}
-	violations = append(violations, ValidateRelationTerm("relation", string(tuple.Relation))...)
-	violations = append(violations, ValidateRelationTerm("subject_type", string(tuple.SubjectType))...)
-	violations = append(violations, validateTupleSubject(tuple)...)
-	if tuple.SubjectRelation != "" {
-		violations = append(violations, ValidateRelationTerm("subject_relation", string(tuple.SubjectRelation))...)
+	if grant.ScopeID == uuid.Nil {
+		violations = AppendViolation(violations, "scope_id", "is required")
 	}
 	return NewValidationError(violations)
 }
@@ -62,32 +120,26 @@ func AuthenticatedSubjectID() uuid.UUID {
 	return uuid.MustParse("00000000-0000-0000-0000-000000000002")
 }
 
-// validateTupleSubject validates subject-specific tuple invariants.
-func validateTupleSubject(tuple RelationTuple) []Violation {
-	switch tuple.SubjectType {
+// validateGrantSubject validates subject-specific grant invariants.
+func validateGrantSubject(grant PermissionGrant) []Violation {
+	switch grant.SubjectType {
 	case SubjectPublic:
-		return validateSystemSubject(tuple, PublicSubjectID())
+		return validateSystemSubject(grant, PublicSubjectID())
 	case SubjectAuthenticated:
-		return validateSystemSubject(tuple, AuthenticatedSubjectID())
+		return validateSystemSubject(grant, AuthenticatedSubjectID())
 	default:
-		if tuple.SubjectID == uuid.Nil {
+		if grant.SubjectID == uuid.Nil {
 			return []Violation{{Field: "subject_id", Message: "is required"}}
-		}
-		if tuple.SubjectRelation != "" && tuple.SubjectType != SubjectGroup {
-			return []Violation{{Field: "subject_relation", Message: "is only supported for group subjects"}}
 		}
 		return nil
 	}
 }
 
-// validateSystemSubject validates public and authenticated subject tuples.
-func validateSystemSubject(tuple RelationTuple, expectedID uuid.UUID) []Violation {
+// validateSystemSubject validates public and authenticated subject grants.
+func validateSystemSubject(grant PermissionGrant, expectedID uuid.UUID) []Violation {
 	var violations []Violation
-	if tuple.SubjectID != expectedID {
+	if grant.SubjectID != expectedID {
 		violations = AppendViolation(violations, "subject_id", "must use the reserved subject identifier")
-	}
-	if tuple.SubjectRelation != "" {
-		violations = AppendViolation(violations, "subject_relation", "must be empty for this subject type")
 	}
 	return violations
 }
@@ -135,90 +187,4 @@ func (condition PolicyCondition) Validate(field string) []Violation {
 		}
 	}
 	return violations
-}
-
-// PermissionDefinition describes one customizable permission.
-type PermissionDefinition struct {
-	// ID is the definition identifier.
-	ID uuid.UUID `json:"id"`
-
-	// Permission is the domain action.
-	Permission Permission `json:"permission"`
-
-	// ObjectType is the target object type.
-	ObjectType ObjectType `json:"object_type"`
-
-	// Description explains the permission to administrators.
-	Description string `json:"description"`
-
-	// Enabled reports whether the permission can grant access.
-	Enabled bool `json:"enabled"`
-
-	// Version is the optimistic version.
-	Version uint64 `json:"version"`
-
-	// CreatedAt is the creation timestamp.
-	CreatedAt time.Time `json:"created_at"`
-
-	// UpdatedAt is the last update timestamp.
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// Validate validates permission definition fields.
-func (definition PermissionDefinition) Validate() error {
-	var violations []Violation
-	violations = append(violations, ValidatePermission("permission", definition.Permission)...)
-	violations = append(violations, ValidateRelationTerm("object_type", string(definition.ObjectType))...)
-	if definition.ID == uuid.Nil {
-		violations = AppendViolation(violations, "id", "is required")
-	}
-	if definition.Version == 0 {
-		violations = AppendViolation(violations, "version", "is required")
-	}
-	return NewValidationError(violations)
-}
-
-// PermissionRule maps one relation to one permission with optional conditions.
-type PermissionRule struct {
-	// ID is the rule identifier.
-	ID uuid.UUID `json:"id"`
-
-	// Permission is the domain action.
-	Permission Permission `json:"permission"`
-
-	// ObjectType is the target object type.
-	ObjectType ObjectType `json:"object_type"`
-
-	// Relation is the object relation that can grant access.
-	Relation Relation `json:"relation"`
-
-	// Conditions must pass after the relation matches.
-	Conditions []PolicyCondition `json:"conditions,omitempty"`
-
-	// Priority orders rules from lowest number to highest.
-	Priority int `json:"priority"`
-
-	// Enabled reports whether the rule participates in checks.
-	Enabled bool `json:"enabled"`
-
-	// CreatedAt is the creation timestamp.
-	CreatedAt time.Time `json:"created_at"`
-
-	// UpdatedAt is the last update timestamp.
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// Validate validates permission rule fields.
-func (rule PermissionRule) Validate() error {
-	var violations []Violation
-	violations = append(violations, ValidatePermission("permission", rule.Permission)...)
-	violations = append(violations, ValidateRelationTerm("object_type", string(rule.ObjectType))...)
-	violations = append(violations, ValidateRelationTerm("relation", string(rule.Relation))...)
-	if rule.ID == uuid.Nil {
-		violations = AppendViolation(violations, "id", "is required")
-	}
-	for index, condition := range rule.Conditions {
-		violations = append(violations, condition.Validate("conditions["+itoa(index)+"]")...)
-	}
-	return NewValidationError(violations)
 }

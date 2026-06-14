@@ -2,180 +2,78 @@ package application
 
 import "github.com/realmkit/rk-backend/module/groups/domain"
 
-// staticPermissionRule defines built-in fallback policy rules.
-type staticPermissionRule struct {
-	objectType domain.ObjectType
-	relations  []domain.Relation
+// staticPermissionActions maps built-in permission actions to their scopes.
+var staticPermissionActions = map[domain.Action]domain.PermissionAction{
+	"groups.read":                                  staticAction("groups.read", "groups", domain.ObjectGroup, "Read groups", domain.WarningLevelNormal),
+	"groups.update":                                staticAction("groups.update", "groups", domain.ObjectGroup, "Update groups", domain.WarningLevelDangerous),
+	"groups.delete":                                staticAction("groups.delete", "groups", domain.ObjectGroup, "Delete groups", domain.WarningLevelDangerous),
+	"groups.assign_member":                         staticAction("groups.assign_member", "groups", domain.ObjectGroup, "Assign group members", domain.WarningLevelDangerous),
+	"groups.read_members":                          staticAction("groups.read_members", "groups", domain.ObjectGroup, "Read group members", domain.WarningLevelNormal),
+	"assets.view":                                  staticAction("assets.view", "assets", domain.ObjectAsset, "View assets", domain.WarningLevelNormal),
+	"assets.update":                                staticAction("assets.update", "assets", domain.ObjectAsset, "Update assets", domain.WarningLevelDangerous),
+	"metadata.write_user":                          staticAction("metadata.write_user", "users", domain.ObjectUser, "Update user metadata", domain.WarningLevelDangerous),
+	domain.PermissionForumsView:                    staticAction(domain.PermissionForumsView, "forums", domain.ObjectForum, "View forums", domain.WarningLevelNormal),
+	domain.PermissionForumsManageForum:             staticAction(domain.PermissionForumsManageForum, "forums", domain.ObjectForum, "Manage forums", domain.WarningLevelDangerous),
+	domain.PermissionForumsCreateThread:            staticAction(domain.PermissionForumsCreateThread, "forums", domain.ObjectForum, "Create forum threads", domain.WarningLevelNormal),
+	domain.PermissionForumsReply:                   staticAction(domain.PermissionForumsReply, "forums", domain.ObjectForum, "Reply in forums", domain.WarningLevelNormal),
+	domain.PermissionForumsLikePosts:               staticAction(domain.PermissionForumsLikePosts, "forums", domain.ObjectForum, "Like forum posts", domain.WarningLevelNormal),
+	domain.PermissionForumsPinThreads:              staticAction(domain.PermissionForumsPinThreads, "forums", domain.ObjectForum, "Pin forum threads", domain.WarningLevelDangerous),
+	domain.PermissionForumsManageThreads:           staticAction(domain.PermissionForumsManageThreads, "forums", domain.ObjectForum, "Manage forum threads", domain.WarningLevelDangerous),
+	domain.PermissionForumsManagePosts:             staticAction(domain.PermissionForumsManagePosts, "forums", domain.ObjectForum, "Manage forum posts", domain.WarningLevelDangerous),
+	domain.PermissionThreadsView:                   staticAction(domain.PermissionThreadsView, "threads", domain.ObjectForumThread, "View threads", domain.WarningLevelNormal),
+	domain.PermissionThreadsUpdate:                 staticAction(domain.PermissionThreadsUpdate, "threads", domain.ObjectForumThread, "Update threads", domain.WarningLevelDangerous),
+	domain.PermissionThreadsClose:                  staticAction(domain.PermissionThreadsClose, "threads", domain.ObjectForumThread, "Close threads", domain.WarningLevelDangerous),
+	domain.PermissionThreadsOpen:                   staticAction(domain.PermissionThreadsOpen, "threads", domain.ObjectForumThread, "Open threads", domain.WarningLevelDangerous),
+	domain.PermissionThreadsDelete:                 staticAction(domain.PermissionThreadsDelete, "threads", domain.ObjectForumThread, "Delete threads", domain.WarningLevelDangerous),
+	domain.PermissionThreadsPin:                    staticAction(domain.PermissionThreadsPin, "threads", domain.ObjectForumThread, "Pin threads", domain.WarningLevelDangerous),
+	domain.PermissionPostsView:                     staticAction(domain.PermissionPostsView, "posts", domain.ObjectForumPost, "View posts", domain.WarningLevelNormal),
+	domain.PermissionPostsUpdate:                   staticAction(domain.PermissionPostsUpdate, "posts", domain.ObjectForumPost, "Update posts", domain.WarningLevelDangerous),
+	domain.PermissionPostsDelete:                   staticAction(domain.PermissionPostsDelete, "posts", domain.ObjectForumPost, "Delete posts", domain.WarningLevelDangerous),
+	domain.PermissionPostsLike:                     staticAction(domain.PermissionPostsLike, "posts", domain.ObjectForumPost, "Like posts", domain.WarningLevelNormal),
+	domain.PermissionPostsViewHidden:               staticAction(domain.PermissionPostsViewHidden, "posts", domain.ObjectForumPost, "View hidden posts", domain.WarningLevelSensitive),
+	domain.PermissionPostsViewRevisions:            staticAction(domain.PermissionPostsViewRevisions, "posts", domain.ObjectForumPost, "View post revisions", domain.WarningLevelSensitive),
+	domain.PermissionPunishmentsView:               staticAction(domain.PermissionPunishmentsView, "punishments", domain.ObjectPunishment, "View punishments", domain.WarningLevelSensitive),
+	domain.PermissionPunishmentsViewPrivate:        staticAction(domain.PermissionPunishmentsViewPrivate, "punishments", domain.ObjectPunishment, "View private punishments", domain.WarningLevelSensitive),
+	domain.PermissionPunishmentsIssue:              staticAction(domain.PermissionPunishmentsIssue, "punishments", domain.ObjectPunishment, "Issue punishments", domain.WarningLevelDangerous),
+	domain.PermissionPunishmentsRevoke:             staticAction(domain.PermissionPunishmentsRevoke, "punishments", domain.ObjectPunishment, "Revoke punishments", domain.WarningLevelDangerous),
+	domain.PermissionPunishmentsUpdate:             staticAction(domain.PermissionPunishmentsUpdate, "punishments", domain.ObjectPunishment, "Update punishments", domain.WarningLevelDangerous),
+	domain.PermissionPunishmentsManageDefinitions:  staticAction(domain.PermissionPunishmentsManageDefinitions, "punishments", domain.ObjectPunishment, "Manage punishment definitions", domain.WarningLevelDangerous),
+	domain.PermissionPunishmentsManageIntegrations: staticAction(domain.PermissionPunishmentsManageIntegrations, "punishments", domain.ObjectPunishment, "Manage punishment integrations", domain.WarningLevelDangerous),
+	domain.PermissionPunishmentsViewEvents:         staticAction(domain.PermissionPunishmentsViewEvents, "punishments", domain.ObjectPunishment, "View punishment events", domain.WarningLevelSensitive),
+	domain.PermissionPunishmentsReplayEvents:       staticAction(domain.PermissionPunishmentsReplayEvents, "punishments", domain.ObjectPunishment, "Replay punishment events", domain.WarningLevelDangerous),
+	domain.PermissionTicketsView:                   staticAction(domain.PermissionTicketsView, "tickets", domain.ObjectTicket, "View tickets", domain.WarningLevelNormal),
+	domain.PermissionTicketsViewPrivate:            staticAction(domain.PermissionTicketsViewPrivate, "tickets", domain.ObjectTicket, "View private tickets", domain.WarningLevelSensitive),
+	domain.PermissionTicketsCreate:                 staticAction(domain.PermissionTicketsCreate, "tickets", domain.ObjectTicket, "Create tickets", domain.WarningLevelNormal),
+	domain.PermissionTicketsReply:                  staticAction(domain.PermissionTicketsReply, "tickets", domain.ObjectTicket, "Reply to tickets", domain.WarningLevelNormal),
+	domain.PermissionTicketsReplyStaffOnly:         staticAction(domain.PermissionTicketsReplyStaffOnly, "tickets", domain.ObjectTicket, "Send staff-only ticket replies", domain.WarningLevelSensitive),
+	domain.PermissionTicketsAddEvidence:            staticAction(domain.PermissionTicketsAddEvidence, "tickets", domain.ObjectTicket, "Add ticket evidence", domain.WarningLevelSensitive),
+	domain.PermissionTicketsAssign:                 staticAction(domain.PermissionTicketsAssign, "tickets", domain.ObjectTicket, "Assign tickets", domain.WarningLevelDangerous),
+	domain.PermissionTicketsEscalate:               staticAction(domain.PermissionTicketsEscalate, "tickets", domain.ObjectTicket, "Escalate tickets", domain.WarningLevelDangerous),
+	domain.PermissionTicketsClose:                  staticAction(domain.PermissionTicketsClose, "tickets", domain.ObjectTicket, "Close tickets", domain.WarningLevelDangerous),
+	domain.PermissionTicketsReopen:                 staticAction(domain.PermissionTicketsReopen, "tickets", domain.ObjectTicket, "Reopen tickets", domain.WarningLevelDangerous),
+	domain.PermissionTicketsManage:                 staticAction(domain.PermissionTicketsManage, "tickets", domain.ObjectTicket, "Manage tickets", domain.WarningLevelDangerous),
+	domain.PermissionTicketsManageDefinitions:      staticAction(domain.PermissionTicketsManageDefinitions, "tickets", domain.ObjectTicket, "Manage ticket definitions", domain.WarningLevelDangerous),
+	domain.PermissionTicketsPerformActions:         staticAction(domain.PermissionTicketsPerformActions, "tickets", domain.ObjectTicket, "Perform ticket actions", domain.WarningLevelDangerous),
+	domain.PermissionTicketsAcceptAppeal:           staticAction(domain.PermissionTicketsAcceptAppeal, "tickets", domain.ObjectTicket, "Accept appeals", domain.WarningLevelDangerous),
+	domain.PermissionTicketsRejectAppeal:           staticAction(domain.PermissionTicketsRejectAppeal, "tickets", domain.ObjectTicket, "Reject appeals", domain.WarningLevelDangerous),
+	domain.PermissionTicketsLinkPunishment:         staticAction(domain.PermissionTicketsLinkPunishment, "tickets", domain.ObjectTicket, "Link punishments", domain.WarningLevelSensitive),
 }
 
-// staticPermissionRules maps permissions to built-in fallback requirements.
-var staticPermissionRules = map[domain.Permission]staticPermissionRule{
-	"groups.read":                                  static(domain.ObjectGroup, groupReaders),
-	"groups.update":                                static(domain.ObjectGroup, managers),
-	"groups.delete":                                static(domain.ObjectGroup, owners),
-	"groups.assign_member":                         static(domain.ObjectGroup, managers),
-	"groups.read_members":                          static(domain.ObjectGroup, groupReaders),
-	"assets.view":                                  static(domain.ObjectAsset, viewers),
-	"assets.update":                                static(domain.ObjectAsset, editors),
-	"metadata.write_user":                          static(domain.ObjectUser, selfManagers),
-	domain.PermissionForumsView:                    static(domain.ObjectForum, viewers),
-	domain.PermissionForumsManageForum:             static(domain.ObjectForum, managers),
-	domain.PermissionForumsCreateThread:            static(domain.ObjectForum, creators),
-	domain.PermissionForumsReply:                   static(domain.ObjectForum, replyers),
-	domain.PermissionForumsLikePosts:               static(domain.ObjectForum, likers),
-	domain.PermissionForumsPinThreads:              static(domain.ObjectForum, moderators),
-	domain.PermissionForumsManageThreads:           static(domain.ObjectForum, moderators),
-	domain.PermissionForumsManagePosts:             static(domain.ObjectForum, moderators),
-	domain.PermissionThreadsView:                   static(domain.ObjectForumThread, threadReaders),
-	domain.PermissionThreadsUpdate:                 static(domain.ObjectForumThread, threadEditors),
-	domain.PermissionThreadsClose:                  static(domain.ObjectForumThread, moderators),
-	domain.PermissionThreadsOpen:                   static(domain.ObjectForumThread, moderators),
-	domain.PermissionThreadsDelete:                 static(domain.ObjectForumThread, authorModerators),
-	domain.PermissionThreadsPin:                    static(domain.ObjectForumThread, moderators),
-	domain.PermissionPostsView:                     static(domain.ObjectForumPost, postReaders),
-	domain.PermissionPostsUpdate:                   static(domain.ObjectForumPost, postEditors),
-	domain.PermissionPostsDelete:                   static(domain.ObjectForumPost, authorModerators),
-	domain.PermissionPostsLike:                     static(domain.ObjectForumPost, postLikers),
-	domain.PermissionPostsViewHidden:               static(domain.ObjectForumPost, moderators),
-	domain.PermissionPostsViewRevisions:            static(domain.ObjectForumPost, moderators),
-	domain.PermissionPunishmentsView:               static(domain.ObjectPunishment, punishmentReaders),
-	domain.PermissionPunishmentsViewPrivate:        static(domain.ObjectPunishment, moderators),
-	domain.PermissionPunishmentsIssue:              static(domain.ObjectPunishment, moderators),
-	domain.PermissionPunishmentsRevoke:             static(domain.ObjectPunishment, moderators),
-	domain.PermissionPunishmentsUpdate:             static(domain.ObjectPunishment, moderators),
-	domain.PermissionPunishmentsManageDefinitions:  static(domain.ObjectPunishment, managers),
-	domain.PermissionPunishmentsManageIntegrations: static(domain.ObjectPunishment, managers),
-	domain.PermissionPunishmentsViewEvents:         static(domain.ObjectPunishment, moderators),
-	domain.PermissionPunishmentsReplayEvents:       static(domain.ObjectPunishment, managers),
-	domain.PermissionTicketsView:                   static(domain.ObjectTicket, ticketReaders),
-	domain.PermissionTicketsViewPrivate:            static(domain.ObjectTicket, ticketStaff),
-	domain.PermissionTicketsCreate:                 static(domain.ObjectTicket, creators),
-	domain.PermissionTicketsReply:                  static(domain.ObjectTicket, ticketReplyers),
-	domain.PermissionTicketsReplyStaffOnly:         static(domain.ObjectTicket, ticketStaff),
-	domain.PermissionTicketsAddEvidence:            static(domain.ObjectTicket, ticketEvidenceEditors),
-	domain.PermissionTicketsAssign:                 static(domain.ObjectTicket, ticketManagers),
-	domain.PermissionTicketsEscalate:               static(domain.ObjectTicket, ticketStaff),
-	domain.PermissionTicketsClose:                  static(domain.ObjectTicket, ticketClosers),
-	domain.PermissionTicketsReopen:                 static(domain.ObjectTicket, ticketStaff),
-	domain.PermissionTicketsManage:                 static(domain.ObjectTicket, ticketManagers),
-	domain.PermissionTicketsManageDefinitions:      static(domain.ObjectTicket, managers),
-	domain.PermissionTicketsPerformActions:         static(domain.ObjectTicket, assignedModerators),
-	domain.PermissionTicketsAcceptAppeal:           static(domain.ObjectTicket, ticketStaff),
-	domain.PermissionTicketsRejectAppeal:           static(domain.ObjectTicket, ticketStaff),
-	domain.PermissionTicketsLinkPunishment:         static(domain.ObjectTicket, ticketStaff),
-}
-
-var (
-	owners           = with(domain.RelationOwner)
-	managers         = with(domain.RelationManager, domain.RelationOwner)
-	viewers          = with(domain.RelationViewer, domain.RelationManager, domain.RelationOwner)
-	editors          = with(domain.RelationEditor, domain.RelationOwner)
-	selfManagers     = with(domain.RelationSelf, domain.RelationManager)
-	groupReaders     = with(domain.RelationViewer, domain.RelationManager, domain.RelationMember, domain.RelationOwner)
-	creators         = with(domain.RelationCreator, domain.RelationManager, domain.RelationOwner)
-	replyers         = with(domain.RelationReplyer, domain.RelationManager, domain.RelationOwner)
-	likers           = with(domain.RelationLiker, domain.RelationManager, domain.RelationOwner)
-	moderators       = with(domain.RelationModerator, domain.RelationManager, domain.RelationOwner)
-	authorModerators = with(
-		domain.RelationAuthor,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	threadReaders = with(
-		domain.RelationViewer,
-		domain.RelationAuthor,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	threadEditors = with(
-		domain.RelationAuthor,
-		domain.RelationEditor,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	postReaders = threadReaders
-	postEditors = threadEditors
-	postLikers  = with(
-		domain.RelationLiker,
-		domain.RelationViewer,
-		domain.RelationAuthor,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	punishmentReaders = with(
-		domain.RelationViewer,
-		domain.RelationTarget,
-		domain.RelationIssuer,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	ticketStaff = with(
-		domain.RelationAssignee,
-		domain.RelationTeamMember,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	ticketManagers = with(
-		domain.RelationTeamMember,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	assignedModerators = with(
-		domain.RelationAssignee,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	ticketReaders = with(
-		domain.RelationSubmitter,
-		domain.RelationAssignee,
-		domain.RelationTeamMember,
-		domain.RelationViewer,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	ticketReplyers = with(
-		domain.RelationSubmitter,
-		domain.RelationAssignee,
-		domain.RelationTeamMember,
-		domain.RelationReplyer,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	ticketEvidenceEditors = with(
-		domain.RelationSubmitter,
-		domain.RelationAssignee,
-		domain.RelationTeamMember,
-		domain.RelationEditor,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-	ticketClosers = with(
-		domain.RelationSubmitter,
-		domain.RelationAssignee,
-		domain.RelationTeamMember,
-		domain.RelationModerator,
-		domain.RelationManager,
-		domain.RelationOwner,
-	)
-)
-
-// static creates one static permission rule.
-func static(objectType domain.ObjectType, relations []domain.Relation) staticPermissionRule {
-	return staticPermissionRule{objectType: objectType, relations: relations}
-}
-
-// with creates a relation set.
-func with(relations ...domain.Relation) []domain.Relation {
-	return relations
+// staticAction creates one built-in action definition.
+func staticAction(
+	action domain.Action,
+	area string,
+	scopeType domain.ScopeType,
+	label string,
+	warningLevel domain.WarningLevel,
+) domain.PermissionAction {
+	return domain.PermissionAction{
+		Action:       action,
+		Area:         area,
+		ScopeType:    scopeType,
+		Label:        label,
+		WarningLevel: warningLevel,
+		Enabled:      true,
+		Version:      1,
+	}
 }

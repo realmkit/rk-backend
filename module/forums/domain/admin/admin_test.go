@@ -29,9 +29,6 @@ func TestForumPermissionGrantNormalizeAndValidate(t *testing.T) {
 		SubjectType: PermissionSubjectGroup,
 		SubjectID:   uuid.New(),
 	}.Normalize()
-	if groupGrant.SubjectRelation != "member" {
-		t.Fatalf("expected default group relation member, got %q", groupGrant.SubjectRelation)
-	}
 	if violations := groupGrant.Validate("moderators[0]"); len(violations) != 0 {
 		t.Fatalf("expected group grant to validate: %#v", violations)
 	}
@@ -46,17 +43,7 @@ func TestForumPermissionGrantNormalizeAndValidate(t *testing.T) {
 			SubjectID:   uuid.New(),
 		},
 		{
-			SubjectType:     PermissionSubjectUser,
-			SubjectID:       uuid.New(),
-			SubjectRelation: "member",
-		},
-		{
 			SubjectType: PermissionSubjectUser,
-		},
-		{
-			SubjectType:     PermissionSubjectGroup,
-			SubjectID:       uuid.New(),
-			SubjectRelation: "owner",
 		},
 		{
 			SubjectType: PermissionSubjectGroup,
@@ -94,10 +81,6 @@ func TestForumPermissionSettingsNormalizeAndValidate(t *testing.T) {
 	if settings.Viewers[0].SubjectID != PublicPermissionSubjectID() {
 		t.Fatalf("expected normalized public viewer id")
 	}
-	if settings.Managers[0].SubjectRelation != "member" {
-		t.Fatalf("expected normalized manager group relation")
-	}
-
 	settings.ForumID = uuid.Nil
 	settings.Likers = []ForumPermissionGrant{{SubjectType: PermissionSubjectUser}}
 	if err := settings.Validate(); err == nil {

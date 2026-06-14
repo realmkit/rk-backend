@@ -86,7 +86,7 @@ func TestMembershipAndPermissionRoutes(t *testing.T) {
 	service := &httpService{
 		group:      group,
 		membership: domain.Membership{ID: uuid.New(), GroupID: group.ID, UserID: userID, Status: domain.MembershipStatusActive, Version: 1},
-		decision:   port.Decision{Allowed: true, Reason: "matched_relation"},
+		decision:   port.Decision{Allowed: true, Reason: "matched_grant"},
 	}
 	app := testApp(service)
 	cases := []struct {
@@ -156,7 +156,7 @@ func TestGetGroupMapsNotFound(t *testing.T) {
 func testApp(service *httpService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	useTestPrincipal(app)
-	Register(app, Services{Groups: service, Memberships: service, Tuples: service, Checker: service})
+	Register(app, Services{Groups: service, Memberships: service, Grants: service, Checker: service})
 	return app
 }
 
@@ -240,13 +240,16 @@ func (service *httpService) ListUserGroups(context.Context, uuid.UUID) (port.Use
 	return port.UserGroups{Groups: []domain.Group{service.group}, DisplayGroup: &service.group}, service.err
 }
 
-// CreateTuple creates a tuple.
-func (service *httpService) CreateTuple(context.Context, port.CreateTupleCommand) (domain.RelationTuple, error) {
-	return domain.RelationTuple{}, service.err
+// CreatePermissionGrant creates a grant.
+func (service *httpService) CreatePermissionGrant(
+	context.Context,
+	port.CreatePermissionGrantCommand,
+) (domain.PermissionGrant, error) {
+	return domain.PermissionGrant{}, service.err
 }
 
-// DeleteTuple deletes a tuple.
-func (service *httpService) DeleteTuple(context.Context, port.DeleteTupleCommand) error {
+// DeletePermissionGrant deletes a grant.
+func (service *httpService) DeletePermissionGrant(context.Context, port.DeletePermissionGrantCommand) error {
 	return service.err
 }
 

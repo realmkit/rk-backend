@@ -51,7 +51,6 @@ func newTicketsFixture(t *testing.T) ticketsFixture {
 	groups := groupsapplication.NewService(
 		groupspostgres.NewGroupRepository(database.Store),
 		groupspostgres.NewMembershipRepository(database.Store),
-		groupspostgres.NewTupleRepository(database.Store),
 		groupspostgres.NewPermissionRepository(database.Store),
 	)
 	punishments := punishmentsapplication.NewService(punishmentsapplication.Dependencies{

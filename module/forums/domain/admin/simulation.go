@@ -68,9 +68,9 @@ type ForumPermissionSimulationResult struct {
 	// ObjectID is the evaluated object identifier.
 	ObjectID uuid.UUID `json:"object_id"`
 
-	// MatchedRelation is the relation that allowed the request.
-	MatchedRelation string `json:"matched_relation,omitempty"`
+	// MatchedAction is the action grant that allowed the request.
+	MatchedAction string `json:"matched_action,omitempty"`
 
-	// CheckedRelations are the relations considered.
-	CheckedRelations []string `json:"checked_relations"`
+	// CheckedActions are the action grants considered.
+	CheckedActions []string `json:"checked_actions"`
 }

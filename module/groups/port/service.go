@@ -41,13 +41,13 @@ type MembershipService interface {
 	ListUserGroups(ctx context.Context, userID uuid.UUID) (UserGroups, error)
 }
 
-// TupleService manages relation tuples.
-type TupleService interface {
-	// Create creates a tuple.
-	CreateTuple(ctx context.Context, command CreateTupleCommand) (domain.RelationTuple, error)
+// PermissionGrantService manages permission grants.
+type PermissionGrantService interface {
+	// CreatePermissionGrant creates a permission grant.
+	CreatePermissionGrant(ctx context.Context, command CreatePermissionGrantCommand) (domain.PermissionGrant, error)
 
-	// Delete deletes a tuple.
-	DeleteTuple(ctx context.Context, command DeleteTupleCommand) error
+	// DeletePermissionGrant deletes a permission grant.
+	DeletePermissionGrant(ctx context.Context, command DeletePermissionGrantCommand) error
 }
 
 // Checker checks permissions.

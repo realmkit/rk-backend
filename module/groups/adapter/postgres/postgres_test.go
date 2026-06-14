@@ -19,7 +19,7 @@ import (
 
 // TestGroupRepositoryLifecycle verifies group CRUD behavior.
 func TestGroupRepositoryLifecycle(t *testing.T) {
-	groups, _, _, _ := newRepositories(t)
+	groups, _, _ := newRepositories(t)
 	group, err := groups.Create(context.Background(), testGroup())
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -56,7 +56,7 @@ func TestGroupRepositoryLifecycle(t *testing.T) {
 
 // TestGroupRepositorySearchMatchesPartialTerms verifies admin finds Administrator.
 func TestGroupRepositorySearchMatchesPartialTerms(t *testing.T) {
-	groups, _, _, _ := newRepositories(t)
+	groups, _, _ := newRepositories(t)
 	administrator := testGroup()
 	administrator.Key = "administrator"
 	administrator.Name = "Administrator"
@@ -100,7 +100,7 @@ func TestGroupPostgresSearchConditionIncludesPartialFallback(t *testing.T) {
 
 // TestMembershipRepositoryUpsertListAndDelete verifies membership persistence.
 func TestMembershipRepositoryUpsertListAndDelete(t *testing.T) {
-	_, memberships, _, _ := newRepositories(t)
+	_, memberships, _ := newRepositories(t)
 	membership := domain.Membership{
 		ID:      uuid.New(),
 		GroupID: uuid.New(),
@@ -138,84 +138,88 @@ func TestMembershipRepositoryUpsertListAndDelete(t *testing.T) {
 	}
 }
 
-// TestTupleRepositoryLifecycle verifies tuple persistence.
-func TestTupleRepositoryLifecycle(t *testing.T) {
-	_, _, tuples, _ := newRepositories(t)
-	tuple := domain.RelationTuple{
+// TestPermissionRepositoryGrantLifecycle verifies grant persistence.
+func TestPermissionRepositoryGrantLifecycle(t *testing.T) {
+	_, _, permissions := newRepositories(t)
+	grant := domain.PermissionGrant{
 		ID:          uuid.New(),
-		ObjectType:  domain.ObjectGroup,
-		ObjectID:    uuid.New(),
-		Relation:    domain.RelationManager,
 		SubjectType: domain.SubjectUser,
 		SubjectID:   uuid.New(),
+		Action:      "groups.update",
+		ScopeType:   domain.ObjectGroup,
+		ScopeID:     uuid.New(),
 	}
-	created, err := tuples.Create(context.Background(), tuple)
+	created, err := permissions.CreateGrant(context.Background(), grant)
 	if err != nil {
-		t.Fatalf("Create() error = %v", err)
+		t.Fatalf("CreateGrant() error = %v", err)
 	}
-	if _, err := tuples.Create(context.Background(), tuple); !errors.Is(err, port.ErrConflict) {
-		t.Fatalf("Create() duplicate error = %v, want %v", err, port.ErrConflict)
+	if _, err := permissions.CreateGrant(context.Background(), grant); !errors.Is(err, port.ErrConflict) {
+		t.Fatalf("CreateGrant() duplicate error = %v, want %v", err, port.ErrConflict)
 	}
-	list, err := tuples.List(
+	list, err := permissions.ListGrants(
 		context.Background(),
-		port.TupleFilter{ObjectType: tuple.ObjectType, ObjectID: tuple.ObjectID},
+		port.PermissionGrantFilter{Action: grant.Action, ScopeType: grant.ScopeType, ScopeID: grant.ScopeID},
 		pagination.Page{Limit: 10},
 	)
 	if err != nil {
-		t.Fatalf("List() error = %v", err)
+		t.Fatalf("ListGrants() error = %v", err)
 	}
 	if len(list.Items) != 1 {
-		t.Fatalf("List() items = %d, want 1", len(list.Items))
+		t.Fatalf("ListGrants() items = %d, want 1", len(list.Items))
 	}
-	if err := tuples.Delete(context.Background(), created.ID); err != nil {
-		t.Fatalf("Delete() error = %v", err)
+	if err := permissions.DeleteGrant(context.Background(), created.ID); err != nil {
+		t.Fatalf("DeleteGrant() error = %v", err)
 	}
-	if _, err := tuples.FindByID(context.Background(), created.ID); !errors.Is(err, port.ErrNotFound) {
-		t.Fatalf("FindByID() error = %v, want %v", err, port.ErrNotFound)
+	list, err = permissions.ListGrants(
+		context.Background(),
+		port.PermissionGrantFilter{Action: grant.Action, ScopeType: grant.ScopeType, ScopeID: grant.ScopeID},
+		pagination.Page{Limit: 10},
+	)
+	if err != nil {
+		t.Fatalf("ListGrants() after delete error = %v", err)
+	}
+	if len(list.Items) != 0 {
+		t.Fatalf("ListGrants() after delete items = %d, want 0", len(list.Items))
 	}
 }
 
-// TestPermissionRepositoryLifecycle verifies policy definition and rule persistence.
+// TestPermissionRepositoryLifecycle verifies action persistence.
 func TestPermissionRepositoryLifecycle(t *testing.T) {
-	_, _, _, policies := newRepositories(t)
-	definition := domain.PermissionDefinition{
-		ID:          uuid.New(),
-		Permission:  "posts.update",
-		ObjectType:  "post",
-		Description: "Update posts",
-		Enabled:     true,
-		Version:     1,
+	_, _, permissions := newRepositories(t)
+	action := domain.PermissionAction{
+		ID:           uuid.New(),
+		Action:       "posts.update",
+		Area:         "posts",
+		ScopeType:    "post",
+		Label:        "Update posts",
+		Description:  "Update posts",
+		WarningLevel: domain.WarningLevelDangerous,
+		Enabled:      true,
+		Version:      1,
 	}
-	stored, err := policies.UpsertDefinition(context.Background(), definition)
+	stored, err := permissions.UpsertAction(context.Background(), action)
 	if err != nil {
-		t.Fatalf("UpsertDefinition() error = %v", err)
+		t.Fatalf("UpsertAction() error = %v", err)
 	}
-	if stored.Permission != definition.Permission || stored.Version != 1 {
-		t.Fatalf("definition = %+v, want stored", stored)
+	if stored.Action != action.Action || stored.Version != 1 {
+		t.Fatalf("action = %+v, want stored", stored)
 	}
-	rule := domain.PermissionRule{
-		ID:         uuid.New(),
-		Permission: definition.Permission,
-		ObjectType: definition.ObjectType,
-		Relation:   "author",
-		Conditions: []domain.PolicyCondition{{Type: domain.ConditionWithinDuration, Field: "post.created_at", Duration: "10m"}},
-		Priority:   10,
-		Enabled:    true,
-	}
-	if _, err := policies.UpsertRule(context.Background(), rule); err != nil {
-		t.Fatalf("UpsertRule() error = %v", err)
-	}
-	rules, err := policies.ListRules(context.Background(), definition.Permission)
+	action.Label = "Edit posts"
+	updated, err := permissions.UpsertAction(context.Background(), action)
 	if err != nil {
-		t.Fatalf("ListRules() error = %v", err)
+		t.Fatalf("UpsertAction() update error = %v", err)
 	}
-	if len(rules) != 1 || len(rules[0].Conditions) != 1 {
-		t.Fatalf("rules = %+v, want one condition rule", rules)
+	found, err := permissions.FindAction(context.Background(), updated.Action)
+	if err != nil {
+		t.Fatalf("FindAction() error = %v", err)
+	}
+	if found.Label != "Edit posts" || found.Version != 2 {
+		t.Fatalf("FindAction() = %+v, want updated version 2", found)
 	}
 }
 
 // newRepositories creates migrated repositories.
-func newRepositories(t *testing.T) (GroupRepository, MembershipRepository, TupleRepository, PermissionRepository) {
+func newRepositories(t *testing.T) (GroupRepository, MembershipRepository, PermissionRepository) {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -225,7 +229,7 @@ func newRepositories(t *testing.T) (GroupRepository, MembershipRepository, Tuple
 		t.Fatalf("migrate Up() error = %v", err)
 	}
 	store := orm.NewStore(db)
-	return NewGroupRepository(store), NewMembershipRepository(store), NewTupleRepository(store), NewPermissionRepository(store)
+	return NewGroupRepository(store), NewMembershipRepository(store), NewPermissionRepository(store)
 }
 
 // testGroup returns a valid group.

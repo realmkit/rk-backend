@@ -7,31 +7,23 @@ import (
 	"github.com/google/uuid"
 )
 
-// ForumPermissionGrant grants one forum relation to one subject.
+// ForumPermissionGrant grants one forum action to one subject.
 type ForumPermissionGrant struct {
 	// SubjectType is public, authenticated, user, or group.
 	SubjectType PermissionSubjectType `json:"subject_type"`
 
 	// SubjectID is the concrete subject identifier.
 	SubjectID uuid.UUID `json:"subject_id"`
-
-	// SubjectRelation is usually member for group subjects.
-	SubjectRelation string `json:"subject_relation,omitempty"`
 }
 
 // Normalize returns a normalized permission grant.
 func (grant ForumPermissionGrant) Normalize() ForumPermissionGrant {
 	grant.SubjectType = PermissionSubjectType(strings.TrimSpace(string(grant.SubjectType)))
-	grant.SubjectRelation = strings.TrimSpace(grant.SubjectRelation)
 	switch grant.SubjectType {
 	case PermissionSubjectPublic:
 		grant.SubjectID = PublicPermissionSubjectID()
 	case PermissionSubjectAuthenticated:
 		grant.SubjectID = AuthenticatedPermissionSubjectID()
-	case PermissionSubjectGroup:
-		if grant.SubjectRelation == "" {
-			grant.SubjectRelation = "member"
-		}
 	}
 	return grant
 }
@@ -140,9 +132,6 @@ func (grant ForumPermissionGrant) validatePublic(
 	if grant.SubjectID != PublicPermissionSubjectID() {
 		violations = AppendViolation(violations, field+".subject_id", "must use the public reserved identifier")
 	}
-	if grant.SubjectRelation != "" {
-		violations = AppendViolation(violations, field+".subject_relation", "must be empty for public grants")
-	}
 	return violations
 }
 
@@ -152,9 +141,6 @@ func (grant ForumPermissionGrant) validateAuthenticated(
 ) []Violation {
 	if grant.SubjectID != AuthenticatedPermissionSubjectID() {
 		violations = AppendViolation(violations, field+".subject_id", "must use the authenticated reserved identifier")
-	}
-	if grant.SubjectRelation != "" {
-		violations = AppendViolation(violations, field+".subject_relation", "must be empty for authenticated grants")
 	}
 	return violations
 }
@@ -166,9 +152,6 @@ func (grant ForumPermissionGrant) validateUser(
 	if grant.SubjectID == uuid.Nil {
 		violations = AppendViolation(violations, field+".subject_id", "is required")
 	}
-	if grant.SubjectRelation != "" {
-		violations = AppendViolation(violations, field+".subject_relation", "must be empty for user grants")
-	}
 	return violations
 }
 
@@ -178,9 +161,6 @@ func (grant ForumPermissionGrant) validateGroup(
 ) []Violation {
 	if grant.SubjectID == uuid.Nil {
 		violations = AppendViolation(violations, field+".subject_id", "is required")
-	}
-	if grant.SubjectRelation != "member" {
-		violations = AppendViolation(violations, field+".subject_relation", "must be member for group grants")
 	}
 	return violations
 }

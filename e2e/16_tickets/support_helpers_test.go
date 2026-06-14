@@ -35,7 +35,7 @@ func (fixture ticketsFixture) createTicketDefinition(t *testing.T, actor uuid.UU
 	return decodeTicketObject(t, response)
 }
 
-// grantTicketRelation grants one user relation on a ticket object.
+// grantTicketRelation grants the ticket actions represented by an old relation fixture.
 func (fixture ticketsFixture) grantTicketRelation(
 	t *testing.T,
 	objectID uuid.UUID,
@@ -43,34 +43,68 @@ func (fixture ticketsFixture) grantTicketRelation(
 	userID uuid.UUID,
 ) {
 	t.Helper()
-	_, err := fixture.groups.CreateTuple(context.Background(), groupsport.CreateTupleCommand{
-		Tuple: groupsdomain.RelationTuple{
-			ObjectType:  groupsdomain.ObjectTicket,
-			ObjectID:    objectID,
-			Relation:    relation,
-			SubjectType: groupsdomain.SubjectUser,
-			SubjectID:   userID,
-		},
-	})
-	if err != nil {
-		t.Fatalf("CreateTuple(%s) error = %v", relation, err)
+	for _, action := range ticketActionsForRelation(relation) {
+		_, err := fixture.groups.CreatePermissionGrant(context.Background(), groupsport.CreatePermissionGrantCommand{
+			Grant: groupsdomain.PermissionGrant{
+				SubjectType: groupsdomain.SubjectUser,
+				SubjectID:   userID,
+				Action:      action,
+				ScopeType:   groupsdomain.ObjectTicket,
+				ScopeID:     objectID,
+			},
+		})
+		if err != nil {
+			t.Fatalf("CreatePermissionGrant(%s/%s) error = %v", relation, action, err)
+		}
 	}
 }
 
 // grantPunishmentRevoke grants a staff actor punishment revoke permission.
 func (fixture ticketsFixture) grantPunishmentRevoke(t *testing.T, punishmentID uuid.UUID, actor uuid.UUID) {
 	t.Helper()
-	_, err := fixture.groups.CreateTuple(context.Background(), groupsport.CreateTupleCommand{
-		Tuple: groupsdomain.RelationTuple{
-			ObjectType:  groupsdomain.ObjectPunishment,
-			ObjectID:    punishmentID,
-			Relation:    groupsdomain.RelationModerator,
+	_, err := fixture.groups.CreatePermissionGrant(context.Background(), groupsport.CreatePermissionGrantCommand{
+		Grant: groupsdomain.PermissionGrant{
 			SubjectType: groupsdomain.SubjectUser,
 			SubjectID:   actor,
+			Action:      groupsdomain.PermissionPunishmentsRevoke,
+			ScopeType:   groupsdomain.ObjectPunishment,
+			ScopeID:     punishmentID,
 		},
 	})
 	if err != nil {
-		t.Fatalf("CreateTuple(punishment) error = %v", err)
+		t.Fatalf("CreatePermissionGrant(punishment) error = %v", err)
+	}
+}
+
+// ticketActionsForRelation returns direct ticket actions for legacy e2e relations.
+func ticketActionsForRelation(relation groupsdomain.Relation) []groupsdomain.Action {
+	switch relation {
+	case groupsdomain.RelationCreator:
+		return []groupsdomain.Action{groupsdomain.PermissionTicketsCreate}
+	case groupsdomain.RelationSubmitter:
+		return []groupsdomain.Action{
+			groupsdomain.PermissionTicketsView,
+			groupsdomain.PermissionTicketsReply,
+			groupsdomain.PermissionTicketsAddEvidence,
+			groupsdomain.PermissionTicketsClose,
+		}
+	default:
+		return []groupsdomain.Action{
+			groupsdomain.PermissionTicketsView,
+			groupsdomain.PermissionTicketsViewPrivate,
+			groupsdomain.PermissionTicketsReply,
+			groupsdomain.PermissionTicketsReplyStaffOnly,
+			groupsdomain.PermissionTicketsAddEvidence,
+			groupsdomain.PermissionTicketsAssign,
+			groupsdomain.PermissionTicketsEscalate,
+			groupsdomain.PermissionTicketsClose,
+			groupsdomain.PermissionTicketsReopen,
+			groupsdomain.PermissionTicketsManage,
+			groupsdomain.PermissionTicketsPerformActions,
+			groupsdomain.PermissionTicketsAcceptAppeal,
+			groupsdomain.PermissionTicketsRejectAppeal,
+			groupsdomain.PermissionTicketsLinkPunishment,
+		}
 	}
 }
 

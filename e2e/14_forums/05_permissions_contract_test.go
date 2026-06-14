@@ -141,15 +141,18 @@ func (fixture forumsFixture) grantSubject(
 	subjectRelation groupsdomain.Relation,
 ) {
 	t.Helper()
-	_, err := fixture.groups.CreateTuple(context.Background(), groupsport.CreateTupleCommand{
-		Tuple: groupsdomain.RelationTuple{
-			ObjectType: groupsdomain.ObjectForum, ObjectID: objectID,
-			Relation: relation, SubjectType: subjectType,
-			SubjectID: subjectID, SubjectRelation: subjectRelation,
+	_ = subjectRelation
+	_, err := fixture.groups.CreatePermissionGrant(context.Background(), groupsport.CreatePermissionGrantCommand{
+		Grant: groupsdomain.PermissionGrant{
+			SubjectType: subjectType,
+			SubjectID:   subjectID,
+			Action:      forumActionForRelation(relation),
+			ScopeType:   groupsdomain.ObjectForum,
+			ScopeID:     objectID,
 		},
 	})
 	if err != nil {
-		t.Fatalf("CreateTuple(%s/%s) error = %v", subjectType, relation, err)
+		t.Fatalf("CreatePermissionGrant(%s/%s) error = %v", subjectType, relation, err)
 	}
 	if err := fixture.service.ClearReadCache(context.Background()); err != nil {
 		t.Fatalf("ClearReadCache() error = %v", err)

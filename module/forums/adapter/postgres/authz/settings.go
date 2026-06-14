@@ -15,23 +15,23 @@ func (authorizer VisibilityAuthorizer) ForumPermissionSettings(
 	forumID uuid.UUID,
 ) (forumsdomain.ForumPermissionSettings, error) {
 	settings := emptyPermissionSettings(forumID)
-	var tuples []relationTupleRow
+	var grants []permissionGrantRow
 	err := authorizer.store.DB(ctx).
-		Table("authorization_relation_tuples").
-		Select("object_id, relation, subject_type, subject_id, subject_relation").
+		Table("permission_grants").
+		Select("scope_id, action, subject_type, subject_id").
 		Where(
-			"object_type = ? AND object_id = ? AND relation IN ? AND deleted_at IS NULL",
+			"scope_type = ? AND scope_id = ? AND action IN ? AND deleted_at IS NULL",
 			groupsdomain.ObjectForum,
 			forumID,
-			managedForumRelations,
+			managedForumActions,
 		).
-		Order("relation asc, subject_type asc, subject_id asc").
-		Find(&tuples).Error
+		Order("action asc, subject_type asc, subject_id asc").
+		Find(&grants).Error
 	if err != nil {
 		return forumsdomain.ForumPermissionSettings{}, err
 	}
-	for _, tuple := range tuples {
-		addGrantToSettings(&settings, groupsdomain.Relation(tuple.Relation), grantFromTuple(tuple))
+	for _, grant := range grants {
+		addGrantToSettings(&settings, groupsdomain.Action(grant.Action), grantFromRow(grant))
 	}
 	return settings, nil
 }
@@ -51,19 +51,19 @@ func (authorizer VisibilityAuthorizer) UpdateForumPermissionSettings(
 	}
 	now := time.Now().UTC()
 	err := authorizer.store.DB(ctx).
-		Table("authorization_relation_tuples").
+		Table("permission_grants").
 		Where(
-			"object_type = ? AND object_id = ? AND relation IN ? AND deleted_at IS NULL",
+			"scope_type = ? AND scope_id = ? AND action IN ? AND deleted_at IS NULL",
 			groupsdomain.ObjectForum,
 			settings.ForumID,
-			managedForumRelations,
+			managedForumActions,
 		).
 		Update("deleted_at", now).Error
 	if err != nil {
 		return err
 	}
-	for _, tuple := range tuplesFromPermissionSettings(settings, actorUserID, now) {
-		if err := authorizer.store.DB(ctx).Table("authorization_relation_tuples").Create(&tuple).Error; err != nil {
+	for _, grant := range rowsFromPermissionSettings(settings, actorUserID, now) {
+		if err := authorizer.store.DB(ctx).Table("permission_grants").Create(&grant).Error; err != nil {
 			return err
 		}
 	}
@@ -125,15 +125,16 @@ func (authorizer VisibilityAuthorizer) groupExists(ctx context.Context, groupID 
 	return count > 0, err
 }
 
-// relationTupleInsertRow is a write model for relation tuples.
-type relationTupleInsertRow struct {
+// permissionGrantInsertRow is a write model for permission grants.
+type permissionGrantInsertRow struct {
 	ID              uuid.UUID  `gorm:"column:id"`
-	ObjectType      string     `gorm:"column:object_type"`
-	ObjectID        uuid.UUID  `gorm:"column:object_id"`
-	Relation        string     `gorm:"column:relation"`
 	SubjectType     string     `gorm:"column:subject_type"`
 	SubjectID       uuid.UUID  `gorm:"column:subject_id"`
-	SubjectRelation string     `gorm:"column:subject_relation"`
+	Action          string     `gorm:"column:action"`
+	ScopeType       string     `gorm:"column:scope_type"`
+	ScopeID         uuid.UUID  `gorm:"column:scope_id"`
+	Inherit         bool       `gorm:"column:inherit"`
+	ConditionKey    string     `gorm:"column:condition_key"`
 	CreatedByUserID *uuid.UUID `gorm:"column:created_by_user_id"`
 	CreatedAt       time.Time  `gorm:"column:created_at"`
 }

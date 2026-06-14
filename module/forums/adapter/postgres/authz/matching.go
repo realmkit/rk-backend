@@ -45,35 +45,34 @@ func (authorizer VisibilityAuthorizer) activeMemberships(
 }
 
 // groupSubjectIDs extracts group subject IDs.
-func groupSubjectIDs(tuples []relationTupleRow) []uuid.UUID {
+func groupSubjectIDs(grants []permissionGrantRow) []uuid.UUID {
 	groupIDs := []uuid.UUID{}
-	for _, tuple := range tuples {
-		if tuple.SubjectType != string(groupsdomain.SubjectGroup) {
+	for _, grant := range grants {
+		if grant.SubjectType != string(groupsdomain.SubjectGroup) {
 			continue
 		}
-		if !slices.Contains(groupIDs, tuple.SubjectID) {
-			groupIDs = append(groupIDs, tuple.SubjectID)
+		if !slices.Contains(groupIDs, grant.SubjectID) {
+			groupIDs = append(groupIDs, grant.SubjectID)
 		}
 	}
 	return groupIDs
 }
 
-// tupleMatchesActor reports whether tuple grants to actor.
-func tupleMatchesActor(
-	tuple relationTupleRow,
+// grantMatchesActor reports whether grant allows actor.
+func grantMatchesActor(
+	grant permissionGrantRow,
 	actorUserID uuid.UUID,
 	memberships map[uuid.UUID]bool,
 ) bool {
-	switch groupsdomain.SubjectType(tuple.SubjectType) {
+	switch groupsdomain.SubjectType(grant.SubjectType) {
 	case groupsdomain.SubjectPublic:
-		return tuple.SubjectID == groupsdomain.PublicSubjectID()
+		return grant.SubjectID == groupsdomain.PublicSubjectID()
 	case groupsdomain.SubjectAuthenticated:
-		return actorUserID != uuid.Nil && tuple.SubjectID == groupsdomain.AuthenticatedSubjectID()
+		return actorUserID != uuid.Nil && grant.SubjectID == groupsdomain.AuthenticatedSubjectID()
 	case groupsdomain.SubjectUser:
-		return actorUserID != uuid.Nil && tuple.SubjectID == actorUserID
+		return actorUserID != uuid.Nil && grant.SubjectID == actorUserID
 	case groupsdomain.SubjectGroup:
-		return tuple.SubjectRelation == string(groupsdomain.RelationMember) &&
-			memberships[tuple.SubjectID]
+		return memberships[grant.SubjectID]
 	default:
 		return false
 	}
@@ -84,52 +83,47 @@ type groupMembershipRow struct {
 	GroupID uuid.UUID
 }
 
-// viewRelations returns relations that grant viewing.
-func viewRelations() []groupsdomain.Relation {
-	return []groupsdomain.Relation{
-		groupsdomain.RelationViewer,
-		groupsdomain.RelationManager,
-		groupsdomain.RelationOwner,
+// viewActions returns actions that grant viewing.
+func viewActions() []groupsdomain.Action {
+	return []groupsdomain.Action{
+		groupsdomain.PermissionForumsView,
+		groupsdomain.PermissionForumsManageForum,
 	}
 }
 
-// manageRelations returns relations that grant structure management.
-func manageRelations() []groupsdomain.Relation {
-	return []groupsdomain.Relation{groupsdomain.RelationManager, groupsdomain.RelationOwner}
+// manageActions returns actions that grant structure management.
+func manageActions() []groupsdomain.Action {
+	return []groupsdomain.Action{groupsdomain.PermissionForumsManageForum}
 }
 
-// creatorRelations returns relations that grant thread creation.
-func creatorRelations() []groupsdomain.Relation {
-	return []groupsdomain.Relation{
-		groupsdomain.RelationCreator,
-		groupsdomain.RelationManager,
-		groupsdomain.RelationOwner,
+// createThreadActions returns actions that grant thread creation.
+func createThreadActions() []groupsdomain.Action {
+	return []groupsdomain.Action{
+		groupsdomain.PermissionForumsCreateThread,
+		groupsdomain.PermissionForumsManageForum,
 	}
 }
 
-// replyRelations returns relations that grant replies.
-func replyRelations() []groupsdomain.Relation {
-	return []groupsdomain.Relation{
-		groupsdomain.RelationReplyer,
-		groupsdomain.RelationManager,
-		groupsdomain.RelationOwner,
+// replyActions returns actions that grant replies.
+func replyActions() []groupsdomain.Action {
+	return []groupsdomain.Action{
+		groupsdomain.PermissionForumsReply,
+		groupsdomain.PermissionForumsManageForum,
 	}
 }
 
-// likeRelations returns relations that grant post likes.
-func likeRelations() []groupsdomain.Relation {
-	return []groupsdomain.Relation{
-		groupsdomain.RelationLiker,
-		groupsdomain.RelationManager,
-		groupsdomain.RelationOwner,
+// likeActions returns actions that grant post likes.
+func likeActions() []groupsdomain.Action {
+	return []groupsdomain.Action{
+		groupsdomain.PermissionForumsLikePosts,
+		groupsdomain.PermissionForumsManageForum,
 	}
 }
 
-// moderateRelations returns relations that grant moderation.
-func moderateRelations() []groupsdomain.Relation {
-	return []groupsdomain.Relation{
-		groupsdomain.RelationModerator,
-		groupsdomain.RelationManager,
-		groupsdomain.RelationOwner,
+// moderateActions returns actions that grant moderation.
+func moderateActions() []groupsdomain.Action {
+	return []groupsdomain.Action{
+		groupsdomain.PermissionForumsManageThreads,
+		groupsdomain.PermissionForumsManageForum,
 	}
 }

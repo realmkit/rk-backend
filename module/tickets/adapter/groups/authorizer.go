@@ -83,9 +83,9 @@ func (authorizer Authorizer) check(
 	}
 	decision, err := authorizer.checker.Check(ctx, groupsport.CheckRequest{
 		ActorUserID: actorID,
-		Permission:  permission,
-		ObjectType:  objectType,
-		ObjectID:    objectID,
+		Action:      permission,
+		ScopeType:   objectType,
+		ScopeID:     objectID,
 	})
 	return decision.Allowed, err
 }

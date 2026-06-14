@@ -11,14 +11,14 @@ import (
 	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
-// managedForumRelations are relations replaced by forum permission settings.
-var managedForumRelations = []groupsdomain.Relation{
-	groupsdomain.RelationViewer,
-	groupsdomain.RelationCreator,
-	groupsdomain.RelationReplyer,
-	groupsdomain.RelationLiker,
-	groupsdomain.RelationModerator,
-	groupsdomain.RelationManager,
+// managedForumActions are actions replaced by forum permission settings.
+var managedForumActions = []groupsdomain.Action{
+	groupsdomain.PermissionForumsView,
+	groupsdomain.PermissionForumsCreateThread,
+	groupsdomain.PermissionForumsReply,
+	groupsdomain.PermissionForumsLikePosts,
+	groupsdomain.PermissionForumsManageThreads,
+	groupsdomain.PermissionForumsManageForum,
 }
 
 // VisibilityAuthorizer resolves forum permissions from authorization tuples.
@@ -37,7 +37,7 @@ func (authorizer VisibilityAuthorizer) VisibleForums(
 	actorUserID uuid.UUID,
 	forumIDs []uuid.UUID,
 ) (map[uuid.UUID]bool, error) {
-	return authorizer.allowedForums(ctx, actorUserID, forumIDs, viewRelations())
+	return authorizer.allowedForums(ctx, actorUserID, forumIDs, viewActions())
 }
 
 // CanManageForum reports whether actor can manage target forum.
@@ -46,7 +46,7 @@ func (authorizer VisibilityAuthorizer) CanManageForum(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
-	return authorizer.allowed(ctx, actorUserID, forumID, manageRelations())
+	return authorizer.allowed(ctx, actorUserID, forumID, manageActions())
 }
 
 // CanCreateThread reports whether actor can create a thread in forum.
@@ -55,7 +55,7 @@ func (authorizer VisibilityAuthorizer) CanCreateThread(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
-	return authorizer.allowed(ctx, actorUserID, forumID, creatorRelations())
+	return authorizer.allowed(ctx, actorUserID, forumID, createThreadActions())
 }
 
 // CanReply reports whether actor can reply in forum.
@@ -64,7 +64,7 @@ func (authorizer VisibilityAuthorizer) CanReply(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
-	return authorizer.allowed(ctx, actorUserID, forumID, replyRelations())
+	return authorizer.allowed(ctx, actorUserID, forumID, replyActions())
 }
 
 // CanLikePosts reports whether actor can like posts in forum.
@@ -73,7 +73,7 @@ func (authorizer VisibilityAuthorizer) CanLikePosts(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
-	return authorizer.allowed(ctx, actorUserID, forumID, likeRelations())
+	return authorizer.allowed(ctx, actorUserID, forumID, likeActions())
 }
 
 // CanManageThreads reports whether actor can manage threads in forum.
@@ -82,7 +82,7 @@ func (authorizer VisibilityAuthorizer) CanManageThreads(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
-	return authorizer.allowed(ctx, actorUserID, forumID, moderateRelations())
+	return authorizer.allowed(ctx, actorUserID, forumID, moderateActions())
 }
 
 // CanManagePosts reports whether actor can manage posts in forum.
@@ -91,7 +91,7 @@ func (authorizer VisibilityAuthorizer) CanManagePosts(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
-	return authorizer.allowed(ctx, actorUserID, forumID, moderateRelations())
+	return authorizer.allowed(ctx, actorUserID, forumID, moderateActions())
 }
 
 // allowed reports whether actor matches any relation for one forum.
@@ -99,56 +99,55 @@ func (authorizer VisibilityAuthorizer) allowed(
 	ctx context.Context,
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
-	relations []groupsdomain.Relation,
+	actions []groupsdomain.Action,
 ) (bool, error) {
-	allowed, err := authorizer.allowedForums(ctx, actorUserID, []uuid.UUID{forumID}, relations)
+	allowed, err := authorizer.allowedForums(ctx, actorUserID, []uuid.UUID{forumID}, actions)
 	return allowed[forumID], err
 }
 
-// allowedForums returns forum ids allowed by matching relations.
+// allowedForums returns forum ids allowed by matching actions.
 func (authorizer VisibilityAuthorizer) allowedForums(
 	ctx context.Context,
 	actorUserID uuid.UUID,
 	forumIDs []uuid.UUID,
-	relations []groupsdomain.Relation,
+	actions []groupsdomain.Action,
 ) (map[uuid.UUID]bool, error) {
 	allowed := map[uuid.UUID]bool{}
 	if len(forumIDs) == 0 {
 		return allowed, nil
 	}
-	var tuples []relationTupleRow
+	var grants []permissionGrantRow
 	err := authorizer.store.DB(ctx).
-		Table("authorization_relation_tuples").
-		Select("object_id, relation, subject_type, subject_id, subject_relation").
+		Table("permission_grants").
+		Select("scope_id, action, subject_type, subject_id").
 		Where(
-			"object_type = ? AND object_id IN ? AND relation IN ? AND deleted_at IS NULL",
+			"scope_type = ? AND scope_id IN ? AND action IN ? AND deleted_at IS NULL",
 			groupsdomain.ObjectForum,
 			forumIDs,
-			relations,
+			actions,
 		).
-		Find(&tuples).Error
+		Find(&grants).Error
 	if err != nil {
 		return nil, err
 	}
-	memberships, err := authorizer.activeMemberships(ctx, actorUserID, groupSubjectIDs(tuples))
+	memberships, err := authorizer.activeMemberships(ctx, actorUserID, groupSubjectIDs(grants))
 	if err != nil {
 		return nil, err
 	}
-	for _, tuple := range tuples {
-		if tupleMatchesActor(tuple, actorUserID, memberships) {
-			allowed[tuple.ObjectID] = true
+	for _, grant := range grants {
+		if grantMatchesActor(grant, actorUserID, memberships) {
+			allowed[grant.ScopeID] = true
 		}
 	}
 	return allowed, nil
 }
 
-// relationTupleRow is a compact authorization tuple projection.
-type relationTupleRow struct {
-	ObjectID        uuid.UUID
-	Relation        string
-	SubjectType     string
-	SubjectID       uuid.UUID
-	SubjectRelation string
+// permissionGrantRow is a compact permission grant projection.
+type permissionGrantRow struct {
+	ScopeID     uuid.UUID
+	Action      string
+	SubjectType string
+	SubjectID   uuid.UUID
 }
 
 // Ensure VisibilityAuthorizer implements port.VisibilityAuthorizer.

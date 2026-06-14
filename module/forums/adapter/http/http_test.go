@@ -633,13 +633,13 @@ func (service httpService) SimulateForumPermission(
 	port.SimulateForumPermissionCommand,
 ) (domain.ForumPermissionSimulationResult, error) {
 	return domain.ForumPermissionSimulationResult{
-		Allowed:          true,
-		Reason:           "matched_relation",
-		Permission:       "forums.view",
-		ObjectType:       "forum",
-		ObjectID:         uuid.New(),
-		MatchedRelation:  "viewer",
-		CheckedRelations: []string{"viewer"},
+		Allowed:        true,
+		Reason:         "matched_grant",
+		Permission:     "forums.view",
+		ObjectType:     "forum",
+		ObjectID:       uuid.New(),
+		MatchedAction:  "forums.view",
+		CheckedActions: []string{"forums.view"},
 	}, service.err
 }
 

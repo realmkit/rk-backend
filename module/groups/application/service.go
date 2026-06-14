@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,12 +11,11 @@ import (
 	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
-// Service manages groups, memberships, tuples, and permission checks.
+// Service manages groups, memberships, grants, and permission checks.
 type Service struct {
 	groups      port.GroupRepository
 	memberships port.MembershipRepository
-	tuples      port.TupleRepository
-	policies    port.PermissionRepository
+	permissions port.PermissionRepository
 	clock       func() time.Time
 	events      emitter.Publisher
 }
@@ -26,18 +24,12 @@ type Service struct {
 func NewService(
 	groups port.GroupRepository,
 	memberships port.MembershipRepository,
-	tuples port.TupleRepository,
-	policies ...port.PermissionRepository,
+	permissions port.PermissionRepository,
 ) Service {
-	var policyRepository port.PermissionRepository
-	if len(policies) > 0 {
-		policyRepository = policies[0]
-	}
 	return Service{
 		groups:      groups,
 		memberships: memberships,
-		tuples:      tuples,
-		policies:    policyRepository,
+		permissions: permissions,
 		clock:       func() time.Time { return time.Now().UTC() },
 	}
 }
@@ -130,9 +122,6 @@ func (service Service) Assign(ctx context.Context, command port.AssignMembership
 	if err != nil {
 		return domain.Membership{}, err
 	}
-	if _, err := service.tuples.Create(ctx, membershipTuple(stored)); err != nil && !errors.Is(err, port.ErrConflict) {
-		return domain.Membership{}, err
-	}
 	return stored, service.publishMembershipEvent(ctx, membershipAddedEvent, stored)
 }
 
@@ -144,25 +133,6 @@ func (service Service) Remove(ctx context.Context, command port.RemoveMembership
 	}
 	if err := service.memberships.Delete(ctx, command.GroupID, command.UserID, command.ExpectedVersion); err != nil {
 		return err
-	}
-	tuples, err := service.tuples.List(
-		ctx,
-		port.TupleFilter{
-			ObjectType:  domain.ObjectGroup,
-			ObjectID:    membership.GroupID,
-			Relation:    domain.RelationMember,
-			SubjectType: domain.SubjectUser,
-			SubjectID:   membership.UserID,
-		},
-		pagination.Page{Limit: 100},
-	)
-	if err != nil {
-		return err
-	}
-	for _, tuple := range tuples.Items {
-		if err := service.tuples.Delete(ctx, tuple.ID); err != nil {
-			return err
-		}
 	}
 	return service.publishMembershipEvent(ctx, membershipRemovedEvent, membership)
 }
@@ -200,38 +170,29 @@ func (service Service) ListUserGroups(ctx context.Context, userID uuid.UUID) (po
 	return result, nil
 }
 
-// Create creates a tuple.
-func (service Service) CreateTuple(ctx context.Context, command port.CreateTupleCommand) (domain.RelationTuple, error) {
-	tuple := command.Tuple
-	if tuple.ID == uuid.Nil {
-		tuple.ID = uuid.New()
+// CreatePermissionGrant creates a permission grant.
+func (service Service) CreatePermissionGrant(
+	ctx context.Context,
+	command port.CreatePermissionGrantCommand,
+) (domain.PermissionGrant, error) {
+	grant := command.Grant
+	if grant.ID == uuid.Nil {
+		grant.ID = uuid.New()
 	}
-	if err := tuple.Validate(); err != nil {
-		return domain.RelationTuple{}, err
+	if err := grant.Validate(); err != nil {
+		return domain.PermissionGrant{}, err
 	}
-	created, err := service.tuples.Create(ctx, tuple)
+	created, err := service.permissions.CreateGrant(ctx, grant)
 	if err != nil {
-		return domain.RelationTuple{}, err
+		return domain.PermissionGrant{}, err
 	}
-	return created, service.publishTupleEvent(ctx, relationTupleCreatedEvent, created)
+	return created, service.publishGrantEvent(ctx, permissionGrantCreatedEvent, created)
 }
 
-// Delete deletes a tuple.
-func (service Service) DeleteTuple(ctx context.Context, command port.DeleteTupleCommand) error {
-	if err := service.tuples.Delete(ctx, command.ID); err != nil {
+// DeletePermissionGrant deletes a permission grant.
+func (service Service) DeletePermissionGrant(ctx context.Context, command port.DeletePermissionGrantCommand) error {
+	if err := service.permissions.DeleteGrant(ctx, command.ID); err != nil {
 		return err
 	}
-	return service.publishTupleDeleted(ctx, command.ID)
-}
-
-// membershipTuple returns the canonical membership tuple.
-func membershipTuple(membership domain.Membership) domain.RelationTuple {
-	return domain.RelationTuple{
-		ID:          uuid.New(),
-		ObjectType:  domain.ObjectGroup,
-		ObjectID:    membership.GroupID,
-		Relation:    domain.RelationMember,
-		SubjectType: domain.SubjectUser,
-		SubjectID:   membership.UserID,
-	}
+	return service.publishGrantDeleted(ctx, command.ID)
 }

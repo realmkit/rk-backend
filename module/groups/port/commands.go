@@ -51,15 +51,15 @@ type RemoveMembershipCommand struct {
 	ExpectedVersion *uint64
 }
 
-// CreateTupleCommand creates a relation tuple.
-type CreateTupleCommand struct {
-	// Tuple is the tuple to create.
-	Tuple domain.RelationTuple
+// CreatePermissionGrantCommand creates a permission grant.
+type CreatePermissionGrantCommand struct {
+	// Grant is the grant to create.
+	Grant domain.PermissionGrant
 }
 
-// DeleteTupleCommand deletes a relation tuple.
-type DeleteTupleCommand struct {
-	// ID is the tuple identifier.
+// DeletePermissionGrantCommand deletes a permission grant.
+type DeletePermissionGrantCommand struct {
+	// ID is the grant identifier.
 	ID uuid.UUID
 }
 
@@ -100,22 +100,22 @@ func AllowedGroupSorts() []search.SortOption {
 	}
 }
 
-// TupleFilter filters relation tuples.
-type TupleFilter struct {
-	// ObjectType filters by object type.
-	ObjectType domain.ObjectType
-
-	// ObjectID filters by object identifier.
-	ObjectID uuid.UUID
-
-	// Relation filters by relation.
-	Relation domain.Relation
-
+// PermissionGrantFilter filters permission grants.
+type PermissionGrantFilter struct {
 	// SubjectType filters by subject type.
 	SubjectType domain.SubjectType
 
 	// SubjectID filters by subject identifier.
 	SubjectID uuid.UUID
+
+	// Action filters by permission action.
+	Action domain.Action
+
+	// ScopeType filters by resource type.
+	ScopeType domain.ScopeType
+
+	// ScopeID filters by resource identifier.
+	ScopeID uuid.UUID
 }
 
 // CheckRequest requests a permission decision.
@@ -123,14 +123,14 @@ type CheckRequest struct {
 	// ActorUserID is the authenticated user.
 	ActorUserID uuid.UUID `json:"actor_user_id"`
 
-	// Permission is the domain action.
-	Permission domain.Permission `json:"permission"`
+	// Action is the domain action.
+	Action domain.Action `json:"action"`
 
-	// ObjectType is the target object type.
-	ObjectType domain.ObjectType `json:"object_type"`
+	// ScopeType is the target resource type.
+	ScopeType domain.ScopeType `json:"scope_type"`
 
-	// ObjectID is the target object identifier.
-	ObjectID uuid.UUID `json:"object_id"`
+	// ScopeID is the target resource identifier.
+	ScopeID uuid.UUID `json:"scope_id"`
 
 	// Context contains module-provided fields used by policy conditions.
 	Context map[string]any `json:"context,omitempty"`
@@ -144,8 +144,20 @@ type Decision struct {
 	// Reason explains the decision.
 	Reason string `json:"reason"`
 
-	// MatchedRelation is the relation that allowed the action.
-	MatchedRelation domain.Relation `json:"matched_relation,omitempty"`
+	// MatchedGrantID is the grant that allowed the action.
+	MatchedGrantID uuid.UUID `json:"matched_grant_id,omitempty"`
+
+	// MatchedSubjectType is the subject type that allowed the action.
+	MatchedSubjectType domain.SubjectType `json:"matched_subject_type,omitempty"`
+
+	// MatchedSubjectID is the subject identifier that allowed the action.
+	MatchedSubjectID uuid.UUID `json:"matched_subject_id,omitempty"`
+
+	// MatchedScopeType is the resource type that allowed the action.
+	MatchedScopeType domain.ScopeType `json:"matched_scope_type,omitempty"`
+
+	// MatchedScopeID is the resource identifier that allowed the action.
+	MatchedScopeID uuid.UUID `json:"matched_scope_id,omitempty"`
 
 	// MatchedConditions are the conditions that passed for the allowing rule.
 	MatchedConditions []domain.PolicyCondition `json:"matched_conditions,omitempty"`

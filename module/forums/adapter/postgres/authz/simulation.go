@@ -18,63 +18,63 @@ func (authorizer VisibilityAuthorizer) SimulateForumPermission(
 	if err := request.Validate(); err != nil {
 		return forumsdomain.ForumPermissionSimulationResult{}, err
 	}
-	relations, err := simulationRelations(request.Permission)
+	actions, err := simulationActions(request.Permission)
 	if err != nil {
 		return forumsdomain.ForumPermissionSimulationResult{}, err
 	}
 	result := forumsdomain.ForumPermissionSimulationResult{
-		Allowed:          false,
-		Reason:           "no_matching_relation",
-		Permission:       request.Permission,
-		ObjectType:       request.ObjectType,
-		ObjectID:         request.ObjectID,
-		CheckedRelations: relationNames(relations),
+		Allowed:        false,
+		Reason:         "no_matching_grant",
+		Permission:     request.Permission,
+		ObjectType:     request.ObjectType,
+		ObjectID:       request.ObjectID,
+		CheckedActions: actionNames(actions),
 	}
-	var tuples []relationTupleRow
+	var grants []permissionGrantRow
 	err = authorizer.store.DB(ctx).
-		Table("authorization_relation_tuples").
-		Select("object_id, relation, subject_type, subject_id, subject_relation").
+		Table("permission_grants").
+		Select("scope_id, action, subject_type, subject_id").
 		Where(
-			"object_type = ? AND object_id = ? AND relation IN ? AND deleted_at IS NULL",
+			"scope_type = ? AND scope_id = ? AND action IN ? AND deleted_at IS NULL",
 			groupsdomain.ObjectForum,
 			forumID,
-			relations,
+			actions,
 		).
-		Find(&tuples).Error
+		Find(&grants).Error
 	if err != nil {
 		return forumsdomain.ForumPermissionSimulationResult{}, err
 	}
-	memberships, err := authorizer.activeMemberships(ctx, request.ActorUserID, groupSubjectIDs(tuples))
+	memberships, err := authorizer.activeMemberships(ctx, request.ActorUserID, groupSubjectIDs(grants))
 	if err != nil {
 		return forumsdomain.ForumPermissionSimulationResult{}, err
 	}
-	for _, tuple := range tuples {
-		if tupleMatchesActor(tuple, request.ActorUserID, memberships) {
+	for _, grant := range grants {
+		if grantMatchesActor(grant, request.ActorUserID, memberships) {
 			result.Allowed = true
-			result.Reason = "matched_relation"
-			result.MatchedRelation = tuple.Relation
+			result.Reason = "matched_grant"
+			result.MatchedAction = grant.Action
 			return result, nil
 		}
 	}
 	return result, nil
 }
 
-// simulationRelations returns forum-level relations checked for permission.
-func simulationRelations(permission string) ([]groupsdomain.Relation, error) {
+// simulationActions returns forum-level actions checked for permission.
+func simulationActions(permission string) ([]groupsdomain.Action, error) {
 	switch groupsdomain.Permission(permission) {
 	case groupsdomain.PermissionForumsView,
 		groupsdomain.PermissionThreadsView,
 		groupsdomain.PermissionPostsView:
-		return viewRelations(), nil
+		return viewActions(), nil
 	case groupsdomain.PermissionForumsManageForum:
-		return manageRelations(), nil
+		return manageActions(), nil
 	case groupsdomain.PermissionForumsCreateThread:
-		return creatorRelations(), nil
+		return createThreadActions(), nil
 	case groupsdomain.PermissionForumsReply:
-		return replyRelations(), nil
+		return replyActions(), nil
 	case groupsdomain.PermissionForumsLikePosts,
 		groupsdomain.PermissionPostsLike:
-		return likeRelations(), nil
+		return likeActions(), nil
 	case groupsdomain.PermissionForumsPinThreads,
 		groupsdomain.PermissionForumsManageThreads,
 		groupsdomain.PermissionForumsManagePosts,
@@ -87,7 +87,7 @@ func simulationRelations(permission string) ([]groupsdomain.Relation, error) {
 		groupsdomain.PermissionPostsDelete,
 		groupsdomain.PermissionPostsViewHidden,
 		groupsdomain.PermissionPostsViewRevisions:
-		return moderateRelations(), nil
+		return moderateActions(), nil
 	default:
 		return nil, unsupportedSimulationPermission()
 	}
@@ -101,11 +101,11 @@ func unsupportedSimulationPermission() error {
 	}})
 }
 
-// relationNames maps relations to strings.
-func relationNames(relations []groupsdomain.Relation) []string {
-	names := make([]string, 0, len(relations))
-	for _, relation := range relations {
-		names = append(names, string(relation))
+// actionNames maps actions to strings.
+func actionNames(actions []groupsdomain.Action) []string {
+	names := make([]string, 0, len(actions))
+	for _, action := range actions {
+		names = append(names, string(action))
 	}
 	return names
 }

@@ -56,7 +56,7 @@ func newUsersFixture(t *testing.T, includeGroups bool) usersFixture {
 		groups = groupsapplication.NewService(
 			groupspostgres.NewGroupRepository(database.Store),
 			groupspostgres.NewMembershipRepository(database.Store),
-			groupspostgres.NewTupleRepository(database.Store),
+			groupspostgres.NewPermissionRepository(database.Store),
 		)
 		services.Groups = groups
 	}

@@ -25,10 +25,10 @@ func TestAuthorizerChecksTicketAndPunishmentPermissions(t *testing.T) {
 	if err != nil || !allowed {
 		t.Fatalf("CanRevokePunishmentFromAppeal() = %v, %v; want allowed", allowed, err)
 	}
-	if got := checker.requests[1].ObjectType; got != groupsdomain.ObjectTicket {
+	if got := checker.requests[1].ScopeType; got != groupsdomain.ObjectTicket {
 		t.Fatalf("ticket object type = %s, want ticket", got)
 	}
-	if got := checker.requests[2].ObjectType; got != groupsdomain.ObjectPunishment {
+	if got := checker.requests[2].ScopeType; got != groupsdomain.ObjectPunishment {
 		t.Fatalf("punishment object type = %s, want punishment", got)
 	}
 }
@@ -52,5 +52,5 @@ func (checker *checkerFake) Check(
 	request groupsport.CheckRequest,
 ) (groupsport.Decision, error) {
 	checker.requests = append(checker.requests, request)
-	return groupsport.Decision{Allowed: checker.allowed[request.Permission]}, nil
+	return groupsport.Decision{Allowed: checker.allowed[request.Action]}, nil
 }

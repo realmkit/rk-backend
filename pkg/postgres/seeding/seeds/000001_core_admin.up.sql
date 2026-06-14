@@ -35,14 +35,15 @@ ON CONFLICT(id) DO UPDATE SET
     updated_at = CURRENT_TIMESTAMP,
     deleted_at = NULL;
 
-INSERT INTO authorization_relation_tuples(
+INSERT INTO permission_grants(
     id,
-    object_type,
-    object_id,
-    relation,
     subject_type,
     subject_id,
-    subject_relation,
+    action,
+    scope_type,
+    scope_id,
+    inherit,
+    condition_key,
     created_by_user_id,
     created_at,
     deleted_at
@@ -50,10 +51,11 @@ INSERT INTO authorization_relation_tuples(
     '00000000-0000-0000-0000-000000000111',
     'group',
     '00000000-0000-0000-0000-000000000101',
-    'owner',
+    'groups.update',
     'group',
     '00000000-0000-0000-0000-000000000101',
-    'member',
+    false,
+    '',
     NULL,
     CURRENT_TIMESTAMP,
     NULL

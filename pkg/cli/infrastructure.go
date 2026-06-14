@@ -91,7 +91,6 @@ func groupsService(db *gorm.DB, events eventsapp.Service) groupsapp.Service {
 	return groupsapp.NewService(
 		groupspostgres.NewGroupRepository(store),
 		groupspostgres.NewMembershipRepository(store),
-		groupspostgres.NewTupleRepository(store),
 		groupspostgres.NewPermissionRepository(store),
 	).WithEvents(events)
 }
@@ -101,7 +100,7 @@ func groupshttpServices(groupService groupsapp.Service, userService userapp.Serv
 	return groupshttp.Services{
 		Groups:      groupService,
 		Memberships: groupService,
-		Tuples:      groupService,
+		Grants:      groupService,
 		Checker:     groupService,
 		Users:       userService,
 	}

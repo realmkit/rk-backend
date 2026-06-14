@@ -13,8 +13,14 @@ type GroupStatus string
 // MembershipStatus is the membership lifecycle state.
 type MembershipStatus string
 
+// Action identifies an action that can be granted.
+type Action string
+
+// ScopeType identifies the resource type an action applies to.
+type ScopeType string
+
 // ObjectType identifies an authorization object type.
-type ObjectType string
+type ObjectType = ScopeType
 
 // Relation identifies an authorization relation.
 type Relation string
@@ -23,10 +29,24 @@ type Relation string
 type SubjectType string
 
 // Permission identifies a domain action.
-type Permission string
+type Permission = Action
+
+// WarningLevel identifies how risky a permission action is.
+type WarningLevel string
 
 // ConditionType identifies a supported permission condition.
 type ConditionType string
+
+const (
+	// WarningLevelNormal marks routine permissions.
+	WarningLevelNormal WarningLevel = "normal"
+
+	// WarningLevelSensitive marks permissions that expose private or risky data.
+	WarningLevelSensitive WarningLevel = "sensitive"
+
+	// WarningLevelDangerous marks permissions that mutate important state.
+	WarningLevelDangerous WarningLevel = "dangerous"
+)
 
 const (
 	// GroupStatusActive means the group grants permissions.

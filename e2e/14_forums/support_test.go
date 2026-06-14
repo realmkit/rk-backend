@@ -51,7 +51,6 @@ func newForumsFixture(t *testing.T) forumsFixture {
 	groups := groupsapplication.NewService(
 		groupspostgres.NewGroupRepository(database.Store),
 		groupspostgres.NewMembershipRepository(database.Store),
-		groupspostgres.NewTupleRepository(database.Store),
 		groupspostgres.NewPermissionRepository(database.Store),
 	)
 	assets := &forumAssets{known: map[uuid.UUID]bool{}}
@@ -110,17 +109,37 @@ func (fixture forumsFixture) do(t *testing.T, request *http.Request) *http.Respo
 
 func (fixture forumsFixture) grant(t *testing.T, objectID uuid.UUID, relation groupsdomain.Relation, user uuid.UUID) {
 	t.Helper()
-	_, err := fixture.groups.CreateTuple(context.Background(), groupsport.CreateTupleCommand{
-		Tuple: groupsdomain.RelationTuple{
-			ObjectType: groupsdomain.ObjectForum, ObjectID: objectID,
-			Relation: relation, SubjectType: groupsdomain.SubjectUser, SubjectID: user,
+	_, err := fixture.groups.CreatePermissionGrant(context.Background(), groupsport.CreatePermissionGrantCommand{
+		Grant: groupsdomain.PermissionGrant{
+			SubjectType: groupsdomain.SubjectUser,
+			SubjectID:   user,
+			Action:      forumActionForRelation(relation),
+			ScopeType:   groupsdomain.ObjectForum,
+			ScopeID:     objectID,
 		},
 	})
 	if err != nil {
-		t.Fatalf("CreateTuple(%s) error = %v", relation, err)
+		t.Fatalf("CreatePermissionGrant(%s) error = %v", relation, err)
 	}
 	if err := fixture.service.ClearReadCache(context.Background()); err != nil {
 		t.Fatalf("ClearReadCache() error = %v", err)
+	}
+}
+
+func forumActionForRelation(relation groupsdomain.Relation) groupsdomain.Action {
+	switch relation {
+	case groupsdomain.RelationViewer:
+		return groupsdomain.PermissionForumsView
+	case groupsdomain.RelationCreator:
+		return groupsdomain.PermissionForumsCreateThread
+	case groupsdomain.RelationReplyer:
+		return groupsdomain.PermissionForumsReply
+	case groupsdomain.RelationLiker:
+		return groupsdomain.PermissionForumsLikePosts
+	case groupsdomain.RelationModerator:
+		return groupsdomain.PermissionForumsManageThreads
+	default:
+		return groupsdomain.PermissionForumsManageForum
 	}
 }
 

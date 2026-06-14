@@ -12,7 +12,7 @@ import (
 	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
 )
 
-// TestGroupsEmitLifecycleEvents verifies group, membership, and tuple event facts.
+// TestGroupsEmitLifecycleEvents verifies group, membership, and grant event facts.
 func TestGroupsEmitLifecycleEvents(t *testing.T) {
 	steps := harness.NewSteps(t)
 	fixture := newGroupsFixture(t)
@@ -56,19 +56,19 @@ func TestGroupsEmitLifecycleEvents(t *testing.T) {
 	)
 	assertGroupsStatus(t, removed, fiber.StatusNoContent)
 
-	steps.Log("create and delete a relation tuple")
-	tuple := fixture.createTuple(
+	steps.Log("create and delete a permission grant")
+	grant := fixture.createGrant(
 		t,
-		domain.RelationTuple{
-			ObjectType:  domain.ObjectForum,
-			ObjectID:    uuid.New(),
-			Relation:    domain.RelationViewer,
+		domain.PermissionGrant{
 			SubjectType: domain.SubjectUser,
 			SubjectID:   userID,
+			Action:      domain.PermissionForumsView,
+			ScopeType:   domain.ObjectForum,
+			ScopeID:     uuid.New(),
 		},
 	)
-	if err := fixture.service.DeleteTuple(context.Background(), port.DeleteTupleCommand{ID: tuple.ID}); err != nil {
-		t.Fatalf("DeleteTuple() error = %v", err)
+	if err := fixture.service.DeletePermissionGrant(context.Background(), port.DeletePermissionGrantCommand{ID: grant.ID}); err != nil {
+		t.Fatalf("DeletePermissionGrant() error = %v", err)
 	}
 
 	steps.Log("delete group")
@@ -89,8 +89,8 @@ func TestGroupsEmitLifecycleEvents(t *testing.T) {
 		"groups.group.updated",
 		eventdomain.EventGroupsMembershipAdded,
 		"groups.membership.removed",
-		"groups.relation_tuple.created",
-		"groups.relation_tuple.deleted",
+		"groups.permission_grant.created",
+		"groups.permission_grant.deleted",
 		"groups.group.deleted",
 	} {
 		assertGroupsEventPresent(t, drafts, key)

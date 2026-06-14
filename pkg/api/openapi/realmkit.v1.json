@@ -11608,7 +11608,11 @@
           "system",
           "forum",
           "forum_thread",
-          "forum_post"
+          "forum_post",
+          "event",
+          "cronjob",
+          "punishment",
+          "ticket"
         ]
       },
       "AuthorizationSubjectType": {
@@ -12358,30 +12362,30 @@
       "PermissionCheckRequest": {
         "type": "object",
         "required": [
-          "permission",
-          "object_type",
-          "object_id"
+          "action",
+          "scope_type",
+          "scope_id"
         ],
         "properties": {
           "actor_user_id": {
             "type": "string",
             "format": "uuid",
-            "description": "Local actor user ID. Omit or send the zero UUID for anonymous public-view checks."
+            "description": "Local actor user ID. Omit or send the zero UUID for anonymous public checks."
           },
-          "permission": {
+          "action": {
             "$ref": "#/components/schemas/Permission"
           },
-          "object_type": {
+          "scope_type": {
             "$ref": "#/components/schemas/AuthorizationObjectType"
           },
-          "object_id": {
+          "scope_id": {
             "type": "string",
             "format": "uuid"
           },
           "context": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Module-provided fields used by permission policy conditions."
+            "description": "Module-provided fields reserved for future conditional grants."
           }
         }
       },
@@ -12398,8 +12402,23 @@
           "reason": {
             "type": "string"
           },
-          "matched_relation": {
-            "$ref": "#/components/schemas/AuthorizationRelation"
+          "matched_grant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "matched_subject_type": {
+            "$ref": "#/components/schemas/AuthorizationSubjectType"
+          },
+          "matched_subject_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "matched_scope_type": {
+            "$ref": "#/components/schemas/AuthorizationObjectType"
+          },
+          "matched_scope_id": {
+            "type": "string",
+            "format": "uuid"
           },
           "matched_conditions": {
             "type": "array",
@@ -13531,13 +13550,6 @@
             "type": "string",
             "format": "uuid",
             "description": "Required for user/group. Public and authenticated use reserved IDs."
-          },
-          "subject_relation": {
-            "type": "string",
-            "enum": [
-              "member"
-            ],
-            "description": "Group grants use member."
           }
         }
       },
@@ -13620,7 +13632,7 @@
           "permission",
           "object_type",
           "object_id",
-          "checked_relations"
+          "checked_actions"
         ],
         "properties": {
           "allowed": {
@@ -13629,8 +13641,8 @@
           "reason": {
             "type": "string",
             "enum": [
-              "matched_relation",
-              "no_matching_relation"
+              "matched_grant",
+              "no_matching_grant"
             ]
           },
           "permission": {
@@ -13643,10 +13655,10 @@
             "type": "string",
             "format": "uuid"
           },
-          "matched_relation": {
+          "matched_action": {
             "type": "string"
           },
-          "checked_relations": {
+          "checked_actions": {
             "type": "array",
             "items": {
               "type": "string"

@@ -101,42 +101,44 @@ func TestDisplayGroupTieBreaksByCreatedAtThenKey(t *testing.T) {
 	}
 }
 
-// TestRelationTupleValidateRejectsMissingIdentifiers verifies tuple validation.
-func TestRelationTupleValidateRejectsMissingIdentifiers(t *testing.T) {
-	err := RelationTuple{ObjectType: ObjectGroup, Relation: RelationMember, SubjectType: SubjectUser}.Validate()
+// TestPermissionGrantValidateRejectsMissingIdentifiers verifies grant validation.
+func TestPermissionGrantValidateRejectsMissingIdentifiers(t *testing.T) {
+	err := PermissionGrant{SubjectType: SubjectUser, Action: "groups.update", ScopeType: ObjectGroup}.Validate()
 	var validation ValidationError
 	if !errors.As(err, &validation) {
 		t.Fatalf("Validate() error = %v, want ValidationError", err)
 	}
-	if len(validation.Violations) != 2 {
-		t.Fatalf("Violations = %d, want 2", len(validation.Violations))
+	if len(validation.Violations) != 3 {
+		t.Fatalf("Violations = %d, want 3", len(validation.Violations))
 	}
 }
 
-// TestRelationTupleValidateAcceptsPublicSubject verifies public tuple validation.
-func TestRelationTupleValidateAcceptsPublicSubject(t *testing.T) {
-	tuple := RelationTuple{
-		ObjectType:  ObjectForum,
-		ObjectID:    uuid.New(),
-		Relation:    RelationViewer,
+// TestPermissionGrantValidateAcceptsPublicSubject verifies public grant validation.
+func TestPermissionGrantValidateAcceptsPublicSubject(t *testing.T) {
+	grant := PermissionGrant{
+		ID:          uuid.New(),
 		SubjectType: SubjectPublic,
 		SubjectID:   PublicSubjectID(),
+		Action:      PermissionForumsView,
+		ScopeType:   ObjectForum,
+		ScopeID:     uuid.New(),
 	}
-	if err := tuple.Validate(); err != nil {
+	if err := grant.Validate(); err != nil {
 		t.Fatalf("Validate() error = %v", err)
 	}
 }
 
-// TestRelationTupleValidateRejectsWrongReservedSubjectID verifies reserved subject IDs.
-func TestRelationTupleValidateRejectsWrongReservedSubjectID(t *testing.T) {
-	tuple := RelationTuple{
-		ObjectType:  ObjectForum,
-		ObjectID:    uuid.New(),
-		Relation:    RelationViewer,
+// TestPermissionGrantValidateRejectsWrongReservedSubjectID verifies reserved subject IDs.
+func TestPermissionGrantValidateRejectsWrongReservedSubjectID(t *testing.T) {
+	grant := PermissionGrant{
+		ID:          uuid.New(),
 		SubjectType: SubjectAuthenticated,
 		SubjectID:   uuid.New(),
+		Action:      PermissionForumsView,
+		ScopeType:   ObjectForum,
+		ScopeID:     uuid.New(),
 	}
-	err := tuple.Validate()
+	err := grant.Validate()
 	var validation ValidationError
 	if !errors.As(err, &validation) {
 		t.Fatalf("Validate() error = %v, want ValidationError", err)
@@ -146,15 +148,9 @@ func TestRelationTupleValidateRejectsWrongReservedSubjectID(t *testing.T) {
 	}
 }
 
-// TestPermissionRuleValidateRejectsInvalidConditions verifies condition validation.
-func TestPermissionRuleValidateRejectsInvalidConditions(t *testing.T) {
-	err := PermissionRule{
-		ID:         uuid.New(),
-		Permission: "posts.update",
-		ObjectType: "post",
-		Relation:   RelationEditor,
-		Conditions: []PolicyCondition{{Type: ConditionWithinDuration, Field: "post.created_at", Duration: "soon"}},
-	}.Validate()
+// TestPermissionActionValidateRejectsInvalidAction verifies action validation.
+func TestPermissionActionValidateRejectsInvalidAction(t *testing.T) {
+	err := PermissionAction{ID: uuid.New(), Action: "Posts Update", ScopeType: "post", Area: "posts", Label: "Update", WarningLevel: WarningLevelNormal, Enabled: true, Version: 1}.Validate()
 	var validation ValidationError
 	if !errors.As(err, &validation) {
 		t.Fatalf("Validate() error = %v, want ValidationError", err)
@@ -182,10 +178,19 @@ func TestPolicyConditionValidationCoversSupportedShapes(t *testing.T) {
 	}
 }
 
-// TestPermissionDefinitionValidateAcceptsDottedPermission verifies permission names.
-func TestPermissionDefinitionValidateAcceptsDottedPermission(t *testing.T) {
-	definition := PermissionDefinition{ID: uuid.New(), Permission: "posts.update", ObjectType: "post", Enabled: true, Version: 1}
-	if err := definition.Validate(); err != nil {
+// TestPermissionActionValidateAcceptsDottedAction verifies permission names.
+func TestPermissionActionValidateAcceptsDottedAction(t *testing.T) {
+	action := PermissionAction{
+		ID:           uuid.New(),
+		Action:       "posts.update",
+		Area:         "posts",
+		ScopeType:    "post",
+		Label:        "Update posts",
+		WarningLevel: WarningLevelDangerous,
+		Enabled:      true,
+		Version:      1,
+	}
+	if err := action.Validate(); err != nil {
 		t.Fatalf("Validate() error = %v", err)
 	}
 }

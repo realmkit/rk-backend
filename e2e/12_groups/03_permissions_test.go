@@ -27,11 +27,11 @@ func TestGroupsPermissionSubjects(t *testing.T) {
 	userForum := uuid.New()
 	groupForum := uuid.New()
 
-	steps.Log("seed representative relation tuples")
-	fixture.createTuple(t, forumViewerTuple(publicForum, domain.SubjectPublic, domain.PublicSubjectID(), ""))
-	fixture.createTuple(t, forumViewerTuple(authForum, domain.SubjectAuthenticated, domain.AuthenticatedSubjectID(), ""))
-	fixture.createTuple(t, forumViewerTuple(userForum, domain.SubjectUser, userID, ""))
-	fixture.createTuple(t, forumViewerTuple(groupForum, domain.SubjectGroup, groupID, domain.RelationMember))
+	steps.Log("seed representative permission grants")
+	fixture.createGrant(t, forumViewGrant(publicForum, domain.SubjectPublic, domain.PublicSubjectID()))
+	fixture.createGrant(t, forumViewGrant(authForum, domain.SubjectAuthenticated, domain.AuthenticatedSubjectID()))
+	fixture.createGrant(t, forumViewGrant(userForum, domain.SubjectUser, userID))
+	fixture.createGrant(t, forumViewGrant(groupForum, domain.SubjectGroup, groupID))
 
 	steps.Log("public grants allow anonymous and authenticated users")
 	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(uuid.Nil, publicForum)), true)
@@ -71,37 +71,33 @@ func TestGroupsUnknownPermissionReturnsValidationProblem(t *testing.T) {
 	assertGroupsStatus(t, response, fiber.StatusUnprocessableEntity)
 }
 
-// TestGroupsCustomPolicyConditions verifies contextual condition allow and deny paths.
-func TestGroupsCustomPolicyConditions(t *testing.T) {
+// TestGroupsCustomActionGrant verifies database-backed custom actions.
+func TestGroupsCustomActionGrant(t *testing.T) {
 	steps := harness.NewSteps(t)
 	fixture := newGroupsFixture(t)
 	userID := uuid.New()
 	postID := uuid.New()
 
-	steps.Log("seed custom posts.update policy requiring open thread status")
-	seedPostUpdatePolicy(t, fixture)
-	fixture.createTuple(
+	steps.Log("seed custom posts.update action and grant")
+	seedPostUpdateAction(t, fixture)
+	fixture.createGrant(
 		t,
-		domain.RelationTuple{
-			ObjectType:  domain.ObjectForumPost,
-			ObjectID:    postID,
-			Relation:    domain.RelationAuthor,
+		domain.PermissionGrant{
 			SubjectType: domain.SubjectUser,
 			SubjectID:   userID,
+			Action:      domain.PermissionPostsUpdate,
+			ScopeType:   domain.ObjectForumPost,
+			ScopeID:     postID,
 		},
 	)
 
-	steps.Log("allow when condition context matches")
+	steps.Log("allow when direct grant matches")
 	openBody := checkPostUpdateBody(userID, postID, "open")
 	assertDecision(t, fixture.checkPermission(t, openBody), true)
 
-	steps.Log("deny when condition context does not match")
-	lockedBody := checkPostUpdateBody(userID, postID, "locked")
-	decision := fixture.checkPermission(t, lockedBody)
+	steps.Log("deny another user without grant")
+	decision := fixture.checkPermission(t, checkPostUpdateBody(uuid.New(), postID, "open"))
 	assertDecision(t, decision, false)
-	if decision["reason"] != "conditions_failed" {
-		t.Fatalf("reason = %v, want conditions_failed", decision["reason"])
-	}
 }
 
 // assignMember assigns a group membership through HTTP.
@@ -136,20 +132,18 @@ func removeMember(t *testing.T, fixture groupsFixture, groupID uuid.UUID, userID
 	assertGroupsStatus(t, response, fiber.StatusNoContent)
 }
 
-// forumViewerTuple creates one forum viewer tuple.
-func forumViewerTuple(
+// forumViewGrant creates one forum view grant.
+func forumViewGrant(
 	forumID uuid.UUID,
 	subjectType domain.SubjectType,
 	subjectID uuid.UUID,
-	subjectRelation domain.Relation,
-) domain.RelationTuple {
-	return domain.RelationTuple{
-		ObjectType:      domain.ObjectForum,
-		ObjectID:        forumID,
-		Relation:        domain.RelationViewer,
-		SubjectType:     subjectType,
-		SubjectID:       subjectID,
-		SubjectRelation: subjectRelation,
+) domain.PermissionGrant {
+	return domain.PermissionGrant{
+		SubjectType: subjectType,
+		SubjectID:   subjectID,
+		Action:      domain.PermissionForumsView,
+		ScopeType:   domain.ObjectForum,
+		ScopeID:     forumID,
 	}
 }
 
@@ -172,41 +166,23 @@ func assertDecision(t *testing.T, payload map[string]any, want bool) {
 }
 
 // seedPostUpdatePolicy stores a custom permission rule with conditions.
-func seedPostUpdatePolicy(t *testing.T, fixture groupsFixture) {
+func seedPostUpdateAction(t *testing.T, fixture groupsFixture) {
 	t.Helper()
-	_, err := fixture.policies.UpsertDefinition(
+	_, err := fixture.policies.UpsertAction(
 		context.Background(),
-		domain.PermissionDefinition{
-			ID:          uuid.New(),
-			Permission:  domain.PermissionPostsUpdate,
-			ObjectType:  domain.ObjectForumPost,
-			Description: "E2E conditioned post update",
-			Enabled:     true,
-			Version:     1,
+		domain.PermissionAction{
+			ID:           uuid.New(),
+			Action:       domain.PermissionPostsUpdate,
+			Area:         "posts",
+			ScopeType:    domain.ObjectForumPost,
+			Label:        "Update posts",
+			Description:  "E2E custom post update",
+			WarningLevel: domain.WarningLevelDangerous,
+			Enabled:      true,
+			Version:      1,
 		},
 	)
 	if err != nil {
-		t.Fatalf("UpsertDefinition() error = %v", err)
-	}
-	_, err = fixture.policies.UpsertRule(
-		context.Background(),
-		domain.PermissionRule{
-			ID:         uuid.New(),
-			Permission: domain.PermissionPostsUpdate,
-			ObjectType: domain.ObjectForumPost,
-			Relation:   domain.RelationAuthor,
-			Conditions: []domain.PolicyCondition{
-				{
-					Type:  domain.ConditionEquals,
-					Field: "thread_status",
-					Value: "open",
-				},
-			},
-			Priority: 1,
-			Enabled:  true,
-		},
-	)
-	if err != nil {
-		t.Fatalf("UpsertRule() error = %v", err)
+		t.Fatalf("UpsertAction() error = %v", err)
 	}
 }

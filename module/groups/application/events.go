@@ -25,11 +25,11 @@ const (
 	// membershipRemovedEvent is emitted when membership is removed.
 	membershipRemovedEvent eventdomain.EventKey = "groups.membership.removed"
 
-	// relationTupleCreatedEvent is emitted when a tuple is created.
-	relationTupleCreatedEvent eventdomain.EventKey = "groups.relation_tuple.created"
+	// permissionGrantCreatedEvent is emitted when a grant is created.
+	permissionGrantCreatedEvent eventdomain.EventKey = "groups.permission_grant.created"
 
-	// relationTupleDeletedEvent is emitted when a tuple is deleted.
-	relationTupleDeletedEvent eventdomain.EventKey = "groups.relation_tuple.deleted"
+	// permissionGrantDeletedEvent is emitted when a grant is deleted.
+	permissionGrantDeletedEvent eventdomain.EventKey = "groups.permission_grant.deleted"
 )
 
 // publishGroupEvent publishes one group lifecycle event.
@@ -74,37 +74,37 @@ func (service Service) publishMembershipEvent(
 	})
 }
 
-// publishTupleEvent publishes one relation tuple event.
-func (service Service) publishTupleEvent(
+// publishGrantEvent publishes one permission grant event.
+func (service Service) publishGrantEvent(
 	ctx context.Context,
 	key eventdomain.EventKey,
-	tuple domain.RelationTuple,
+	grant domain.PermissionGrant,
 ) error {
 	return emitter.Publish(ctx, service.events, eventdomain.Draft{
 		Key:           key,
 		SchemaVersion: 1,
 		Producer:      eventdomain.ProducerGroups,
-		AggregateType: "relation_tuple",
-		AggregateID:   emitter.UUID(tuple.ID),
+		AggregateType: "permission_grant",
+		AggregateID:   emitter.UUID(grant.ID),
 		Payload: map[string]any{
-			"id":           tuple.ID,
-			"object_type":  tuple.ObjectType,
-			"object_id":    tuple.ObjectID,
-			"relation":     tuple.Relation,
-			"subject_type": tuple.SubjectType,
-			"subject_id":   tuple.SubjectID,
+			"id":           grant.ID,
+			"action":       grant.Action,
+			"scope_type":   grant.ScopeType,
+			"scope_id":     grant.ScopeID,
+			"subject_type": grant.SubjectType,
+			"subject_id":   grant.SubjectID,
 		},
 		Scopes: systemScopes(),
 	})
 }
 
-// publishTupleDeleted publishes one relation tuple deletion event.
-func (service Service) publishTupleDeleted(ctx context.Context, id uuid.UUID) error {
+// publishGrantDeleted publishes one permission grant deletion event.
+func (service Service) publishGrantDeleted(ctx context.Context, id uuid.UUID) error {
 	return emitter.Publish(ctx, service.events, eventdomain.Draft{
-		Key:           relationTupleDeletedEvent,
+		Key:           permissionGrantDeletedEvent,
 		SchemaVersion: 1,
 		Producer:      eventdomain.ProducerGroups,
-		AggregateType: "relation_tuple",
+		AggregateType: "permission_grant",
 		AggregateID:   emitter.UUID(id),
 		Payload:       map[string]any{"id": id},
 		Scopes:        systemScopes(),

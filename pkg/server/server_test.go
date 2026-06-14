@@ -417,10 +417,9 @@ func newGroupsServices(t *testing.T) groupshttp.Services {
 	service := groupsapplication.NewService(
 		groupspostgres.NewGroupRepository(store),
 		groupspostgres.NewMembershipRepository(store),
-		groupspostgres.NewTupleRepository(store),
 		groupspostgres.NewPermissionRepository(store),
 	)
-	return groupshttp.Services{Groups: service, Memberships: service, Tuples: service, Checker: service}
+	return groupshttp.Services{Groups: service, Memberships: service, Grants: service, Checker: service}
 }
 
 // newUserServices creates auth config and user services for server tests.

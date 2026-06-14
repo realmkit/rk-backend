@@ -36,7 +36,6 @@ func newSeedingFixture(t *testing.T) seedingFixture {
 	groups := groupsapp.NewService(
 		groupspostgres.NewGroupRepository(database.Store),
 		groupspostgres.NewMembershipRepository(database.Store),
-		groupspostgres.NewTupleRepository(database.Store),
 		groupspostgres.NewPermissionRepository(database.Store),
 	)
 	forums := forumsapp.NewService(forumsapp.Dependencies{
@@ -58,7 +57,7 @@ func newSeedingFixture(t *testing.T) seedingFixture {
 			server.WithGroups(groupshttp.Services{
 				Groups:      groups,
 				Memberships: groups,
-				Tuples:      groups,
+				Grants:      groups,
 				Checker:     groups,
 			}),
 			server.WithForums(forumshttp.Services{

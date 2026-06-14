@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/realmkit/rk-backend/module/groups/domain"
@@ -108,95 +107,65 @@ func membershipFromModel(model MembershipModel) domain.Membership {
 	}
 }
 
-// tupleModelFromDomain maps domain tuple to persistence.
-func tupleModelFromDomain(tuple domain.RelationTuple) RelationTupleModel {
-	return RelationTupleModel{
-		ID:              orm.ID{ID: tuple.ID},
-		ObjectType:      string(tuple.ObjectType),
-		ObjectID:        tuple.ObjectID,
-		Relation:        string(tuple.Relation),
-		SubjectType:     string(tuple.SubjectType),
-		SubjectID:       tuple.SubjectID,
-		SubjectRelation: string(tuple.SubjectRelation),
-		CreatedByUserID: tuple.CreatedByUserID,
+// actionModelFromDomain maps domain permission action to persistence.
+func actionModelFromDomain(action domain.PermissionAction) PermissionActionModel {
+	return PermissionActionModel{
+		ID:           orm.ID{ID: action.ID},
+		Action:       string(action.Action),
+		Area:         action.Area,
+		ScopeType:    string(action.ScopeType),
+		Label:        action.Label,
+		Description:  action.Description,
+		WarningLevel: string(action.WarningLevel),
+		Enabled:      action.Enabled,
+		Version:      action.Version,
 	}
 }
 
-// tupleFromModel maps persistence tuple to domain.
-func tupleFromModel(model RelationTupleModel) domain.RelationTuple {
-	return domain.RelationTuple{
+// actionFromModel maps persistence permission action to domain.
+func actionFromModel(model PermissionActionModel) domain.PermissionAction {
+	return domain.PermissionAction{
+		ID:           model.ID.ID,
+		Action:       domain.Action(model.Action),
+		Area:         model.Area,
+		ScopeType:    domain.ScopeType(model.ScopeType),
+		Label:        model.Label,
+		Description:  model.Description,
+		WarningLevel: domain.WarningLevel(model.WarningLevel),
+		Enabled:      model.Enabled,
+		Version:      model.Version,
+		CreatedAt:    model.CreatedAt,
+		UpdatedAt:    model.UpdatedAt,
+	}
+}
+
+// grantModelFromDomain maps domain permission grant to persistence.
+func grantModelFromDomain(grant domain.PermissionGrant) PermissionGrantModel {
+	return PermissionGrantModel{
+		ID:              orm.ID{ID: grant.ID},
+		SubjectType:     string(grant.SubjectType),
+		SubjectID:       grant.SubjectID,
+		Action:          string(grant.Action),
+		ScopeType:       string(grant.ScopeType),
+		ScopeID:         grant.ScopeID,
+		Inherit:         grant.Inherit,
+		ConditionKey:    grant.ConditionKey,
+		CreatedByUserID: grant.CreatedByUserID,
+	}
+}
+
+// grantFromModel maps persistence permission grant to domain.
+func grantFromModel(model PermissionGrantModel) domain.PermissionGrant {
+	return domain.PermissionGrant{
 		ID:              model.ID.ID,
-		ObjectType:      domain.ObjectType(model.ObjectType),
-		ObjectID:        model.ObjectID,
-		Relation:        domain.Relation(model.Relation),
 		SubjectType:     domain.SubjectType(model.SubjectType),
 		SubjectID:       model.SubjectID,
-		SubjectRelation: domain.Relation(model.SubjectRelation),
+		Action:          domain.Action(model.Action),
+		ScopeType:       domain.ScopeType(model.ScopeType),
+		ScopeID:         model.ScopeID,
+		Inherit:         model.Inherit,
+		ConditionKey:    model.ConditionKey,
 		CreatedByUserID: model.CreatedByUserID,
 		CreatedAt:       model.CreatedAt,
 	}
-}
-
-// definitionModelFromDomain maps domain permission definition to persistence.
-func definitionModelFromDomain(definition domain.PermissionDefinition) PermissionDefinitionModel {
-	return PermissionDefinitionModel{
-		ID:          orm.ID{ID: definition.ID},
-		Permission:  string(definition.Permission),
-		ObjectType:  string(definition.ObjectType),
-		Description: definition.Description,
-		Enabled:     definition.Enabled,
-		Version:     definition.Version,
-	}
-}
-
-// definitionFromModel maps persistence permission definition to domain.
-func definitionFromModel(model PermissionDefinitionModel) domain.PermissionDefinition {
-	return domain.PermissionDefinition{
-		ID:          model.ID.ID,
-		Permission:  domain.Permission(model.Permission),
-		ObjectType:  domain.ObjectType(model.ObjectType),
-		Description: model.Description,
-		Enabled:     model.Enabled,
-		Version:     model.Version,
-		CreatedAt:   model.CreatedAt,
-		UpdatedAt:   model.UpdatedAt,
-	}
-}
-
-// ruleModelFromDomain maps domain permission rule to persistence.
-func ruleModelFromDomain(rule domain.PermissionRule) (PermissionRuleModel, error) {
-	conditions, err := json.Marshal(rule.Conditions)
-	if err != nil {
-		return PermissionRuleModel{}, err
-	}
-	return PermissionRuleModel{
-		ID:             orm.ID{ID: rule.ID},
-		Permission:     string(rule.Permission),
-		ObjectType:     string(rule.ObjectType),
-		Relation:       string(rule.Relation),
-		ConditionsJSON: string(conditions),
-		Priority:       rule.Priority,
-		Enabled:        rule.Enabled,
-	}, nil
-}
-
-// ruleFromModel maps persistence permission rule to domain.
-func ruleFromModel(model PermissionRuleModel) (domain.PermissionRule, error) {
-	var conditions []domain.PolicyCondition
-	if model.ConditionsJSON != "" {
-		if err := json.Unmarshal([]byte(model.ConditionsJSON), &conditions); err != nil {
-			return domain.PermissionRule{}, err
-		}
-	}
-	return domain.PermissionRule{
-		ID:         model.ID.ID,
-		Permission: domain.Permission(model.Permission),
-		ObjectType: domain.ObjectType(model.ObjectType),
-		Relation:   domain.Relation(model.Relation),
-		Conditions: conditions,
-		Priority:   model.Priority,
-		Enabled:    model.Enabled,
-		CreatedAt:  model.CreatedAt,
-		UpdatedAt:  model.UpdatedAt,
-	}, nil
 }

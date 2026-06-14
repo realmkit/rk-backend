@@ -40,30 +40,14 @@ CREATE INDEX group_memberships_status_active_idx ON group_memberships (status) W
 CREATE INDEX group_memberships_expires_at_idx ON group_memberships (expires_at);
 CREATE INDEX group_memberships_deleted_at_idx ON group_memberships (deleted_at);
 
-CREATE TABLE authorization_relation_tuples (
+CREATE TABLE permission_actions (
     id uuid PRIMARY KEY,
-    object_type text NOT NULL,
-    object_id uuid NOT NULL,
-    relation text NOT NULL,
-    subject_type text NOT NULL,
-    subject_id uuid NOT NULL,
-    subject_relation text NOT NULL DEFAULT '',
-    created_by_user_id uuid NULL,
-    created_at timestamptz NOT NULL,
-    deleted_at timestamptz NULL
-);
-
-CREATE UNIQUE INDEX authorization_relation_tuples_unique_active_idx ON authorization_relation_tuples (object_type, object_id, relation, subject_type, subject_id, subject_relation) WHERE deleted_at IS NULL;
-CREATE INDEX authorization_relation_tuples_object_idx ON authorization_relation_tuples (object_type, object_id, relation) WHERE deleted_at IS NULL;
-CREATE INDEX authorization_relation_tuples_subject_idx ON authorization_relation_tuples (subject_type, subject_id) WHERE deleted_at IS NULL;
-CREATE INDEX authorization_relation_tuples_subject_relation_idx ON authorization_relation_tuples (subject_type, subject_id, subject_relation) WHERE deleted_at IS NULL;
-CREATE INDEX authorization_relation_tuples_deleted_at_idx ON authorization_relation_tuples (deleted_at);
-
-CREATE TABLE authorization_permission_definitions (
-    id uuid PRIMARY KEY,
-    permission text NOT NULL,
-    object_type text NOT NULL,
+    action text NOT NULL,
+    area text NOT NULL,
+    scope_type text NOT NULL,
+    label text NOT NULL,
     description text NOT NULL DEFAULT '',
+    warning_level text NOT NULL DEFAULT 'normal',
     enabled boolean NOT NULL DEFAULT true,
     version bigint NOT NULL DEFAULT 1,
     created_at timestamptz NOT NULL,
@@ -71,25 +55,28 @@ CREATE TABLE authorization_permission_definitions (
     deleted_at timestamptz NULL
 );
 
-CREATE UNIQUE INDEX authorization_permission_definitions_permission_active_idx ON authorization_permission_definitions (permission) WHERE deleted_at IS NULL;
-CREATE INDEX authorization_permission_definitions_object_active_idx ON authorization_permission_definitions (object_type) WHERE deleted_at IS NULL;
-CREATE INDEX authorization_permission_definitions_enabled_active_idx ON authorization_permission_definitions (enabled) WHERE deleted_at IS NULL;
-CREATE INDEX authorization_permission_definitions_deleted_at_idx ON authorization_permission_definitions (deleted_at);
+CREATE UNIQUE INDEX permission_actions_action_active_idx ON permission_actions (action) WHERE deleted_at IS NULL;
+CREATE INDEX permission_actions_area_active_idx ON permission_actions (area) WHERE deleted_at IS NULL;
+CREATE INDEX permission_actions_scope_active_idx ON permission_actions (scope_type) WHERE deleted_at IS NULL;
+CREATE INDEX permission_actions_enabled_active_idx ON permission_actions (enabled) WHERE deleted_at IS NULL;
+CREATE INDEX permission_actions_deleted_at_idx ON permission_actions (deleted_at);
 
-CREATE TABLE authorization_policy_rules (
+CREATE TABLE permission_grants (
     id uuid PRIMARY KEY,
-    permission text NOT NULL,
-    object_type text NOT NULL,
-    relation text NOT NULL,
-    conditions_json text NOT NULL DEFAULT '[]',
-    priority integer NOT NULL DEFAULT 0,
-    enabled boolean NOT NULL DEFAULT true,
+    subject_type text NOT NULL,
+    subject_id uuid NOT NULL,
+    action text NOT NULL,
+    scope_type text NOT NULL,
+    scope_id uuid NOT NULL,
+    inherit boolean NOT NULL DEFAULT false,
+    condition_key text NOT NULL DEFAULT '',
+    created_by_user_id uuid NULL,
     created_at timestamptz NOT NULL,
-    updated_at timestamptz NOT NULL,
     deleted_at timestamptz NULL
 );
 
-CREATE INDEX authorization_policy_rules_permission_active_idx ON authorization_policy_rules (permission, priority) WHERE deleted_at IS NULL;
-CREATE INDEX authorization_policy_rules_object_active_idx ON authorization_policy_rules (object_type, relation) WHERE deleted_at IS NULL;
-CREATE INDEX authorization_policy_rules_enabled_active_idx ON authorization_policy_rules (enabled) WHERE deleted_at IS NULL;
-CREATE INDEX authorization_policy_rules_deleted_at_idx ON authorization_policy_rules (deleted_at);
+CREATE UNIQUE INDEX permission_grants_unique_active_idx ON permission_grants (subject_type, subject_id, action, scope_type, scope_id, inherit, condition_key) WHERE deleted_at IS NULL;
+CREATE INDEX permission_grants_scope_action_idx ON permission_grants (scope_type, scope_id, action) WHERE deleted_at IS NULL;
+CREATE INDEX permission_grants_subject_idx ON permission_grants (subject_type, subject_id) WHERE deleted_at IS NULL;
+CREATE INDEX permission_grants_action_idx ON permission_grants (action) WHERE deleted_at IS NULL;
+CREATE INDEX permission_grants_deleted_at_idx ON permission_grants (deleted_at);

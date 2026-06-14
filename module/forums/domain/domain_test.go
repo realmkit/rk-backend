@@ -120,9 +120,8 @@ func TestForumPermissionSettingsNormalizeReservedSubjects(t *testing.T) {
 		t.Fatalf("Validate() error = %v", err)
 	}
 	if settings.Viewers[0].SubjectID != PublicPermissionSubjectID() ||
-		settings.Replyers[0].SubjectID != AuthenticatedPermissionSubjectID() ||
-		settings.Moderators[0].SubjectRelation != "member" {
-		t.Fatalf("settings = %+v, want reserved ids and group member relation", settings)
+		settings.Replyers[0].SubjectID != AuthenticatedPermissionSubjectID() {
+		t.Fatalf("settings = %+v, want reserved ids", settings)
 	}
 }
 
@@ -130,7 +129,6 @@ func TestForumPermissionSettingsNormalizeReservedSubjects(t *testing.T) {
 func TestForumPermissionSettingsRejectsInvalidGrants(t *testing.T) {
 	settings := ForumPermissionSettings{
 		ForumID:  uuid.New(),
-		Managers: []ForumPermissionGrant{{SubjectType: PermissionSubjectGroup, SubjectID: uuid.New(), SubjectRelation: "owner"}},
 		Creators: []ForumPermissionGrant{{SubjectType: PermissionSubjectUser}},
 	}
 

@@ -48,56 +48,42 @@ func (MembershipModel) TableName() string {
 	return "group_memberships"
 }
 
-// RelationTupleModel is the GORM model for authorization relation tuples.
-type RelationTupleModel struct {
+// PermissionActionModel is the GORM model for permission actions.
+type PermissionActionModel struct {
 	orm.ID
-	ObjectType      string     `gorm:"size:64;not null;index"`
-	ObjectID        uuid.UUID  `gorm:"type:uuid;not null;index"`
-	Relation        string     `gorm:"size:64;not null;index"`
+	Action       string `gorm:"size:120;not null;index"`
+	Area         string `gorm:"size:64;not null;index"`
+	ScopeType    string `gorm:"size:64;not null;index"`
+	Label        string `gorm:"size:120;not null"`
+	Description  string `gorm:"size:500;not null;default:''"`
+	WarningLevel string `gorm:"size:32;not null;default:'normal';index"`
+	Enabled      bool   `gorm:"not null;default:true;index"`
+	Version      uint64 `gorm:"not null;default:1"`
+	orm.Timestamps
+	orm.SoftDelete
+}
+
+// TableName returns the database table name.
+func (PermissionActionModel) TableName() string {
+	return "permission_actions"
+}
+
+// PermissionGrantModel is the GORM model for permission grants.
+type PermissionGrantModel struct {
+	orm.ID
 	SubjectType     string     `gorm:"size:64;not null;index"`
 	SubjectID       uuid.UUID  `gorm:"type:uuid;not null;index"`
-	SubjectRelation string     `gorm:"size:64;not null;default:'';index"`
+	Action          string     `gorm:"size:120;not null;index"`
+	ScopeType       string     `gorm:"size:64;not null;index"`
+	ScopeID         uuid.UUID  `gorm:"type:uuid;not null;index"`
+	Inherit         bool       `gorm:"not null;default:false;index"`
+	ConditionKey    string     `gorm:"size:120;not null;default:'';index"`
 	CreatedByUserID *uuid.UUID `gorm:"type:uuid;index"`
 	CreatedAt       time.Time
 	orm.SoftDelete
 }
 
 // TableName returns the database table name.
-func (RelationTupleModel) TableName() string {
-	return "authorization_relation_tuples"
-}
-
-// PermissionDefinitionModel is the GORM model for permission definitions.
-type PermissionDefinitionModel struct {
-	orm.ID
-	Permission  string `gorm:"size:120;not null;index"`
-	ObjectType  string `gorm:"size:64;not null;index"`
-	Description string `gorm:"size:500;not null;default:''"`
-	Enabled     bool   `gorm:"not null;default:true;index"`
-	Version     uint64 `gorm:"not null;default:1"`
-	orm.Timestamps
-	orm.SoftDelete
-}
-
-// TableName returns the database table name.
-func (PermissionDefinitionModel) TableName() string {
-	return "authorization_permission_definitions"
-}
-
-// PermissionRuleModel is the GORM model for permission policy rules.
-type PermissionRuleModel struct {
-	orm.ID
-	Permission     string `gorm:"size:120;not null;index"`
-	ObjectType     string `gorm:"size:64;not null;index"`
-	Relation       string `gorm:"size:64;not null;index"`
-	ConditionsJSON string `gorm:"type:text;not null;default:'[]'"`
-	Priority       int    `gorm:"not null;default:0;index"`
-	Enabled        bool   `gorm:"not null;default:true;index"`
-	orm.Timestamps
-	orm.SoftDelete
-}
-
-// TableName returns the database table name.
-func (PermissionRuleModel) TableName() string {
-	return "authorization_policy_rules"
+func (PermissionGrantModel) TableName() string {
+	return "permission_grants"
 }

@@ -10,31 +10,31 @@ import (
 	"github.com/realmkit/rk-backend/module/groups/port"
 )
 
-// TestGroupsRelationTupleLifecycle verifies tuple create, duplicate, delete, and recreate behavior.
-func TestGroupsRelationTupleLifecycle(t *testing.T) {
+// TestGroupsPermissionGrantLifecycle verifies grant create, duplicate, delete, and recreate behavior.
+func TestGroupsPermissionGrantLifecycle(t *testing.T) {
 	steps := harness.NewSteps(t)
 	fixture := newGroupsFixture(t)
 	userID := uuid.New()
 	forumID := uuid.New()
-	tuple := forumViewerTuple(forumID, domain.SubjectUser, userID, "")
+	grant := forumViewGrant(forumID, domain.SubjectUser, userID)
 
-	steps.Log("create direct user viewer tuple")
-	created := fixture.createTuple(t, tuple)
+	steps.Log("create direct user forum view grant")
+	created := fixture.createGrant(t, grant)
 	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, forumID)), true)
 
-	steps.Log("reject duplicate active tuple through service contract")
-	if _, err := fixture.service.CreateTuple(context.Background(), portCreateTuple(tuple)); err == nil {
-		t.Fatalf("CreateTuple() duplicate error = nil, want conflict")
+	steps.Log("reject duplicate active grant through service contract")
+	if _, err := fixture.service.CreatePermissionGrant(context.Background(), portCreateGrant(grant)); err == nil {
+		t.Fatalf("CreatePermissionGrant() duplicate error = nil, want conflict")
 	}
 
-	steps.Log("delete tuple and verify access is removed")
-	if err := fixture.service.DeleteTuple(context.Background(), portDeleteTuple(created.ID)); err != nil {
-		t.Fatalf("DeleteTuple() error = %v", err)
+	steps.Log("delete grant and verify access is removed")
+	if err := fixture.service.DeletePermissionGrant(context.Background(), portDeleteGrant(created.ID)); err != nil {
+		t.Fatalf("DeletePermissionGrant() error = %v", err)
 	}
 	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, forumID)), false)
 
-	steps.Log("recreate tuple after deletion")
-	fixture.createTuple(t, tuple)
+	steps.Log("recreate grant after deletion")
+	fixture.createGrant(t, grant)
 	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, forumID)), true)
 }
 
@@ -66,12 +66,12 @@ func TestGroupsBuiltInPermissionsAreRecognized(t *testing.T) {
 	}
 }
 
-// portCreateTuple creates a tuple command while keeping test bodies compact.
-func portCreateTuple(tuple domain.RelationTuple) port.CreateTupleCommand {
-	return port.CreateTupleCommand{Tuple: tuple}
+// portCreateGrant creates a grant command while keeping test bodies compact.
+func portCreateGrant(grant domain.PermissionGrant) port.CreatePermissionGrantCommand {
+	return port.CreatePermissionGrantCommand{Grant: grant}
 }
 
-// portDeleteTuple creates a delete tuple command while keeping test bodies compact.
-func portDeleteTuple(id uuid.UUID) port.DeleteTupleCommand {
-	return port.DeleteTupleCommand{ID: id}
+// portDeleteGrant creates a delete grant command while keeping test bodies compact.
+func portDeleteGrant(id uuid.UUID) port.DeletePermissionGrantCommand {
+	return port.DeletePermissionGrantCommand{ID: id}
 }

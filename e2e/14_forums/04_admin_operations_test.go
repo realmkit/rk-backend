@@ -125,7 +125,7 @@ func settingsBody(id uuid.UUID, mode string, status string) string {
 
 func permissionBody(forumID uuid.UUID, groupID uuid.UUID) string {
 	publicID := forumsdomain.PublicPermissionSubjectID().String()
-	groupGrant := `{"subject_type":"group","subject_id":"` + groupID.String() + `","subject_relation":"member"}`
+	groupGrant := `{"subject_type":"group","subject_id":"` + groupID.String() + `"}`
 	publicGrant := `{"subject_type":"public","subject_id":"` + publicID + `"}`
 	return `{"forum_id":"` + forumID.String() + `","viewers":[` + publicGrant + `],` +
 		`"creators":[` + groupGrant + `],"replyers":[],"likers":[],"moderators":[],` +

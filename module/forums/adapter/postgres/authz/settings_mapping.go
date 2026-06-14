@@ -8,76 +8,75 @@ import (
 	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 )
 
-// addGrantToSettings appends grant to the relation bucket it belongs to.
+// addGrantToSettings appends grant to the action bucket it belongs to.
 func addGrantToSettings(
 	settings *forumsdomain.ForumPermissionSettings,
-	relation groupsdomain.Relation,
+	action groupsdomain.Action,
 	grant forumsdomain.ForumPermissionGrant,
 ) {
-	switch relation {
-	case groupsdomain.RelationViewer:
+	switch action {
+	case groupsdomain.PermissionForumsView:
 		settings.Viewers = append(settings.Viewers, grant)
-	case groupsdomain.RelationCreator:
+	case groupsdomain.PermissionForumsCreateThread:
 		settings.Creators = append(settings.Creators, grant)
-	case groupsdomain.RelationReplyer:
+	case groupsdomain.PermissionForumsReply:
 		settings.Replyers = append(settings.Replyers, grant)
-	case groupsdomain.RelationLiker:
+	case groupsdomain.PermissionForumsLikePosts:
 		settings.Likers = append(settings.Likers, grant)
-	case groupsdomain.RelationModerator:
+	case groupsdomain.PermissionForumsManageThreads:
 		settings.Moderators = append(settings.Moderators, grant)
-	case groupsdomain.RelationManager:
+	case groupsdomain.PermissionForumsManageForum:
 		settings.Managers = append(settings.Managers, grant)
 	}
 }
 
-// grantFromTuple maps a tuple projection to a grant.
-func grantFromTuple(tuple relationTupleRow) forumsdomain.ForumPermissionGrant {
+// grantFromRow maps a grant projection to a forum grant.
+func grantFromRow(row permissionGrantRow) forumsdomain.ForumPermissionGrant {
 	return forumsdomain.ForumPermissionGrant{
-		SubjectType:     forumsdomain.PermissionSubjectType(tuple.SubjectType),
-		SubjectID:       tuple.SubjectID,
-		SubjectRelation: tuple.SubjectRelation,
+		SubjectType: forumsdomain.PermissionSubjectType(row.SubjectType),
+		SubjectID:   row.SubjectID,
 	}
 }
 
-// tuplesFromPermissionSettings maps settings to insert rows.
-func tuplesFromPermissionSettings(
+// rowsFromPermissionSettings maps settings to insert rows.
+func rowsFromPermissionSettings(
 	settings forumsdomain.ForumPermissionSettings,
 	actorUserID uuid.UUID,
 	now time.Time,
-) []relationTupleInsertRow {
+) []permissionGrantInsertRow {
 	var actor *uuid.UUID
 	if actorUserID != uuid.Nil {
 		actor = &actorUserID
 	}
-	tuples := []relationTupleInsertRow{}
-	tuples = append(tuples, tuplesFromGrants(settings.ForumID, groupsdomain.RelationViewer, settings.Viewers, actor, now)...)
-	tuples = append(tuples, tuplesFromGrants(settings.ForumID, groupsdomain.RelationCreator, settings.Creators, actor, now)...)
-	tuples = append(tuples, tuplesFromGrants(settings.ForumID, groupsdomain.RelationReplyer, settings.Replyers, actor, now)...)
-	tuples = append(tuples, tuplesFromGrants(settings.ForumID, groupsdomain.RelationLiker, settings.Likers, actor, now)...)
-	tuples = append(tuples, tuplesFromGrants(settings.ForumID, groupsdomain.RelationModerator, settings.Moderators, actor, now)...)
-	tuples = append(tuples, tuplesFromGrants(settings.ForumID, groupsdomain.RelationManager, settings.Managers, actor, now)...)
-	return tuples
+	rows := []permissionGrantInsertRow{}
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsView, settings.Viewers, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsCreateThread, settings.Creators, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsReply, settings.Replyers, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsLikePosts, settings.Likers, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsManageThreads, settings.Moderators, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsManageForum, settings.Managers, actor, now)...)
+	return rows
 }
 
-// tuplesFromGrants maps one relation and grant list to insert rows.
-func tuplesFromGrants(
+// rowsFromGrants maps one action and grant list to insert rows.
+func rowsFromGrants(
 	forumID uuid.UUID,
-	relation groupsdomain.Relation,
+	action groupsdomain.Action,
 	grants []forumsdomain.ForumPermissionGrant,
 	actor *uuid.UUID,
 	now time.Time,
-) []relationTupleInsertRow {
-	rows := make([]relationTupleInsertRow, 0, len(grants))
+) []permissionGrantInsertRow {
+	rows := make([]permissionGrantInsertRow, 0, len(grants))
 	for _, grant := range grants {
 		grant = grant.Normalize()
-		rows = append(rows, relationTupleInsertRow{
+		rows = append(rows, permissionGrantInsertRow{
 			ID:              uuid.New(),
-			ObjectType:      string(groupsdomain.ObjectForum),
-			ObjectID:        forumID,
-			Relation:        string(relation),
 			SubjectType:     string(grant.SubjectType),
 			SubjectID:       grant.SubjectID,
-			SubjectRelation: grant.SubjectRelation,
+			Action:          string(action),
+			ScopeType:       string(groupsdomain.ObjectForum),
+			ScopeID:         forumID,
+			ConditionKey:    "",
 			CreatedByUserID: actor,
 			CreatedAt:       now,
 		})

@@ -14,8 +14,8 @@ type Services struct {
 	// Memberships manages group memberships.
 	Memberships port.MembershipService
 
-	// Tuples manages relation tuples.
-	Tuples port.TupleService
+	// Grants manages permission grants.
+	Grants port.PermissionGrantService
 
 	// Checker checks permissions.
 	Checker port.Checker

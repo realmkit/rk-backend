@@ -40,7 +40,6 @@ func newGroupsFixture(t *testing.T) groupsFixture {
 	service := groupsapplication.NewService(
 		groupspostgres.NewGroupRepository(database.Store),
 		groupspostgres.NewMembershipRepository(database.Store),
-		groupspostgres.NewTupleRepository(database.Store),
 		policies,
 	).WithEvents(events)
 	ecosystem := harness.New(
@@ -53,7 +52,7 @@ func newGroupsFixture(t *testing.T) groupsFixture {
 				groupshttp.Services{
 					Groups:      service,
 					Memberships: service,
-					Tuples:      service,
+					Grants:      service,
 					Checker:     service,
 				},
 			),
@@ -88,18 +87,18 @@ func (fixture groupsFixture) createGroup(t *testing.T, key string) map[string]an
 	return decodeGroupsObject(t, response)
 }
 
-// createTuple creates a relation tuple through the application seam.
-func (fixture groupsFixture) createTuple(
+// createGrant creates a permission grant through the application seam.
+func (fixture groupsFixture) createGrant(
 	t *testing.T,
-	tuple groupsdomain.RelationTuple,
-) groupsdomain.RelationTuple {
+	grant groupsdomain.PermissionGrant,
+) groupsdomain.PermissionGrant {
 	t.Helper()
-	created, err := fixture.service.CreateTuple(
+	created, err := fixture.service.CreatePermissionGrant(
 		context.Background(),
-		groupsport.CreateTupleCommand{Tuple: tuple},
+		groupsport.CreatePermissionGrantCommand{Grant: grant},
 	)
 	if err != nil {
-		t.Fatalf("CreateTuple() error = %v", err)
+		t.Fatalf("CreatePermissionGrant() error = %v", err)
 	}
 	return created
 }

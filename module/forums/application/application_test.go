@@ -875,7 +875,7 @@ func TestServicePermissionSettingsRoundTripAndSimulation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SimulateForumPermission() error = %v", err)
 	}
-	if !result.Allowed || result.MatchedRelation != "creator" {
+	if !result.Allowed || result.MatchedAction != "forums.create_thread" {
 		t.Fatalf("result = %+v, want creator allow", result)
 	}
 }
@@ -1308,19 +1308,19 @@ func (authorizer *memoryAuthorizer) SimulateForumPermission(
 ) (domain.ForumPermissionSimulationResult, error) {
 	settings, _ := authorizer.ForumPermissionSettings(context.Background(), forumID)
 	result := domain.ForumPermissionSimulationResult{
-		Allowed:          false,
-		Reason:           "no_matching_relation",
-		Permission:       request.Permission,
-		ObjectType:       request.ObjectType,
-		ObjectID:         request.ObjectID,
-		CheckedRelations: []string{"viewer", "creator", "replyer", "liker", "moderator", "manager"},
+		Allowed:        false,
+		Reason:         "no_matching_grant",
+		Permission:     request.Permission,
+		ObjectType:     request.ObjectType,
+		ObjectID:       request.ObjectID,
+		CheckedActions: []string{"forums.view", "forums.create_thread", "forums.reply", "forums.like_posts", "forums.manage_threads", "forums.manage_forum"},
 	}
 	for _, grant := range settings.Creators {
 		if grant.SubjectType == domain.PermissionSubjectUser && grant.SubjectID == request.ActorUserID &&
 			request.Permission == "forums.create_thread" {
 			result.Allowed = true
-			result.Reason = "matched_relation"
-			result.MatchedRelation = "creator"
+			result.Reason = "matched_grant"
+			result.MatchedAction = "forums.create_thread"
 			return result, nil
 		}
 	}

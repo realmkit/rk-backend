@@ -47,32 +47,20 @@ type MembershipRepository interface {
 	Delete(ctx context.Context, groupID uuid.UUID, userID uuid.UUID, expectedVersion *uint64) error
 }
 
-// TupleRepository stores relation tuples.
-type TupleRepository interface {
-	// Create stores a tuple.
-	Create(ctx context.Context, tuple domain.RelationTuple) (domain.RelationTuple, error)
-
-	// FindByID returns one tuple.
-	FindByID(ctx context.Context, id uuid.UUID) (domain.RelationTuple, error)
-
-	// List returns matching tuples.
-	List(ctx context.Context, filter TupleFilter, page pagination.Page) (pagination.Result[domain.RelationTuple], error)
-
-	// Delete soft deletes one tuple.
-	Delete(ctx context.Context, id uuid.UUID) error
-}
-
-// PermissionRepository stores customizable permission definitions and rules.
+// PermissionRepository stores permission actions and grants.
 type PermissionRepository interface {
-	// UpsertDefinition stores or updates a permission definition.
-	UpsertDefinition(ctx context.Context, definition domain.PermissionDefinition) (domain.PermissionDefinition, error)
+	// UpsertAction stores or updates a permission action.
+	UpsertAction(ctx context.Context, action domain.PermissionAction) (domain.PermissionAction, error)
 
-	// FindDefinition returns one active permission definition.
-	FindDefinition(ctx context.Context, permission domain.Permission) (domain.PermissionDefinition, error)
+	// FindAction returns one active permission action.
+	FindAction(ctx context.Context, action domain.Action) (domain.PermissionAction, error)
 
-	// UpsertRule stores or updates a permission rule.
-	UpsertRule(ctx context.Context, rule domain.PermissionRule) (domain.PermissionRule, error)
+	// CreateGrant stores a permission grant.
+	CreateGrant(ctx context.Context, grant domain.PermissionGrant) (domain.PermissionGrant, error)
 
-	// ListRules returns active rules for a permission.
-	ListRules(ctx context.Context, permission domain.Permission) ([]domain.PermissionRule, error)
+	// ListGrants returns active permission grants.
+	ListGrants(ctx context.Context, filter PermissionGrantFilter, page pagination.Page) (pagination.Result[domain.PermissionGrant], error)
+
+	// DeleteGrant soft deletes one permission grant.
+	DeleteGrant(ctx context.Context, id uuid.UUID) error
 }

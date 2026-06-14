@@ -150,8 +150,8 @@ func TestVisibilityAuthorizerSupportsPublicAndAuthenticated(t *testing.T) {
 	authorizer := NewVisibilityAuthorizer(store)
 	publicForumID := uuid.New()
 	authForumID := uuid.New()
-	createTuple(t, db, publicForumID, groupsdomain.SubjectPublic, groupsdomain.PublicSubjectID())
-	createTuple(t, db, authForumID, groupsdomain.SubjectAuthenticated, groupsdomain.AuthenticatedSubjectID())
+	createGrant(t, db, publicForumID, groupsdomain.SubjectPublic, groupsdomain.PublicSubjectID(), groupsdomain.PermissionForumsView)
+	createGrant(t, db, authForumID, groupsdomain.SubjectAuthenticated, groupsdomain.AuthenticatedSubjectID(), groupsdomain.PermissionForumsView)
 
 	anonymous, err := authorizer.VisibleForums(context.Background(), uuid.Nil, []uuid.UUID{publicForumID, authForumID})
 	if err != nil {
@@ -180,7 +180,7 @@ func TestVisibilityAuthorizerSupportsGroupMembership(t *testing.T) {
 	otherID := uuid.New()
 	createGroup(t, db, groupID)
 	createMembership(t, db, groupID, memberID)
-	createTuple(t, db, forumID, groupsdomain.SubjectGroup, groupID)
+	createGrant(t, db, forumID, groupsdomain.SubjectGroup, groupID, groupsdomain.PermissionForumsView)
 
 	memberVisible, err := authorizer.VisibleForums(context.Background(), memberID, []uuid.UUID{forumID})
 	if err != nil {
@@ -255,10 +255,10 @@ func TestVisibilityAuthorizerPermissionSettingsAndSimulation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Simulate group error = %v", err)
 	}
-	if !publicResult.Allowed || publicResult.MatchedRelation != string(groupsdomain.RelationViewer) || !userResult.Allowed ||
-		userResult.MatchedRelation != string(groupsdomain.RelationCreator) ||
+	if !publicResult.Allowed || publicResult.MatchedAction != string(groupsdomain.PermissionForumsView) || !userResult.Allowed ||
+		userResult.MatchedAction != string(groupsdomain.PermissionForumsCreateThread) ||
 		!groupResult.Allowed ||
-		groupResult.MatchedRelation != string(groupsdomain.RelationModerator) {
+		groupResult.MatchedAction != string(groupsdomain.PermissionForumsManageThreads) {
 		t.Fatalf("results public=%+v user=%+v group=%+v, want matching explanations", publicResult, userResult, groupResult)
 	}
 	if err := authorizer.UpdateForumPermissionSettings(context.Background(), actorID, domain.ForumPermissionSettings{ForumID: forumID}); err != nil {
@@ -717,25 +717,29 @@ func createContentFixture(
 	return category, forum, thread, post
 }
 
-// createTuple stores one visibility tuple.
-func createTuple(t *testing.T, db *gorm.DB, forumID uuid.UUID, subjectType groupsdomain.SubjectType, subjectID uuid.UUID) {
+// createGrant stores one visibility grant.
+func createGrant(
+	t *testing.T,
+	db *gorm.DB,
+	forumID uuid.UUID,
+	subjectType groupsdomain.SubjectType,
+	subjectID uuid.UUID,
+	action groupsdomain.Action,
+) {
 	t.Helper()
-	subjectRelation := ""
-	if subjectType == groupsdomain.SubjectGroup {
-		subjectRelation = string(groupsdomain.RelationMember)
-	}
 	err := db.Exec(
-		"INSERT INTO authorization_relation_tuples (id, object_type, object_id, relation, subject_type, subject_id, subject_relation, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+		"INSERT INTO permission_grants (id, subject_type, subject_id, action, scope_type, scope_id, inherit, condition_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
 		uuid.New(),
-		groupsdomain.ObjectForum,
-		forumID,
-		groupsdomain.RelationViewer,
 		subjectType,
 		subjectID,
-		subjectRelation,
+		action,
+		groupsdomain.ObjectForum,
+		forumID,
+		false,
+		"",
 	).Error
 	if err != nil {
-		t.Fatalf("insert tuple error = %v", err)
+		t.Fatalf("insert grant error = %v", err)
 	}
 }
 
