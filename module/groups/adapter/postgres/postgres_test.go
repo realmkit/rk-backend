@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/orm"
 	"github.com/realmkit/rk-backend/pkg/pagination"
 	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
+	"github.com/realmkit/rk-backend/pkg/search"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -49,6 +51,50 @@ func TestGroupRepositoryLifecycle(t *testing.T) {
 	}
 	if _, err := groups.FindByID(context.Background(), updated.ID); !errors.Is(err, port.ErrNotFound) {
 		t.Fatalf("FindByID() error = %v, want %v", err, port.ErrNotFound)
+	}
+}
+
+// TestGroupRepositorySearchMatchesPartialTerms verifies admin finds Administrator.
+func TestGroupRepositorySearchMatchesPartialTerms(t *testing.T) {
+	groups, _, _, _ := newRepositories(t)
+	administrator := testGroup()
+	administrator.Key = "administrator"
+	administrator.Name = "Administrator"
+	if _, err := groups.Create(context.Background(), administrator); err != nil {
+		t.Fatalf("Create() administrator error = %v", err)
+	}
+	moderator := testGroup()
+	moderator.ID = uuid.New()
+	moderator.Key = "moderator"
+	moderator.Name = "Moderator"
+	if _, err := groups.Create(context.Background(), moderator); err != nil {
+		t.Fatalf("Create() moderator error = %v", err)
+	}
+	query, err := search.NewTextQuery("admin", search.QueryOptions{})
+	if err != nil {
+		t.Fatalf("NewTextQuery() error = %v", err)
+	}
+	list, err := groups.List(
+		context.Background(),
+		port.GroupFilter{Query: query},
+		pagination.Page{Limit: 10},
+	)
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(list.Items) != 1 || list.Items[0].Key != "administrator" {
+		t.Fatalf("items = %+v, want only administrator", list.Items)
+	}
+}
+
+// TestGroupPostgresSearchConditionIncludesPartialFallback guards prefix search.
+func TestGroupPostgresSearchConditionIncludesPartialFallback(t *testing.T) {
+	condition := groupPostgresSearchCondition()
+	if !strings.Contains(condition, "plainto_tsquery") {
+		t.Fatalf("condition = %q, want full-text search", condition)
+	}
+	if strings.Count(condition, "LIKE ?") != 3 {
+		t.Fatalf("condition = %q, want key, name, and description LIKE fallbacks", condition)
 	}
 }
 

@@ -133,10 +133,10 @@ func applyGroupFilter(query *gorm.DB, filter port.GroupFilter) *gorm.DB {
 		query = query.Where("status = ?", filter.Status)
 	}
 	if !filter.Query.Empty() {
+		like := filter.Query.LowerLike()
 		if query.Dialector.Name() == "postgres" {
-			query = query.Where("to_tsvector('simple', coalesce(key, '') || ' ' || coalesce(name, '') || ' ' || coalesce(description, '')) @@ plainto_tsquery('simple', ?)", filter.Query.String())
+			query = query.Where(groupPostgresSearchCondition(), filter.Query.String(), like, like, like)
 		} else {
-			like := filter.Query.LowerLike()
 			query = query.Where("LOWER(key) LIKE ? OR LOWER(name) LIKE ? OR LOWER(description) LIKE ?", like, like, like)
 		}
 	}

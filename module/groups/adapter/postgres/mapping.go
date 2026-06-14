@@ -55,6 +55,19 @@ func groupUpdates(group domain.Group, expectedVersion uint64) map[string]any {
 	}
 }
 
+// groupPostgresSearchCondition returns exact full-text plus prefix fallback search.
+func groupPostgresSearchCondition() string {
+	return `
+		to_tsvector(
+			'simple',
+			coalesce(key, '') || ' ' || coalesce(name, '') || ' ' || coalesce(description, '')
+		) @@ plainto_tsquery('simple', ?)
+		OR LOWER(key) LIKE ?
+		OR LOWER(name) LIKE ?
+		OR LOWER(description) LIKE ?
+	`
+}
+
 // mapError maps GORM errors into groups errors.
 func mapError(err error) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
