@@ -2,12 +2,12 @@ package operations
 
 import (
 	"context"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/forums/domain"
 	"github.com/realmkit/rk-backend/module/forums/port"
 	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // Search searches visible forum content.
@@ -16,8 +16,8 @@ func (service Service) Search(
 	command port.SearchCommand,
 	page pagination.Page,
 ) (pagination.Result[domain.SearchResult], error) {
-	query := strings.TrimSpace(command.Query)
-	if len(query) < 2 || len(query) > 120 {
+	query, err := search.NewTextQuery(command.Query, search.QueryOptions{})
+	if err != nil || query.Empty() {
 		return pagination.Result[domain.SearchResult]{}, domain.NewValidationError([]domain.Violation{
 			{Field: "query", Message: "must be between 2 and 120 characters"},
 		})
@@ -31,7 +31,7 @@ func (service Service) Search(
 	}
 	filter := port.SearchFilter{
 		ForumIDs: forumIDs,
-		Query:    query,
+		Query:    query.String(),
 	}
 	return service.operations.Search(ctx, filter, page)
 }

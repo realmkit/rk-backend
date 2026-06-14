@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/tickets/domain"
 	"github.com/realmkit/rk-backend/module/tickets/port"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // createTicketRequest is the ticket intake DTO.
@@ -84,7 +85,10 @@ func (handler handler) listTickets(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	filter := ticketFilter(ctx)
+	filter, err := ticketFilter(ctx)
+	if err != nil {
+		return err
+	}
 	result, err := handler.services.Tickets.ListTickets(ctx.UserContext(), filter, page)
 	if err != nil {
 		return handleError(ctx, err)
@@ -131,7 +135,15 @@ func (request createTicketRequest) command(actor uuid.UUID, key string) port.Cre
 }
 
 // ticketFilter parses queue filters.
-func ticketFilter(ctx *fiber.Ctx) port.TicketFilter {
+func ticketFilter(ctx *fiber.Ctx) (port.TicketFilter, error) {
+	query, err := search.NewTextQuery(ctx.Query("q"), search.QueryOptions{})
+	if err != nil {
+		return port.TicketFilter{}, searchProblem(err)
+	}
+	sort, err := search.NewSort(ctx.Query("sort"), ctx.Query("direction"), port.DefaultTicketSort(), port.AllowedTicketSorts())
+	if err != nil {
+		return port.TicketFilter{}, searchProblem(err)
+	}
 	return port.TicketFilter{
 		SubmitterUserID:    queryUUID(ctx, "submitter_user_id"),
 		TargetUserID:       queryUUID(ctx, "target_user_id"),
@@ -140,7 +152,9 @@ func ticketFilter(ctx *fiber.Ctx) port.TicketFilter {
 		AssigneeUserID:     queryUUID(ctx, "assignee_user_id"),
 		Status:             domain.TicketStatus(ctx.Query("status")),
 		Kind:               domain.Kind(ctx.Query("kind")),
-	}
+		Query:              query,
+		Sort:               sort,
+	}, nil
 }
 
 // queryUUID parses optional UUID query parameters.

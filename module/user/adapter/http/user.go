@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -9,6 +10,8 @@ import (
 	"github.com/realmkit/rk-backend/module/user/domain"
 	userport "github.com/realmkit/rk-backend/module/user/port"
 	"github.com/realmkit/rk-backend/pkg/api/principal"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // updateCurrentRequest is the local current-user update body.
@@ -21,6 +24,21 @@ type currentUserResponse struct {
 	User           domain.User        `json:"user"`
 	ProviderClaims *claimCacheSummary `json:"provider_claims,omitempty"`
 	Groups         *port.UserGroups   `json:"groups,omitempty"`
+}
+
+// userListResponse contains one user list page.
+type userListResponse struct {
+	Items         []userSummaryResponse `json:"items"`
+	NextPageToken string                `json:"next_page_token,omitempty"`
+	Query         string                `json:"query,omitempty"`
+	Sort          string                `json:"sort,omitempty"`
+	Direction     string                `json:"direction,omitempty"`
+}
+
+// userSummaryResponse contains one admin user list item.
+type userSummaryResponse struct {
+	User           domain.User        `json:"user"`
+	ProviderClaims *claimCacheSummary `json:"provider_claims,omitempty"`
 }
 
 // claimCacheSummary exposes provider-owned cache data without raw subject.
@@ -63,6 +81,32 @@ func (handler handler) currentUser(ctx *fiber.Ctx) error {
 	}
 	setETag(ctx, user.User.Version)
 	return writeJSON(ctx, fiber.StatusOK, response)
+}
+
+// listUsers returns searchable users.
+func (handler handler) listUsers(ctx *fiber.Ctx) error {
+	if _, err := principal.Require(ctx); err != nil {
+		return handleError(ctx, err)
+	}
+	page, err := pageFromQuery(ctx)
+	if err != nil {
+		return err
+	}
+	filter, err := userFilterFromQuery(ctx)
+	if err != nil {
+		return err
+	}
+	result, err := handler.services.Users.List(ctx.UserContext(), filter, page)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, userListResponse{
+		Items:         userSummaries(result.Items),
+		NextPageToken: result.NextCursor,
+		Query:         filter.Query.String(),
+		Sort:          filter.Sort.Key,
+		Direction:     string(filter.Sort.Direction),
+	})
 }
 
 // updateCurrentUser updates local current-user settings.
@@ -110,4 +154,43 @@ func claimsSummary(cache domain.ClaimCache) *claimCacheSummary {
 		ClaimsHash:      cache.ClaimsHash,
 		SyncedAt:        cache.SyncedAt,
 	}
+}
+
+// userFilterFromQuery maps query params into a user filter.
+func userFilterFromQuery(ctx *fiber.Ctx) (userport.UserFilter, error) {
+	query, err := search.NewTextQuery(ctx.Query("q"), search.QueryOptions{})
+	if err != nil {
+		return userport.UserFilter{}, searchProblem(err)
+	}
+	sort, err := search.NewSort(ctx.Query("sort"), ctx.Query("direction"), userport.DefaultUserSort(), userport.AllowedUserSorts())
+	if err != nil {
+		return userport.UserFilter{}, searchProblem(err)
+	}
+	return userport.UserFilter{
+		Status: domain.Status(ctx.Query("status")),
+		Query:  query,
+		Sort:   sort,
+	}, nil
+}
+
+// userSummaries maps port user summaries into HTTP responses.
+func userSummaries(items []userport.UserSummary) []userSummaryResponse {
+	result := make([]userSummaryResponse, 0, len(items))
+	for _, item := range items {
+		summary := userSummaryResponse{User: item.User}
+		if item.Claims != nil {
+			summary.ProviderClaims = claimsSummary(*item.Claims)
+		}
+		result = append(result, summary)
+	}
+	return result
+}
+
+// searchProblem maps invalid search parameters to a problem response.
+func searchProblem(err error) error {
+	code := "invalid_search"
+	if errors.Is(err, search.ErrInvalidCursor) {
+		code = "invalid_page_token"
+	}
+	return problem.Error{Problem: problem.New(fiber.StatusBadRequest, code, "Search parameters are invalid.")}
 }

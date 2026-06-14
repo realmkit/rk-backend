@@ -10,7 +10,9 @@ import (
 	"github.com/realmkit/rk-backend/module/user/domain"
 	"github.com/realmkit/rk-backend/module/user/port"
 	"github.com/realmkit/rk-backend/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
+	"github.com/realmkit/rk-backend/pkg/search"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -36,6 +38,57 @@ func TestUserRepositoryLifecycle(t *testing.T) {
 	}
 	if _, err := users.FindByID(context.Background(), uuid.New()); !errors.Is(err, port.ErrNotFound) {
 		t.Fatalf("FindByID() error = %v, want not found", err)
+	}
+}
+
+// TestUserRepositoryListSearchesClaimCache verifies user list search uses cached provider claims.
+func TestUserRepositoryListSearchesClaimCache(t *testing.T) {
+	users, _, claims := newRepositories(t)
+	ian := createUserWithClaims(t, users, claims, "ian", "ian@example.test", "Ian Castano")
+	createUserWithClaims(t, users, claims, "ada", "ada@example.test", "Ada Lovelace")
+
+	result, err := users.List(context.Background(), userFilter(t, "castano", "email", "asc"), page(t, 10, ""))
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(result.Items) != 1 || result.Items[0].User.ID != ian.ID {
+		t.Fatalf("Items = %+v, want Ian result", result.Items)
+	}
+	if result.Items[0].Claims == nil || result.Items[0].Claims.Email != "ian@example.test" {
+		t.Fatalf("Claims = %+v, want cached email", result.Items[0].Claims)
+	}
+}
+
+// TestUserRepositoryListUsesCursorPagination verifies user list cursors are stable.
+func TestUserRepositoryListUsesCursorPagination(t *testing.T) {
+	users, _, claims := newRepositories(t)
+	first := createUserWithClaims(t, users, claims, "ada", "ada@example.test", "Ada Lovelace")
+	second := createUserWithClaims(t, users, claims, "ian", "ian@example.test", "Ian Castano")
+
+	filter := userFilter(t, "", "email", "asc")
+	firstPage, err := users.List(context.Background(), filter, page(t, 1, ""))
+	if err != nil {
+		t.Fatalf("List() first page error = %v", err)
+	}
+	if len(firstPage.Items) != 1 || firstPage.Items[0].User.ID != first.ID || firstPage.NextCursor == "" {
+		t.Fatalf("firstPage = %+v, want Ada plus cursor", firstPage)
+	}
+
+	secondPage, err := users.List(context.Background(), filter, page(t, 1, firstPage.NextCursor))
+	if err != nil {
+		t.Fatalf("List() second page error = %v", err)
+	}
+	if len(secondPage.Items) != 1 || secondPage.Items[0].User.ID != second.ID {
+		t.Fatalf("secondPage = %+v, want Ian", secondPage)
+	}
+}
+
+// TestUserRepositoryListRejectsInvalidCursor verifies malformed cursors fail.
+func TestUserRepositoryListRejectsInvalidCursor(t *testing.T) {
+	users, _, _ := newRepositories(t)
+	_, err := users.List(context.Background(), userFilter(t, "", "email", "asc"), page(t, 1, "not-a-cursor"))
+	if !errors.Is(err, search.ErrInvalidCursor) {
+		t.Fatalf("List() error = %v, want invalid cursor", err)
 	}
 }
 
@@ -119,4 +172,60 @@ func newRepositories(t *testing.T) (UserRepository, IdentityLinkRepository, Clai
 // testUser returns a valid local user.
 func testUser() domain.User {
 	return domain.User{ID: uuid.New(), Status: domain.StatusActive, FirstSeenAt: time.Now().UTC(), Version: 1}
+}
+
+// createUserWithClaims stores a user and matching provider claims.
+func createUserWithClaims(
+	t *testing.T,
+	users UserRepository,
+	claims ClaimCacheRepository,
+	username string,
+	email string,
+	displayName string,
+) domain.User {
+	t.Helper()
+	user, err := users.Create(context.Background(), testUser())
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	_, err = claims.Upsert(context.Background(), domain.ClaimCache{
+		ID:            uuid.New(),
+		UserID:        user.ID,
+		Issuer:        "issuer",
+		Subject:       user.ID.String(),
+		Username:      username,
+		Email:         email,
+		EmailVerified: true,
+		DisplayName:   displayName,
+		ClaimsHash:    username + "-hash",
+		SyncedAt:      time.Now().UTC(),
+	})
+	if err != nil {
+		t.Fatalf("Upsert() error = %v", err)
+	}
+	return user
+}
+
+// userFilter returns a validated list filter.
+func userFilter(t *testing.T, query string, sortKey string, direction string) port.UserFilter {
+	t.Helper()
+	text, err := search.NewTextQuery(query, search.QueryOptions{})
+	if err != nil {
+		t.Fatalf("NewTextQuery() error = %v", err)
+	}
+	sort, err := search.NewSort(sortKey, direction, port.DefaultUserSort(), port.AllowedUserSorts())
+	if err != nil {
+		t.Fatalf("NewSort() error = %v", err)
+	}
+	return port.UserFilter{Query: text, Sort: sort}
+}
+
+// page returns normalized pagination options.
+func page(t *testing.T, limit int, cursor string) pagination.Page {
+	t.Helper()
+	page, err := pagination.New(pagination.Request{Limit: limit, Cursor: cursor})
+	if err != nil {
+		t.Fatalf("pagination.New() error = %v", err)
+	}
+	return page
 }

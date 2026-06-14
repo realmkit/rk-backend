@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // CreateGroupCommand creates a group.
@@ -66,6 +67,37 @@ type DeleteTupleCommand struct {
 type GroupFilter struct {
 	// Status filters by group status.
 	Status domain.GroupStatus
+
+	// Query filters by key, name, or description.
+	Query search.TextQuery
+
+	// HasIcon filters by icon presence when set.
+	HasIcon *bool
+
+	// MinWeight filters by minimum display weight when set.
+	MinWeight *int
+
+	// MaxWeight filters by maximum display weight when set.
+	MaxWeight *int
+
+	// Sort controls deterministic result ordering.
+	Sort search.Sort
+}
+
+// DefaultGroupSort returns the default group list sort.
+func DefaultGroupSort() search.SortOption {
+	return search.SortOption{Key: "weight", DefaultDirection: search.DirectionDesc}
+}
+
+// AllowedGroupSorts returns public group list sort keys.
+func AllowedGroupSorts() []search.SortOption {
+	return []search.SortOption{
+		DefaultGroupSort(),
+		{Key: "key", DefaultDirection: search.DirectionAsc},
+		{Key: "name", DefaultDirection: search.DirectionAsc},
+		{Key: "created_at", DefaultDirection: search.DirectionDesc},
+		{Key: "updated_at", DefaultDirection: search.DirectionDesc},
+	}
 }
 
 // TupleFilter filters relation tuples.

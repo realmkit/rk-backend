@@ -11,6 +11,7 @@ import (
 	"github.com/realmkit/rk-backend/module/assets/port"
 	"github.com/realmkit/rk-backend/pkg/orm"
 	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 	"gorm.io/gorm"
 )
 
@@ -73,12 +74,26 @@ func (repository AssetRepository) List(
 	filter port.AssetFilter,
 	page pagination.Page,
 ) (pagination.Result[domain.Asset], error) {
-	query := applyAssetFilter(repository.store.DB(ctx).Model(&AssetModel{}), filter).Order("created_at desc, id desc").Limit(page.Limit + 1)
+	sort := filter.Sort
+	if sort.Key == "" {
+		sort, _ = search.NewSort("", "", port.DefaultAssetSort(), port.AllowedAssetSorts())
+	}
+	filterHash := assetFilterHash(filter, sort)
+	cursor, hasCursor, err := search.RequireCursor(page.Cursor, filterHash, sort)
+	if err != nil {
+		return pagination.Result[domain.Asset]{}, err
+	}
+	query := applyAssetFilter(repository.store.DB(ctx).Model(&AssetModel{}), filter)
+	query, err = applyAssetCursor(query, cursor, hasCursor, sort)
+	if err != nil {
+		return pagination.Result[domain.Asset]{}, err
+	}
+	query = query.Order(assetOrder(sort)).Limit(page.Limit + 1)
 	var models []AssetModel
 	if err := query.Find(&models).Error; err != nil {
 		return pagination.Result[domain.Asset]{}, err
 	}
-	return assetPage(models, page.Limit), nil
+	return assetPage(models, page.Limit, filterHash, sort)
 }
 
 // ListFolders returns direct child folders.
@@ -104,37 +119,6 @@ func (repository AssetRepository) Delete(ctx context.Context, id uuid.UUID, expe
 		return port.ErrPreconditionFailed
 	}
 	return nil
-}
-
-// applyAssetFilter applies asset filters.
-func applyAssetFilter(query *gorm.DB, filter port.AssetFilter) *gorm.DB {
-	if filter.Namespace != "" {
-		query = query.Where("namespace = ?", filter.Namespace)
-	}
-	if filter.Path != "" {
-		query = query.Where("path = ?", filter.Path)
-	}
-	if filter.PathPrefix != "" {
-		query = query.Where("path = ? OR path LIKE ?", filter.PathPrefix, string(filter.PathPrefix)+"/%")
-	}
-	if filter.Status != "" {
-		query = query.Where("status = ?", filter.Status)
-	}
-	return query
-}
-
-// assetPage maps models into a page.
-func assetPage(models []AssetModel, limit int) pagination.Result[domain.Asset] {
-	next := ""
-	if len(models) > limit {
-		next = models[limit-1].ID.ID.String()
-		models = models[:limit]
-	}
-	items := make([]domain.Asset, 0, len(models))
-	for _, model := range models {
-		items = append(items, assetFromModel(model))
-	}
-	return pagination.Result[domain.Asset]{Items: items, NextCursor: next}
 }
 
 // foldersFromPaths returns direct child folder names.

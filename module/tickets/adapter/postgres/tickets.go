@@ -9,6 +9,7 @@ import (
 	"github.com/realmkit/rk-backend/module/tickets/port"
 	"github.com/realmkit/rk-backend/pkg/orm"
 	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 	"gorm.io/gorm"
 )
 
@@ -88,14 +89,26 @@ func (repository TicketRepository) List(
 	filter port.TicketFilter,
 	page pagination.Page,
 ) (pagination.Result[domain.Ticket], error) {
-	query := repository.store.DB(ctx).Model(&TicketModel{}).
-		Order("updated_at desc, id desc").Limit(page.Limit + 1)
-	query = ticketFilter(query, filter)
+	sort := filter.Sort
+	if sort.Key == "" {
+		sort, _ = search.NewSort("", "", port.DefaultTicketSort(), port.AllowedTicketSorts())
+	}
+	filterHash := ticketFilterHash(filter, sort)
+	cursor, hasCursor, err := search.RequireCursor(page.Cursor, filterHash, sort)
+	if err != nil {
+		return pagination.Result[domain.Ticket]{}, err
+	}
+	query := ticketFilter(repository.store.DB(ctx).Model(&TicketModel{}), filter)
+	query, err = applyTicketCursor(query, cursor, hasCursor, sort)
+	if err != nil {
+		return pagination.Result[domain.Ticket]{}, err
+	}
+	query = query.Order(ticketOrder(sort)).Limit(page.Limit + 1)
 	var models []TicketModel
 	if err := query.Find(&models).Error; err != nil {
 		return pagination.Result[domain.Ticket]{}, err
 	}
-	return ticketPage(models, page.Limit), nil
+	return ticketPage(models, page.Limit, filterHash, sort)
 }
 
 // ticketFilter applies ticket filters.
@@ -121,48 +134,107 @@ func ticketFilter(query *gorm.DB, filter port.TicketFilter) *gorm.DB {
 	if filter.Kind != "" {
 		query = query.Where("kind = ?", filter.Kind)
 	}
+	if !filter.Query.Empty() {
+		if query.Dialector.Name() == "postgres" {
+			query = query.Where(ticketPostgresSearchCondition(), filter.Query.String(), filter.Query.LowerLike())
+		} else {
+			like := filter.Query.LowerLike()
+			query = query.Where(ticketSearchCondition(), like, like, like, like)
+		}
+	}
 	return query
 }
 
-// ticketUpdates returns mutable update columns.
-func ticketUpdates(model TicketModel, expectedVersion uint64) map[string]any {
-	return map[string]any{
-		"title":                       model.Title,
-		"status":                      model.Status,
-		"priority":                    model.Priority,
-		"target_user_id":              model.TargetUserID,
-		"punishment_id":               model.PunishmentID,
-		"current_team_group_id":       model.CurrentTeamGroupID,
-		"assignee_user_id":            model.AssigneeUserID,
-		"first_staff_response_at":     model.FirstStaffResponseAt,
-		"last_message_at":             model.LastMessageAt,
-		"last_message_author_user_id": model.LastMessageAuthorUserID,
-		"closed_at":                   model.ClosedAt,
-		"closed_by_user_id":           model.ClosedByUserID,
-		"close_reason":                model.CloseReason,
-		"resolution":                  model.Resolution,
-		"escalation_level":            model.EscalationLevel,
-		"sla_first_response_due_at":   model.SLAFirstResponseDueAt,
-		"sla_resolution_due_at":       model.SLAResolutionDueAt,
-		"message_count":               model.MessageCount,
-		"staff_message_count":         model.StaffMessageCount,
-		"evidence_count":              model.EvidenceCount,
-		"version":                     expectedVersion + 1,
-	}
-}
-
 // ticketPage maps ticket models into a page.
-func ticketPage(models []TicketModel, limit int) pagination.Result[domain.Ticket] {
+func ticketPage(models []TicketModel, limit int, filterHash string, sort search.Sort) (pagination.Result[domain.Ticket], error) {
 	next := ""
 	if len(models) > limit {
-		next = models[limit-1].ID.ID.String()
+		cursor, err := ticketCursor(models[limit-1], filterHash, sort)
+		if err != nil {
+			return pagination.Result[domain.Ticket]{}, err
+		}
+		next = cursor
 		models = models[:limit]
 	}
 	items := make([]domain.Ticket, 0, len(models))
 	for _, model := range models {
 		items = append(items, ticketFromModel(model))
 	}
-	return pagination.Result[domain.Ticket]{Items: items, NextCursor: next}
+	return pagination.Result[domain.Ticket]{Items: items, NextCursor: next}, nil
+}
+
+// applyTicketCursor applies keyset cursor filtering.
+func applyTicketCursor(query *gorm.DB, cursor search.Cursor, ok bool, sort search.Sort) (*gorm.DB, error) {
+	if !ok || len(cursor.Values) == 0 {
+		return query, nil
+	}
+	id, err := uuid.Parse(cursor.ID)
+	if err != nil {
+		return nil, search.ErrInvalidCursor
+	}
+	column := ticketSortColumn(sort.Key)
+	value := ticketCursorValue(cursor.Values[0], sort.Key)
+	if sort.Desc() {
+		return query.Where(column+" < ? OR ("+column+" = ? AND id > ?)", value, value, id), nil
+	}
+	return query.Where(column+" > ? OR ("+column+" = ? AND id > ?)", value, value, id), nil
+}
+
+// ticketOrder returns deterministic ticket ordering.
+func ticketOrder(sort search.Sort) string {
+	direction := "ASC"
+	if sort.Desc() {
+		direction = "DESC"
+	}
+	return ticketSortColumn(sort.Key) + " " + direction + ", id ASC"
+}
+
+// ticketSortColumn maps public sort keys to columns.
+func ticketSortColumn(key string) string {
+	switch key {
+	case "created_at":
+		return "created_at"
+	case "priority":
+		return "priority"
+	case "title":
+		return "title"
+	default:
+		return "updated_at"
+	}
+}
+
+// ticketCursor returns an encoded ticket cursor.
+func ticketCursor(model TicketModel, filterHash string, sort search.Sort) (string, error) {
+	return search.EncodeCursor(search.Cursor{
+		FilterHash: filterHash,
+		Sort:       sort.Key,
+		Direction:  sort.Direction,
+		Values:     []string{ticketModelSortValue(model, sort.Key)},
+		ID:         model.ID.ID.String(),
+	})
+}
+
+// ticketModelSortValue returns the cursor value.
+func ticketModelSortValue(model TicketModel, key string) string {
+	switch key {
+	case "created_at":
+		return model.CreatedAt.Format(time.RFC3339Nano)
+	case "priority":
+		return model.Priority
+	case "title":
+		return model.Title
+	default:
+		return model.UpdatedAt.Format(time.RFC3339Nano)
+	}
+}
+
+// ticketCursorValue converts cursor text to the matching SQL type.
+func ticketCursorValue(value string, key string) any {
+	if key == "created_at" || key == "updated_at" || key == "" {
+		parsed, _ := time.Parse(time.RFC3339Nano, value)
+		return parsed
+	}
+	return value
 }
 
 // pointer returns a pointer to value for GORM create calls.

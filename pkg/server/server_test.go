@@ -353,7 +353,7 @@ func requiresContract(route fiber.Route) bool {
 	if route.Path == "/" {
 		return false
 	}
-	if route.Path == "/users" {
+	if route.Path == "/users" || route.Path == "/users/" {
 		return false
 	}
 	if route.Path == swagger.DocsPath || route.Path == swagger.OpenAPIPath {

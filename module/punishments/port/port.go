@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/punishments/domain"
 	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 var (
@@ -24,13 +25,58 @@ var (
 
 // DefinitionFilter filters definition lists.
 type DefinitionFilter struct {
+	// Query filters by key, name, or description.
+	Query search.TextQuery
+
+	// Sort controls deterministic result ordering.
+	Sort search.Sort
+
+	// Status filters by lifecycle status.
 	Status domain.DefinitionStatus
 }
 
 // PunishmentFilter filters punishment lists.
 type PunishmentFilter struct {
+	// TargetUserID filters by punished user.
 	TargetUserID uuid.UUID
-	Status       domain.PunishmentStatus
+
+	// Status filters by punishment lifecycle status.
+	Status domain.PunishmentStatus
+
+	// Query filters by reason, source, issuer key, or target IP hash.
+	Query search.TextQuery
+
+	// Sort controls deterministic result ordering.
+	Sort search.Sort
+}
+
+// DefaultDefinitionSort returns the default punishment definition sort.
+func DefaultDefinitionSort() search.SortOption {
+	return search.SortOption{Key: "display_order", DefaultDirection: search.DirectionAsc}
+}
+
+// AllowedDefinitionSorts returns public punishment definition list sort keys.
+func AllowedDefinitionSorts() []search.SortOption {
+	return []search.SortOption{
+		DefaultDefinitionSort(),
+		{Key: "name", DefaultDirection: search.DirectionAsc},
+		{Key: "severity", DefaultDirection: search.DirectionDesc},
+		{Key: "created_at", DefaultDirection: search.DirectionDesc},
+	}
+}
+
+// DefaultPunishmentSort returns the default punishment case sort.
+func DefaultPunishmentSort() search.SortOption {
+	return search.SortOption{Key: "created_at", DefaultDirection: search.DirectionDesc}
+}
+
+// AllowedPunishmentSorts returns public punishment case list sort keys.
+func AllowedPunishmentSorts() []search.SortOption {
+	return []search.SortOption{
+		DefaultPunishmentSort(),
+		{Key: "expires_at", DefaultDirection: search.DirectionAsc},
+		{Key: "status", DefaultDirection: search.DirectionAsc},
+	}
 }
 
 // IssueCommand issues a punishment.

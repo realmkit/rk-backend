@@ -2,9 +2,12 @@ package postgres
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/realmkit/rk-backend/module/groups/domain"
+	"github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/pkg/orm"
+	"gorm.io/gorm"
 )
 
 // groupModelFromDomain maps domain group to persistence.
@@ -37,6 +40,27 @@ func groupFromModel(model GroupModel) domain.Group {
 		CreatedAt:   model.CreatedAt,
 		UpdatedAt:   model.UpdatedAt,
 	}
+}
+
+// groupUpdates returns update fields for a group.
+func groupUpdates(group domain.Group, expectedVersion uint64) map[string]any {
+	return map[string]any{
+		"name":          group.Name,
+		"description":   group.Description,
+		"color":         string(group.Color),
+		"weight":        group.Weight,
+		"status":        string(group.Status),
+		"icon_asset_id": group.IconAssetID,
+		"version":       expectedVersion + 1,
+	}
+}
+
+// mapError maps GORM errors into groups errors.
+func mapError(err error) error {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return port.ErrNotFound
+	}
+	return err
 }
 
 // membershipModelFromDomain maps domain membership to persistence.

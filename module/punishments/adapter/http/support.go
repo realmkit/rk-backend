@@ -14,6 +14,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
 	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // decodeJSON decodes a strict JSON request body.
@@ -45,6 +46,8 @@ func handleError(ctx *fiber.Ctx, err error) error {
 		return problem.Write(ctx, payload)
 	}
 	switch {
+	case errors.Is(err, search.ErrInvalidCursor):
+		return problem.Write(ctx, problem.New(fiber.StatusBadRequest, "invalid_page_token", "Page token is invalid."))
 	case errors.Is(err, port.ErrNotFound):
 		return problem.Write(ctx, problem.New(fiber.StatusNotFound, "punishment_not_found", "Punishment resource was not found."))
 	case errors.Is(err, port.ErrPreconditionFailed):
@@ -62,6 +65,15 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	default:
 		return err
 	}
+}
+
+// searchProblem maps invalid search parameters to a problem response.
+func searchProblem(err error) error {
+	code := "invalid_search"
+	if errors.Is(err, search.ErrInvalidCursor) {
+		code = "invalid_page_token"
+	}
+	return problem.Error{Problem: problem.New(fiber.StatusBadRequest, code, "Search parameters are invalid.")}
 }
 
 // idFromParam parses a UUID path parameter.

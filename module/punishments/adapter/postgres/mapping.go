@@ -2,9 +2,13 @@ package postgres
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/realmkit/rk-backend/module/punishments/domain"
+	"github.com/realmkit/rk-backend/module/punishments/port"
 	"github.com/realmkit/rk-backend/pkg/orm"
+	"github.com/realmkit/rk-backend/pkg/search"
+	"gorm.io/gorm"
 )
 
 // definitionModel maps a domain definition into persistence state.
@@ -53,6 +57,22 @@ func definitionFromModel(model DefinitionModel, actions []ActionModel) domain.De
 		definition.Actions = append(definition.Actions, actionFromModel(action))
 	}
 	return definition
+}
+
+// definitionFilterHash binds cursors to definition filters.
+func definitionFilterHash(filter port.DefinitionFilter, sort search.Sort) string {
+	return search.HashFilter(filter.Status, filter.Query.String(), sort)
+}
+
+// mapError translates GORM and ORM errors to punishment ports.
+func mapError(err error) error {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return port.ErrNotFound
+	}
+	if errors.Is(orm.TranslateError(err), orm.ErrConflict) {
+		return port.ErrConflict
+	}
+	return err
 }
 
 // actionModel maps a domain action template into persistence state.

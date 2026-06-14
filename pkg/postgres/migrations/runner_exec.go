@@ -79,17 +79,29 @@ func migrationSQL(dialect string, script string) string {
 	return stripPostgresOnlyLines(script)
 }
 
-// stripPostgresOnlyLines removes clauses unsupported by SQLite test databases.
+// stripPostgresOnlyLines removes statements unsupported by SQLite test databases.
 func stripPostgresOnlyLines(script string) string {
-	lines := strings.Split(script, "\n")
-	filtered := make([]string, 0, len(lines))
-	for _, line := range lines {
-		if strings.Contains(line, "USING gin") || strings.Contains(line, "to_tsvector") {
+	statements := strings.Split(script, ";")
+	filtered := make([]string, 0, len(statements))
+	for _, statement := range statements {
+		statement = strings.TrimSpace(statement)
+		if statement == "" {
 			continue
 		}
-		filtered = append(filtered, line)
+		if isPostgresOnlyStatement(statement) {
+			continue
+		}
+		filtered = append(filtered, statement+";")
 	}
 	return strings.Join(filtered, "\n")
+}
+
+// isPostgresOnlyStatement reports whether a statement uses PostgreSQL-only SQL.
+func isPostgresOnlyStatement(statement string) bool {
+	return strings.Contains(statement, "USING gin") ||
+		strings.Contains(statement, "USING GIN") ||
+		strings.Contains(statement, "to_tsvector") ||
+		strings.Contains(statement, "::text")
 }
 
 // validateRecords validates applied records against migration files.

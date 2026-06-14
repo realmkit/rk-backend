@@ -13,6 +13,7 @@ import (
 	eventdomain "github.com/realmkit/rk-backend/pkg/events/domain"
 	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
 	"github.com/realmkit/rk-backend/pkg/identity"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // TestServiceProvisionCreatesUserLinkAndClaims verifies lazy provisioning.
@@ -158,6 +159,25 @@ func TestServiceGetReturnsUser(t *testing.T) {
 	}
 }
 
+// TestServiceListReturnsUsers verifies list delegation.
+func TestServiceListReturnsUsers(t *testing.T) {
+	service, users, _, _ := newTestService()
+	userID := uuid.New()
+	users.items[userID] = domain.User{
+		ID:          userID,
+		Status:      domain.StatusActive,
+		FirstSeenAt: time.Now().UTC(),
+		Version:     1,
+	}
+	result, err := service.List(context.Background(), port.UserFilter{}, pagination.Page{Limit: 10})
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(result.Items) != 1 || result.Items[0].User.ID != userID {
+		t.Fatalf("List() = %+v, want seeded user", result.Items)
+	}
+}
+
 // TestDevelopmentPrincipalRequiresExistingEnabledUser verifies development bypass guardrails.
 func TestDevelopmentPrincipalRequiresExistingEnabledUser(t *testing.T) {
 	service, users, _, _ := newTestService()
@@ -234,6 +254,19 @@ func (repository *memoryUsers) FindByID(_ context.Context, id uuid.UUID) (domain
 		return domain.User{}, port.ErrNotFound
 	}
 	return user, nil
+}
+
+// List returns a memory user page.
+func (repository *memoryUsers) List(
+	_ context.Context,
+	_ port.UserFilter,
+	_ pagination.Page,
+) (pagination.Result[port.UserSummary], error) {
+	items := make([]port.UserSummary, 0, len(repository.items))
+	for _, user := range repository.items {
+		items = append(items, port.UserSummary{User: user})
+	}
+	return pagination.Result[port.UserSummary]{Items: items}, nil
 }
 
 // TouchLastSeen stores last-seen data.

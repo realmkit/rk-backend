@@ -1,6 +1,7 @@
 package groups_e2e
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -114,4 +115,52 @@ func TestGroupsValidationRejectsInvalidInput(t *testing.T) {
 		),
 	)
 	assertGroupsStatus(t, duplicate, fiber.StatusConflict)
+}
+
+// TestGroupsSearchAndCursorPagination verifies the searchable list contract.
+func TestGroupsSearchAndCursorPagination(t *testing.T) {
+	steps := harness.NewSteps(t)
+	fixture := newGroupsFixture(t)
+
+	steps.Log("create searchable groups")
+	builders := fixture.createGroup(t, "builders")
+	moderators := fixture.createGroup(t, "moderators")
+
+	steps.Log("search by group text query")
+	searchResult := fixture.do(t, harness.JSONRequest(fiber.MethodGet, "/groups?q=builder&sort=key&direction=asc&page_size=10", ""))
+	assertGroupsStatus(t, searchResult, fiber.StatusOK)
+	searchPayload := decodeGroupsObject(t, searchResult)
+	assertGroupListIDs(t, searchPayload, []string{builders["id"].(string)})
+	if searchPayload["query"] != "builder" || searchPayload["sort"] != "key" || searchPayload["direction"] != "asc" {
+		t.Fatalf("search metadata = %+v, want echoed query, sort, and direction", searchPayload)
+	}
+
+	steps.Log("page through groups with cursor token")
+	firstPage := fixture.do(t, harness.JSONRequest(fiber.MethodGet, "/groups?sort=key&direction=asc&page_size=1", ""))
+	assertGroupsStatus(t, firstPage, fiber.StatusOK)
+	firstPayload := decodeGroupsObject(t, firstPage)
+	assertGroupListIDs(t, firstPayload, []string{builders["id"].(string)})
+	token, ok := firstPayload["next_page_token"].(string)
+	if !ok || token == "" {
+		t.Fatalf("next_page_token = %v, want cursor", firstPayload["next_page_token"])
+	}
+
+	secondPage := fixture.do(t, harness.JSONRequest(fiber.MethodGet, "/groups?sort=key&direction=asc&page_size=1&page_token="+url.QueryEscape(token), ""))
+	assertGroupsStatus(t, secondPage, fiber.StatusOK)
+	assertGroupListIDs(t, decodeGroupsObject(t, secondPage), []string{moderators["id"].(string)})
+}
+
+// assertGroupListIDs verifies group list item IDs in order.
+func assertGroupListIDs(t *testing.T, payload map[string]any, expected []string) {
+	t.Helper()
+	items := payload["items"].([]any)
+	if len(items) != len(expected) {
+		t.Fatalf("items = %v, want %d items", items, len(expected))
+	}
+	for index, id := range expected {
+		item := items[index].(map[string]any)
+		if item["id"] != id {
+			t.Fatalf("items[%d].id = %v, want %s", index, item["id"], id)
+		}
+	}
 }

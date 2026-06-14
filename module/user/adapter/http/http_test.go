@@ -16,6 +16,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/principal"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // TestCurrentUserRouteReturnsUser verifies current user response.
@@ -115,6 +116,34 @@ func TestUpdateCurrentUserRejectsInvalidJSON(t *testing.T) {
 	}
 }
 
+// TestListUsersRouteReturnsUsers verifies user list response.
+func TestListUsersRouteReturnsUsers(t *testing.T) {
+	userID := uuid.New()
+	app := testApp(userID, &userService{
+		list: []userport.UserSummary{{User: domain.User{ID: userID}}},
+	})
+	res, err := app.Test(testRequest(http.MethodGet, "/users?q=ian&sort=created_at", ""))
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if res.StatusCode != fiber.StatusOK {
+		t.Fatalf("StatusCode = %d, want 200", res.StatusCode)
+	}
+}
+
+// TestListUsersRejectsInvalidSearch verifies search validation mapping.
+func TestListUsersRejectsInvalidSearch(t *testing.T) {
+	userID := uuid.New()
+	app := testApp(userID, &userService{})
+	res, err := app.Test(testRequest(http.MethodGet, "/users?sort=bad", ""))
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	if res.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("StatusCode = %d, want 400", res.StatusCode)
+	}
+}
+
 // testApp creates a user HTTP app.
 func testApp(userID uuid.UUID, service *userService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
@@ -151,12 +180,22 @@ func testCurrentUser(userID uuid.UUID) userport.CurrentUser {
 type userService struct {
 	current userport.CurrentUser
 	user    domain.User
+	list    []userport.UserSummary
 	err     error
 }
 
 // Get returns one user.
 func (service *userService) Get(context.Context, uuid.UUID) (domain.User, error) {
 	return service.user, service.err
+}
+
+// List returns user summaries.
+func (service *userService) List(
+	context.Context,
+	userport.UserFilter,
+	pagination.Page,
+) (pagination.Result[userport.UserSummary], error) {
+	return pagination.Result[userport.UserSummary]{Items: service.list}, service.err
 }
 
 // Current returns current user data.

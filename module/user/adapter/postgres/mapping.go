@@ -1,7 +1,11 @@
 package postgres
 
 import (
+	"time"
+
+	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/user/domain"
+	"github.com/realmkit/rk-backend/module/user/port"
 	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
@@ -29,6 +33,90 @@ func userFromModel(model UserModel) domain.User {
 		CreatedAt:     model.CreatedAt,
 		UpdatedAt:     model.UpdatedAt,
 	}
+}
+
+// userListRow contains one joined user and provider claim row.
+type userListRow struct {
+	ID              uuid.UUID
+	Status          string
+	AvatarAssetID   *uuid.UUID
+	FirstSeenAt     time.Time
+	LastSeenAt      *time.Time
+	Version         uint64
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	ClaimID         *uuid.UUID
+	Issuer          string
+	Subject         string
+	Username        string
+	Email           string
+	EmailVerified   bool
+	DisplayName     string
+	PictureURL      string
+	PreferredLocale string
+	ClaimsHash      string
+	SyncedAt        *time.Time
+}
+
+// sortValue returns the cursor value for a user list row.
+func (row userListRow) sortValue(key string) string {
+	switch key {
+	case "display_name":
+		return row.DisplayName
+	case "email":
+		return row.Email
+	case "last_seen_at":
+		return optionalTime(row.LastSeenAt)
+	default:
+		return row.CreatedAt.Format(time.RFC3339Nano)
+	}
+}
+
+// summary maps a user list row into a port summary.
+func (row userListRow) summary() port.UserSummary {
+	result := port.UserSummary{User: domain.User{
+		ID:            row.ID,
+		Status:        domain.Status(row.Status),
+		AvatarAssetID: row.AvatarAssetID,
+		FirstSeenAt:   row.FirstSeenAt,
+		LastSeenAt:    row.LastSeenAt,
+		Version:       row.Version,
+		CreatedAt:     row.CreatedAt,
+		UpdatedAt:     row.UpdatedAt,
+	}}
+	if row.ClaimID != nil {
+		result.Claims = &domain.ClaimCache{
+			ID:              *row.ClaimID,
+			UserID:          row.ID,
+			Issuer:          row.Issuer,
+			Subject:         row.Subject,
+			Username:        row.Username,
+			Email:           row.Email,
+			EmailVerified:   row.EmailVerified,
+			DisplayName:     row.DisplayName,
+			PictureURL:      row.PictureURL,
+			PreferredLocale: row.PreferredLocale,
+			ClaimsHash:      row.ClaimsHash,
+			SyncedAt:        valueTime(row.SyncedAt),
+		}
+	}
+	return result
+}
+
+// optionalTime formats a nullable time cursor value.
+func optionalTime(value *time.Time) string {
+	if value == nil {
+		return time.Time{}.Format(time.RFC3339Nano)
+	}
+	return value.Format(time.RFC3339Nano)
+}
+
+// valueTime returns a zero time when value is nil.
+func valueTime(value *time.Time) time.Time {
+	if value == nil {
+		return time.Time{}
+	}
+	return *value
 }
 
 // linkModelFromDomain maps identity link to persistence.

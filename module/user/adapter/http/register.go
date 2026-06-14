@@ -19,6 +19,8 @@ type Services struct {
 func Register(router fiber.Router, services Services, authenticate fiber.Handler) {
 	handler := handler{services: services}
 	group := router.Group("/users", authenticate)
+	group.Get("", handler.listUsers)
+	group.Get("/", handler.listUsers)
 	group.Get("/me", handler.currentUser)
 	group.Patch("/me", handler.updateCurrentUser)
 	group.Get("/me/identity/account-url", handler.accountURL)

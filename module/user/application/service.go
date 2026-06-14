@@ -12,6 +12,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/api/auth"
 	"github.com/realmkit/rk-backend/pkg/api/principal"
 	"github.com/realmkit/rk-backend/pkg/events/emitter"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 	"github.com/realmkit/rk-backend/pkg/transaction"
 )
 
@@ -80,6 +81,15 @@ func (service Service) Current(ctx context.Context, userID uuid.UUID) (port.Curr
 		result.Claims = &claims
 	}
 	return result, nil
+}
+
+// List returns matching users.
+func (service Service) List(
+	ctx context.Context,
+	filter port.UserFilter,
+	page pagination.Page,
+) (pagination.Result[port.UserSummary], error) {
+	return service.users.List(ctx, filter, page)
 }
 
 // UpdateCurrent updates local settings for the current user.

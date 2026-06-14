@@ -1260,16 +1260,81 @@
             "$ref": "#/components/parameters/CorrelationIdHeader"
           },
           {
-            "$ref": "#/components/parameters/AssetNamespaceQuery"
+            "$ref": "#/components/parameters/DevUserIDHeader"
           },
           {
-            "$ref": "#/components/parameters/AssetPathQuery"
+            "name": "namespace",
+            "in": "query",
+            "description": "Asset namespace.",
+            "schema": {
+              "$ref": "#/components/schemas/MachineKey"
+            }
           },
           {
-            "$ref": "#/components/parameters/AssetPathPrefixQuery"
+            "name": "path",
+            "in": "query",
+            "description": "Exact virtual path.",
+            "schema": {
+              "type": "string"
+            }
           },
           {
-            "$ref": "#/components/parameters/AssetStatusQuery"
+            "name": "path_prefix",
+            "in": "query",
+            "description": "Virtual path prefix.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Asset lifecycle status.",
+            "schema": {
+              "$ref": "#/components/schemas/AssetStatus"
+            }
+          },
+          {
+            "name": "visibility",
+            "in": "query",
+            "description": "Asset visibility filter.",
+            "schema": {
+              "$ref": "#/components/schemas/AssetVisibility"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Case-insensitive text search query. Cursor tokens are bound to this query and current filters.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key. Allowed values: created_at, updated_at, filename, display_name.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "created_at",
+                "updated_at",
+                "filename",
+                "display_name"
+              ]
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction for cursor pagination.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
           },
           {
             "$ref": "#/components/parameters/PageSizeQuery"
@@ -1280,7 +1345,14 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/components/responses/AssetList"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetList"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -1688,7 +1760,74 @@
             "$ref": "#/components/parameters/CorrelationIdHeader"
           },
           {
-            "$ref": "#/components/parameters/GroupStatusQuery"
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Restricts the result to one group status.",
+            "schema": {
+              "$ref": "#/components/schemas/GroupStatus"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Case-insensitive text search query. Cursor tokens are bound to this query and current filters.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "has_icon",
+            "in": "query",
+            "description": "When true returns groups with an icon asset; when false returns groups without one.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "min_weight",
+            "in": "query",
+            "description": "Minimum display weight, inclusive.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "max_weight",
+            "in": "query",
+            "description": "Maximum display weight, inclusive.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key. Allowed values: weight, key, name, created_at, updated_at.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "weight",
+                "key",
+                "name",
+                "created_at",
+                "updated_at"
+              ]
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction for cursor pagination.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
           },
           {
             "$ref": "#/components/parameters/PageSizeQuery"
@@ -1699,7 +1838,14 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/components/responses/GroupList"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupList"
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
@@ -4608,6 +4754,14 @@
           },
           {
             "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias for query. Prefer q for consistency with other searchable lists.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4686,6 +4840,14 @@
           },
           {
             "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Alias for query. Prefer q for consistency with other searchable lists.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6006,28 +6168,55 @@
             "$ref": "#/components/parameters/CorrelationIdHeader"
           },
           {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
             "name": "status",
             "in": "query",
-            "required": false,
+            "description": "Restricts definitions by lifecycle status.",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "page_size",
+            "name": "q",
             "in": "query",
-            "required": false,
+            "description": "Case-insensitive text search query. Cursor tokens are bound to this query and current filters.",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "page_token",
+            "name": "sort",
             "in": "query",
-            "required": false,
+            "description": "Sort key. Allowed values: display_order, name, severity, created_at.",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "display_order",
+                "name",
+                "severity",
+                "created_at"
+              ]
             }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction for cursor pagination.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
           }
         ],
         "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
@@ -6896,36 +7085,64 @@
             "$ref": "#/components/parameters/CorrelationIdHeader"
           },
           {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
             "name": "target_user_id",
             "in": "query",
-            "required": false,
+            "description": "Restricts results to one punished user.",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
             "name": "status",
             "in": "query",
-            "required": false,
+            "description": "Restricts punishment cases by status.",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "page_size",
+            "name": "q",
             "in": "query",
-            "required": false,
+            "description": "Case-insensitive text search query. Cursor tokens are bound to this query and current filters.",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "page_token",
+            "name": "sort",
             "in": "query",
-            "required": false,
+            "description": "Sort key. Allowed values: created_at, expires_at, status, definition_key.",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "created_at",
+                "expires_at",
+                "status",
+                "definition_key"
+              ]
             }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction for cursor pagination.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
           }
         ],
         "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
@@ -8180,22 +8397,11 @@
         "summary": "List ticket definitions",
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/TicketDefinition"
-                      }
-                    },
-                    "next_cursor": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/TicketDefinitionList"
                 }
               }
             }
@@ -8216,6 +8422,58 @@
           },
           {
             "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "description": "Restricts definitions by ticket kind.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Restricts definitions by lifecycle status.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Case-insensitive text search query. Cursor tokens are bound to this query and current filters.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key. Allowed values: display_order, name, created_at.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "display_order",
+                "name",
+                "created_at"
+              ]
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction for cursor pagination.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
           },
           {
             "$ref": "#/components/parameters/PageSizeQuery"
@@ -8440,22 +8698,11 @@
         "summary": "List tickets",
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Ticket"
-                      }
-                    },
-                    "next_cursor": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/TicketList"
                 }
               }
             }
@@ -8476,6 +8723,104 @@
           },
           {
             "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
+            "name": "submitter_user_id",
+            "in": "query",
+            "description": "Restricts tickets to one submitter.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "target_user_id",
+            "in": "query",
+            "description": "Restricts tickets to one target user.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "punishment_id",
+            "in": "query",
+            "description": "Restricts tickets to one punishment.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "current_team_group_id",
+            "in": "query",
+            "description": "Restricts tickets to one current team group.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "assignee_user_id",
+            "in": "query",
+            "description": "Restricts tickets to one assignee.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "description": "Restricts tickets by kind.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Restricts tickets by status.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Case-insensitive text search query. Cursor tokens are bound to this query and current filters.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key. Allowed values: updated_at, created_at, priority, title.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "updated_at",
+                "created_at",
+                "priority",
+                "title"
+              ]
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction for cursor pagination.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
           },
           {
             "$ref": "#/components/parameters/PageSizeQuery"
@@ -9318,6 +9663,105 @@
             "$ref": "#/components/parameters/CorrelationIdHeader"
           }
         ]
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "listUsers",
+        "summary": "List users",
+        "description": "Lists local users with optional text search and cursor pagination. Requires an authenticated RealmKit principal.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/DevUserIDHeader"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Restricts the result to one local user status.",
+            "schema": {
+              "$ref": "#/components/schemas/UserStatus"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Case-insensitive text search query. Cursor tokens are bound to this query and current filters.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key. Allowed values: created_at, last_seen_at, display_name, email.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "created_at",
+                "last_seen_at",
+                "display_name",
+                "email"
+              ]
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction for cursor pagination.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
       }
     }
   },
@@ -11100,6 +11544,15 @@
           },
           "next_page_token": {
             "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
           }
         }
       },
@@ -11304,6 +11757,15 @@
             }
           },
           "next_page_token": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string"
+          },
+          "direction": {
             "type": "string"
           }
         }
@@ -12955,6 +13417,15 @@
           },
           "next_page_token": {
             "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
           }
         }
       },
@@ -13489,14 +13960,26 @@
       },
       "PunishmentDefinitionList": {
         "type": "object",
+        "required": [
+          "items"
+        ],
         "properties": {
-          "Items": {
+          "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PunishmentDefinition"
             }
           },
-          "NextCursor": {
+          "next_page_token": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string"
+          },
+          "direction": {
             "type": "string"
           }
         }
@@ -13595,14 +14078,26 @@
       },
       "PunishmentList": {
         "type": "object",
+        "required": [
+          "items"
+        ],
         "properties": {
-          "Items": {
+          "items": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Punishment"
             }
           },
-          "NextCursor": {
+          "next_page_token": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string"
+          },
+          "direction": {
             "type": "string"
           }
         }
@@ -14256,6 +14751,144 @@
           },
           "repaired": {
             "type": "boolean"
+          }
+        }
+      },
+      "UserList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserSummary"
+            }
+          },
+          "next_page_token": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          }
+        }
+      },
+      "UserSummary": {
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "claims": {
+            "$ref": "#/components/schemas/UserProviderClaim"
+          }
+        }
+      },
+      "UserProviderClaim": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "email_verified": {
+            "type": "boolean"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "picture_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "preferred_locale": {
+            "type": "string"
+          },
+          "claims_hash": {
+            "type": "string"
+          },
+          "synced_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TicketDefinitionList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketDefinition"
+            }
+          },
+          "next_page_token": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          }
+        }
+      },
+      "TicketList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Ticket"
+            }
+          },
+          "next_page_token": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
           }
         }
       }

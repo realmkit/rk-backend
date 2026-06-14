@@ -8,6 +8,7 @@ import (
 	"github.com/realmkit/rk-backend/module/punishments/domain"
 	"github.com/realmkit/rk-backend/module/punishments/port"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 type definitionRequest struct {
@@ -54,9 +55,13 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	filter, err := definitionFilter(ctx)
+	if err != nil {
+		return err
+	}
 	result, err := handler.services.Punishments.ListDefinitions(
 		ctx.UserContext(),
-		port.DefinitionFilter{Status: domain.DefinitionStatus(ctx.Query("status"))},
+		filter,
 		page,
 	)
 	if err != nil {
@@ -165,6 +170,23 @@ func definitionFromRequest(request definitionRequest, id uuid.UUID) domain.Defin
 		DisplayOrder:           request.DisplayOrder,
 		Actions:                request.Actions,
 	}
+}
+
+// definitionFilter maps list query parameters to a definition filter.
+func definitionFilter(ctx *fiber.Ctx) (port.DefinitionFilter, error) {
+	query, err := search.NewTextQuery(ctx.Query("q"), search.QueryOptions{})
+	if err != nil {
+		return port.DefinitionFilter{}, searchProblem(err)
+	}
+	sort, err := search.NewSort(ctx.Query("sort"), ctx.Query("direction"), port.DefaultDefinitionSort(), port.AllowedDefinitionSorts())
+	if err != nil {
+		return port.DefinitionFilter{}, searchProblem(err)
+	}
+	return port.DefinitionFilter{
+		Query:  query,
+		Sort:   sort,
+		Status: domain.DefinitionStatus(ctx.Query("status")),
+	}, nil
 }
 
 type issueRequest struct {

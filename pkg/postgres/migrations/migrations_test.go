@@ -19,8 +19,8 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if len(migrations) != 8 {
-		t.Fatalf("len(migrations) = %d, want 8", len(migrations))
+	if len(migrations) != 9 {
+		t.Fatalf("len(migrations) = %d, want 9", len(migrations))
 	}
 	if migrations[0].Version != 1 || migrations[0].Name != "create_metadata_tables" {
 		t.Fatalf("migration[0] = %+v, want metadata version 1", migrations[0])
@@ -45,6 +45,9 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	}
 	if migrations[7].Version != 8 || migrations[7].Name != "create_ticket_tables" {
 		t.Fatalf("migration[7] = %+v, want tickets version 8", migrations[7])
+	}
+	if migrations[8].Version != 9 || migrations[8].Name != "create_search_indexes" {
+		t.Fatalf("migration[8] = %+v, want search indexes version 9", migrations[8])
 	}
 }
 
@@ -76,8 +79,8 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Up() error = %v", err)
 	}
-	if len(status.Applied) != 8 || len(status.Pending) != 0 {
-		t.Fatalf("Status = %+v, want eight applied and no pending", status)
+	if len(status.Applied) != 9 || len(status.Pending) != 0 {
+		t.Fatalf("Status = %+v, want nine applied and no pending", status)
 	}
 	if !db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table missing")
@@ -187,12 +190,12 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	status, err := runner.Down(context.Background(), 8)
+	status, err := runner.Down(context.Background(), 9)
 	if err != nil {
 		t.Fatalf("Down() error = %v", err)
 	}
-	if len(status.Applied) != 0 || len(status.Pending) != 8 {
-		t.Fatalf("Status = %+v, want no applied and eight pending", status)
+	if len(status.Applied) != 0 || len(status.Pending) != 9 {
+		t.Fatalf("Status = %+v, want no applied and nine pending", status)
 	}
 	if db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table exists after Down()")

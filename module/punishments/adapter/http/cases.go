@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/punishments/domain"
 	"github.com/realmkit/rk-backend/module/punishments/port"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 func (handler handler) issuePunishment(ctx *fiber.Ctx) error {
@@ -35,7 +36,11 @@ func (handler handler) listPunishments(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Punishments.ListPunishments(ctx.UserContext(), punishmentFilter(ctx), page)
+	filter, err := punishmentFilter(ctx)
+	if err != nil {
+		return err
+	}
+	result, err := handler.services.Punishments.ListPunishments(ctx.UserContext(), filter, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
@@ -184,15 +189,25 @@ func (handler handler) listRestrictions(ctx *fiber.Ctx) error {
 }
 
 // punishmentFilter maps list query parameters to a repository filter.
-func punishmentFilter(ctx *fiber.Ctx) port.PunishmentFilter {
+func punishmentFilter(ctx *fiber.Ctx) (port.PunishmentFilter, error) {
 	var userID uuid.UUID
 	if value := ctx.Query("target_user_id"); value != "" {
 		userID, _ = uuid.Parse(value)
 	}
+	query, err := search.NewTextQuery(ctx.Query("q"), search.QueryOptions{})
+	if err != nil {
+		return port.PunishmentFilter{}, searchProblem(err)
+	}
+	sort, err := search.NewSort(ctx.Query("sort"), ctx.Query("direction"), port.DefaultPunishmentSort(), port.AllowedPunishmentSorts())
+	if err != nil {
+		return port.PunishmentFilter{}, searchProblem(err)
+	}
 	return port.PunishmentFilter{
 		TargetUserID: userID,
 		Status:       domain.PunishmentStatus(ctx.Query("status")),
-	}
+		Query:        query,
+		Sort:         sort,
+	}, nil
 }
 
 // activePunishmentPath reports whether a user punishment list requests active rows.

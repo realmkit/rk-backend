@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/tickets/domain"
 	"github.com/realmkit/rk-backend/module/tickets/port"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // definitionRequest is the definition write DTO.
@@ -56,15 +57,33 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	filter := port.DefinitionFilter{
-		Kind:   domain.Kind(ctx.Query("kind")),
-		Status: domain.DefinitionStatus(ctx.Query("status")),
+	filter, err := definitionFilter(ctx)
+	if err != nil {
+		return err
 	}
 	result, err := handler.services.Definitions.ListDefinitions(ctx.UserContext(), filter, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
 	return writeJSON(ctx, fiber.StatusOK, result)
+}
+
+// definitionFilter maps query params into a definition filter.
+func definitionFilter(ctx *fiber.Ctx) (port.DefinitionFilter, error) {
+	query, err := search.NewTextQuery(ctx.Query("q"), search.QueryOptions{})
+	if err != nil {
+		return port.DefinitionFilter{}, searchProblem(err)
+	}
+	sort, err := search.NewSort(ctx.Query("sort"), ctx.Query("direction"), port.DefaultDefinitionSort(), port.AllowedDefinitionSorts())
+	if err != nil {
+		return port.DefinitionFilter{}, searchProblem(err)
+	}
+	return port.DefinitionFilter{
+		Kind:   domain.Kind(ctx.Query("kind")),
+		Status: domain.DefinitionStatus(ctx.Query("status")),
+		Query:  query,
+		Sort:   sort,
+	}, nil
 }
 
 // getDefinition handles one definition read.

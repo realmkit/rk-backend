@@ -1,10 +1,15 @@
 package http
 
 import (
+	"errors"
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/groups/port"
+	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // groupRequest is the group create or update body.
@@ -22,6 +27,9 @@ type groupRequest struct {
 type groupListResponse struct {
 	Items         []domain.Group `json:"items"`
 	NextPageToken string         `json:"next_page_token,omitempty"`
+	Query         string         `json:"query,omitempty"`
+	Sort          string         `json:"sort,omitempty"`
+	Direction     string         `json:"direction,omitempty"`
 }
 
 // createGroup creates a group.
@@ -47,11 +55,21 @@ func (handler handler) listGroups(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Groups.List(ctx.UserContext(), port.GroupFilter{Status: domain.GroupStatus(ctx.Query("status"))}, page)
+	filter, err := groupFilterFromQuery(ctx)
+	if err != nil {
+		return err
+	}
+	result, err := handler.services.Groups.List(ctx.UserContext(), filter, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
-	return writeJSON(ctx, fiber.StatusOK, groupListResponse{Items: result.Items, NextPageToken: result.NextCursor})
+	return writeJSON(ctx, fiber.StatusOK, groupListResponse{
+		Items:         result.Items,
+		NextPageToken: result.NextCursor,
+		Query:         filter.Query.String(),
+		Sort:          filter.Sort.Key,
+		Direction:     string(filter.Sort.Direction),
+	})
 }
 
 // getGroup returns one group.
@@ -125,4 +143,69 @@ func groupFromRequest(request groupRequest) domain.Group {
 		Status:      request.Status,
 		IconAssetID: request.IconAssetID,
 	}
+}
+
+// groupFilterFromQuery maps query params into a group filter.
+func groupFilterFromQuery(ctx *fiber.Ctx) (port.GroupFilter, error) {
+	query, err := search.NewTextQuery(ctx.Query("q"), search.QueryOptions{})
+	if err != nil {
+		return port.GroupFilter{}, searchProblem(err)
+	}
+	sort, err := search.NewSort(ctx.Query("sort"), ctx.Query("direction"), port.DefaultGroupSort(), port.AllowedGroupSorts())
+	if err != nil {
+		return port.GroupFilter{}, searchProblem(err)
+	}
+	hasIcon, err := optionalBool(ctx.Query("has_icon"))
+	if err != nil {
+		return port.GroupFilter{}, searchProblem(err)
+	}
+	minWeight, err := optionalInt(ctx.Query("min_weight"))
+	if err != nil {
+		return port.GroupFilter{}, searchProblem(err)
+	}
+	maxWeight, err := optionalInt(ctx.Query("max_weight"))
+	if err != nil {
+		return port.GroupFilter{}, searchProblem(err)
+	}
+	return port.GroupFilter{
+		Status:    domain.GroupStatus(ctx.Query("status")),
+		Query:     query,
+		HasIcon:   hasIcon,
+		MinWeight: minWeight,
+		MaxWeight: maxWeight,
+		Sort:      sort,
+	}, nil
+}
+
+// optionalBool parses an optional boolean query value.
+func optionalBool(value string) (*bool, error) {
+	if value == "" {
+		return nil, nil
+	}
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		return nil, err
+	}
+	return &parsed, nil
+}
+
+// optionalInt parses an optional integer query value.
+func optionalInt(value string) (*int, error) {
+	if value == "" {
+		return nil, nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return nil, err
+	}
+	return &parsed, nil
+}
+
+// searchProblem maps invalid search parameters to a problem response.
+func searchProblem(err error) error {
+	code := "invalid_search"
+	if errors.Is(err, search.ErrInvalidCursor) {
+		code = "invalid_page_token"
+	}
+	return problem.Error{Problem: problem.New(fiber.StatusBadRequest, code, "Search parameters are invalid.")}
 }

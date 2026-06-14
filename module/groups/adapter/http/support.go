@@ -14,6 +14,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
 	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // decodeJSON decodes the request body into target.
@@ -49,6 +50,8 @@ func handleError(ctx *fiber.Ctx, err error) error {
 		return problem.Write(ctx, payload)
 	}
 	switch {
+	case errors.Is(err, search.ErrInvalidCursor):
+		return problem.Write(ctx, problem.New(fiber.StatusBadRequest, "invalid_page_token", "Page token is invalid."))
 	case errors.Is(err, port.ErrNotFound):
 		return problem.Write(ctx, problem.New(fiber.StatusNotFound, "group_not_found", "Group resource was not found."))
 	case errors.Is(err, port.ErrPreconditionFailed):

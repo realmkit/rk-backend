@@ -2,13 +2,15 @@ package postgres
 
 import (
 	"context"
-	"errors"
+	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/punishments/domain"
 	"github.com/realmkit/rk-backend/module/punishments/port"
 	"github.com/realmkit/rk-backend/pkg/orm"
 	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 	"gorm.io/gorm"
 )
 
@@ -94,17 +96,31 @@ func (repository DefinitionRepository) List(
 	filter port.DefinitionFilter,
 	page pagination.Page,
 ) (pagination.Result[domain.Definition], error) {
-	query := repository.store.DB(ctx).Model(&DefinitionModel{}).Order("display_order, severity desc, name, id").Limit(page.Limit + 1)
-	if filter.Status != "" {
-		query = query.Where("status = ?", filter.Status)
+	sort := filter.Sort
+	if sort.Key == "" {
+		sort, _ = search.NewSort("", "", port.DefaultDefinitionSort(), port.AllowedDefinitionSorts())
 	}
+	filterHash := definitionFilterHash(filter, sort)
+	cursor, hasCursor, err := search.RequireCursor(page.Cursor, filterHash, sort)
+	if err != nil {
+		return pagination.Result[domain.Definition]{}, err
+	}
+	query := applyDefinitionFilter(repository.store.DB(ctx).Model(&DefinitionModel{}), filter)
+	query, err = applyDefinitionCursor(query, cursor, hasCursor, sort)
+	if err != nil {
+		return pagination.Result[domain.Definition]{}, err
+	}
+	query = query.Order(definitionOrder(sort)).Limit(page.Limit + 1)
 	var models []DefinitionModel
 	if err := query.Find(&models).Error; err != nil {
 		return pagination.Result[domain.Definition]{}, err
 	}
 	next := ""
 	if len(models) > page.Limit {
-		next = models[page.Limit-1].ID.ID.String()
+		next, err = definitionCursor(models[page.Limit-1], definitionFilterHash(filter, sort), sort)
+		if err != nil {
+			return pagination.Result[domain.Definition]{}, err
+		}
 		models = models[:page.Limit]
 	}
 	items := make([]domain.Definition, 0, len(models))
@@ -112,6 +128,100 @@ func (repository DefinitionRepository) List(
 		items = append(items, definitionFromModel(model, repository.actions(ctx, model.ID.ID)))
 	}
 	return pagination.Result[domain.Definition]{Items: items, NextCursor: next}, nil
+}
+
+// applyDefinitionFilter applies definition list filters.
+func applyDefinitionFilter(query *gorm.DB, filter port.DefinitionFilter) *gorm.DB {
+	if filter.Status != "" {
+		query = query.Where("status = ?", filter.Status)
+	}
+	if !filter.Query.Empty() {
+		if query.Dialector.Name() == "postgres" {
+			query = query.Where("to_tsvector('simple', coalesce(key, '') || ' ' || coalesce(name, '') || ' ' || coalesce(description, '')) @@ plainto_tsquery('simple', ?)", filter.Query.String())
+		} else {
+			like := filter.Query.LowerLike()
+			query = query.Where("LOWER(key) LIKE ? OR LOWER(name) LIKE ? OR LOWER(description) LIKE ?", like, like, like)
+		}
+	}
+	return query
+}
+
+// applyDefinitionCursor applies keyset filtering.
+func applyDefinitionCursor(query *gorm.DB, cursor search.Cursor, ok bool, sort search.Sort) (*gorm.DB, error) {
+	if !ok || len(cursor.Values) == 0 {
+		return query, nil
+	}
+	id, err := uuid.Parse(cursor.ID)
+	if err != nil {
+		return nil, search.ErrInvalidCursor
+	}
+	column := definitionSortColumn(sort.Key)
+	value := definitionCursorValue(cursor.Values[0], sort.Key)
+	if sort.Desc() {
+		return query.Where(column+" < ? OR ("+column+" = ? AND id > ?)", value, value, id), nil
+	}
+	return query.Where(column+" > ? OR ("+column+" = ? AND id > ?)", value, value, id), nil
+}
+
+// definitionOrder returns deterministic ordering SQL.
+func definitionOrder(sort search.Sort) string {
+	direction := "ASC"
+	if sort.Desc() {
+		direction = "DESC"
+	}
+	return definitionSortColumn(sort.Key) + " " + direction + ", id ASC"
+}
+
+// definitionSortColumn maps public sort keys to columns.
+func definitionSortColumn(key string) string {
+	switch key {
+	case "name":
+		return "name"
+	case "severity":
+		return "severity"
+	case "created_at":
+		return "created_at"
+	default:
+		return "display_order"
+	}
+}
+
+// definitionCursor returns an encoded definition cursor.
+func definitionCursor(model DefinitionModel, filterHash string, sort search.Sort) (string, error) {
+	return search.EncodeCursor(search.Cursor{
+		FilterHash: filterHash,
+		Sort:       sort.Key,
+		Direction:  sort.Direction,
+		Values:     []string{definitionModelSortValue(model, sort.Key)},
+		ID:         model.ID.ID.String(),
+	})
+}
+
+// definitionModelSortValue returns the cursor value.
+func definitionModelSortValue(model DefinitionModel, key string) string {
+	switch key {
+	case "name":
+		return model.Name
+	case "severity":
+		return strconv.Itoa(model.Severity)
+	case "created_at":
+		return model.CreatedAt.Format(time.RFC3339Nano)
+	default:
+		return strconv.Itoa(model.DisplayOrder)
+	}
+}
+
+// definitionCursorValue converts a cursor value to the matching SQL type.
+func definitionCursorValue(value string, key string) any {
+	if key == "created_at" {
+		parsed, _ := time.Parse(time.RFC3339Nano, value)
+		return parsed
+	}
+	if key == "severity" || key == "display_order" || key == "" {
+		parsed, _ := strconv.Atoi(value)
+		return parsed
+	}
+	return value
 }
 
 // ReorderActions updates action display order.
@@ -134,17 +244,6 @@ func (repository DefinitionRepository) actions(ctx context.Context, definitionID
 	var actions []ActionModel
 	_ = repository.store.DB(ctx).Where("definition_id = ?", definitionID).Order("display_order, id").Find(&actions).Error
 	return actions
-}
-
-// mapError translates GORM and ORM errors to punishment ports.
-func mapError(err error) error {
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return port.ErrNotFound
-	}
-	if errors.Is(orm.TranslateError(err), orm.ErrConflict) {
-		return port.ErrConflict
-	}
-	return err
 }
 
 var _ port.DefinitionRepository = DefinitionRepository{}

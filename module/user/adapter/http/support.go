@@ -12,6 +12,8 @@ import (
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/principal"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
+	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // errAccountURLUnavailable reports that provider account URL is not available.
@@ -45,6 +47,8 @@ func handleError(ctx *fiber.Ctx, err error) error {
 		return problem.Write(ctx, payload)
 	}
 	switch {
+	case errors.Is(err, search.ErrInvalidCursor):
+		return problem.Write(ctx, problem.New(fiber.StatusBadRequest, "invalid_page_token", "Page token is invalid."))
 	case errors.Is(err, principal.ErrMissing):
 		return problem.Write(ctx, problem.New(fiber.StatusUnauthorized, "unauthenticated", "Authentication is required."))
 	case errors.Is(err, port.ErrNotFound):
@@ -61,6 +65,20 @@ func handleError(ctx *fiber.Ctx, err error) error {
 	default:
 		return err
 	}
+}
+
+// pageFromQuery parses cursor pagination query parameters.
+func pageFromQuery(ctx *fiber.Ctx) (pagination.Page, error) {
+	page, err := pagination.New(pagination.Request{
+		Limit:  ctx.QueryInt("page_size"),
+		Cursor: ctx.Query("page_token"),
+	})
+	if err != nil {
+		return pagination.Page{}, problem.Error{
+			Problem: problem.New(fiber.StatusBadRequest, "invalid_pagination", "Pagination parameters are invalid."),
+		}
+	}
+	return page, nil
 }
 
 // expectedVersion returns the required If-Match version.

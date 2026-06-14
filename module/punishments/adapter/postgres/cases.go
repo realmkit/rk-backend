@@ -10,6 +10,7 @@ import (
 	"github.com/realmkit/rk-backend/module/punishments/port"
 	"github.com/realmkit/rk-backend/pkg/orm"
 	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // CaseRepository stores issued punishments and restriction projections.
@@ -134,20 +135,31 @@ func (repository CaseRepository) List(
 	filter port.PunishmentFilter,
 	page pagination.Page,
 ) (pagination.Result[domain.Punishment], error) {
-	query := repository.store.DB(ctx).Model(&PunishmentModel{}).Order("created_at desc, id desc").Limit(page.Limit + 1)
-	if filter.TargetUserID != uuid.Nil {
-		query = query.Where("target_user_id = ?", filter.TargetUserID)
+	sort := filter.Sort
+	if sort.Key == "" {
+		sort, _ = search.NewSort("", "", port.DefaultPunishmentSort(), port.AllowedPunishmentSorts())
 	}
-	if filter.Status != "" {
-		query = query.Where("status = ?", filter.Status)
+	filterHash := punishmentFilterHash(filter, sort)
+	cursor, hasCursor, err := search.RequireCursor(page.Cursor, filterHash, sort)
+	if err != nil {
+		return pagination.Result[domain.Punishment]{}, err
 	}
+	query := applyPunishmentFilter(repository.store.DB(ctx).Model(&PunishmentModel{}), filter)
+	query, err = applyPunishmentCursor(query, cursor, hasCursor, sort)
+	if err != nil {
+		return pagination.Result[domain.Punishment]{}, err
+	}
+	query = query.Order(punishmentOrder(sort)).Limit(page.Limit + 1)
 	var models []PunishmentModel
 	if err := query.Find(&models).Error; err != nil {
 		return pagination.Result[domain.Punishment]{}, err
 	}
 	next := ""
 	if len(models) > page.Limit {
-		next = models[page.Limit-1].ID.ID.String()
+		next, err = punishmentCursor(models[page.Limit-1], filterHash, sort)
+		if err != nil {
+			return pagination.Result[domain.Punishment]{}, err
+		}
 		models = models[:page.Limit]
 	}
 	items := make([]domain.Punishment, 0, len(models))

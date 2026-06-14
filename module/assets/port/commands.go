@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/assets/domain"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // CreateUploadIntentCommand requests an asset row and signed upload URL.
@@ -80,6 +81,30 @@ type AssetFilter struct {
 
 	// Status filters by status.
 	Status domain.Status
+
+	// Visibility filters by asset visibility.
+	Visibility domain.Visibility
+
+	// Query filters by filename, display name, or path.
+	Query search.TextQuery
+
+	// Sort controls deterministic result ordering.
+	Sort search.Sort
+}
+
+// DefaultAssetSort returns the default asset list sort.
+func DefaultAssetSort() search.SortOption {
+	return search.SortOption{Key: "created_at", DefaultDirection: search.DirectionDesc}
+}
+
+// AllowedAssetSorts returns public asset list sort keys.
+func AllowedAssetSorts() []search.SortOption {
+	return []search.SortOption{
+		DefaultAssetSort(),
+		{Key: "filename", DefaultDirection: search.DirectionAsc},
+		{Key: "display_name", DefaultDirection: search.DirectionAsc},
+		{Key: "updated_at", DefaultDirection: search.DirectionDesc},
+	}
 }
 
 // FolderFilter filters virtual folder lists.

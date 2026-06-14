@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/user/domain"
+	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
 // UserRepository stores local users.
@@ -17,6 +18,9 @@ type UserRepository interface {
 
 	// FindByID returns one user.
 	FindByID(ctx context.Context, id uuid.UUID) (domain.User, error)
+
+	// List returns matching users.
+	List(ctx context.Context, filter UserFilter, page pagination.Page) (pagination.Result[UserSummary], error)
 
 	// TouchLastSeen stores the last-seen timestamp.
 	TouchLastSeen(ctx context.Context, id uuid.UUID) error

@@ -46,6 +46,9 @@ type uploadURLResponse struct {
 type assetListResponse struct {
 	Items         []domain.Asset `json:"items"`
 	NextPageToken string         `json:"next_page_token,omitempty"`
+	Query         string         `json:"query,omitempty"`
+	Sort          string         `json:"sort,omitempty"`
+	Direction     string         `json:"direction,omitempty"`
 }
 
 // folderListResponse contains virtual folders.
@@ -157,12 +160,21 @@ func (handler handler) listAssets(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	filter := assetFilterFromQuery(ctx)
+	filter, err := assetFilterFromQuery(ctx)
+	if err != nil {
+		return err
+	}
 	result, err := handler.services.Assets.List(ctx.UserContext(), filter, page)
 	if err != nil {
 		return handleError(ctx, err)
 	}
-	return writeJSON(ctx, fiber.StatusOK, assetListResponse{Items: result.Items, NextPageToken: result.NextCursor})
+	return writeJSON(ctx, fiber.StatusOK, assetListResponse{
+		Items:         result.Items,
+		NextPageToken: result.NextCursor,
+		Query:         filter.Query.String(),
+		Sort:          filter.Sort.Key,
+		Direction:     string(filter.Sort.Direction),
+	})
 }
 
 // listFolders lists virtual folders.
@@ -231,14 +243,4 @@ func (handler handler) deleteAsset(ctx *fiber.Ctx) error {
 		return handleError(ctx, err)
 	}
 	return writeNoContent(ctx)
-}
-
-// assetFilterFromQuery returns asset filters from query params.
-func assetFilterFromQuery(ctx *fiber.Ctx) port.AssetFilter {
-	return port.AssetFilter{
-		Namespace:  domain.Namespace(ctx.Query("namespace")),
-		Path:       domain.VirtualPath(ctx.Query("path")),
-		PathPrefix: domain.VirtualPath(ctx.Query("path_prefix")),
-		Status:     domain.Status(ctx.Query("status")),
-	}
 }
