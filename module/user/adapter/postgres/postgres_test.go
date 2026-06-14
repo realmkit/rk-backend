@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -56,6 +57,29 @@ func TestUserRepositoryListSearchesClaimCache(t *testing.T) {
 	}
 	if result.Items[0].Claims == nil || result.Items[0].Claims.Email != "ian@example.test" {
 		t.Fatalf("Claims = %+v, want cached email", result.Items[0].Claims)
+	}
+
+	emailResult, err := users.List(
+		context.Background(),
+		userFilter(t, "ian@example", "email", "asc"),
+		page(t, 10, ""),
+	)
+	if err != nil {
+		t.Fatalf("List() email substring error = %v", err)
+	}
+	if len(emailResult.Items) != 1 || emailResult.Items[0].User.ID != ian.ID {
+		t.Fatalf("email Items = %+v, want Ian result", emailResult.Items)
+	}
+}
+
+// TestUserPostgresSearchConditionIncludesPartialFallbacks guards email local-part search.
+func TestUserPostgresSearchConditionIncludesPartialFallbacks(t *testing.T) {
+	condition := userPostgresSearchCondition()
+	if !strings.Contains(condition, "plainto_tsquery") {
+		t.Fatalf("condition = %q, want full-text search", condition)
+	}
+	if strings.Count(condition, "LIKE ?") != 4 {
+		t.Fatalf("condition = %q, want id and claim LIKE fallbacks", condition)
 	}
 }
 

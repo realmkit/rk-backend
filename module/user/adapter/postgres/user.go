@@ -133,10 +133,17 @@ func userListBase(db *gorm.DB, filter port.UserFilter) *gorm.DB {
 		query = query.Where("u.status = ?", filter.Status)
 	}
 	if !filter.Query.Empty() {
+		like := filter.Query.LowerLike()
 		if query.Dialector.Name() == "postgres" {
-			query = query.Where(userPostgresSearchCondition(), filter.Query.String(), filter.Query.LowerLike())
+			query = query.Where(
+				userPostgresSearchCondition(),
+				filter.Query.String(),
+				like,
+				like,
+				like,
+				like,
+			)
 		} else {
-			like := filter.Query.LowerLike()
 			query = query.Where(userSearchCondition(), like, like, like, like)
 		}
 	}
@@ -160,7 +167,16 @@ func userSearchCondition() string {
 
 // userPostgresSearchCondition returns indexed PostgreSQL text search.
 func userPostgresSearchCondition() string {
-	return "to_tsvector('simple', coalesce(c.username, '') || ' ' || coalesce(c.email, '') || ' ' || coalesce(c.display_name, '')) @@ plainto_tsquery('simple', ?) OR u.id::text ILIKE ?"
+	return `
+		to_tsvector(
+			'simple',
+			coalesce(c.username, '') || ' ' || coalesce(c.email, '') || ' ' || coalesce(c.display_name, '')
+		) @@ plainto_tsquery('simple', ?)
+		OR LOWER(CAST(u.id AS text)) LIKE ?
+		OR LOWER(c.username) LIKE ?
+		OR LOWER(c.email) LIKE ?
+		OR LOWER(c.display_name) LIKE ?
+	`
 }
 
 // applyUserCursor applies keyset cursor filtering.
