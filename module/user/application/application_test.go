@@ -178,6 +178,25 @@ func TestServiceListReturnsUsers(t *testing.T) {
 	}
 }
 
+// TestServiceFindSummariesByIDsReturnsUsers verifies batch summary lookup.
+func TestServiceFindSummariesByIDsReturnsUsers(t *testing.T) {
+	service, users, _, _ := newTestService()
+	userID := uuid.New()
+	users.items[userID] = domain.User{
+		ID:          userID,
+		Status:      domain.StatusActive,
+		FirstSeenAt: time.Now().UTC(),
+		Version:     1,
+	}
+	result, err := service.FindSummariesByIDs(context.Background(), []uuid.UUID{userID})
+	if err != nil {
+		t.Fatalf("FindSummariesByIDs() error = %v", err)
+	}
+	if result[userID].User.ID != userID {
+		t.Fatalf("FindSummariesByIDs() = %+v, want user summary", result)
+	}
+}
+
 // TestDevelopmentPrincipalRequiresExistingEnabledUser verifies development bypass guardrails.
 func TestDevelopmentPrincipalRequiresExistingEnabledUser(t *testing.T) {
 	service, users, _, _ := newTestService()
@@ -267,6 +286,21 @@ func (repository *memoryUsers) List(
 		items = append(items, port.UserSummary{User: user})
 	}
 	return pagination.Result[port.UserSummary]{Items: items}, nil
+}
+
+// FindSummariesByIDs returns selected memory user summaries.
+func (repository *memoryUsers) FindSummariesByIDs(
+	_ context.Context,
+	ids []uuid.UUID,
+) (map[uuid.UUID]port.UserSummary, error) {
+	result := make(map[uuid.UUID]port.UserSummary, len(ids))
+	for _, id := range ids {
+		user, ok := repository.items[id]
+		if ok {
+			result[id] = port.UserSummary{User: user}
+		}
+	}
+	return result, nil
 }
 
 // TouchLastSeen stores last-seen data.

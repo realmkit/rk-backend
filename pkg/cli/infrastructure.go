@@ -97,12 +97,13 @@ func groupsService(db *gorm.DB, events eventsapp.Service) groupsapp.Service {
 }
 
 // groupshttpServices creates HTTP services for groups.
-func groupshttpServices(groupService groupsapp.Service) groupshttp.Services {
+func groupshttpServices(groupService groupsapp.Service, userService userapp.Service) groupshttp.Services {
 	return groupshttp.Services{
 		Groups:      groupService,
 		Memberships: groupService,
 		Tuples:      groupService,
 		Checker:     groupService,
+		Users:       userService,
 	}
 }
 

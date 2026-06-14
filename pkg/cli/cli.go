@@ -211,7 +211,7 @@ func runtimeServerOptions(
 		server.WithRateLimitStore(ratelimit.NewRedisStore(client)),
 		server.WithAuth(cfg.Auth, userService),
 		server.WithAssets(assetshttpServices(assetService)),
-		server.WithGroups(groupshttpServices(groupService)),
+		server.WithGroups(groupshttpServices(groupService, userService)),
 		server.WithForums(forumshttpServices(forumService)),
 		server.WithMetadata(metadatahttpServices(metadataService)),
 		server.WithPunishments(punishmentshttpServices(punishmentService)),

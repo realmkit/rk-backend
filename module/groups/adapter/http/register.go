@@ -3,6 +3,7 @@ package http
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/realmkit/rk-backend/module/groups/port"
+	userport "github.com/realmkit/rk-backend/module/user/port"
 )
 
 // Services contains groups application services used by handlers.
@@ -18,6 +19,9 @@ type Services struct {
 
 	// Checker checks permissions.
 	Checker port.Checker
+
+	// Users resolves local user summaries for membership displays.
+	Users userport.Service
 }
 
 // Register registers groups and permissions routes on router.

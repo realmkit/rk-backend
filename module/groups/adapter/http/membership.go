@@ -1,12 +1,15 @@
 package http
 
 import (
+	"context"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/groups/port"
+	userdomain "github.com/realmkit/rk-backend/module/user/domain"
+	userport "github.com/realmkit/rk-backend/module/user/port"
 )
 
 // membershipRequest is the membership assign body.
@@ -20,8 +23,32 @@ type membershipRequest struct {
 
 // membershipListResponse contains one membership page.
 type membershipListResponse struct {
-	Items         []domain.Membership `json:"items"`
-	NextPageToken string              `json:"next_page_token,omitempty"`
+	Items         []membershipListItem `json:"items"`
+	NextPageToken string               `json:"next_page_token,omitempty"`
+}
+
+// membershipListItem contains a membership with optional local user display data.
+type membershipListItem struct {
+	Membership domain.Membership       `json:"membership"`
+	User       *membershipUserResponse `json:"user,omitempty"`
+}
+
+// membershipUserResponse contains one display-safe local user summary.
+type membershipUserResponse struct {
+	User           userdomain.User       `json:"user"`
+	ProviderClaims *membershipClaimCache `json:"provider_claims,omitempty"`
+}
+
+// membershipClaimCache exposes provider-owned display claims without raw subject.
+type membershipClaimCache struct {
+	Username        string    `json:"username"`
+	Email           string    `json:"email"`
+	EmailVerified   bool      `json:"email_verified"`
+	DisplayName     string    `json:"display_name"`
+	PictureURL      string    `json:"picture_url"`
+	PreferredLocale string    `json:"preferred_locale"`
+	ClaimsHash      string    `json:"claims_hash"`
+	SyncedAt        time.Time `json:"synced_at"`
 }
 
 // listGroupMembers lists memberships for a group.
@@ -38,7 +65,11 @@ func (handler handler) listGroupMembers(ctx *fiber.Ctx) error {
 	if err != nil {
 		return handleError(ctx, err)
 	}
-	return writeJSON(ctx, fiber.StatusOK, membershipListResponse{Items: result.Items, NextPageToken: result.NextCursor})
+	items, err := handler.membershipItems(ctx.UserContext(), result.Items)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, membershipListResponse{Items: items, NextPageToken: result.NextCursor})
 }
 
 // assignMembership assigns a membership.
@@ -140,4 +171,58 @@ func membershipFromRequest(groupID uuid.UUID, userID uuid.UUID, request membersh
 		StartsAt:         request.StartsAt,
 		ExpiresAt:        request.ExpiresAt,
 	}
+}
+
+// membershipItems maps memberships and enriches local user summaries when available.
+func (handler handler) membershipItems(
+	ctx context.Context,
+	memberships []domain.Membership,
+) ([]membershipListItem, error) {
+	items := make([]membershipListItem, 0, len(memberships))
+	summaries, err := handler.membershipUserSummaries(ctx, memberships)
+	if err != nil {
+		return nil, err
+	}
+	for _, membership := range memberships {
+		item := membershipListItem{Membership: membership}
+		if summary, ok := summaries[membership.UserID]; ok {
+			response := membershipUserSummary(summary)
+			item.User = &response
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+// membershipUserSummaries loads user summaries for one membership page.
+func (handler handler) membershipUserSummaries(
+	ctx context.Context,
+	memberships []domain.Membership,
+) (map[uuid.UUID]userport.UserSummary, error) {
+	if handler.services.Users == nil || len(memberships) == 0 {
+		return map[uuid.UUID]userport.UserSummary{}, nil
+	}
+	ids := make([]uuid.UUID, 0, len(memberships))
+	for _, membership := range memberships {
+		ids = append(ids, membership.UserID)
+	}
+	return handler.services.Users.FindSummariesByIDs(ctx, ids)
+}
+
+// membershipUserSummary maps a user summary into the membership response shape.
+func membershipUserSummary(summary userport.UserSummary) membershipUserResponse {
+	result := membershipUserResponse{User: summary.User}
+	if summary.Claims != nil {
+		result.ProviderClaims = &membershipClaimCache{
+			Username:        summary.Claims.Username,
+			Email:           summary.Claims.Email,
+			EmailVerified:   summary.Claims.EmailVerified,
+			DisplayName:     summary.Claims.DisplayName,
+			PictureURL:      summary.Claims.PictureURL,
+			PreferredLocale: summary.Claims.PreferredLocale,
+			ClaimsHash:      summary.Claims.ClaimsHash,
+			SyncedAt:        summary.Claims.SyncedAt,
+		}
+	}
+	return result
 }

@@ -11860,11 +11860,39 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Membership"
+              "$ref": "#/components/schemas/MembershipListItem"
             }
           },
           "next_page_token": {
             "type": "string"
+          }
+        }
+      },
+      "MembershipListItem": {
+        "type": "object",
+        "required": [
+          "membership"
+        ],
+        "properties": {
+          "membership": {
+            "$ref": "#/components/schemas/Membership"
+          },
+          "user": {
+            "$ref": "#/components/schemas/MembershipUserSummary"
+          }
+        }
+      },
+      "MembershipUserSummary": {
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "provider_claims": {
+            "$ref": "#/components/schemas/ProviderClaimSummary"
           }
         }
       },

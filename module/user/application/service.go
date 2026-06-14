@@ -92,6 +92,14 @@ func (service Service) List(
 	return service.users.List(ctx, filter, page)
 }
 
+// FindSummariesByIDs returns display summaries for the requested local users.
+func (service Service) FindSummariesByIDs(
+	ctx context.Context,
+	ids []uuid.UUID,
+) (map[uuid.UUID]port.UserSummary, error) {
+	return service.users.FindSummariesByIDs(ctx, ids)
+}
+
 // UpdateCurrent updates local settings for the current user.
 func (service Service) UpdateCurrent(ctx context.Context, command port.UpdateCurrentCommand) (domain.User, error) {
 	user, err := service.users.FindByID(ctx, command.UserID)

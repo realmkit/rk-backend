@@ -22,6 +22,9 @@ type UserRepository interface {
 	// List returns matching users.
 	List(ctx context.Context, filter UserFilter, page pagination.Page) (pagination.Result[UserSummary], error)
 
+	// FindSummariesByIDs returns display summaries keyed by local user ID.
+	FindSummariesByIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID]UserSummary, error)
+
 	// TouchLastSeen stores the last-seen timestamp.
 	TouchLastSeen(ctx context.Context, id uuid.UUID) error
 }

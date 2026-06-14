@@ -59,6 +59,24 @@ func TestUserRepositoryListSearchesClaimCache(t *testing.T) {
 	}
 }
 
+// TestUserRepositoryFindSummariesByIDsReturnsClaimCache verifies batch summaries.
+func TestUserRepositoryFindSummariesByIDsReturnsClaimCache(t *testing.T) {
+	users, _, claims := newRepositories(t)
+	ian := createUserWithClaims(t, users, claims, "ian", "ian@example.test", "Ian Castano")
+	createUserWithClaims(t, users, claims, "ada", "ada@example.test", "Ada Lovelace")
+
+	result, err := users.FindSummariesByIDs(context.Background(), []uuid.UUID{ian.ID, ian.ID})
+	if err != nil {
+		t.Fatalf("FindSummariesByIDs() error = %v", err)
+	}
+	if len(result) != 1 || result[ian.ID].User.ID != ian.ID {
+		t.Fatalf("FindSummariesByIDs() = %+v, want only Ian", result)
+	}
+	if result[ian.ID].Claims == nil || result[ian.ID].Claims.DisplayName != "Ian Castano" {
+		t.Fatalf("Claims = %+v, want cached display name", result[ian.ID].Claims)
+	}
+}
+
 // TestUserRepositoryListUsesCursorPagination verifies user list cursors are stable.
 func TestUserRepositoryListUsesCursorPagination(t *testing.T) {
 	users, _, claims := newRepositories(t)

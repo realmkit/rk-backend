@@ -86,6 +86,32 @@ func (repository UserRepository) List(
 	return userPage(rows, page.Limit, filterHash, sort)
 }
 
+// FindSummariesByIDs returns display summaries keyed by local user ID.
+func (repository UserRepository) FindSummariesByIDs(
+	ctx context.Context,
+	ids []uuid.UUID,
+) (map[uuid.UUID]port.UserSummary, error) {
+	if len(ids) == 0 {
+		return map[uuid.UUID]port.UserSummary{}, nil
+	}
+	var rows []userListRow
+	err := repository.store.DB(ctx).
+		Table("users AS u").
+		Select(userListSelect()).
+		Joins("LEFT JOIN user_provider_claim_cache AS c ON c.user_id = u.id AND c.deleted_at IS NULL").
+		Where("u.deleted_at IS NULL AND u.id IN ?", uniqueUserIDs(ids)).
+		Scan(&rows).
+		Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID]port.UserSummary, len(rows))
+	for _, row := range rows {
+		result[row.ID] = row.summary()
+	}
+	return result, nil
+}
+
 // TouchLastSeen stores the last-seen timestamp.
 func (repository UserRepository) TouchLastSeen(ctx context.Context, id uuid.UUID) error {
 	result := repository.store.DB(ctx).Model(&UserModel{}).Where("id = ?", id).Update("last_seen_at", time.Now().UTC())
@@ -218,6 +244,20 @@ func userCursor(row userListRow, filterHash string, sort search.Sort) (string, e
 // userFilterHash binds a user cursor to active filters.
 func userFilterHash(filter port.UserFilter, sort search.Sort) string {
 	return search.HashFilter(filter.Status, filter.Query.String(), sort)
+}
+
+// uniqueUserIDs removes duplicate IDs before a batch lookup.
+func uniqueUserIDs(ids []uuid.UUID) []uuid.UUID {
+	seen := make(map[uuid.UUID]struct{}, len(ids))
+	result := make([]uuid.UUID, 0, len(ids))
+	for _, id := range ids {
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
 }
 
 // mapError maps persistence errors to port errors.

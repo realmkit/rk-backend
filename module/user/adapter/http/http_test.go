@@ -198,6 +198,14 @@ func (service *userService) List(
 	return pagination.Result[userport.UserSummary]{Items: service.list}, service.err
 }
 
+// FindSummariesByIDs returns summaries by user ID.
+func (service *userService) FindSummariesByIDs(
+	context.Context,
+	[]uuid.UUID,
+) (map[uuid.UUID]userport.UserSummary, error) {
+	return map[uuid.UUID]userport.UserSummary{}, service.err
+}
+
 // Current returns current user data.
 func (service *userService) Current(context.Context, uuid.UUID) (userport.CurrentUser, error) {
 	return service.current, service.err
