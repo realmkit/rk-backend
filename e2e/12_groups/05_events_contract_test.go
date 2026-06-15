@@ -109,11 +109,15 @@ func TestGroupsOpenAPICoversRoutes(t *testing.T) {
 		{fiber.MethodGet, "/groups/{group_id}"},
 		{fiber.MethodPatch, "/groups/{group_id}"},
 		{fiber.MethodDelete, "/groups/{group_id}"},
+		{fiber.MethodGet, "/groups/{group_id}/permission-grants"},
+		{fiber.MethodPost, "/groups/{group_id}/permission-grants"},
+		{fiber.MethodDelete, "/groups/{group_id}/permission-grants/{grant_id}"},
 		{fiber.MethodGet, "/groups/{group_id}/members"},
 		{fiber.MethodPut, "/groups/{group_id}/members/{user_id}"},
 		{fiber.MethodDelete, "/groups/{group_id}/members/{user_id}"},
 		{fiber.MethodGet, "/users/{user_id}/groups"},
 		{fiber.MethodGet, "/users/me/groups"},
+		{fiber.MethodGet, "/permission-actions"},
 		{fiber.MethodPost, "/permissions/check"},
 	}
 	for _, route := range routes {

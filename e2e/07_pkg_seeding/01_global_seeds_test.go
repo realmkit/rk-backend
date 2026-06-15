@@ -20,7 +20,7 @@ func TestGlobalSeedsBootstrapCommunity(t *testing.T) {
 	if err != nil {
 		t.Fatalf("seed Up() error = %v", err)
 	}
-	if len(status.Applied) != 4 || len(status.Pending) != 0 {
+	if len(status.Applied) != 3 || len(status.Pending) != 0 {
 		t.Fatalf("status = %+v, want all seeds applied", status)
 	}
 
@@ -60,12 +60,20 @@ func TestSeedGrantAdminAllowsSeededPolicy(t *testing.T) {
 		t.Fatalf("grant group = %s, want %s", grant.GroupID, seeding.AdminGroupID)
 	}
 
-	steps.Log("check seeded groups.update policy through HTTP")
-	body := `{"actor_user_id":"` + userID.String() + `","permission":"groups.update","object_type":"group","object_id":"` + seeding.AdminGroupID.String() + `"}`
-	decision := fixture.do(t, postJSON("/permissions/check", body))
-	assertStatus(t, decision, fiber.StatusOK)
-	payload := decodeObject(t, decision)
-	if payload["allowed"] != true {
-		t.Fatalf("allowed = %v, want true payload = %+v", payload["allowed"], payload)
+	for _, permission := range []string{
+		"groups.update",
+		"groups.delete",
+		"groups.assign_member",
+		"groups.read_members",
+		"groups.manage_permissions",
+	} {
+		steps.Log("check seeded %s policy through HTTP", permission)
+		body := `{"actor_user_id":"` + userID.String() + `","permission":"` + permission + `","object_type":"group","object_id":"` + seeding.AdminGroupID.String() + `"}`
+		decision := fixture.do(t, postJSON("/permissions/check", body))
+		assertStatus(t, decision, fiber.StatusOK)
+		payload := decodeObject(t, decision)
+		if payload["allowed"] != true {
+			t.Fatalf("%s allowed = %v, want true payload = %+v", permission, payload["allowed"], payload)
+		}
 	}
 }

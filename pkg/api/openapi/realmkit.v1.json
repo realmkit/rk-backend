@@ -9763,6 +9763,529 @@
           }
         }
       }
+    },
+    "/permission-actions": {
+      "get": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "List grantable permission actions",
+        "operationId": "listPermissionActions",
+        "responses": {
+          "200": {
+            "description": "Permission actions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionActionList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "headers": {
+              "RateLimit-Limit": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Request limit for the current window."
+              },
+              "RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Remaining requests in the current window."
+              },
+              "RateLimit-Reset": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Unix timestamp when the window resets."
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait before retrying."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/groups/{group_id}/permission-grants": {
+      "get": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "List group permission grants",
+        "operationId": "listGroupPermissionGrants",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Group identifier."
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Maximum number of records to return."
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Cursor returned by the previous page."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Permission grants.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionGrantList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination or path parameter.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Group not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "headers": {
+              "RateLimit-Limit": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Request limit for the current window."
+              },
+              "RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Remaining requests in the current window."
+              },
+              "RateLimit-Reset": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Unix timestamp when the window resets."
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait before retrying."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "Create a group permission grant",
+        "operationId": "createGroupPermissionGrant",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Group identifier."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Required for retried mutating requests."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionGrantRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Permission grant created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionGrant"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, idempotency key, or path parameter.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Equivalent active grant already exists.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request validation failed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "headers": {
+              "RateLimit-Limit": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Request limit for the current window."
+              },
+              "RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Remaining requests in the current window."
+              },
+              "RateLimit-Reset": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Unix timestamp when the window resets."
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait before retrying."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/groups/{group_id}/permission-grants/{grant_id}": {
+      "delete": {
+        "tags": [
+          "groups"
+        ],
+        "summary": "Delete a group permission grant",
+        "operationId": "deleteGroupPermissionGrant",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Group identifier."
+          },
+          {
+            "name": "grant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Permission grant identifier."
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Required for retried mutating requests."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Permission grant deleted."
+          },
+          "400": {
+            "description": "Invalid idempotency key or path parameter.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Permission grant not found.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "headers": {
+              "RateLimit-Limit": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Request limit for the current window."
+              },
+              "RateLimit-Remaining": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Remaining requests in the current window."
+              },
+              "RateLimit-Reset": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Unix timestamp when the window resets."
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait before retrying."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -14931,6 +15454,177 @@
             "type": "string"
           }
         }
+      },
+      "PermissionAction": {
+        "type": "object",
+        "required": [
+          "action",
+          "area",
+          "scope_type",
+          "label",
+          "warning_level",
+          "enabled",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string"
+          },
+          "area": {
+            "type": "string"
+          },
+          "scope_type": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "warning_level": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "sensitive",
+              "dangerous"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PermissionGrant": {
+        "type": "object",
+        "required": [
+          "id",
+          "subject_type",
+          "subject_id",
+          "action",
+          "scope_type",
+          "scope_id",
+          "inherit",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subject_type": {
+            "type": "string",
+            "enum": [
+              "public",
+              "authenticated",
+              "user",
+              "group"
+            ]
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string"
+          },
+          "scope_type": {
+            "type": "string"
+          },
+          "scope_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inherit": {
+            "type": "boolean"
+          },
+          "condition_key": {
+            "type": "string"
+          },
+          "created_by_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PermissionActionList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionAction"
+            }
+          }
+        }
+      },
+      "PermissionGrantList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionGrant"
+            }
+          },
+          "next_page_token": {
+            "type": "string"
+          }
+        }
+      },
+      "PermissionGrantRequest": {
+        "type": "object",
+        "required": [
+          "action",
+          "scope_type",
+          "scope_id"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "scope_type": {
+            "type": "string"
+          },
+          "scope_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inherit": {
+            "type": "boolean",
+            "default": false
+          },
+          "condition_key": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
       }
     },
     "securitySchemes": {

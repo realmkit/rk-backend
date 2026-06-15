@@ -1,7 +1,6 @@
 package groups_e2e
 
 import (
-	"context"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -71,15 +70,14 @@ func TestGroupsUnknownPermissionReturnsValidationProblem(t *testing.T) {
 	assertGroupsStatus(t, response, fiber.StatusUnprocessableEntity)
 }
 
-// TestGroupsCustomActionGrant verifies database-backed custom actions.
-func TestGroupsCustomActionGrant(t *testing.T) {
+// TestGroupsCatalogActionGrant verifies code-owned actions can be granted.
+func TestGroupsCatalogActionGrant(t *testing.T) {
 	steps := harness.NewSteps(t)
 	fixture := newGroupsFixture(t)
 	userID := uuid.New()
 	postID := uuid.New()
 
-	steps.Log("seed custom posts.update action and grant")
-	seedPostUpdateAction(t, fixture)
+	steps.Log("grant code-owned posts.update action")
 	fixture.createGrant(
 		t,
 		domain.PermissionGrant{
@@ -162,27 +160,5 @@ func assertDecision(t *testing.T, payload map[string]any, want bool) {
 	t.Helper()
 	if payload["allowed"] != want {
 		t.Fatalf("allowed = %v, want %v payload = %+v", payload["allowed"], want, payload)
-	}
-}
-
-// seedPostUpdatePolicy stores a custom permission rule with conditions.
-func seedPostUpdateAction(t *testing.T, fixture groupsFixture) {
-	t.Helper()
-	_, err := fixture.policies.UpsertAction(
-		context.Background(),
-		domain.PermissionAction{
-			ID:           uuid.New(),
-			Action:       domain.PermissionPostsUpdate,
-			Area:         "posts",
-			ScopeType:    domain.ObjectForumPost,
-			Label:        "Update posts",
-			Description:  "E2E custom post update",
-			WarningLevel: domain.WarningLevelDangerous,
-			Enabled:      true,
-			Version:      1,
-		},
-	)
-	if err != nil {
-		t.Fatalf("UpsertAction() error = %v", err)
 	}
 }

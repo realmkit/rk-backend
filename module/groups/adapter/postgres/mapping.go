@@ -107,38 +107,6 @@ func membershipFromModel(model MembershipModel) domain.Membership {
 	}
 }
 
-// actionModelFromDomain maps domain permission action to persistence.
-func actionModelFromDomain(action domain.PermissionAction) PermissionActionModel {
-	return PermissionActionModel{
-		ID:           orm.ID{ID: action.ID},
-		Action:       string(action.Action),
-		Area:         action.Area,
-		ScopeType:    string(action.ScopeType),
-		Label:        action.Label,
-		Description:  action.Description,
-		WarningLevel: string(action.WarningLevel),
-		Enabled:      action.Enabled,
-		Version:      action.Version,
-	}
-}
-
-// actionFromModel maps persistence permission action to domain.
-func actionFromModel(model PermissionActionModel) domain.PermissionAction {
-	return domain.PermissionAction{
-		ID:           model.ID.ID,
-		Action:       domain.Action(model.Action),
-		Area:         model.Area,
-		ScopeType:    domain.ScopeType(model.ScopeType),
-		Label:        model.Label,
-		Description:  model.Description,
-		WarningLevel: domain.WarningLevel(model.WarningLevel),
-		Enabled:      model.Enabled,
-		Version:      model.Version,
-		CreatedAt:    model.CreatedAt,
-		UpdatedAt:    model.UpdatedAt,
-	}
-}
-
 // grantModelFromDomain maps domain permission grant to persistence.
 func grantModelFromDomain(grant domain.PermissionGrant) PermissionGrantModel {
 	return PermissionGrantModel{

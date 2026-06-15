@@ -18,7 +18,7 @@ func (service Service) Check(ctx context.Context, request port.CheckRequest) (po
 	if request.ScopeType == "" || request.ScopeID == uuid.Nil {
 		return port.Decision{Allowed: false, Reason: "missing_scope"}, nil
 	}
-	action, err := service.permissionAction(ctx, request.Action)
+	action, err := permissionAction(request.Action)
 	if err != nil {
 		return port.Decision{Allowed: false, Reason: "unknown_permission"}, err
 	}
@@ -31,17 +31,8 @@ func (service Service) Check(ctx context.Context, request port.CheckRequest) (po
 	return service.checkGrants(ctx, request)
 }
 
-// permissionAction returns a configured action or built-in fallback action.
-func (service Service) permissionAction(ctx context.Context, action domain.Action) (domain.PermissionAction, error) {
-	if service.permissions != nil {
-		found, err := service.permissions.FindAction(ctx, action)
-		if err == nil {
-			return found, nil
-		}
-		if err != nil && !errors.Is(err, port.ErrNotFound) {
-			return domain.PermissionAction{}, err
-		}
-	}
+// permissionAction returns one app-owned action definition.
+func permissionAction(action domain.Action) (domain.PermissionAction, error) {
 	found, ok := staticPermissionActions[action]
 	if !ok {
 		return domain.PermissionAction{}, port.ErrUnknownPermission

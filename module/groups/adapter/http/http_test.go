@@ -86,7 +86,15 @@ func TestMembershipAndPermissionRoutes(t *testing.T) {
 	service := &httpService{
 		group:      group,
 		membership: domain.Membership{ID: uuid.New(), GroupID: group.ID, UserID: userID, Status: domain.MembershipStatusActive, Version: 1},
-		decision:   port.Decision{Allowed: true, Reason: "matched_grant"},
+		grant: domain.PermissionGrant{
+			ID:          uuid.New(),
+			SubjectType: domain.SubjectGroup,
+			SubjectID:   group.ID,
+			Action:      domain.PermissionForumsView,
+			ScopeType:   domain.ObjectForum,
+			ScopeID:     uuid.New(),
+		},
+		decision: port.Decision{Allowed: true, Reason: "matched_grant"},
 	}
 	app := testApp(service)
 	cases := []struct {
@@ -97,6 +105,21 @@ func TestMembershipAndPermissionRoutes(t *testing.T) {
 		header map[string]string
 	}{
 		{method: http.MethodGet, path: "/groups/" + group.ID.String() + "/members", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/permission-actions", status: fiber.StatusOK},
+		{method: http.MethodGet, path: "/groups/" + group.ID.String() + "/permission-grants", status: fiber.StatusOK},
+		{
+			method: http.MethodPost,
+			path:   "/groups/" + group.ID.String() + "/permission-grants",
+			body:   `{"action":"forums.view","scope_type":"forum","scope_id":"` + uuid.NewString() + `","inherit":true}`,
+			status: fiber.StatusCreated,
+			header: map[string]string{headers.IdempotencyKey: "grant"},
+		},
+		{
+			method: http.MethodDelete,
+			path:   "/groups/" + group.ID.String() + "/permission-grants/" + service.grant.ID.String(),
+			status: fiber.StatusNoContent,
+			header: map[string]string{headers.IdempotencyKey: "delete-grant"},
+		},
 		{
 			method: http.MethodPut,
 			path:   "/groups/" + group.ID.String() + "/members/" + userID.String(),
@@ -191,6 +214,7 @@ func testHTTPGroup() domain.Group {
 type httpService struct {
 	group      domain.Group
 	membership domain.Membership
+	grant      domain.PermissionGrant
 	decision   port.Decision
 	err        error
 }
@@ -245,7 +269,23 @@ func (service *httpService) CreatePermissionGrant(
 	context.Context,
 	port.CreatePermissionGrantCommand,
 ) (domain.PermissionGrant, error) {
-	return domain.PermissionGrant{}, service.err
+	return service.grant, service.err
+}
+
+// ListPermissionActions returns permission actions.
+func (service *httpService) ListPermissionActions(context.Context) ([]domain.PermissionAction, error) {
+	return []domain.PermissionAction{
+		{Action: domain.PermissionForumsView, Area: "forums", ScopeType: domain.ObjectForum, Label: "View forums"},
+	}, service.err
+}
+
+// ListPermissionGrants lists grants.
+func (service *httpService) ListPermissionGrants(
+	context.Context,
+	port.PermissionGrantFilter,
+	pagination.Page,
+) (pagination.Result[domain.PermissionGrant], error) {
+	return pagination.Result[domain.PermissionGrant]{Items: []domain.PermissionGrant{service.grant}}, service.err
 }
 
 // DeletePermissionGrant deletes a grant.

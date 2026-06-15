@@ -48,26 +48,6 @@ func (MembershipModel) TableName() string {
 	return "group_memberships"
 }
 
-// PermissionActionModel is the GORM model for permission actions.
-type PermissionActionModel struct {
-	orm.ID
-	Action       string `gorm:"size:120;not null;index"`
-	Area         string `gorm:"size:64;not null;index"`
-	ScopeType    string `gorm:"size:64;not null;index"`
-	Label        string `gorm:"size:120;not null"`
-	Description  string `gorm:"size:500;not null;default:''"`
-	WarningLevel string `gorm:"size:32;not null;default:'normal';index"`
-	Enabled      bool   `gorm:"not null;default:true;index"`
-	Version      uint64 `gorm:"not null;default:1"`
-	orm.Timestamps
-	orm.SoftDelete
-}
-
-// TableName returns the database table name.
-func (PermissionActionModel) TableName() string {
-	return "permission_actions"
-}
-
 // PermissionGrantModel is the GORM model for permission grants.
 type PermissionGrantModel struct {
 	orm.ID

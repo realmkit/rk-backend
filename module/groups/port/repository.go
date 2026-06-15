@@ -47,14 +47,8 @@ type MembershipRepository interface {
 	Delete(ctx context.Context, groupID uuid.UUID, userID uuid.UUID, expectedVersion *uint64) error
 }
 
-// PermissionRepository stores permission actions and grants.
+// PermissionRepository stores permission grants.
 type PermissionRepository interface {
-	// UpsertAction stores or updates a permission action.
-	UpsertAction(ctx context.Context, action domain.PermissionAction) (domain.PermissionAction, error)
-
-	// FindAction returns one active permission action.
-	FindAction(ctx context.Context, action domain.Action) (domain.PermissionAction, error)
-
 	// CreateGrant stores a permission grant.
 	CreateGrant(ctx context.Context, grant domain.PermissionGrant) (domain.PermissionGrant, error)
 

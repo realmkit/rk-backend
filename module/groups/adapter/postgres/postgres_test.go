@@ -183,41 +183,6 @@ func TestPermissionRepositoryGrantLifecycle(t *testing.T) {
 	}
 }
 
-// TestPermissionRepositoryLifecycle verifies action persistence.
-func TestPermissionRepositoryLifecycle(t *testing.T) {
-	_, _, permissions := newRepositories(t)
-	action := domain.PermissionAction{
-		ID:           uuid.New(),
-		Action:       "posts.update",
-		Area:         "posts",
-		ScopeType:    "post",
-		Label:        "Update posts",
-		Description:  "Update posts",
-		WarningLevel: domain.WarningLevelDangerous,
-		Enabled:      true,
-		Version:      1,
-	}
-	stored, err := permissions.UpsertAction(context.Background(), action)
-	if err != nil {
-		t.Fatalf("UpsertAction() error = %v", err)
-	}
-	if stored.Action != action.Action || stored.Version != 1 {
-		t.Fatalf("action = %+v, want stored", stored)
-	}
-	action.Label = "Edit posts"
-	updated, err := permissions.UpsertAction(context.Background(), action)
-	if err != nil {
-		t.Fatalf("UpsertAction() update error = %v", err)
-	}
-	found, err := permissions.FindAction(context.Background(), updated.Action)
-	if err != nil {
-		t.Fatalf("FindAction() error = %v", err)
-	}
-	if found.Label != "Edit posts" || found.Version != 2 {
-		t.Fatalf("FindAction() = %+v, want updated version 2", found)
-	}
-}
-
 // newRepositories creates migrated repositories.
 func newRepositories(t *testing.T) (GroupRepository, MembershipRepository, PermissionRepository) {
 	t.Helper()

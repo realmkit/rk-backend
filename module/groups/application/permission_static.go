@@ -9,6 +9,7 @@ var staticPermissionActions = map[domain.Action]domain.PermissionAction{
 	"groups.delete":                                staticAction("groups.delete", "groups", domain.ObjectGroup, "Delete groups", domain.WarningLevelDangerous),
 	"groups.assign_member":                         staticAction("groups.assign_member", "groups", domain.ObjectGroup, "Assign group members", domain.WarningLevelDangerous),
 	"groups.read_members":                          staticAction("groups.read_members", "groups", domain.ObjectGroup, "Read group members", domain.WarningLevelNormal),
+	"groups.manage_permissions":                    staticAction("groups.manage_permissions", "groups", domain.ObjectGroup, "Manage group permissions", domain.WarningLevelDangerous),
 	"assets.view":                                  staticAction("assets.view", "assets", domain.ObjectAsset, "View assets", domain.WarningLevelNormal),
 	"assets.update":                                staticAction("assets.update", "assets", domain.ObjectAsset, "Update assets", domain.WarningLevelDangerous),
 	"metadata.write_user":                          staticAction("metadata.write_user", "users", domain.ObjectUser, "Update user metadata", domain.WarningLevelDangerous),

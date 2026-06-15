@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -170,6 +171,30 @@ func (service Service) ListUserGroups(ctx context.Context, userID uuid.UUID) (po
 	return result, nil
 }
 
+// ListPermissionActions returns grantable permission actions.
+func (service Service) ListPermissionActions(context.Context) ([]domain.PermissionAction, error) {
+	actions := make([]domain.PermissionAction, 0, len(staticPermissionActions))
+	for _, action := range staticPermissionActions {
+		actions = append(actions, action)
+	}
+	sort.Slice(actions, func(left int, right int) bool {
+		if actions[left].Area == actions[right].Area {
+			return actions[left].Action < actions[right].Action
+		}
+		return actions[left].Area < actions[right].Area
+	})
+	return actions, nil
+}
+
+// ListPermissionGrants returns permission grants.
+func (service Service) ListPermissionGrants(
+	ctx context.Context,
+	filter port.PermissionGrantFilter,
+	page pagination.Page,
+) (pagination.Result[domain.PermissionGrant], error) {
+	return service.permissions.ListGrants(ctx, filter, page)
+}
+
 // CreatePermissionGrant creates a permission grant.
 func (service Service) CreatePermissionGrant(
 	ctx context.Context,
@@ -181,6 +206,16 @@ func (service Service) CreatePermissionGrant(
 	}
 	if err := grant.Validate(); err != nil {
 		return domain.PermissionGrant{}, err
+	}
+	action, err := permissionAction(grant.Action)
+	if err != nil {
+		return domain.PermissionGrant{}, err
+	}
+	if action.ScopeType != grant.ScopeType {
+		return domain.PermissionGrant{}, domain.NewValidationError([]domain.Violation{{
+			Field:   "scope_type",
+			Message: "must match the permission scope",
+		}})
 	}
 	created, err := service.permissions.CreateGrant(ctx, grant)
 	if err != nil {

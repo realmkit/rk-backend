@@ -102,6 +102,23 @@ func TestServicePublishesGrantEvents(t *testing.T) {
 	})
 }
 
+// TestServiceCreatePermissionGrantRejectsUnknownAction verifies grants use the app catalog.
+func TestServiceCreatePermissionGrantRejectsUnknownAction(t *testing.T) {
+	service, _, _, _ := newTestService()
+	_, err := service.CreatePermissionGrant(context.Background(), port.CreatePermissionGrantCommand{
+		Grant: domain.PermissionGrant{
+			SubjectType: domain.SubjectUser,
+			SubjectID:   uuid.New(),
+			Action:      "missing.permission",
+			ScopeType:   domain.ObjectGroup,
+			ScopeID:     uuid.New(),
+		},
+	})
+	if !errors.Is(err, port.ErrUnknownPermission) {
+		t.Fatalf("CreatePermissionGrant() error = %v, want %v", err, port.ErrUnknownPermission)
+	}
+}
+
 // TestServiceCheckAllowsDirectUserGrant verifies direct user grants allow actions.
 func TestServiceCheckAllowsDirectUserGrant(t *testing.T) {
 	service, _, _, permissions := newTestService()
@@ -267,10 +284,7 @@ func assertEventKeys(t *testing.T, drafts []eventdomain.Draft, want []string) {
 func newTestService() (Service, *memoryGroups, *memoryMemberships, *memoryPermissions) {
 	groups := &memoryGroups{items: map[uuid.UUID]domain.Group{}}
 	memberships := &memoryMemberships{items: map[string]domain.Membership{}}
-	permissions := &memoryPermissions{
-		actions: map[domain.Action]domain.PermissionAction{},
-		grants:  map[uuid.UUID]domain.PermissionGrant{},
-	}
+	permissions := &memoryPermissions{grants: map[uuid.UUID]domain.PermissionGrant{}}
 	service := NewService(groups, memberships, permissions)
 	return service, groups, memberships, permissions
 }
@@ -404,25 +418,9 @@ func (repository *memoryMemberships) Delete(_ context.Context, groupID uuid.UUID
 	return nil
 }
 
-// memoryPermissions stores permission actions and grants in memory.
+// memoryPermissions stores permission grants in memory.
 type memoryPermissions struct {
-	actions map[domain.Action]domain.PermissionAction
-	grants  map[uuid.UUID]domain.PermissionGrant
-}
-
-// UpsertAction stores or updates a permission action.
-func (repository *memoryPermissions) UpsertAction(_ context.Context, action domain.PermissionAction) (domain.PermissionAction, error) {
-	repository.actions[action.Action] = action
-	return action, nil
-}
-
-// FindAction returns one action.
-func (repository *memoryPermissions) FindAction(_ context.Context, action domain.Action) (domain.PermissionAction, error) {
-	found, ok := repository.actions[action]
-	if !ok {
-		return domain.PermissionAction{}, port.ErrNotFound
-	}
-	return found, nil
+	grants map[uuid.UUID]domain.PermissionGrant
 }
 
 // CreateGrant stores a grant.

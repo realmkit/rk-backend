@@ -33,11 +33,15 @@ func Register(router fiber.Router, services Services) {
 	groups.Get("/:group_id", handler.getGroup)
 	groups.Patch("/:group_id", handler.updateGroup)
 	groups.Delete("/:group_id", handler.deleteGroup)
+	groups.Get("/:group_id/permission-grants", handler.listGroupPermissionGrants)
+	groups.Post("/:group_id/permission-grants", handler.createGroupPermissionGrant)
+	groups.Delete("/:group_id/permission-grants/:grant_id", handler.deleteGroupPermissionGrant)
 	groups.Get("/:group_id/members", handler.listGroupMembers)
 	groups.Put("/:group_id/members/:user_id", handler.assignMembership)
 	groups.Delete("/:group_id/members/:user_id", handler.removeMembership)
 	router.Get("/users/me/groups", handler.listCurrentUserGroups)
 	router.Get("/users/:user_id/groups", handler.listUserGroups)
+	router.Get("/permission-actions", handler.listPermissionActions)
 	router.Post("/permissions/check", handler.checkPermission)
 }
 

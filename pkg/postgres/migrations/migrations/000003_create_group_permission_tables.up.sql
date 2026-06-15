@@ -40,27 +40,6 @@ CREATE INDEX group_memberships_status_active_idx ON group_memberships (status) W
 CREATE INDEX group_memberships_expires_at_idx ON group_memberships (expires_at);
 CREATE INDEX group_memberships_deleted_at_idx ON group_memberships (deleted_at);
 
-CREATE TABLE permission_actions (
-    id uuid PRIMARY KEY,
-    action text NOT NULL,
-    area text NOT NULL,
-    scope_type text NOT NULL,
-    label text NOT NULL,
-    description text NOT NULL DEFAULT '',
-    warning_level text NOT NULL DEFAULT 'normal',
-    enabled boolean NOT NULL DEFAULT true,
-    version bigint NOT NULL DEFAULT 1,
-    created_at timestamptz NOT NULL,
-    updated_at timestamptz NOT NULL,
-    deleted_at timestamptz NULL
-);
-
-CREATE UNIQUE INDEX permission_actions_action_active_idx ON permission_actions (action) WHERE deleted_at IS NULL;
-CREATE INDEX permission_actions_area_active_idx ON permission_actions (area) WHERE deleted_at IS NULL;
-CREATE INDEX permission_actions_scope_active_idx ON permission_actions (scope_type) WHERE deleted_at IS NULL;
-CREATE INDEX permission_actions_enabled_active_idx ON permission_actions (enabled) WHERE deleted_at IS NULL;
-CREATE INDEX permission_actions_deleted_at_idx ON permission_actions (deleted_at);
-
 CREATE TABLE permission_grants (
     id uuid PRIMARY KEY,
     subject_type text NOT NULL,

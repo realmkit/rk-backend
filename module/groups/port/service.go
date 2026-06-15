@@ -43,6 +43,12 @@ type MembershipService interface {
 
 // PermissionGrantService manages permission grants.
 type PermissionGrantService interface {
+	// ListPermissionActions returns grantable permission actions.
+	ListPermissionActions(ctx context.Context) ([]domain.PermissionAction, error)
+
+	// ListPermissionGrants returns permission grants.
+	ListPermissionGrants(ctx context.Context, filter PermissionGrantFilter, page pagination.Page) (pagination.Result[domain.PermissionGrant], error)
+
 	// CreatePermissionGrant creates a permission grant.
 	CreatePermissionGrant(ctx context.Context, command CreatePermissionGrantCommand) (domain.PermissionGrant, error)
 

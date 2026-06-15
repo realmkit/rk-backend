@@ -19,8 +19,8 @@ func TestLoadValidatesSequence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if len(seeds) != 4 {
-		t.Fatalf("seeds = %d, want 4", len(seeds))
+	if len(seeds) != 3 {
+		t.Fatalf("seeds = %d, want 3", len(seeds))
 	}
 	if seeds[0].Version != 1 || seeds[0].Checksum == "" {
 		t.Fatalf("first seed = %+v, want version and checksum", seeds[0])
@@ -51,17 +51,18 @@ func TestRunnerAppliesSeedsIdempotently(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Up() error = %v", err)
 	}
-	if len(status.Applied) != 4 || len(status.Pending) != 0 {
+	if len(status.Applied) != 3 || len(status.Pending) != 0 {
 		t.Fatalf("status = %+v, want all applied", status)
 	}
 	status, err = runner.Up(context.Background())
 	if err != nil {
 		t.Fatalf("second Up() error = %v", err)
 	}
-	if len(status.Applied) != 4 || len(status.Pending) != 0 {
+	if len(status.Applied) != 3 || len(status.Pending) != 0 {
 		t.Fatalf("second status = %+v, want no pending", status)
 	}
 	assertCount(t, db, "groups", "key = ?", "administrator")
+	assertCount(t, db, "permission_grants", "action = ?", "groups.manage_permissions")
 	assertCount(t, db, "forums", "key = ?", "announcements")
 }
 

@@ -22,48 +22,6 @@ func NewPermissionRepository(store orm.Store) PermissionRepository {
 	return PermissionRepository{store: store}
 }
 
-// UpsertAction stores or updates a permission action.
-func (repository PermissionRepository) UpsertAction(
-	ctx context.Context,
-	action domain.PermissionAction,
-) (domain.PermissionAction, error) {
-	if err := action.Validate(); err != nil {
-		return domain.PermissionAction{}, err
-	}
-	model := actionModelFromDomain(action)
-	var current PermissionActionModel
-	err := repository.store.DB(ctx).First(&current, "action = ?", action.Action).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		if err := repository.store.DB(ctx).Create(&model).Error; err != nil {
-			return domain.PermissionAction{}, err
-		}
-		return actionFromModel(model), nil
-	}
-	if err != nil {
-		return domain.PermissionAction{}, err
-	}
-	model.ID = current.ID
-	model.Version = current.Version + 1
-	err = repository.store.DB(ctx).
-		Model(&PermissionActionModel{}).
-		Where("id = ?", current.ID.ID).
-		Updates(actionUpdates(model)).
-		Error
-	if err != nil {
-		return domain.PermissionAction{}, err
-	}
-	return repository.FindAction(ctx, action.Action)
-}
-
-// FindAction returns one active permission action.
-func (repository PermissionRepository) FindAction(ctx context.Context, action domain.Action) (domain.PermissionAction, error) {
-	var model PermissionActionModel
-	if err := repository.store.DB(ctx).First(&model, "action = ?", action).Error; err != nil {
-		return domain.PermissionAction{}, mapError(err)
-	}
-	return actionFromModel(model), nil
-}
-
 // CreateGrant stores a permission grant.
 func (repository PermissionRepository) CreateGrant(
 	ctx context.Context,
@@ -110,19 +68,6 @@ func (repository PermissionRepository) DeleteGrant(ctx context.Context, id uuid.
 		return port.ErrNotFound
 	}
 	return nil
-}
-
-// actionUpdates returns update fields for a permission action.
-func actionUpdates(model PermissionActionModel) map[string]any {
-	return map[string]any{
-		"area":          model.Area,
-		"scope_type":    model.ScopeType,
-		"label":         model.Label,
-		"description":   model.Description,
-		"warning_level": model.WarningLevel,
-		"enabled":       model.Enabled,
-		"version":       model.Version,
-	}
 }
 
 // findEquivalentGrant returns a matching active grant.
