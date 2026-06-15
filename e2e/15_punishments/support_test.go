@@ -61,7 +61,7 @@ func newPunishmentsFixture(t *testing.T) punishmentsFixture {
 		harness.WithDatabase(database),
 		harness.WithServerOptions(
 			server.WithAuth(auth.Config{DevelopmentBypass: true}, harness.DevProvisioner{}),
-			server.WithPunishments(punishmentshttp.Services{Punishments: service}),
+			server.WithPunishments(punishmentshttp.Services{Punishments: service, Checker: harness.AllowChecker{}}),
 		),
 	)
 	return punishmentsFixture{ecosystem: ecosystem, service: service, events: events}

@@ -3,6 +3,7 @@ package http
 import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/pkg/events/application"
 	"github.com/realmkit/rk-backend/pkg/events/port"
 )
@@ -17,6 +18,9 @@ type Services struct {
 
 	// ScopeAuthorizer checks non-public websocket subscriptions.
 	ScopeAuthorizer port.ScopeAuthorizer
+
+	// Checker checks group-backed permissions.
+	Checker groupsport.Checker
 }
 
 // Register registers event routes.

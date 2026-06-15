@@ -3,15 +3,26 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/module/tickets/port"
 )
 
 // Services contains ticket route dependencies.
 type Services struct {
-	Definitions  port.DefinitionService
-	Tickets      port.TicketService
+	// Definitions manages ticket definitions.
+	Definitions port.DefinitionService
+
+	// Tickets manages ticket cases.
+	Tickets port.TicketService
+
+	// Conversation manages ticket messages and evidence.
 	Conversation port.ConversationService
-	Operations   port.OperationsService
+
+	// Operations manages ticket operational diagnostics.
+	Operations port.OperationsService
+
+	// Checker checks group-backed permissions.
+	Checker groupsport.Checker
 }
 
 // Register registers ticket routes.

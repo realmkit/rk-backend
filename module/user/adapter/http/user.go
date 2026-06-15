@@ -6,6 +6,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/module/groups/adapter/httpguard"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/module/user/domain"
 	userport "github.com/realmkit/rk-backend/module/user/port"
@@ -85,8 +87,17 @@ func (handler handler) currentUser(ctx *fiber.Ctx) error {
 
 // listUsers returns searchable users.
 func (handler handler) listUsers(ctx *fiber.Ctx) error {
-	if _, err := principal.Require(ctx); err != nil {
+	current, err := principal.Require(ctx)
+	if err != nil {
 		return handleError(ctx, err)
+	}
+	if err := httpguard.Check(
+		ctx,
+		handler.services.Checker,
+		current.UserID,
+		httpguard.All(groupsdomain.PermissionUsersRead, groupsdomain.ObjectUser),
+	); err != nil {
+		return err
 	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {

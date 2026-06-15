@@ -192,16 +192,16 @@ func TestSeedCommandsApplyAndValidate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("seed up error = %v", err)
 	}
-	if !strings.Contains(output, "applied=3 pending=0") {
-		t.Fatalf("seed up output = %q, want applied=3 pending=0", output)
+	if !strings.Contains(output, "applied=4 pending=0") {
+		t.Fatalf("seed up output = %q, want applied=4 pending=0", output)
 	}
 
 	output, err = executeCommand(t, []string{"seed", "validate"}, deps)
 	if err != nil {
 		t.Fatalf("seed validate error = %v", err)
 	}
-	if !strings.Contains(output, "applied=3 pending=0") {
-		t.Fatalf("seed validate output = %q, want applied=3 pending=0", output)
+	if !strings.Contains(output, "applied=4 pending=0") {
+		t.Fatalf("seed validate output = %q, want applied=4 pending=0", output)
 	}
 }
 
@@ -217,7 +217,7 @@ func TestSeedDryRunReportsPendingSeeds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("seed dry-run error = %v", err)
 	}
-	if !strings.Contains(output, "applied=0 pending=3") {
+	if !strings.Contains(output, "applied=0 pending=4") {
 		t.Fatalf("dry-run output = %q, want pending seeds", output)
 	}
 }

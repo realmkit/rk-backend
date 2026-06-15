@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
 	"github.com/realmkit/rk-backend/pkg/events/adapter/postgres"
 	"github.com/realmkit/rk-backend/pkg/events/application"
@@ -34,7 +35,7 @@ func TestEventHTTPRoutes(t *testing.T) {
 	}
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	useTestPrincipal(app)
-	Register(app, Services{Events: service, Hub: NewHub()})
+	Register(app, Services{Events: service, Hub: NewHub(), Checker: allowChecker{}})
 
 	for _, req := range []*http.Request{
 		newRequest(t, http.MethodGet, "/events"),
@@ -58,7 +59,7 @@ func TestEventHTTPInvalidID(t *testing.T) {
 	service := newHTTPEventService(t)
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	useTestPrincipal(app)
-	Register(app, Services{Events: service})
+	Register(app, Services{Events: service, Checker: allowChecker{}})
 	req := newRequest(t, http.MethodGet, "/events/nope")
 	req.Header.Set(currentUserIDHeader, uuid.NewString())
 	resp, err := app.Test(req)
@@ -91,6 +92,14 @@ func TestEventAdminRoutesRequireUser(t *testing.T) {
 			t.Fatalf("%s %s status = %d, want 401", req.Method, req.URL.Path, resp.StatusCode)
 		}
 	}
+}
+
+// allowChecker permits route guards in HTTP adapter tests.
+type allowChecker struct{}
+
+// Check returns an allowed decision.
+func (allowChecker) Check(context.Context, groupsport.CheckRequest) (groupsport.Decision, error) {
+	return groupsport.Decision{Allowed: true, Reason: "test_allowed"}, nil
 }
 
 // TestWebSocketScopeAuthorizationPreventsLeaks verifies private scopes fail closed.

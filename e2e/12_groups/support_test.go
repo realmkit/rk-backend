@@ -29,6 +29,7 @@ type groupsFixture struct {
 	service   groupsapplication.Service
 	policies  groupspostgres.PermissionRepository
 	events    *eventtesting.PublisherRecorder
+	adminID   uuid.UUID
 }
 
 // newGroupsFixture starts a server with groups routes.
@@ -42,6 +43,8 @@ func newGroupsFixture(t *testing.T) groupsFixture {
 		groupspostgres.NewMembershipRepository(database.Store),
 		policies,
 	).WithEvents(events)
+	adminID := uuid.MustParse("00000000-0000-0000-0000-00000000e212")
+	bootstrapGroupsAdmin(t, service, adminID)
 	ecosystem := harness.New(
 		t,
 		harness.WithDevelopment(true),
@@ -63,12 +66,16 @@ func newGroupsFixture(t *testing.T) groupsFixture {
 		service:   service,
 		policies:  policies,
 		events:    events,
+		adminID:   adminID,
 	}
 }
 
 // do sends a request through the fixture server.
 func (fixture groupsFixture) do(t *testing.T, request *http.Request) *http.Response {
 	t.Helper()
+	if request.Header.Get(auth.DevUserIDHeader) == "" && request.URL.Path != "/users/me/groups" {
+		request.Header.Set(auth.DevUserIDHeader, fixture.adminID.String())
+	}
 	return fixture.ecosystem.Test(t, request)
 }
 

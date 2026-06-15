@@ -8,6 +8,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/module/groups/adapter/httpguard"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/module/punishments/domain"
 	"github.com/realmkit/rk-backend/module/punishments/port"
 	"github.com/realmkit/rk-backend/pkg/api/authgate"
@@ -128,6 +131,27 @@ func requireIdempotency(ctx *fiber.Ctx) error {
 // currentUserID returns the authenticated user from the validated principal.
 func currentUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
 	return authgate.RequireUserID(ctx)
+}
+
+// requirePunishment verifies one punishment permission.
+func requirePunishment(ctx *fiber.Ctx, checker groupsport.Checker, action groupsdomain.Action, id uuid.UUID) error {
+	target := httpguard.All(action, groupsdomain.ObjectPunishment)
+	if id != uuid.Nil {
+		target = httpguard.Object(action, groupsdomain.ObjectPunishment, id)
+	}
+	_, err := httpguard.Require(ctx, checker, target)
+	return err
+}
+
+// requireSelfOrPunishment verifies self access or a punishment permission.
+func requireSelfOrPunishment(
+	ctx *fiber.Ctx,
+	checker groupsport.Checker,
+	userID uuid.UUID,
+	action groupsdomain.Action,
+) error {
+	_, err := httpguard.RequireSelfOr(ctx, checker, userID, httpguard.All(action, groupsdomain.ObjectPunishment))
+	return err
 }
 
 // setETag writes an optimistic concurrency ETag.

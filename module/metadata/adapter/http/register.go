@@ -3,6 +3,7 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/module/metadata/port"
 )
 
@@ -16,6 +17,9 @@ type Services struct {
 
 	// Metaobjects manages metaobject definitions and entries.
 	Metaobjects port.MetaobjectService
+
+	// Checker checks group-backed permissions.
+	Checker groupsport.Checker
 }
 
 // Register registers metadata routes on router.

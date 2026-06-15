@@ -1,6 +1,66 @@
 package domain
 
 const (
+	// PermissionGroupsCreate allows creating groups.
+	PermissionGroupsCreate Permission = "groups.create"
+
+	// PermissionGroupsRead allows reading groups.
+	PermissionGroupsRead Permission = "groups.read"
+
+	// PermissionGroupsUpdate allows updating groups.
+	PermissionGroupsUpdate Permission = "groups.update"
+
+	// PermissionGroupsDelete allows deleting groups.
+	PermissionGroupsDelete Permission = "groups.delete"
+
+	// PermissionGroupsAssignMember allows assigning group memberships.
+	PermissionGroupsAssignMember Permission = "groups.assign_member"
+
+	// PermissionGroupsReadMembers allows reading group memberships.
+	PermissionGroupsReadMembers Permission = "groups.read_members"
+
+	// PermissionGroupsManagePermissions allows managing group permissions.
+	PermissionGroupsManagePermissions Permission = "groups.manage_permissions"
+
+	// PermissionAssetsView allows reading assets.
+	PermissionAssetsView Permission = "assets.view"
+
+	// PermissionAssetsCreate allows creating assets.
+	PermissionAssetsCreate Permission = "assets.create"
+
+	// PermissionAssetsUpdate allows updating assets.
+	PermissionAssetsUpdate Permission = "assets.update"
+
+	// PermissionAssetsDelete allows deleting assets.
+	PermissionAssetsDelete Permission = "assets.delete"
+
+	// PermissionUsersRead allows reading the user directory.
+	PermissionUsersRead Permission = "users.read"
+
+	// PermissionMetadataReadUser allows reading user metadata.
+	PermissionMetadataReadUser Permission = "metadata.read_user"
+
+	// PermissionMetadataWriteUser allows writing user metadata.
+	PermissionMetadataWriteUser Permission = "metadata.write_user"
+
+	// PermissionMetadataReadValues allows reading non-user owner metadata.
+	PermissionMetadataReadValues Permission = "metadata.read_values"
+
+	// PermissionMetadataWriteValues allows writing non-user owner metadata.
+	PermissionMetadataWriteValues Permission = "metadata.write_values"
+
+	// PermissionMetadataReadDefinitions allows reading metadata definitions.
+	PermissionMetadataReadDefinitions Permission = "metadata.read_definitions"
+
+	// PermissionMetadataManageDefinitions allows managing metadata definitions.
+	PermissionMetadataManageDefinitions Permission = "metadata.manage_definitions"
+
+	// PermissionMetadataReadEntries allows reading metaobject entries.
+	PermissionMetadataReadEntries Permission = "metadata.read_entries"
+
+	// PermissionMetadataWriteEntries allows writing metaobject entries.
+	PermissionMetadataWriteEntries Permission = "metadata.write_entries"
+
 	// PermissionForumsView allows reading a forum.
 	PermissionForumsView Permission = "forums.view"
 
@@ -66,6 +126,9 @@ const (
 
 	// PermissionEventsReplay allows replaying or cancelling events.
 	PermissionEventsReplay Permission = "events.replay"
+
+	// PermissionEventsCancel allows cancelling pending events.
+	PermissionEventsCancel Permission = "events.cancel"
 
 	// PermissionCronJobsView allows reading cron job status and history.
 	PermissionCronJobsView Permission = "cronjobs.view"

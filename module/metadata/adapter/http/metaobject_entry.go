@@ -36,6 +36,9 @@ func (handler handler) createMetaobjectEntry(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if err := requireMetadata(ctx, handler.services.Checker, entryWriteTarget()); err != nil {
+		return err
+	}
 	var request metaobjectEntryRequest
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
@@ -64,6 +67,9 @@ func (handler handler) listMetaobjectEntries(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if err := requireMetadata(ctx, handler.services.Checker, entryReadTarget()); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -84,6 +90,9 @@ func (handler handler) getMetaobjectEntry(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if err := requireMetadata(ctx, handler.services.Checker, entryReadTarget()); err != nil {
+		return err
+	}
 	entry, err := handler.services.Metaobjects.GetMetaobjectEntry(
 		ctx.UserContext(),
 		port.GetMetaobjectEntryQuery{ID: id},
@@ -99,6 +108,9 @@ func (handler handler) getMetaobjectEntry(ctx *fiber.Ctx) error {
 func (handler handler) updateMetaobjectEntry(ctx *fiber.Ctx) error {
 	id, err := idFromParam(ctx, "entry_id")
 	if err != nil {
+		return err
+	}
+	if err := requireMetadata(ctx, handler.services.Checker, entryWriteTarget()); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)
@@ -138,6 +150,9 @@ func (handler handler) updateMetaobjectEntry(ctx *fiber.Ctx) error {
 func (handler handler) deleteMetaobjectEntry(ctx *fiber.Ctx) error {
 	id, err := idFromParam(ctx, "entry_id")
 	if err != nil {
+		return err
+	}
+	if err := requireMetadata(ctx, handler.services.Checker, entryWriteTarget()); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)

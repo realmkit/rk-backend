@@ -2,13 +2,15 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/pkg/events/domain"
 	"github.com/realmkit/rk-backend/pkg/events/port"
 )
 
 // listEvents lists durable events.
 func (handler handler) listEvents(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
+	if err := requireEvent(ctx, handler.services.Checker, groupsdomain.PermissionEventsView, uuid.Nil); err != nil {
 		return err
 	}
 	page, err := pageFromQuery(ctx)
@@ -30,11 +32,11 @@ func (handler handler) listEvents(ctx *fiber.Ctx) error {
 
 // getEvent returns one durable event.
 func (handler handler) getEvent(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	id, err := idFromParam(ctx, "event_id")
 	if err != nil {
+		return err
+	}
+	if err := requireEvent(ctx, handler.services.Checker, groupsdomain.PermissionEventsView, id); err != nil {
 		return err
 	}
 	event, err := handler.services.Events.Get(ctx.UserContext(), id)
@@ -46,11 +48,11 @@ func (handler handler) getEvent(ctx *fiber.Ctx) error {
 
 // replayEvent requeues one event.
 func (handler handler) replayEvent(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	id, err := idFromParam(ctx, "event_id")
 	if err != nil {
+		return err
+	}
+	if err := requireEvent(ctx, handler.services.Checker, groupsdomain.PermissionEventsReplay, id); err != nil {
 		return err
 	}
 	if err := handler.services.Events.Replay(ctx.UserContext(), id); err != nil {
@@ -61,11 +63,11 @@ func (handler handler) replayEvent(ctx *fiber.Ctx) error {
 
 // cancelEvent cancels one event.
 func (handler handler) cancelEvent(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	id, err := idFromParam(ctx, "event_id")
 	if err != nil {
+		return err
+	}
+	if err := requireEvent(ctx, handler.services.Checker, groupsdomain.PermissionEventsCancel, id); err != nil {
 		return err
 	}
 	if err := handler.services.Events.Cancel(ctx.UserContext(), id); err != nil {

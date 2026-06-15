@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/tickets/domain"
 	"github.com/realmkit/rk-backend/module/tickets/port"
 	"github.com/realmkit/rk-backend/pkg/search"
@@ -30,6 +31,9 @@ func (handler handler) createTicket(ctx *fiber.Ctx) error {
 	}
 	key, err := requireIdempotency(ctx)
 	if err != nil {
+		return err
+	}
+	if err := requireTicket(ctx, handler.services.Checker, groupsdomain.PermissionTicketsCreate, uuid.Nil); err != nil {
 		return err
 	}
 	var request createTicketRequest
@@ -68,6 +72,9 @@ func (handler handler) createTicketWithRequest(ctx *fiber.Ctx, request createTic
 	if err != nil {
 		return err
 	}
+	if err := requireTicket(ctx, handler.services.Checker, groupsdomain.PermissionTicketsCreate, uuid.Nil); err != nil {
+		return err
+	}
 	ticket, err := handler.services.Tickets.CreateTicket(ctx.UserContext(), request.command(actor, key))
 	if err != nil {
 		return handleError(ctx, err)
@@ -78,7 +85,7 @@ func (handler handler) createTicketWithRequest(ctx *fiber.Ctx, request createTic
 
 // listTickets handles queue and personal ticket reads.
 func (handler handler) listTickets(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
+	if err := requireTicket(ctx, handler.services.Checker, groupsdomain.PermissionTicketsView, uuid.Nil); err != nil {
 		return err
 	}
 	page, err := pageFromQuery(ctx)

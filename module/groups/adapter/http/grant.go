@@ -3,6 +3,7 @@ package http
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/module/groups/adapter/httpguard"
 	"github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/groups/port"
 )
@@ -42,6 +43,13 @@ type permissionGrantListResponse struct {
 
 // listPermissionActions lists grantable permission actions.
 func (handler handler) listPermissionActions(ctx *fiber.Ctx) error {
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.All(domain.PermissionGroupsManagePermissions, domain.ObjectGroup),
+	); err != nil {
+		return err
+	}
 	actions, err := handler.services.Grants.ListPermissionActions(ctx.UserContext())
 	if err != nil {
 		return handleError(ctx, err)
@@ -53,6 +61,13 @@ func (handler handler) listPermissionActions(ctx *fiber.Ctx) error {
 func (handler handler) listGroupPermissionGrants(ctx *fiber.Ctx) error {
 	groupID, err := idFromParam(ctx, "group_id")
 	if err != nil {
+		return err
+	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.Object(domain.PermissionGroupsManagePermissions, domain.ObjectGroup, groupID),
+	); err != nil {
 		return err
 	}
 	page, err := pageFromQuery(ctx)
@@ -80,6 +95,13 @@ func (handler handler) createGroupPermissionGrant(ctx *fiber.Ctx) error {
 	}
 	groupID, err := idFromParam(ctx, "group_id")
 	if err != nil {
+		return err
+	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.Object(domain.PermissionGroupsManagePermissions, domain.ObjectGroup, groupID),
+	); err != nil {
 		return err
 	}
 	var request permissionGrantRequest
@@ -110,6 +132,13 @@ func (handler handler) deleteGroupPermissionGrant(ctx *fiber.Ctx) error {
 	}
 	groupID, err := idFromParam(ctx, "group_id")
 	if err != nil {
+		return err
+	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.Object(domain.PermissionGroupsManagePermissions, domain.ObjectGroup, groupID),
+	); err != nil {
 		return err
 	}
 	if err := handler.services.Grants.DeletePermissionGrant(

@@ -28,6 +28,9 @@ func (handler handler) setValue(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if err := requireMetadata(ctx, handler.services.Checker, ownerWriteTarget(owner)); err != nil {
+		return err
+	}
 	expected, err := optionalExpectedVersion(ctx)
 	if err != nil {
 		return err
@@ -59,6 +62,9 @@ func (handler handler) listValues(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if err := requireMetadata(ctx, handler.services.Checker, ownerReadTarget(owner)); err != nil {
+		return err
+	}
 	includeEmpty := true
 	if ctx.Query("include_empty") != "" {
 		includeEmpty = ctx.QueryBool("include_empty")
@@ -80,6 +86,9 @@ func (handler handler) getValue(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if err := requireMetadata(ctx, handler.services.Checker, ownerReadTarget(owner)); err != nil {
+		return err
+	}
 	value, err := handler.services.Values.GetValue(ctx.UserContext(), port.GetValueQuery{
 		Owner:     owner,
 		Namespace: domain.Namespace(ctx.Params("namespace")),
@@ -96,6 +105,9 @@ func (handler handler) getValue(ctx *fiber.Ctx) error {
 func (handler handler) deleteValue(ctx *fiber.Ctx) error {
 	owner, err := ownerFromParams(ctx)
 	if err != nil {
+		return err
+	}
+	if err := requireMetadata(ctx, handler.services.Checker, ownerWriteTarget(owner)); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)

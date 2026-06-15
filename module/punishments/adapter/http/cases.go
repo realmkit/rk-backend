@@ -3,6 +3,7 @@ package http
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/punishments/domain"
 	"github.com/realmkit/rk-backend/module/punishments/port"
 	"github.com/realmkit/rk-backend/pkg/search"
@@ -14,6 +15,9 @@ func (handler handler) issuePunishment(ctx *fiber.Ctx) error {
 	}
 	actor, err := currentUserID(ctx)
 	if err != nil {
+		return err
+	}
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsIssue, uuid.Nil); err != nil {
 		return err
 	}
 	var request issueRequest
@@ -29,7 +33,7 @@ func (handler handler) issuePunishment(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) listPunishments(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsView, uuid.Nil); err != nil {
 		return err
 	}
 	page, err := pageFromQuery(ctx)
@@ -48,11 +52,11 @@ func (handler handler) listPunishments(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) getPunishment(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	id, err := idFromParam(ctx, "punishment_id")
 	if err != nil {
+		return err
+	}
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsView, id); err != nil {
 		return err
 	}
 	punishment, err := handler.services.Punishments.GetPunishment(ctx.UserContext(), id)
@@ -70,6 +74,9 @@ func (handler handler) updatePunishment(ctx *fiber.Ctx) error {
 	}
 	id, err := idFromParam(ctx, "punishment_id")
 	if err != nil {
+		return err
+	}
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsUpdate, id); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)
@@ -109,6 +116,9 @@ func (handler handler) revokePunishment(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsRevoke, id); err != nil {
+		return err
+	}
 	version, err := expectedVersion(ctx)
 	if err != nil {
 		return err
@@ -130,11 +140,11 @@ func (handler handler) revokePunishment(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) listUserPunishments(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	userID, err := idFromParam(ctx, "user_id")
 	if err != nil {
+		return err
+	}
+	if err := requireSelfOrPunishment(ctx, handler.services.Checker, userID, groupsdomain.PermissionPunishmentsView); err != nil {
 		return err
 	}
 	page, err := pageFromQuery(ctx)
@@ -153,7 +163,7 @@ func (handler handler) listUserPunishments(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) checkRestriction(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsView, uuid.Nil); err != nil {
 		return err
 	}
 	var request struct {
@@ -174,11 +184,11 @@ func (handler handler) checkRestriction(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) listRestrictions(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	userID, err := idFromParam(ctx, "user_id")
 	if err != nil {
+		return err
+	}
+	if err := requireSelfOrPunishment(ctx, handler.services.Checker, userID, groupsdomain.PermissionPunishmentsView); err != nil {
 		return err
 	}
 	restrictions, err := handler.services.Punishments.ListActiveRestrictions(ctx.UserContext(), userID)

@@ -10,6 +10,7 @@ import (
 	forumshttp "github.com/realmkit/rk-backend/module/forums/adapter/http"
 	forumsapp "github.com/realmkit/rk-backend/module/forums/application"
 	forumsdomain "github.com/realmkit/rk-backend/module/forums/domain"
+	groupsapp "github.com/realmkit/rk-backend/module/groups/application"
 	punishmentshttp "github.com/realmkit/rk-backend/module/punishments/adapter/http"
 	punishmentsport "github.com/realmkit/rk-backend/module/punishments/port"
 	ticketsgroups "github.com/realmkit/rk-backend/module/tickets/adapter/groups"
@@ -188,8 +189,8 @@ func newForumsViewsCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.C
 }
 
 // assetshttpServices creates HTTP services for assets.
-func assetshttpServices(assetService assetsport.Service) assetshttp.Services {
-	return assetshttp.Services{Assets: assetService}
+func assetshttpServices(assetService assetsport.Service, checker groupsapp.Service) assetshttp.Services {
+	return assetshttp.Services{Assets: assetService, Checker: checker}
 }
 
 // forumshttpServices creates HTTP services for forums.
@@ -204,8 +205,8 @@ func forumshttpServices(forumService forumsapp.Service) forumshttp.Services {
 }
 
 // punishmentshttpServices creates HTTP services for punishments.
-func punishmentshttpServices(service punishmentsport.Service) punishmentshttp.Services {
-	return punishmentshttp.Services{Punishments: service}
+func punishmentshttpServices(service punishmentsport.Service, checker groupsapp.Service) punishmentshttp.Services {
+	return punishmentshttp.Services{Punishments: service, Checker: checker}
 }
 
 // ticketsService creates tickets application service.
@@ -234,11 +235,12 @@ func ticketsService(
 }
 
 // ticketshttpServices creates HTTP services for tickets.
-func ticketshttpServices(service ticketsapp.Service) ticketshttp.Services {
+func ticketshttpServices(service ticketsapp.Service, checker groupsapp.Service) ticketshttp.Services {
 	return ticketshttp.Services{
 		Definitions:  service,
 		Tickets:      service,
 		Conversation: service,
 		Operations:   service,
+		Checker:      checker,
 	}
 }

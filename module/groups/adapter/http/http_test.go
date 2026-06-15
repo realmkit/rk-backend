@@ -189,6 +189,7 @@ func testRequest(method string, target string, body string) *http.Request {
 	}
 	req, _ := http.NewRequest(method, target, reader)
 	req.Header.Set(headers.Accept, "application/json")
+	req.Header.Set(currentUserIDHeader, uuid.NewString())
 	if body != "" {
 		req.Header.Set(headers.ContentType, "application/json")
 	}
@@ -293,5 +294,8 @@ func (service *httpService) DeletePermissionGrant(context.Context, port.DeletePe
 
 // Check returns an authorization decision.
 func (service *httpService) Check(context.Context, port.CheckRequest) (port.Decision, error) {
-	return service.decision, service.err
+	if !service.decision.Allowed && service.decision.Reason == "" {
+		return port.Decision{Allowed: true, Reason: "test_allowed"}, nil
+	}
+	return service.decision, nil
 }

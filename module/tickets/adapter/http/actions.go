@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/tickets/port"
 )
 
@@ -65,7 +66,7 @@ func (handler handler) rejectAppeal(ctx *fiber.Ctx) error {
 
 // verifyStats handles ticket stat verification.
 func (handler handler) verifyStats(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
+	if err := requireTicket(ctx, handler.services.Checker, groupsdomain.PermissionTicketsManage, uuid.Nil); err != nil {
 		return err
 	}
 	report, err := handler.services.Operations.VerifyStats(ctx.UserContext())
@@ -77,7 +78,7 @@ func (handler handler) verifyStats(ctx *fiber.Ctx) error {
 
 // rebuildStats handles ticket stat rebuild.
 func (handler handler) rebuildStats(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
+	if err := requireTicket(ctx, handler.services.Checker, groupsdomain.PermissionTicketsManage, uuid.Nil); err != nil {
 		return err
 	}
 	report, err := handler.services.Operations.RebuildStats(ctx.UserContext())

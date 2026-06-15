@@ -3,6 +3,7 @@ package http
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/tickets/domain"
 	"github.com/realmkit/rk-backend/module/tickets/port"
 	"github.com/realmkit/rk-backend/pkg/search"
@@ -33,7 +34,7 @@ type definitionRequest struct {
 
 // createDefinition handles ticket definition creation.
 func (handler handler) createDefinition(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
+	if err := requireTicket(ctx, handler.services.Checker, groupsdomain.PermissionTicketsManageDefinitions, uuid.Nil); err != nil {
 		return err
 	}
 	var request definitionRequest
@@ -50,7 +51,7 @@ func (handler handler) createDefinition(ctx *fiber.Ctx) error {
 
 // listDefinitions handles definition list reads.
 func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
+	if err := requireTicket(ctx, handler.services.Checker, groupsdomain.PermissionTicketsManageDefinitions, uuid.Nil); err != nil {
 		return err
 	}
 	page, err := pageFromQuery(ctx)
@@ -88,11 +89,11 @@ func definitionFilter(ctx *fiber.Ctx) (port.DefinitionFilter, error) {
 
 // getDefinition handles one definition read.
 func (handler handler) getDefinition(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
+		return err
+	}
+	if err := requireTicket(ctx, handler.services.Checker, groupsdomain.PermissionTicketsManageDefinitions, id); err != nil {
 		return err
 	}
 	definition, err := handler.services.Definitions.GetDefinition(ctx.UserContext(), id)
@@ -105,11 +106,11 @@ func (handler handler) getDefinition(ctx *fiber.Ctx) error {
 
 // updateDefinition handles definition updates.
 func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
+		return err
+	}
+	if err := requireTicket(ctx, handler.services.Checker, groupsdomain.PermissionTicketsManageDefinitions, id); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)
@@ -130,11 +131,11 @@ func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
 
 // deleteDefinition handles definition soft deletion.
 func (handler handler) deleteDefinition(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
+		return err
+	}
+	if err := requireTicket(ctx, handler.services.Checker, groupsdomain.PermissionTicketsManageDefinitions, id); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)

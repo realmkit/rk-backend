@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
 	"github.com/realmkit/rk-backend/pkg/postgres/seeding"
 )
 
@@ -20,7 +21,7 @@ func TestGlobalSeedsBootstrapCommunity(t *testing.T) {
 	if err != nil {
 		t.Fatalf("seed Up() error = %v", err)
 	}
-	if len(status.Applied) != 3 || len(status.Pending) != 0 {
+	if len(status.Applied) != 4 || len(status.Pending) != 0 {
 		t.Fatalf("status = %+v, want all seeds applied", status)
 	}
 
@@ -69,7 +70,9 @@ func TestSeedGrantAdminAllowsSeededPolicy(t *testing.T) {
 	} {
 		steps.Log("check seeded %s policy through HTTP", permission)
 		body := `{"actor_user_id":"` + userID.String() + `","permission":"` + permission + `","object_type":"group","object_id":"` + seeding.AdminGroupID.String() + `"}`
-		decision := fixture.do(t, postJSON("/permissions/check", body))
+		request := postJSON("/permissions/check", body)
+		request.Header.Set(auth.DevUserIDHeader, userID.String())
+		decision := fixture.do(t, request)
 		assertStatus(t, decision, fiber.StatusOK)
 		payload := decodeObject(t, decision)
 		if payload["allowed"] != true {

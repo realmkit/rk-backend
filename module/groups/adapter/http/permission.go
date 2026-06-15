@@ -3,6 +3,7 @@ package http
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/module/groups/adapter/httpguard"
 	"github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/groups/port"
 )
@@ -25,6 +26,18 @@ func (handler handler) checkPermission(ctx *fiber.Ctx) error {
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
 	}
+	actor, err := currentUserID(ctx)
+	if err != nil {
+		return err
+	}
+	if request.ActorUserID == uuid.Nil {
+		request.ActorUserID = actor
+	}
+	if request.ActorUserID != actor {
+		if err := httpguard.Check(ctx, handler.services.Checker, actor, checkManagementTarget(request)); err != nil {
+			return err
+		}
+	}
 	decision, err := handler.services.Checker.Check(
 		ctx.UserContext(),
 		port.CheckRequest{
@@ -39,6 +52,16 @@ func (handler handler) checkPermission(ctx *fiber.Ctx) error {
 		return handleError(ctx, err)
 	}
 	return writeJSON(ctx, fiber.StatusOK, decision)
+}
+
+// checkManagementTarget returns the guard target for checking another actor.
+func checkManagementTarget(request checkRequest) httpguard.Target {
+	scopeType := requestScopeType(request)
+	scopeID := requestScopeID(request)
+	if scopeType == domain.ObjectGroup && scopeID != uuid.Nil {
+		return httpguard.Object(domain.PermissionGroupsManagePermissions, domain.ObjectGroup, scopeID)
+	}
+	return httpguard.All(domain.PermissionGroupsManagePermissions, domain.ObjectGroup)
 }
 
 // requestAction returns the new action field or legacy permission field.

@@ -6,6 +6,10 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/module/groups/adapter/httpguard"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
 	"github.com/realmkit/rk-backend/pkg/cronjob/domain"
@@ -46,6 +50,21 @@ func expectedVersion(ctx *fiber.Ctx) (uint64, error) {
 		}
 	}
 	return version, nil
+}
+
+// requireCron verifies one cron job administration permission.
+func requireCron(ctx *fiber.Ctx, checker groupsport.Checker, action groupsdomain.Action, jobKey string) error {
+	target := httpguard.All(action, groupsdomain.ObjectCronJob)
+	if strings.TrimSpace(jobKey) != "" {
+		target = httpguard.Object(action, groupsdomain.ObjectCronJob, cronJobScopeID(jobKey))
+	}
+	_, err := httpguard.Require(ctx, checker, target)
+	return err
+}
+
+// cronJobScopeID returns a stable UUID scope for one cron job key.
+func cronJobScopeID(jobKey string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte("realmkit:cronjob:"+jobKey))
 }
 
 // handleError maps cron errors to problem responses.

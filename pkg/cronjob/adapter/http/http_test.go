@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
 	cronpostgres "github.com/realmkit/rk-backend/pkg/cronjob/adapter/postgres"
 	cronapp "github.com/realmkit/rk-backend/pkg/cronjob/application"
@@ -21,7 +24,8 @@ import (
 func TestCronHTTPRoutes(t *testing.T) {
 	service := newHTTPCronService(t)
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
-	Register(app, Services{Cron: service})
+	useTestPrincipal(app)
+	Register(app, Services{Cron: service, Checker: allowChecker{}})
 
 	for _, req := range []*http.Request{
 		newRequest(t, http.MethodGet, "/cronjobs"),
@@ -43,7 +47,8 @@ func TestCronHTTPRoutes(t *testing.T) {
 // TestCronHTTPPauseRequiresIfMatch verifies concurrency header handling.
 func TestCronHTTPPauseRequiresIfMatch(t *testing.T) {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
-	Register(app, Services{Cron: newHTTPCronService(t)})
+	useTestPrincipal(app)
+	Register(app, Services{Cron: newHTTPCronService(t), Checker: allowChecker{}})
 	resp, err := app.Test(newRequest(t, http.MethodPost, "/cronjobs/events.dispatch-pending/pause"))
 	if err != nil {
 		t.Fatalf("app.Test() error = %v", err)
@@ -113,4 +118,21 @@ func newRequest(t *testing.T, method string, path string) *http.Request {
 		t.Fatalf("NewRequest() error = %v", err)
 	}
 	return req
+}
+
+// useTestPrincipal installs a test principal for guarded cron routes.
+func useTestPrincipal(app *fiber.App) {
+	app.Use(func(ctx *fiber.Ctx) error {
+		userID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
+		principal.Set(ctx, principal.Principal{UserID: userID, SubjectHash: "test:" + userID.String()})
+		return ctx.Next()
+	})
+}
+
+// allowChecker permits route guards in HTTP adapter tests.
+type allowChecker struct{}
+
+// Check returns an allowed decision.
+func (allowChecker) Check(context.Context, groupsport.CheckRequest) (groupsport.Decision, error) {
+	return groupsport.Decision{Allowed: true, Reason: "test_allowed"}, nil
 }

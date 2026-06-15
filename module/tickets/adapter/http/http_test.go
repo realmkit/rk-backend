@@ -10,6 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/module/tickets/domain"
 	"github.com/realmkit/rk-backend/module/tickets/port"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
@@ -285,8 +286,17 @@ func newApp() (*fiber.App, *httpService) {
 		Tickets:      service,
 		Conversation: service,
 		Operations:   service,
+		Checker:      allowChecker{},
 	})
 	return app, service
+}
+
+// allowChecker permits route guards in HTTP adapter tests.
+type allowChecker struct{}
+
+// Check returns an allowed decision.
+func (allowChecker) Check(context.Context, groupsport.CheckRequest) (groupsport.Decision, error) {
+	return groupsport.Decision{Allowed: true, Reason: "test_allowed"}, nil
 }
 
 // httpService is a fake implementing all ticket HTTP service ports.

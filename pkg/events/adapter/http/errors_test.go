@@ -37,7 +37,7 @@ func TestEventHTTPProblemMappings(t *testing.T) {
 	for _, item := range cases {
 		app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 		useTestPrincipal(app)
-		Register(app, Services{Events: eventServiceWithError(item.err)})
+		Register(app, Services{Events: eventServiceWithError(item.err), Checker: allowChecker{}})
 		req := newRequest(t, item.method, item.path)
 		req.Header.Set(currentUserIDHeader, uuid.NewString())
 		if item.name == "invalid user" {

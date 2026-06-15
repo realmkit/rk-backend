@@ -119,11 +119,12 @@ func metadataService(db *gorm.DB, events eventsapp.Service) metadataapp.Service 
 }
 
 // metadatahttpServices creates HTTP services for metadata.
-func metadatahttpServices(service metadataapp.Service) metadatahttp.Services {
+func metadatahttpServices(service metadataapp.Service, checker groupsapp.Service) metadatahttp.Services {
 	return metadatahttp.Services{
 		Definitions: service,
 		Values:      service,
 		Metaobjects: service,
+		Checker:     checker,
 	}
 }
 
@@ -142,7 +143,7 @@ func usersService(db *gorm.DB, cfg config.Config, events eventsapp.Service) user
 
 // usershttpServices creates HTTP services for users.
 func usershttpServices(userService userapp.Service, groupService groupsapp.Service) userhttp.Services {
-	return userhttp.Services{Users: userService, Groups: groupService}
+	return userhttp.Services{Users: userService, Groups: groupService, Checker: groupService}
 }
 
 // eventsService creates the events application service.

@@ -20,7 +20,8 @@ import (
 // TestCronHTTPPauseAndResumeSuccess verifies state change routes with If-Match.
 func TestCronHTTPPauseAndResumeSuccess(t *testing.T) {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
-	Register(app, Services{Cron: newHTTPCronService(t)})
+	useTestPrincipal(app)
+	Register(app, Services{Cron: newHTTPCronService(t), Checker: allowChecker{}})
 	for _, route := range []struct {
 		path    string
 		ifMatch string
@@ -94,7 +95,8 @@ func TestCronHTTPProblemMappings(t *testing.T) {
 
 	for _, item := range cases {
 		app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
-		Register(app, Services{Cron: item.service})
+		useTestPrincipal(app)
+		Register(app, Services{Cron: item.service, Checker: allowChecker{}})
 		req := newRequest(t, item.method, item.path)
 		if item.ifMatch != "" {
 			req.Header.Set(headers.IfMatch, item.ifMatch)

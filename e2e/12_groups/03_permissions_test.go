@@ -35,6 +35,39 @@ func TestGroupsPermissionGrants(t *testing.T) {
 	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, groupForum)), false)
 }
 
+// TestSoftDeletedMembershipCannotUseGuardedRoute verifies route guards honor deleted memberships.
+func TestSoftDeletedMembershipCannotUseGuardedRoute(t *testing.T) {
+	steps := harness.NewSteps(t)
+	fixture := newGroupsFixture(t)
+	actorID := uuid.New()
+	target := fixture.createGroup(t, "guarded")
+	targetID := groupIDFrom(t, target)
+	targetVersion := groupVersionFrom(t, target)
+	policyGroup := fixture.createGroup(t, "temporary_admins")
+	policyGroupID := groupIDFrom(t, policyGroup)
+
+	steps.Log("grant group update to a temporary membership")
+	membershipVersion := assignMember(t, fixture, policyGroupID, actorID, "soft-delete-route")
+	fixture.createGrant(t, policyGroupID, domain.PermissionGrant{
+		Action:    domain.PermissionGroupsUpdate,
+		ScopeType: domain.ObjectGroup,
+		ScopeID:   domain.AllScopeID(),
+	})
+
+	steps.Log("remove membership and attempt protected update as removed actor")
+	removeMember(t, fixture, policyGroupID, actorID, membershipVersion)
+	response := fixture.do(
+		t,
+		configureRequest(
+			harness.JSONRequest(fiber.MethodPatch, "/groups/"+targetID.String(), groupUpdateBody()),
+			withCurrentGroupUser(actorID),
+			withGroupsIdempotency("soft-deleted-update"),
+			withGroupsIfMatch(targetVersion),
+		),
+	)
+	assertGroupsStatus(t, response, fiber.StatusForbidden)
+}
+
 // TestGroupsUnknownPermissionReturnsValidationProblem verifies unknown permission checks fail safely.
 func TestGroupsUnknownPermissionReturnsValidationProblem(t *testing.T) {
 	steps := harness.NewSteps(t)

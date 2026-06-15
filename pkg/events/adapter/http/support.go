@@ -5,6 +5,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/module/groups/adapter/httpguard"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/pkg/api/authgate"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
@@ -22,6 +25,16 @@ func writeJSON(ctx *fiber.Ctx, status int, payload any) error {
 // currentUserID returns the authenticated user from the validated principal.
 func currentUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
 	return authgate.RequireUserID(ctx)
+}
+
+// requireEvent verifies one event administration permission.
+func requireEvent(ctx *fiber.Ctx, checker groupsport.Checker, action groupsdomain.Action, eventID uuid.UUID) error {
+	target := httpguard.All(action, groupsdomain.ObjectEvent)
+	if eventID != uuid.Nil {
+		target = httpguard.Object(action, groupsdomain.ObjectEvent, eventID)
+	}
+	_, err := httpguard.Require(ctx, checker, target)
+	return err
 }
 
 // idFromParam parses a UUID route parameter.

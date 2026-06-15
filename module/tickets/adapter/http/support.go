@@ -8,6 +8,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/module/groups/adapter/httpguard"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/module/tickets/domain"
 	"github.com/realmkit/rk-backend/module/tickets/port"
 	"github.com/realmkit/rk-backend/pkg/api/authgate"
@@ -97,6 +100,16 @@ func pageFromQuery(ctx *fiber.Ctx) (pagination.Page, error) {
 // currentUserID returns the current authenticated user from the validated principal.
 func currentUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
 	return authgate.RequireUserID(ctx)
+}
+
+// requireTicket verifies one ticket permission.
+func requireTicket(ctx *fiber.Ctx, checker groupsport.Checker, action groupsdomain.Action, id uuid.UUID) error {
+	target := httpguard.All(action, groupsdomain.ObjectTicket)
+	if id != uuid.Nil {
+		target = httpguard.Object(action, groupsdomain.ObjectTicket, id)
+	}
+	_, err := httpguard.Require(ctx, checker, target)
+	return err
 }
 
 // expectedVersion parses required optimistic concurrency state.

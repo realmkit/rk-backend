@@ -86,6 +86,9 @@ const (
 	// ObjectSystem is a system authorization object.
 	ObjectSystem ObjectType = "system"
 
+	// ObjectMetadata is a metadata administration authorization object.
+	ObjectMetadata ObjectType = "metadata"
+
 	// ObjectForum is a forum authorization object.
 	ObjectForum ObjectType = "forum"
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	forumsapp "github.com/realmkit/rk-backend/module/forums/application"
+	groupsapp "github.com/realmkit/rk-backend/module/groups/application"
 	punishmentsapp "github.com/realmkit/rk-backend/module/punishments/application"
 	ticketsdomain "github.com/realmkit/rk-backend/module/tickets/domain"
 	cronhttp "github.com/realmkit/rk-backend/pkg/cronjob/adapter/http"
@@ -212,19 +213,11 @@ func writeStatus(output io.Writer, status migrations.Status) {
 }
 
 // infrastructureOptions creates server options for shared infrastructure.
-func infrastructureOptions(
-	_ context.Context,
-	db *gorm.DB,
-	events eventsapp.Service,
-	hub *eventshttp.Hub,
-	forums forumsapp.Service,
-	punishments punishmentsapp.Service,
-	tickets ticketOperations,
-) ([]server.Option, error) {
+func infrastructureOptions(_ context.Context, db *gorm.DB, events eventsapp.Service, hub *eventshttp.Hub, groups groupsapp.Service, forums forumsapp.Service, punishments punishmentsapp.Service, tickets ticketOperations) ([]server.Option, error) {
 	cron := cronService(db, events, forums, punishments, tickets)
 	return []server.Option{
-		server.WithEvents(eventshttp.Services{Events: events, Hub: hub}),
-		server.WithCron(cronhttp.Services{Cron: cron}),
+		server.WithEvents(eventshttp.Services{Events: events, Hub: hub, Checker: groups}),
+		server.WithCron(cronhttp.Services{Cron: cron, Checker: groups}),
 	}, nil
 }
 

@@ -10,11 +10,14 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	metadatapostgres "github.com/realmkit/rk-backend/module/metadata/adapter/postgres"
 	"github.com/realmkit/rk-backend/module/metadata/application"
 	"github.com/realmkit/rk-backend/module/metadata/domain"
 	"github.com/realmkit/rk-backend/module/metadata/port"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/api/principal"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
 	"github.com/realmkit/rk-backend/pkg/orm"
 	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
@@ -451,10 +454,22 @@ func newTestApp(t *testing.T) *fiber.App {
 	})
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	app.Use(headers.Middleware())
+	app.Use(func(ctx *fiber.Ctx) error {
+		principal.Set(ctx, principal.Principal{UserID: uuid.New(), SubjectHash: "test"})
+		return ctx.Next()
+	})
 	v1 := app
 	v1.Use(headers.RequireJSON())
-	Register(v1, Services{Definitions: service, Values: service, Metaobjects: service})
+	Register(v1, Services{Definitions: service, Values: service, Metaobjects: service, Checker: allowChecker{}})
 	return app
+}
+
+// allowChecker permits route guards in HTTP adapter tests.
+type allowChecker struct{}
+
+// Check returns an allowed decision.
+func (allowChecker) Check(context.Context, groupsport.CheckRequest) (groupsport.Decision, error) {
+	return groupsport.Decision{Allowed: true, Reason: "test_allowed"}, nil
 }
 
 // createDefinition creates the default test definition.

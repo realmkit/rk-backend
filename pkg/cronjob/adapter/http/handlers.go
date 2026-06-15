@@ -1,9 +1,15 @@
 package http
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+)
 
 // listDefinitions lists cron jobs.
 func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
+	if err := requireCron(ctx, handler.services.Checker, groupsdomain.PermissionCronJobsView, ""); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -17,6 +23,9 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 
 // getDefinition returns one cron job.
 func (handler handler) getDefinition(ctx *fiber.Ctx) error {
+	if err := requireCron(ctx, handler.services.Checker, groupsdomain.PermissionCronJobsView, ctx.Params("job_key")); err != nil {
+		return err
+	}
 	definition, err := handler.services.Cron.GetDefinition(ctx.UserContext(), ctx.Params("job_key"))
 	if err != nil {
 		return handleError(ctx, err)
@@ -26,6 +35,9 @@ func (handler handler) getDefinition(ctx *fiber.Ctx) error {
 
 // listRuns lists run history.
 func (handler handler) listRuns(ctx *fiber.Ctx) error {
+	if err := requireCron(ctx, handler.services.Checker, groupsdomain.PermissionCronJobsView, ctx.Params("job_key")); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -39,6 +51,9 @@ func (handler handler) listRuns(ctx *fiber.Ctx) error {
 
 // runNow manually runs one job.
 func (handler handler) runNow(ctx *fiber.Ctx) error {
+	if err := requireCron(ctx, handler.services.Checker, groupsdomain.PermissionCronJobsRun, ctx.Params("job_key")); err != nil {
+		return err
+	}
 	result, err := handler.services.Cron.Trigger(ctx.UserContext(), ctx.Params("job_key"))
 	if err != nil {
 		return handleError(ctx, err)
@@ -48,6 +63,9 @@ func (handler handler) runNow(ctx *fiber.Ctx) error {
 
 // pause disables one job.
 func (handler handler) pause(ctx *fiber.Ctx) error {
+	if err := requireCron(ctx, handler.services.Checker, groupsdomain.PermissionCronJobsManage, ctx.Params("job_key")); err != nil {
+		return err
+	}
 	version, err := expectedVersion(ctx)
 	if err != nil {
 		return err
@@ -60,6 +78,9 @@ func (handler handler) pause(ctx *fiber.Ctx) error {
 
 // resume enables one job.
 func (handler handler) resume(ctx *fiber.Ctx) error {
+	if err := requireCron(ctx, handler.services.Checker, groupsdomain.PermissionCronJobsManage, ctx.Params("job_key")); err != nil {
+		return err
+	}
 	version, err := expectedVersion(ctx)
 	if err != nil {
 		return err
@@ -72,6 +93,9 @@ func (handler handler) resume(ctx *fiber.Ctx) error {
 
 // repairLocks repairs stale locks.
 func (handler handler) repairLocks(ctx *fiber.Ctx) error {
+	if err := requireCron(ctx, handler.services.Checker, groupsdomain.PermissionCronJobsRepair, ""); err != nil {
+		return err
+	}
 	count, err := handler.services.Cron.RepairLocks(ctx.UserContext())
 	if err != nil {
 		return handleError(ctx, err)

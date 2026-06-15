@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/punishments/domain"
 	"github.com/realmkit/rk-backend/module/punishments/port"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
@@ -29,7 +30,7 @@ type definitionRequest struct {
 }
 
 func (handler handler) createDefinition(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsManageDefinitions, uuid.Nil); err != nil {
 		return err
 	}
 	if err := requireIdempotency(ctx); err != nil {
@@ -48,7 +49,7 @@ func (handler handler) createDefinition(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsManageDefinitions, uuid.Nil); err != nil {
 		return err
 	}
 	page, err := pageFromQuery(ctx)
@@ -71,11 +72,11 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) getDefinition(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
+		return err
+	}
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsManageDefinitions, id); err != nil {
 		return err
 	}
 	definition, err := handler.services.Punishments.GetDefinition(ctx.UserContext(), id)
@@ -87,11 +88,11 @@ func (handler handler) getDefinition(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
+		return err
+	}
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsManageDefinitions, id); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)
@@ -111,11 +112,11 @@ func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) deleteDefinition(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
+		return err
+	}
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsManageDefinitions, id); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)
@@ -129,14 +130,14 @@ func (handler handler) deleteDefinition(ctx *fiber.Ctx) error {
 }
 
 func (handler handler) reorderActions(ctx *fiber.Ctx) error {
-	if _, err := currentUserID(ctx); err != nil {
-		return err
-	}
 	if err := requireIdempotency(ctx); err != nil {
 		return err
 	}
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
+		return err
+	}
+	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsManageDefinitions, id); err != nil {
 		return err
 	}
 	var request struct {

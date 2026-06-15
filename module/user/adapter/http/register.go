@@ -13,6 +13,9 @@ type Services struct {
 
 	// Groups returns group summaries when available.
 	Groups groupsport.MembershipService
+
+	// Checker checks group-backed permissions.
+	Checker groupsport.Checker
 }
 
 // Register registers user routes on router.

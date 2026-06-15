@@ -84,6 +84,7 @@ func newTicketsFixture(t *testing.T) ticketsFixture {
 				Tickets:      service,
 				Conversation: service,
 				Operations:   service,
+				Checker:      harness.AllowChecker{},
 			}),
 		),
 	)

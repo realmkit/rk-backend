@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/module/punishments/domain"
 	"github.com/realmkit/rk-backend/module/punishments/port"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
@@ -142,8 +143,16 @@ func newHTTPTestRequest(t *testing.T, method string, path string, body string) *
 func newTestApp(service httpService) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	useTestPrincipal(app)
-	Register(app, Services{Punishments: service})
+	Register(app, Services{Punishments: service, Checker: allowChecker{}})
 	return app
+}
+
+// allowChecker permits route guards in HTTP adapter tests.
+type allowChecker struct{}
+
+// Check returns an allowed decision.
+func (allowChecker) Check(context.Context, groupsport.CheckRequest) (groupsport.Decision, error) {
+	return groupsport.Decision{Allowed: true, Reason: "test_allowed"}, nil
 }
 
 type httpService struct {

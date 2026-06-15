@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/realmkit/rk-backend/e2e/harness"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
 	cronhttp "github.com/realmkit/rk-backend/pkg/cronjob/adapter/http"
 	cronpostgres "github.com/realmkit/rk-backend/pkg/cronjob/adapter/postgres"
 	cronapp "github.com/realmkit/rk-backend/pkg/cronjob/application"
@@ -37,12 +38,17 @@ func TestCronjobManualRunThroughHTTP(t *testing.T) {
 	steps.Log("start server with cron routes")
 	ecosystem := harness.New(
 		t,
+		harness.WithDevelopment(true),
 		harness.WithDatabase(database),
-		harness.WithServerOptions(server.WithCron(cronhttp.Services{Cron: service})),
+		harness.WithServerOptions(
+			server.WithAuth(auth.Config{DevelopmentBypass: true}, harness.DevProvisioner{}),
+			server.WithCron(cronhttp.Services{Cron: service, Checker: harness.AllowChecker{}}),
+		),
 	)
 
 	steps.Log("trigger cron job through HTTP")
 	request := harness.JSONRequest(fiber.MethodPost, "/cronjobs/e2e.job/run", "")
+	request.Header.Set(auth.DevUserIDHeader, "00000000-0000-0000-0000-00000000e004")
 	response := ecosystem.Test(t, request)
 	body := harness.ResponseBody(t, response)
 	if response.StatusCode != fiber.StatusOK {
@@ -50,7 +56,9 @@ func TestCronjobManualRunThroughHTTP(t *testing.T) {
 	}
 
 	steps.Log("verify run history through HTTP")
-	response = ecosystem.Test(t, harness.JSONRequest(fiber.MethodGet, "/cronjobs/e2e.job/runs?page_size=5", ""))
+	request = harness.JSONRequest(fiber.MethodGet, "/cronjobs/e2e.job/runs?page_size=5", "")
+	request.Header.Set(auth.DevUserIDHeader, "00000000-0000-0000-0000-00000000e004")
+	response = ecosystem.Test(t, request)
 	body = harness.ResponseBody(t, response)
 	if response.StatusCode != fiber.StatusOK || !strings.Contains(body, "processed_count") {
 		t.Fatalf("runs response status=%d body=%q, want processed history", response.StatusCode, body)

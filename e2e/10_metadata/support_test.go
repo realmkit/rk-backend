@@ -15,6 +15,7 @@ import (
 	metadatapostgres "github.com/realmkit/rk-backend/module/metadata/adapter/postgres"
 	metadataapplication "github.com/realmkit/rk-backend/module/metadata/application"
 	"github.com/realmkit/rk-backend/module/metadata/domain"
+	"github.com/realmkit/rk-backend/pkg/api/auth"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	eventtesting "github.com/realmkit/rk-backend/pkg/events/testing"
 	"github.com/realmkit/rk-backend/pkg/server"
@@ -25,6 +26,7 @@ type metadataFixture struct {
 	ecosystem *harness.Ecosystem
 	events    *eventtesting.PublisherRecorder
 	owners    *knownOwners
+	actorID   uuid.UUID
 }
 
 // knownOwners is an e2e owner and reference resolver.
@@ -48,16 +50,22 @@ func newMetadataFixture(t *testing.T) metadataFixture {
 		References:            owners,
 		Events:                events,
 	})
+	actorID := uuid.MustParse("00000000-0000-0000-0000-00000000e010")
 	ecosystem := harness.New(
 		t,
+		harness.WithDevelopment(true),
 		harness.WithDatabase(database),
-		harness.WithServerOptions(server.WithMetadata(metadatahttp.Services{
-			Definitions: service,
-			Values:      service,
-			Metaobjects: service,
-		})),
+		harness.WithServerOptions(
+			server.WithAuth(auth.Config{DevelopmentBypass: true}, harness.DevProvisioner{}),
+			server.WithMetadata(metadatahttp.Services{
+				Definitions: service,
+				Values:      service,
+				Metaobjects: service,
+				Checker:     harness.AllowChecker{},
+			}),
+		),
 	)
-	return metadataFixture{ecosystem: ecosystem, events: events, owners: owners}
+	return metadataFixture{ecosystem: ecosystem, events: events, owners: owners, actorID: actorID}
 }
 
 // newKnownOwners creates an empty owner resolver.
@@ -106,6 +114,7 @@ func (fixture metadataFixture) doJSON(
 ) *http.Response {
 	t.Helper()
 	request := harness.JSONRequest(method, path, body)
+	request.Header.Set(auth.DevUserIDHeader, fixture.actorID.String())
 	for _, fn := range configure {
 		fn(request)
 	}

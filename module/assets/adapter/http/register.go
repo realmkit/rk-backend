@@ -3,12 +3,16 @@ package http
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/realmkit/rk-backend/module/assets/port"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 )
 
 // Services contains assets application services used by handlers.
 type Services struct {
 	// Assets manages assets.
 	Assets port.Service
+
+	// Checker checks group-backed permissions.
+	Checker groupsport.Checker
 }
 
 // Register registers assets routes on router.

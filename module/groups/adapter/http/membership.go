@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/module/groups/adapter/httpguard"
 	"github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/groups/port"
 	userdomain "github.com/realmkit/rk-backend/module/user/domain"
@@ -57,6 +58,13 @@ func (handler handler) listGroupMembers(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.Object(domain.PermissionGroupsReadMembers, domain.ObjectGroup, groupID),
+	); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -79,6 +87,13 @@ func (handler handler) assignMembership(ctx *fiber.Ctx) error {
 	}
 	groupID, userID, err := membershipIDs(ctx)
 	if err != nil {
+		return err
+	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.Object(domain.PermissionGroupsAssignMember, domain.ObjectGroup, groupID),
+	); err != nil {
 		return err
 	}
 	var request membershipRequest
@@ -105,16 +120,22 @@ func (handler handler) removeMembership(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.Object(domain.PermissionGroupsAssignMember, domain.ObjectGroup, groupID),
+	); err != nil {
+		return err
+	}
 	version, err := expectedVersion(ctx)
 	if err != nil {
 		return err
 	}
-	command := port.RemoveMembershipCommand{
+	if err := handler.services.Memberships.Remove(ctx.UserContext(), port.RemoveMembershipCommand{
 		GroupID:         groupID,
 		UserID:          userID,
 		ExpectedVersion: &version,
-	}
-	if err := handler.services.Memberships.Remove(ctx.UserContext(), command); err != nil {
+	}); err != nil {
 		return handleError(ctx, err)
 	}
 	return writeNoContent(ctx)
@@ -124,6 +145,14 @@ func (handler handler) removeMembership(ctx *fiber.Ctx) error {
 func (handler handler) listUserGroups(ctx *fiber.Ctx) error {
 	userID, err := idFromParam(ctx, "user_id")
 	if err != nil {
+		return err
+	}
+	if _, err := httpguard.RequireSelfOr(
+		ctx,
+		handler.services.Checker,
+		userID,
+		httpguard.All(domain.PermissionGroupsReadMembers, domain.ObjectGroup),
+	); err != nil {
 		return err
 	}
 	return handler.writeUserGroups(ctx, userID)
@@ -147,19 +176,6 @@ func (handler handler) writeUserGroups(ctx *fiber.Ctx, userID uuid.UUID) error {
 	return writeJSON(ctx, fiber.StatusOK, groups)
 }
 
-// membershipIDs parses membership path IDs.
-func membershipIDs(ctx *fiber.Ctx) (uuid.UUID, uuid.UUID, error) {
-	groupID, err := idFromParam(ctx, "group_id")
-	if err != nil {
-		return uuid.Nil, uuid.Nil, err
-	}
-	userID, err := idFromParam(ctx, "user_id")
-	if err != nil {
-		return uuid.Nil, uuid.Nil, err
-	}
-	return groupID, userID, nil
-}
-
 // membershipFromRequest maps HTTP request to membership.
 func membershipFromRequest(groupID uuid.UUID, userID uuid.UUID, request membershipRequest) domain.Membership {
 	return domain.Membership{
@@ -174,10 +190,7 @@ func membershipFromRequest(groupID uuid.UUID, userID uuid.UUID, request membersh
 }
 
 // membershipItems maps memberships and enriches local user summaries when available.
-func (handler handler) membershipItems(
-	ctx context.Context,
-	memberships []domain.Membership,
-) ([]membershipListItem, error) {
+func (handler handler) membershipItems(ctx context.Context, memberships []domain.Membership) ([]membershipListItem, error) {
 	items := make([]membershipListItem, 0, len(memberships))
 	summaries, err := handler.membershipUserSummaries(ctx, memberships)
 	if err != nil {
@@ -195,10 +208,7 @@ func (handler handler) membershipItems(
 }
 
 // membershipUserSummaries loads user summaries for one membership page.
-func (handler handler) membershipUserSummaries(
-	ctx context.Context,
-	memberships []domain.Membership,
-) (map[uuid.UUID]userport.UserSummary, error) {
+func (handler handler) membershipUserSummaries(ctx context.Context, memberships []domain.Membership) (map[uuid.UUID]userport.UserSummary, error) {
 	if handler.services.Users == nil || len(memberships) == 0 {
 		return map[uuid.UUID]userport.UserSummary{}, nil
 	}

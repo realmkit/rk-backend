@@ -3,12 +3,17 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/module/punishments/port"
 )
 
 // Services contains punishment HTTP dependencies.
 type Services struct {
+	// Punishments manages punishment definitions and cases.
 	Punishments port.Service
+
+	// Checker checks group-backed permissions.
+	Checker groupsport.Checker
 }
 
 // Register registers punishment routes.

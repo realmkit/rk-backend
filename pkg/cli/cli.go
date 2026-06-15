@@ -200,7 +200,7 @@ func runtimeServerOptions(
 	ticketService := ticketsService(db, client, assetService, punishmentService, eventService)
 	userService := usersService(db, cfg, eventService)
 	metadataService := metadataService(db, eventService)
-	infraOptions, err := infrastructureOptions(ctx, db, eventService, eventHub, forumService, punishmentService, ticketService)
+	infraOptions, err := infrastructureOptions(ctx, db, eventService, eventHub, groupService, forumService, punishmentService, ticketService)
 	if err != nil {
 		closeDatabase(zap.NewNop(), deps.closePostgres, db)
 		deps.closeRedis(client)
@@ -210,12 +210,12 @@ func runtimeServerOptions(
 		server.WithIdempotencyStore(idempotency.NewRedisStore(client)),
 		server.WithRateLimitStore(ratelimit.NewRedisStore(client)),
 		server.WithAuth(cfg.Auth, userService),
-		server.WithAssets(assetshttpServices(assetService)),
+		server.WithAssets(assetshttpServices(assetService, groupService)),
 		server.WithGroups(groupshttpServices(groupService, userService)),
 		server.WithForums(forumshttpServices(forumService)),
-		server.WithMetadata(metadatahttpServices(metadataService)),
-		server.WithPunishments(punishmentshttpServices(punishmentService)),
-		server.WithTickets(ticketshttpServices(ticketService)),
+		server.WithMetadata(metadatahttpServices(metadataService, groupService)),
+		server.WithPunishments(punishmentshttpServices(punishmentService, groupService)),
+		server.WithTickets(ticketshttpServices(ticketService, groupService)),
 		server.WithUsers(usershttpServices(userService, groupService)),
 	)
 	options = append(options, infraOptions...)

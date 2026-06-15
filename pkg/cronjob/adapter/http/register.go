@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/gofiber/fiber/v2"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/pkg/cronjob/application"
 )
 
@@ -9,6 +10,9 @@ import (
 type Services struct {
 	// Cron manages job definitions and runs.
 	Cron application.Service
+
+	// Checker checks group-backed permissions.
+	Checker groupsport.Checker
 }
 
 // Register registers cron job routes.

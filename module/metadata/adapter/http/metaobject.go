@@ -34,6 +34,9 @@ func (handler handler) createMetaobjectDefinition(ctx *fiber.Ctx) error {
 	if err := requireIdempotency(ctx); err != nil {
 		return err
 	}
+	if err := requireMetadata(ctx, handler.services.Checker, definitionManageTarget()); err != nil {
+		return err
+	}
 	var request metaobjectDefinitionRequest
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
@@ -50,6 +53,9 @@ func (handler handler) createMetaobjectDefinition(ctx *fiber.Ctx) error {
 
 // listMetaobjectDefinitions handles metaobject definition listing.
 func (handler handler) listMetaobjectDefinitions(ctx *fiber.Ctx) error {
+	if err := requireMetadata(ctx, handler.services.Checker, definitionReadTarget()); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -75,6 +81,9 @@ func (handler handler) getMetaobjectDefinition(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if err := requireMetadata(ctx, handler.services.Checker, definitionReadTarget()); err != nil {
+		return err
+	}
 	definition, err := handler.services.Metaobjects.GetMetaobjectDefinition(ctx.UserContext(), port.GetMetaobjectDefinitionQuery{ID: id})
 	if err != nil {
 		return handleError(ctx, err)
@@ -87,6 +96,9 @@ func (handler handler) getMetaobjectDefinition(ctx *fiber.Ctx) error {
 func (handler handler) updateMetaobjectDefinition(ctx *fiber.Ctx) error {
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
+		return err
+	}
+	if err := requireMetadata(ctx, handler.services.Checker, definitionManageTarget()); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)
@@ -116,6 +128,9 @@ func (handler handler) updateMetaobjectDefinition(ctx *fiber.Ctx) error {
 func (handler handler) archiveMetaobjectDefinition(ctx *fiber.Ctx) error {
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
+		return err
+	}
+	if err := requireMetadata(ctx, handler.services.Checker, definitionManageTarget()); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)

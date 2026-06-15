@@ -79,6 +79,19 @@ func idFromParam(ctx *fiber.Ctx, name string) (uuid.UUID, error) {
 	return id, nil
 }
 
+// membershipIDs parses membership path IDs.
+func membershipIDs(ctx *fiber.Ctx) (uuid.UUID, uuid.UUID, error) {
+	groupID, err := idFromParam(ctx, "group_id")
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+	userID, err := idFromParam(ctx, "user_id")
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+	return groupID, userID, nil
+}
+
 // pageFromQuery parses pagination query parameters.
 func pageFromQuery(ctx *fiber.Ctx) (pagination.Page, error) {
 	page, err := pagination.New(pagination.Request{Limit: ctx.QueryInt("page_size"), Cursor: ctx.Query("page_token")})

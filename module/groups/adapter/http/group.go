@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/module/groups/adapter/httpguard"
 	"github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
@@ -37,6 +38,13 @@ func (handler handler) createGroup(ctx *fiber.Ctx) error {
 	if err := requireIdempotency(ctx); err != nil {
 		return err
 	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.All(domain.PermissionGroupsCreate, domain.ObjectGroup),
+	); err != nil {
+		return err
+	}
 	var request groupRequest
 	if err := decodeJSON(ctx, &request); err != nil {
 		return err
@@ -51,6 +59,13 @@ func (handler handler) createGroup(ctx *fiber.Ctx) error {
 
 // listGroups lists groups.
 func (handler handler) listGroups(ctx *fiber.Ctx) error {
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.All(domain.PermissionGroupsRead, domain.ObjectGroup),
+	); err != nil {
+		return err
+	}
 	page, err := pageFromQuery(ctx)
 	if err != nil {
 		return err
@@ -78,6 +93,13 @@ func (handler handler) getGroup(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.Object(domain.PermissionGroupsRead, domain.ObjectGroup, id),
+	); err != nil {
+		return err
+	}
 	group, err := handler.services.Groups.Get(ctx.UserContext(), id)
 	if err != nil {
 		return handleError(ctx, err)
@@ -93,6 +115,13 @@ func (handler handler) updateGroup(ctx *fiber.Ctx) error {
 	}
 	id, err := idFromParam(ctx, "group_id")
 	if err != nil {
+		return err
+	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.Object(domain.PermissionGroupsUpdate, domain.ObjectGroup, id),
+	); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)
@@ -120,6 +149,13 @@ func (handler handler) deleteGroup(ctx *fiber.Ctx) error {
 	}
 	id, err := idFromParam(ctx, "group_id")
 	if err != nil {
+		return err
+	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.Object(domain.PermissionGroupsDelete, domain.ObjectGroup, id),
+	); err != nil {
 		return err
 	}
 	version, err := expectedVersion(ctx)

@@ -8,6 +8,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/realmkit/rk-backend/module/groups/adapter/httpguard"
+	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/module/metadata/domain"
 	"github.com/realmkit/rk-backend/module/metadata/port"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
@@ -149,4 +152,46 @@ func activeFromPointer(active *bool) bool {
 		return true
 	}
 	return *active
+}
+
+// requireMetadata verifies one metadata permission target.
+func requireMetadata(ctx *fiber.Ctx, checker groupsport.Checker, target httpguard.Target) error {
+	_, err := httpguard.Require(ctx, checker, target)
+	return err
+}
+
+// definitionReadTarget returns the metadata definition read target.
+func definitionReadTarget() httpguard.Target {
+	return httpguard.All(groupsdomain.PermissionMetadataReadDefinitions, groupsdomain.ObjectMetadata)
+}
+
+// definitionManageTarget returns the metadata definition management target.
+func definitionManageTarget() httpguard.Target {
+	return httpguard.All(groupsdomain.PermissionMetadataManageDefinitions, groupsdomain.ObjectMetadata)
+}
+
+// entryReadTarget returns the metaobject entry read target.
+func entryReadTarget() httpguard.Target {
+	return httpguard.All(groupsdomain.PermissionMetadataReadEntries, groupsdomain.ObjectMetadata)
+}
+
+// entryWriteTarget returns the metaobject entry write target.
+func entryWriteTarget() httpguard.Target {
+	return httpguard.All(groupsdomain.PermissionMetadataWriteEntries, groupsdomain.ObjectMetadata)
+}
+
+// ownerReadTarget returns a metadata owner read target.
+func ownerReadTarget(owner port.OwnerRef) httpguard.Target {
+	if owner.Type == domain.OwnerUser {
+		return httpguard.Object(groupsdomain.PermissionMetadataReadUser, groupsdomain.ObjectUser, owner.ID)
+	}
+	return httpguard.All(groupsdomain.PermissionMetadataReadValues, groupsdomain.ObjectMetadata)
+}
+
+// ownerWriteTarget returns a metadata owner write target.
+func ownerWriteTarget(owner port.OwnerRef) httpguard.Target {
+	if owner.Type == domain.OwnerUser {
+		return httpguard.Object(groupsdomain.PermissionMetadataWriteUser, groupsdomain.ObjectUser, owner.ID)
+	}
+	return httpguard.All(groupsdomain.PermissionMetadataWriteValues, groupsdomain.ObjectMetadata)
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/assets/domain"
 	"github.com/realmkit/rk-backend/module/assets/port"
+	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
 	"github.com/realmkit/rk-backend/pkg/api/problem"
 	"github.com/realmkit/rk-backend/pkg/pagination"
@@ -197,8 +198,16 @@ func TestPrivateAssetRoutesRequireUser(t *testing.T) {
 func testApp(service port.Service) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
 	useTestPrincipal(app)
-	Register(app, Services{Assets: service})
+	Register(app, Services{Assets: service, Checker: allowChecker{}})
 	return app
+}
+
+// allowChecker permits route guards in HTTP adapter tests.
+type allowChecker struct{}
+
+// Check returns an allowed decision.
+func (allowChecker) Check(context.Context, groupsport.CheckRequest) (groupsport.Decision, error) {
+	return groupsport.Decision{Allowed: true, Reason: "test_allowed"}, nil
 }
 
 // httptestRequest creates a JSON request.
