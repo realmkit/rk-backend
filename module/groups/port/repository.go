@@ -49,12 +49,12 @@ type MembershipRepository interface {
 
 // PermissionRepository stores permission grants.
 type PermissionRepository interface {
-	// CreateGrant stores a permission grant.
-	CreateGrant(ctx context.Context, grant domain.PermissionGrant) (domain.PermissionGrant, error)
+	// CreateGrant stores or assigns a global permission grant to a group.
+	CreateGrant(ctx context.Context, groupID uuid.UUID, grant domain.PermissionGrant) (domain.PermissionGrant, error)
 
 	// ListGrants returns active permission grants.
 	ListGrants(ctx context.Context, filter PermissionGrantFilter, page pagination.Page) (pagination.Result[domain.PermissionGrant], error)
 
-	// DeleteGrant soft deletes one permission grant.
-	DeleteGrant(ctx context.Context, id uuid.UUID) error
+	// DeleteGrant removes one global permission grant from a group.
+	DeleteGrant(ctx context.Context, groupID uuid.UUID, id uuid.UUID) error
 }

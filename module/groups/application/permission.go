@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/groups/domain"
@@ -45,9 +44,11 @@ func (service Service) checkGrants(ctx context.Context, request port.CheckReques
 	grants, err := service.permissions.ListGrants(
 		ctx,
 		port.PermissionGrantFilter{
-			Action:    request.Action,
-			ScopeType: request.ScopeType,
-			ScopeID:   request.ScopeID,
+			ActorUserID:      request.ActorUserID,
+			Action:           request.Action,
+			ScopeType:        request.ScopeType,
+			ScopeID:          request.ScopeID,
+			IncludeAllScopes: true,
 		},
 		pagination.Page{Limit: 100},
 	)
@@ -55,64 +56,15 @@ func (service Service) checkGrants(ctx context.Context, request port.CheckReques
 		return port.Decision{}, err
 	}
 	for _, grant := range grants.Items {
-		ok, err := service.subjectMatches(ctx, request.ActorUserID, grant)
-		if err != nil {
-			return port.Decision{}, err
-		}
-		if ok {
-			return port.Decision{
-				Allowed:            true,
-				Reason:             "matched_grant",
-				MatchedGrantID:     grant.ID,
-				MatchedSubjectType: grant.SubjectType,
-				MatchedSubjectID:   grant.SubjectID,
-				MatchedScopeType:   grant.ScopeType,
-				MatchedScopeID:     grant.ScopeID,
-			}, nil
-		}
+		return port.Decision{
+			Allowed:          true,
+			Reason:           "matched_grant",
+			MatchedGrantID:   grant.ID,
+			MatchedScopeType: grant.ScopeType,
+			MatchedScopeID:   grant.ScopeID,
+		}, nil
 	}
 	return port.Decision{Allowed: false, Reason: "no_matching_grant"}, nil
-}
-
-// subjectMatches reports whether actor matches grant subject.
-func (service Service) subjectMatches(ctx context.Context, actorUserID uuid.UUID, grant domain.PermissionGrant) (bool, error) {
-	switch grant.SubjectType {
-	case domain.SubjectPublic:
-		return grant.SubjectID == domain.PublicSubjectID(), nil
-	case domain.SubjectAuthenticated:
-		return actorUserID != uuid.Nil && grant.SubjectID == domain.AuthenticatedSubjectID(), nil
-	case domain.SubjectUser:
-		return actorUserID != uuid.Nil && grant.SubjectID == actorUserID, nil
-	case domain.SubjectGroup:
-		if actorUserID == uuid.Nil {
-			return false, nil
-		}
-		return service.activeGroupMember(ctx, grant.SubjectID, actorUserID)
-	default:
-		return false, nil
-	}
-}
-
-// activeGroupMember reports whether user is active in enabled group.
-func (service Service) activeGroupMember(ctx context.Context, groupID uuid.UUID, userID uuid.UUID) (bool, error) {
-	group, err := service.groups.FindByID(ctx, groupID)
-	if errors.Is(err, port.ErrNotFound) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	if !group.GrantsPermissions() {
-		return false, nil
-	}
-	membership, err := service.memberships.Find(ctx, groupID, userID)
-	if errors.Is(err, port.ErrNotFound) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return membership.ActiveAt(service.clock()), nil
 }
 
 // Ensure Service implements service contracts.

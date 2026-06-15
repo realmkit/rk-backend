@@ -63,6 +63,7 @@ func TestRunnerAppliesSeedsIdempotently(t *testing.T) {
 	}
 	assertCount(t, db, "groups", "key = ?", "administrator")
 	assertCount(t, db, "permission_grants", "action = ?", "groups.manage_permissions")
+	assertCount(t, db, "forum_permission_grants", "id = ?", "00000000-0000-0000-0000-000000000401")
 	assertCount(t, db, "forums", "key = ?", "announcements")
 }
 

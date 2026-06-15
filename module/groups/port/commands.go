@@ -53,12 +53,18 @@ type RemoveMembershipCommand struct {
 
 // CreatePermissionGrantCommand creates a permission grant.
 type CreatePermissionGrantCommand struct {
+	// GroupID is the group receiving the global permission.
+	GroupID uuid.UUID
+
 	// Grant is the grant to create.
 	Grant domain.PermissionGrant
 }
 
 // DeletePermissionGrantCommand deletes a permission grant.
 type DeletePermissionGrantCommand struct {
+	// GroupID is the group losing the global permission.
+	GroupID uuid.UUID
+
 	// ID is the grant identifier.
 	ID uuid.UUID
 }
@@ -102,11 +108,11 @@ func AllowedGroupSorts() []search.SortOption {
 
 // PermissionGrantFilter filters permission grants.
 type PermissionGrantFilter struct {
-	// SubjectType filters by subject type.
-	SubjectType domain.SubjectType
+	// GroupID filters by assigned group.
+	GroupID uuid.UUID
 
-	// SubjectID filters by subject identifier.
-	SubjectID uuid.UUID
+	// ActorUserID filters by active memberships for permission checks.
+	ActorUserID uuid.UUID
 
 	// Action filters by permission action.
 	Action domain.Action
@@ -116,6 +122,9 @@ type PermissionGrantFilter struct {
 
 	// ScopeID filters by resource identifier.
 	ScopeID uuid.UUID
+
+	// IncludeAllScopes includes grants that apply to all resources of the scope type.
+	IncludeAllScopes bool
 }
 
 // CheckRequest requests a permission decision.
@@ -146,12 +155,6 @@ type Decision struct {
 
 	// MatchedGrantID is the grant that allowed the action.
 	MatchedGrantID uuid.UUID `json:"matched_grant_id,omitempty"`
-
-	// MatchedSubjectType is the subject type that allowed the action.
-	MatchedSubjectType domain.SubjectType `json:"matched_subject_type,omitempty"`
-
-	// MatchedSubjectID is the subject identifier that allowed the action.
-	MatchedSubjectID uuid.UUID `json:"matched_subject_id,omitempty"`
 
 	// MatchedScopeType is the resource type that allowed the action.
 	MatchedScopeType domain.ScopeType `json:"matched_scope_type,omitempty"`

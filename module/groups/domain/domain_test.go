@@ -101,50 +101,31 @@ func TestDisplayGroupTieBreaksByCreatedAtThenKey(t *testing.T) {
 	}
 }
 
-// TestPermissionGrantValidateRejectsMissingIdentifiers verifies grant validation.
-func TestPermissionGrantValidateRejectsMissingIdentifiers(t *testing.T) {
-	err := PermissionGrant{SubjectType: SubjectUser, Action: "groups.update", ScopeType: ObjectGroup}.Validate()
+// TestPermissionGrantValidateRejectsMissingID verifies grant validation.
+func TestPermissionGrantValidateRejectsMissingID(t *testing.T) {
+	err := PermissionGrant{Action: "groups.update", ScopeType: ObjectGroup}.Validate()
 	var validation ValidationError
 	if !errors.As(err, &validation) {
 		t.Fatalf("Validate() error = %v, want ValidationError", err)
 	}
-	if len(validation.Violations) != 3 {
-		t.Fatalf("Violations = %d, want 3", len(validation.Violations))
+	if len(validation.Violations) != 1 {
+		t.Fatalf("Violations = %d, want 1", len(validation.Violations))
 	}
 }
 
-// TestPermissionGrantValidateAcceptsPublicSubject verifies public grant validation.
-func TestPermissionGrantValidateAcceptsPublicSubject(t *testing.T) {
+// TestPermissionGrantValidateAcceptsAllScopeGrant verifies wildcard scopes are valid.
+func TestPermissionGrantValidateAcceptsAllScopeGrant(t *testing.T) {
 	grant := PermissionGrant{
-		ID:          uuid.New(),
-		SubjectType: SubjectPublic,
-		SubjectID:   PublicSubjectID(),
-		Action:      PermissionForumsView,
-		ScopeType:   ObjectForum,
-		ScopeID:     uuid.New(),
+		ID:        uuid.New(),
+		Action:    "groups.manage_permissions",
+		ScopeType: ObjectGroup,
+		ScopeID:   AllScopeID(),
 	}
 	if err := grant.Validate(); err != nil {
 		t.Fatalf("Validate() error = %v", err)
 	}
-}
-
-// TestPermissionGrantValidateRejectsWrongReservedSubjectID verifies reserved subject IDs.
-func TestPermissionGrantValidateRejectsWrongReservedSubjectID(t *testing.T) {
-	grant := PermissionGrant{
-		ID:          uuid.New(),
-		SubjectType: SubjectAuthenticated,
-		SubjectID:   uuid.New(),
-		Action:      PermissionForumsView,
-		ScopeType:   ObjectForum,
-		ScopeID:     uuid.New(),
-	}
-	err := grant.Validate()
-	var validation ValidationError
-	if !errors.As(err, &validation) {
-		t.Fatalf("Validate() error = %v, want ValidationError", err)
-	}
-	if len(validation.Violations) == 0 {
-		t.Fatalf("Violations = 0, want reserved subject violation")
+	if !grant.AppliesToAllScopes() {
+		t.Fatalf("AppliesToAllScopes() = false, want true")
 	}
 }
 

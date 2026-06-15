@@ -32,7 +32,7 @@ func (authorizer VisibilityAuthorizer) SimulateForumPermission(
 	}
 	var grants []permissionGrantRow
 	err = authorizer.store.DB(ctx).
-		Table("permission_grants").
+		Table("forum_permission_grants").
 		Select("scope_id, action, subject_type, subject_id").
 		Where(
 			"scope_type = ? AND scope_id = ? AND action IN ? AND deleted_at IS NULL",
@@ -44,12 +44,28 @@ func (authorizer VisibilityAuthorizer) SimulateForumPermission(
 	if err != nil {
 		return forumsdomain.ForumPermissionSimulationResult{}, err
 	}
-	memberships, err := authorizer.activeMemberships(ctx, request.ActorUserID, groupSubjectIDs(grants))
+	groupGrants, err := authorizer.groupPermissionGrants(ctx, []uuid.UUID{forumID}, actions)
+	if err != nil {
+		return forumsdomain.ForumPermissionSimulationResult{}, err
+	}
+	memberships, err := authorizer.activeMemberships(
+		ctx,
+		request.ActorUserID,
+		grantGroupIDs(grants, groupGrants),
+	)
 	if err != nil {
 		return forumsdomain.ForumPermissionSimulationResult{}, err
 	}
 	for _, grant := range grants {
 		if grantMatchesActor(grant, request.ActorUserID, memberships) {
+			result.Allowed = true
+			result.Reason = "matched_grant"
+			result.MatchedAction = grant.Action
+			return result, nil
+		}
+	}
+	for _, grant := range groupGrants {
+		if groupGrantMatchesActor(grant, memberships) {
 			result.Allowed = true
 			result.Reason = "matched_grant"
 			result.MatchedAction = grant.Action

@@ -17,7 +17,7 @@ func (authorizer VisibilityAuthorizer) ForumPermissionSettings(
 	settings := emptyPermissionSettings(forumID)
 	var grants []permissionGrantRow
 	err := authorizer.store.DB(ctx).
-		Table("permission_grants").
+		Table("forum_permission_grants").
 		Select("scope_id, action, subject_type, subject_id").
 		Where(
 			"scope_type = ? AND scope_id = ? AND action IN ? AND deleted_at IS NULL",
@@ -51,7 +51,7 @@ func (authorizer VisibilityAuthorizer) UpdateForumPermissionSettings(
 	}
 	now := time.Now().UTC()
 	err := authorizer.store.DB(ctx).
-		Table("permission_grants").
+		Table("forum_permission_grants").
 		Where(
 			"scope_type = ? AND scope_id = ? AND action IN ? AND deleted_at IS NULL",
 			groupsdomain.ObjectForum,
@@ -63,7 +63,7 @@ func (authorizer VisibilityAuthorizer) UpdateForumPermissionSettings(
 		return err
 	}
 	for _, grant := range rowsFromPermissionSettings(settings, actorUserID, now) {
-		if err := authorizer.store.DB(ctx).Table("permission_grants").Create(&grant).Error; err != nil {
+		if err := authorizer.store.DB(ctx).Table("forum_permission_grants").Create(&grant).Error; err != nil {
 			return err
 		}
 	}

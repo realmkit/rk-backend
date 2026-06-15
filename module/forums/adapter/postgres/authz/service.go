@@ -118,7 +118,7 @@ func (authorizer VisibilityAuthorizer) allowedForums(
 	}
 	var grants []permissionGrantRow
 	err := authorizer.store.DB(ctx).
-		Table("permission_grants").
+		Table("forum_permission_grants").
 		Select("scope_id, action, subject_type, subject_id").
 		Where(
 			"scope_type = ? AND scope_id IN ? AND action IN ? AND deleted_at IS NULL",
@@ -130,7 +130,15 @@ func (authorizer VisibilityAuthorizer) allowedForums(
 	if err != nil {
 		return nil, err
 	}
-	memberships, err := authorizer.activeMemberships(ctx, actorUserID, groupSubjectIDs(grants))
+	groupGrants, err := authorizer.groupPermissionGrants(ctx, forumIDs, actions)
+	if err != nil {
+		return nil, err
+	}
+	memberships, err := authorizer.activeMemberships(
+		ctx,
+		actorUserID,
+		grantGroupIDs(grants, groupGrants),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +147,43 @@ func (authorizer VisibilityAuthorizer) allowedForums(
 			allowed[grant.ScopeID] = true
 		}
 	}
+	for _, grant := range groupGrants {
+		if !groupGrantMatchesActor(grant, memberships) {
+			continue
+		}
+		if grant.ScopeID == groupsdomain.AllScopeID() {
+			for _, forumID := range forumIDs {
+				allowed[forumID] = true
+			}
+			continue
+		}
+		allowed[grant.ScopeID] = true
+	}
 	return allowed, nil
+}
+
+// groupPermissionGrants returns group-owned forum grants.
+func (authorizer VisibilityAuthorizer) groupPermissionGrants(
+	ctx context.Context,
+	forumIDs []uuid.UUID,
+	actions []groupsdomain.Action,
+) ([]groupPermissionGrantRow, error) {
+	var grants []groupPermissionGrantRow
+	err := authorizer.store.DB(ctx).
+		Table("permission_grants").
+		Select("permission_grants.scope_id, permission_grants.action, group_permission_grants.group_id").
+		Joins("JOIN group_permission_grants ON group_permission_grants.grant_id = permission_grants.id").
+		Where(
+			"permission_grants.scope_type = ? AND (permission_grants.scope_id IN ? OR permission_grants.scope_id = ?) "+
+				"AND permission_grants.action IN ? AND permission_grants.deleted_at IS NULL "+
+				"AND group_permission_grants.deleted_at IS NULL",
+			groupsdomain.ObjectForum,
+			forumIDs,
+			groupsdomain.AllScopeID(),
+			actions,
+		).
+		Find(&grants).Error
+	return grants, err
 }
 
 // permissionGrantRow is a compact permission grant projection.
@@ -148,6 +192,13 @@ type permissionGrantRow struct {
 	Action      string
 	SubjectType string
 	SubjectID   uuid.UUID
+}
+
+// groupPermissionGrantRow is a compact group permission grant projection.
+type groupPermissionGrantRow struct {
+	ScopeID uuid.UUID
+	Action  string
+	GroupID uuid.UUID
 }
 
 // Ensure VisibilityAuthorizer implements port.VisibilityAuthorizer.

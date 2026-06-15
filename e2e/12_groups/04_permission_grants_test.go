@@ -16,25 +16,28 @@ func TestGroupsPermissionGrantLifecycle(t *testing.T) {
 	fixture := newGroupsFixture(t)
 	userID := uuid.New()
 	forumID := uuid.New()
-	grant := forumViewGrant(forumID, domain.SubjectUser, userID)
+	group := fixture.createGroup(t, "lifecycle_viewers")
+	groupID := groupIDFrom(t, group)
+	assignMember(t, fixture, groupID, userID, "lifecycle-permissions")
+	grant := forumViewGrant()
 
-	steps.Log("create direct user forum view grant")
-	created := fixture.createGrant(t, grant)
+	steps.Log("create global forum view grant assigned to the group")
+	created := fixture.createGrant(t, groupID, grant)
 	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, forumID)), true)
 
 	steps.Log("reject duplicate active grant through service contract")
-	if _, err := fixture.service.CreatePermissionGrant(context.Background(), portCreateGrant(grant)); err == nil {
+	if _, err := fixture.service.CreatePermissionGrant(context.Background(), portCreateGrant(groupID, grant)); err == nil {
 		t.Fatalf("CreatePermissionGrant() duplicate error = nil, want conflict")
 	}
 
 	steps.Log("delete grant and verify access is removed")
-	if err := fixture.service.DeletePermissionGrant(context.Background(), portDeleteGrant(created.ID)); err != nil {
+	if err := fixture.service.DeletePermissionGrant(context.Background(), portDeleteGrant(groupID, created.ID)); err != nil {
 		t.Fatalf("DeletePermissionGrant() error = %v", err)
 	}
 	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, forumID)), false)
 
 	steps.Log("recreate grant after deletion")
-	fixture.createGrant(t, grant)
+	fixture.createGrant(t, groupID, grant)
 	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, forumID)), true)
 }
 
@@ -67,11 +70,11 @@ func TestGroupsBuiltInPermissionsAreRecognized(t *testing.T) {
 }
 
 // portCreateGrant creates a grant command while keeping test bodies compact.
-func portCreateGrant(grant domain.PermissionGrant) port.CreatePermissionGrantCommand {
-	return port.CreatePermissionGrantCommand{Grant: grant}
+func portCreateGrant(groupID uuid.UUID, grant domain.PermissionGrant) port.CreatePermissionGrantCommand {
+	return port.CreatePermissionGrantCommand{GroupID: groupID, Grant: grant}
 }
 
 // portDeleteGrant creates a delete grant command while keeping test bodies compact.
-func portDeleteGrant(id uuid.UUID) port.DeletePermissionGrantCommand {
-	return port.DeletePermissionGrantCommand{ID: id}
+func portDeleteGrant(groupID uuid.UUID, id uuid.UUID) port.DeletePermissionGrantCommand {
+	return port.DeletePermissionGrantCommand{GroupID: groupID, ID: id}
 }

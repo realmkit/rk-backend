@@ -44,16 +44,28 @@ func (authorizer VisibilityAuthorizer) activeMemberships(
 	return result, nil
 }
 
-// groupSubjectIDs extracts group subject IDs.
-func groupSubjectIDs(grants []permissionGrantRow) []uuid.UUID {
+// grantGroupIDs extracts all group IDs that may match an actor.
+func grantGroupIDs(
+	subjectGrants []permissionGrantRow,
+	groupGrants []groupPermissionGrantRow,
+) []uuid.UUID {
 	groupIDs := []uuid.UUID{}
-	for _, grant := range grants {
+	for _, grant := range subjectGrants {
 		if grant.SubjectType != string(groupsdomain.SubjectGroup) {
 			continue
 		}
-		if !slices.Contains(groupIDs, grant.SubjectID) {
-			groupIDs = append(groupIDs, grant.SubjectID)
-		}
+		groupIDs = appendUniqueGroupID(groupIDs, grant.SubjectID)
+	}
+	for _, grant := range groupGrants {
+		groupIDs = appendUniqueGroupID(groupIDs, grant.GroupID)
+	}
+	return groupIDs
+}
+
+// appendUniqueGroupID appends id when missing.
+func appendUniqueGroupID(groupIDs []uuid.UUID, id uuid.UUID) []uuid.UUID {
+	if !slices.Contains(groupIDs, id) {
+		groupIDs = append(groupIDs, id)
 	}
 	return groupIDs
 }
@@ -76,6 +88,14 @@ func grantMatchesActor(
 	default:
 		return false
 	}
+}
+
+// groupGrantMatchesActor reports whether a group-owned grant allows actor.
+func groupGrantMatchesActor(
+	grant groupPermissionGrantRow,
+	memberships map[uuid.UUID]bool,
+) bool {
+	return memberships[grant.GroupID]
 }
 
 // groupMembershipRow is a compact group membership projection.

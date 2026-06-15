@@ -51,8 +51,6 @@ func (MembershipModel) TableName() string {
 // PermissionGrantModel is the GORM model for permission grants.
 type PermissionGrantModel struct {
 	orm.ID
-	SubjectType     string     `gorm:"size:64;not null;index"`
-	SubjectID       uuid.UUID  `gorm:"type:uuid;not null;index"`
 	Action          string     `gorm:"size:120;not null;index"`
 	ScopeType       string     `gorm:"size:64;not null;index"`
 	ScopeID         uuid.UUID  `gorm:"type:uuid;not null;index"`
@@ -66,4 +64,19 @@ type PermissionGrantModel struct {
 // TableName returns the database table name.
 func (PermissionGrantModel) TableName() string {
 	return "permission_grants"
+}
+
+// GroupPermissionGrantModel assigns a global grant to a group.
+type GroupPermissionGrantModel struct {
+	orm.ID
+	GroupID         uuid.UUID  `gorm:"type:uuid;not null;index"`
+	GrantID         uuid.UUID  `gorm:"type:uuid;not null;index"`
+	CreatedByUserID *uuid.UUID `gorm:"type:uuid;index"`
+	CreatedAt       time.Time
+	orm.SoftDelete
+}
+
+// TableName returns the database table name.
+func (GroupPermissionGrantModel) TableName() string {
+	return "group_permission_grants"
 }

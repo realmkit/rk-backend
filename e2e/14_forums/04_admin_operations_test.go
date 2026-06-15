@@ -136,7 +136,7 @@ func (fixture forumsFixture) createGroupWithMember(t *testing.T, userID uuid.UUI
 	t.Helper()
 	group, err := fixture.groups.Create(context.Background(), groupsport.CreateGroupCommand{
 		Group: groupsdomain.Group{
-			ID: uuid.New(), Key: groupsdomain.Key("forum_e2e_group"),
+			ID: uuid.New(), Key: groupsdomain.Key("forum_e2e_group_" + uuid.NewString()[:8]),
 			Name: "Forum E2E Group", Color: "#3366ff", Weight: 10,
 			Status: groupsdomain.GroupStatusActive,
 		},

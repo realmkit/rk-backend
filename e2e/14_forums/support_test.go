@@ -109,13 +109,14 @@ func (fixture forumsFixture) do(t *testing.T, request *http.Request) *http.Respo
 
 func (fixture forumsFixture) grant(t *testing.T, objectID uuid.UUID, relation groupsdomain.Relation, user uuid.UUID) {
 	t.Helper()
+	_ = objectID
+	groupID := fixture.createGroupWithMember(t, user)
 	_, err := fixture.groups.CreatePermissionGrant(context.Background(), groupsport.CreatePermissionGrantCommand{
+		GroupID: groupID,
 		Grant: groupsdomain.PermissionGrant{
-			SubjectType: groupsdomain.SubjectUser,
-			SubjectID:   user,
-			Action:      forumActionForRelation(relation),
-			ScopeType:   groupsdomain.ObjectForum,
-			ScopeID:     objectID,
+			Action:    forumActionForRelation(relation),
+			ScopeType: groupsdomain.ObjectForum,
+			ScopeID:   groupsdomain.AllScopeID(),
 		},
 	})
 	if err != nil {

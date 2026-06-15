@@ -13,7 +13,7 @@ type permissionActionListResponse struct {
 	Items []domain.PermissionAction `json:"items"`
 }
 
-// permissionGrantRequest is the create grant body for a group subject.
+// permissionGrantRequest is the create grant body for a group.
 type permissionGrantRequest struct {
 	// Action is the granted dotted permission key.
 	Action domain.Action `json:"action"`
@@ -49,7 +49,7 @@ func (handler handler) listPermissionActions(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusOK, permissionActionListResponse{Items: actions})
 }
 
-// listGroupPermissionGrants lists permission grants owned by a group subject.
+// listGroupPermissionGrants lists global permission grants assigned to a group.
 func (handler handler) listGroupPermissionGrants(ctx *fiber.Ctx) error {
 	groupID, err := idFromParam(ctx, "group_id")
 	if err != nil {
@@ -61,7 +61,7 @@ func (handler handler) listGroupPermissionGrants(ctx *fiber.Ctx) error {
 	}
 	result, err := handler.services.Grants.ListPermissionGrants(
 		ctx.UserContext(),
-		port.PermissionGrantFilter{SubjectType: domain.SubjectGroup, SubjectID: groupID},
+		port.PermissionGrantFilter{GroupID: groupID},
 		page,
 	)
 	if err != nil {
@@ -73,7 +73,7 @@ func (handler handler) listGroupPermissionGrants(ctx *fiber.Ctx) error {
 	})
 }
 
-// createGroupPermissionGrant creates a permission grant owned by a group subject.
+// createGroupPermissionGrant assigns a global permission grant to a group.
 func (handler handler) createGroupPermissionGrant(ctx *fiber.Ctx) error {
 	if err := requireIdempotency(ctx); err != nil {
 		return err
@@ -88,7 +88,10 @@ func (handler handler) createGroupPermissionGrant(ctx *fiber.Ctx) error {
 	}
 	grant, err := handler.services.Grants.CreatePermissionGrant(
 		ctx.UserContext(),
-		port.CreatePermissionGrantCommand{Grant: permissionGrantFromRequest(groupID, request)},
+		port.CreatePermissionGrantCommand{
+			GroupID: groupID,
+			Grant:   permissionGrantFromRequest(request),
+		},
 	)
 	if err != nil {
 		return handleError(ctx, err)
@@ -105,20 +108,22 @@ func (handler handler) deleteGroupPermissionGrant(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	groupID, err := idFromParam(ctx, "group_id")
+	if err != nil {
+		return err
+	}
 	if err := handler.services.Grants.DeletePermissionGrant(
 		ctx.UserContext(),
-		port.DeletePermissionGrantCommand{ID: grantID},
+		port.DeletePermissionGrantCommand{GroupID: groupID, ID: grantID},
 	); err != nil {
 		return handleError(ctx, err)
 	}
 	return writeNoContent(ctx)
 }
 
-// permissionGrantFromRequest maps a group grant request to domain state.
-func permissionGrantFromRequest(groupID uuid.UUID, request permissionGrantRequest) domain.PermissionGrant {
+// permissionGrantFromRequest maps a grant request to global domain state.
+func permissionGrantFromRequest(request permissionGrantRequest) domain.PermissionGrant {
 	return domain.PermissionGrant{
-		SubjectType:  domain.SubjectGroup,
-		SubjectID:    groupID,
 		Action:       request.Action,
 		ScopeType:    request.ScopeType,
 		ScopeID:      request.ScopeID,

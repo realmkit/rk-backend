@@ -87,12 +87,10 @@ func (service Service) publishGrantEvent(
 		AggregateType: "permission_grant",
 		AggregateID:   emitter.UUID(grant.ID),
 		Payload: map[string]any{
-			"id":           grant.ID,
-			"action":       grant.Action,
-			"scope_type":   grant.ScopeType,
-			"scope_id":     grant.ScopeID,
-			"subject_type": grant.SubjectType,
-			"subject_id":   grant.SubjectID,
+			"id":         grant.ID,
+			"action":     grant.Action,
+			"scope_type": grant.ScopeType,
+			"scope_id":   grant.ScopeID,
 		},
 		Scopes: systemScopes(),
 	})

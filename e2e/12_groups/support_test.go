@@ -90,12 +90,13 @@ func (fixture groupsFixture) createGroup(t *testing.T, key string) map[string]an
 // createGrant creates a permission grant through the application seam.
 func (fixture groupsFixture) createGrant(
 	t *testing.T,
+	groupID uuid.UUID,
 	grant groupsdomain.PermissionGrant,
 ) groupsdomain.PermissionGrant {
 	t.Helper()
 	created, err := fixture.service.CreatePermissionGrant(
 		context.Background(),
-		groupsport.CreatePermissionGrantCommand{Grant: grant},
+		groupsport.CreatePermissionGrantCommand{GroupID: groupID, Grant: grant},
 	)
 	if err != nil {
 		t.Fatalf("CreatePermissionGrant() error = %v", err)

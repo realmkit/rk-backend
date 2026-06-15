@@ -61,16 +61,10 @@ func (action PermissionAction) Validate() error {
 	return NewValidationError(violations)
 }
 
-// PermissionGrant allows one subject to perform one action on one scope.
+// PermissionGrant describes one global permission that can be assigned to groups.
 type PermissionGrant struct {
 	// ID is the grant identifier.
 	ID uuid.UUID `json:"id"`
-
-	// SubjectType is the subject type.
-	SubjectType SubjectType `json:"subject_type"`
-
-	// SubjectID is the subject identifier.
-	SubjectID uuid.UUID `json:"subject_id"`
 
 	// Action is the granted dotted action key.
 	Action Action `json:"action"`
@@ -94,18 +88,26 @@ type PermissionGrant struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// AllScopeID returns the scope identifier used for all resources of one scope type.
+func AllScopeID() uuid.UUID {
+	return uuid.Nil
+}
+
+// AppliesToAllScopes reports whether this grant applies to every resource of its scope type.
+func (grant PermissionGrant) AppliesToAllScopes() bool {
+	return grant.ScopeID == AllScopeID()
+}
+
 // Validate validates permission grant fields.
 func (grant PermissionGrant) Validate() error {
 	var violations []Violation
-	violations = append(violations, ValidateRelationTerm("subject_type", string(grant.SubjectType))...)
-	violations = append(violations, validateGrantSubject(grant)...)
 	violations = append(violations, ValidatePermission("action", grant.Action)...)
 	violations = append(violations, ValidateRelationTerm("scope_type", string(grant.ScopeType))...)
 	if grant.ID == uuid.Nil {
 		violations = AppendViolation(violations, "id", "is required")
 	}
-	if grant.ScopeID == uuid.Nil {
-		violations = AppendViolation(violations, "scope_id", "is required")
+	if grant.ScopeID != AllScopeID() {
+		violations = AppendViolation(violations, "scope_id", "must target all resources")
 	}
 	return NewValidationError(violations)
 }
@@ -118,30 +120,6 @@ func PublicSubjectID() uuid.UUID {
 // AuthenticatedSubjectID returns the stable subject identifier used by authenticated grants.
 func AuthenticatedSubjectID() uuid.UUID {
 	return uuid.MustParse("00000000-0000-0000-0000-000000000002")
-}
-
-// validateGrantSubject validates subject-specific grant invariants.
-func validateGrantSubject(grant PermissionGrant) []Violation {
-	switch grant.SubjectType {
-	case SubjectPublic:
-		return validateSystemSubject(grant, PublicSubjectID())
-	case SubjectAuthenticated:
-		return validateSystemSubject(grant, AuthenticatedSubjectID())
-	default:
-		if grant.SubjectID == uuid.Nil {
-			return []Violation{{Field: "subject_id", Message: "is required"}}
-		}
-		return nil
-	}
-}
-
-// validateSystemSubject validates public and authenticated subject grants.
-func validateSystemSubject(grant PermissionGrant, expectedID uuid.UUID) []Violation {
-	var violations []Violation
-	if grant.SubjectID != expectedID {
-		violations = AppendViolation(violations, "subject_id", "must use the reserved subject identifier")
-	}
-	return violations
 }
 
 // PolicyCondition describes one contextual condition for a permission rule.

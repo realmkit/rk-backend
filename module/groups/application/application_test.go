@@ -78,22 +78,22 @@ func TestServiceGroupLifecycle(t *testing.T) {
 // TestServicePublishesGrantEvents verifies grants emit event facts.
 func TestServicePublishesGrantEvents(t *testing.T) {
 	events := &eventtesting.PublisherRecorder{}
-	service, _, _, _ := newTestService()
+	service, groups, _, _ := newTestService()
 	service = service.WithEvents(events)
-	scopeID := uuid.New()
+	group := testGroup("grant_events", domain.GroupStatusActive)
+	groups.items[group.ID] = group
 	grant, err := service.CreatePermissionGrant(context.Background(), port.CreatePermissionGrantCommand{
+		GroupID: group.ID,
 		Grant: domain.PermissionGrant{
-			SubjectType: domain.SubjectUser,
-			SubjectID:   uuid.New(),
-			Action:      "groups.update",
-			ScopeType:   domain.ObjectGroup,
-			ScopeID:     scopeID,
+			Action:    "groups.update",
+			ScopeType: domain.ObjectGroup,
+			ScopeID:   domain.AllScopeID(),
 		},
 	})
 	if err != nil {
 		t.Fatalf("CreatePermissionGrant() error = %v", err)
 	}
-	if err := service.DeletePermissionGrant(context.Background(), port.DeletePermissionGrantCommand{ID: grant.ID}); err != nil {
+	if err := service.DeletePermissionGrant(context.Background(), port.DeletePermissionGrantCommand{GroupID: group.ID, ID: grant.ID}); err != nil {
 		t.Fatalf("DeletePermissionGrant() error = %v", err)
 	}
 	assertEventKeys(t, events.Drafts(), []string{
@@ -106,12 +106,11 @@ func TestServicePublishesGrantEvents(t *testing.T) {
 func TestServiceCreatePermissionGrantRejectsUnknownAction(t *testing.T) {
 	service, _, _, _ := newTestService()
 	_, err := service.CreatePermissionGrant(context.Background(), port.CreatePermissionGrantCommand{
+		GroupID: uuid.New(),
 		Grant: domain.PermissionGrant{
-			SubjectType: domain.SubjectUser,
-			SubjectID:   uuid.New(),
-			Action:      "missing.permission",
-			ScopeType:   domain.ObjectGroup,
-			ScopeID:     uuid.New(),
+			Action:    "missing.permission",
+			ScopeType: domain.ObjectGroup,
+			ScopeID:   domain.AllScopeID(),
 		},
 	})
 	if !errors.Is(err, port.ErrUnknownPermission) {
@@ -119,33 +118,7 @@ func TestServiceCreatePermissionGrantRejectsUnknownAction(t *testing.T) {
 	}
 }
 
-// TestServiceCheckAllowsDirectUserGrant verifies direct user grants allow actions.
-func TestServiceCheckAllowsDirectUserGrant(t *testing.T) {
-	service, _, _, permissions := newTestService()
-	userID := uuid.New()
-	groupID := uuid.New()
-	permissions.grants[uuid.New()] = domain.PermissionGrant{
-		ID:          uuid.New(),
-		SubjectType: domain.SubjectUser,
-		SubjectID:   userID,
-		Action:      "groups.update",
-		ScopeType:   domain.ObjectGroup,
-		ScopeID:     groupID,
-	}
-
-	decision, err := service.Check(
-		context.Background(),
-		port.CheckRequest{ActorUserID: userID, Action: "groups.update", ScopeType: domain.ObjectGroup, ScopeID: groupID},
-	)
-	if err != nil {
-		t.Fatalf("Check() error = %v", err)
-	}
-	if !decision.Allowed || decision.MatchedSubjectType != domain.SubjectUser {
-		t.Fatalf("decision = %+v, want direct user grant", decision)
-	}
-}
-
-// TestServiceCheckAllowsGroupGrant verifies active members inherit group grants.
+// TestServiceCheckAllowsGroupGrant verifies active members receive group-owned grants.
 func TestServiceCheckAllowsGroupGrant(t *testing.T) {
 	service, groups, memberships, permissions := newTestService()
 	group := testGroup("moderator", domain.GroupStatusActive)
@@ -159,14 +132,14 @@ func TestServiceCheckAllowsGroupGrant(t *testing.T) {
 		Status:  domain.MembershipStatusActive,
 		Version: 1,
 	}
-	permissions.grants[uuid.New()] = domain.PermissionGrant{
-		ID:          uuid.New(),
-		SubjectType: domain.SubjectGroup,
-		SubjectID:   group.ID,
-		Action:      "assets.view",
-		ScopeType:   domain.ObjectAsset,
-		ScopeID:     targetID,
+	grantID := uuid.New()
+	permissions.grants[grantID] = domain.PermissionGrant{
+		ID:        grantID,
+		Action:    "assets.view",
+		ScopeType: domain.ObjectAsset,
+		ScopeID:   domain.AllScopeID(),
 	}
+	permissions.assignments[grantID] = group.ID
 
 	decision, err := service.Check(
 		context.Background(),
@@ -175,8 +148,48 @@ func TestServiceCheckAllowsGroupGrant(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
-	if !decision.Allowed || decision.MatchedSubjectType != domain.SubjectGroup {
-		t.Fatalf("decision = %+v, want group grant", decision)
+	if !decision.Allowed || decision.MatchedGrantID != grantID {
+		t.Fatalf("decision = %+v, want assigned global grant", decision)
+	}
+}
+
+// TestServiceCheckAllowsAllScopeGroupGrant verifies broad grants apply to every resource.
+func TestServiceCheckAllowsAllScopeGroupGrant(t *testing.T) {
+	service, groups, memberships, permissions := newTestService()
+	group := testGroup("administrator", domain.GroupStatusSystem)
+	groups.items[group.ID] = group
+	actorID := uuid.New()
+	targetID := uuid.New()
+	memberships.items[membershipKey(group.ID, actorID)] = domain.Membership{
+		ID:      uuid.New(),
+		GroupID: group.ID,
+		UserID:  actorID,
+		Status:  domain.MembershipStatusActive,
+		Version: 1,
+	}
+	grantID := uuid.New()
+	permissions.grants[grantID] = domain.PermissionGrant{
+		ID:        grantID,
+		Action:    "groups.manage_permissions",
+		ScopeType: domain.ObjectGroup,
+		ScopeID:   domain.AllScopeID(),
+	}
+	permissions.assignments[grantID] = group.ID
+
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{
+			ActorUserID: actorID,
+			Action:      "groups.manage_permissions",
+			ScopeType:   domain.ObjectGroup,
+			ScopeID:     targetID,
+		},
+	)
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !decision.Allowed || decision.MatchedScopeID != domain.AllScopeID() {
+		t.Fatalf("decision = %+v, want all-scope group grant", decision)
 	}
 }
 
@@ -194,14 +207,14 @@ func TestServiceCheckDeniesDisabledGroupGrant(t *testing.T) {
 		Status:  domain.MembershipStatusActive,
 		Version: 1,
 	}
-	permissions.grants[uuid.New()] = domain.PermissionGrant{
-		ID:          uuid.New(),
-		SubjectType: domain.SubjectGroup,
-		SubjectID:   group.ID,
-		Action:      "assets.view",
-		ScopeType:   domain.ObjectAsset,
-		ScopeID:     targetID,
+	grantID := uuid.New()
+	permissions.grants[grantID] = domain.PermissionGrant{
+		ID:        grantID,
+		Action:    "assets.view",
+		ScopeType: domain.ObjectAsset,
+		ScopeID:   domain.AllScopeID(),
 	}
+	permissions.assignments[grantID] = group.ID
 
 	decision, err := service.Check(
 		context.Background(),
@@ -212,31 +225,6 @@ func TestServiceCheckDeniesDisabledGroupGrant(t *testing.T) {
 	}
 	if decision.Allowed || decision.Reason != "no_matching_grant" {
 		t.Fatalf("decision = %+v, want denied", decision)
-	}
-}
-
-// TestServiceCheckAllowsPublicGrant verifies anonymous actors match public grants.
-func TestServiceCheckAllowsPublicGrant(t *testing.T) {
-	service, _, _, permissions := newTestService()
-	forumID := uuid.New()
-	permissions.grants[uuid.New()] = domain.PermissionGrant{
-		ID:          uuid.New(),
-		SubjectType: domain.SubjectPublic,
-		SubjectID:   domain.PublicSubjectID(),
-		Action:      domain.PermissionForumsView,
-		ScopeType:   domain.ObjectForum,
-		ScopeID:     forumID,
-	}
-
-	decision, err := service.Check(
-		context.Background(),
-		port.CheckRequest{Action: domain.PermissionForumsView, ScopeType: domain.ObjectForum, ScopeID: forumID},
-	)
-	if err != nil {
-		t.Fatalf("Check() error = %v", err)
-	}
-	if !decision.Allowed || decision.MatchedSubjectType != domain.SubjectPublic {
-		t.Fatalf("decision = %+v, want public grant", decision)
 	}
 }
 
@@ -284,7 +272,12 @@ func assertEventKeys(t *testing.T, drafts []eventdomain.Draft, want []string) {
 func newTestService() (Service, *memoryGroups, *memoryMemberships, *memoryPermissions) {
 	groups := &memoryGroups{items: map[uuid.UUID]domain.Group{}}
 	memberships := &memoryMemberships{items: map[string]domain.Membership{}}
-	permissions := &memoryPermissions{grants: map[uuid.UUID]domain.PermissionGrant{}}
+	permissions := &memoryPermissions{
+		grants:      map[uuid.UUID]domain.PermissionGrant{},
+		assignments: map[uuid.UUID]uuid.UUID{},
+		groups:      groups,
+		memberships: memberships,
+	}
 	service := NewService(groups, memberships, permissions)
 	return service, groups, memberships, permissions
 }
@@ -420,17 +413,29 @@ func (repository *memoryMemberships) Delete(_ context.Context, groupID uuid.UUID
 
 // memoryPermissions stores permission grants in memory.
 type memoryPermissions struct {
-	grants map[uuid.UUID]domain.PermissionGrant
+	grants      map[uuid.UUID]domain.PermissionGrant
+	assignments map[uuid.UUID]uuid.UUID
+	groups      *memoryGroups
+	memberships *memoryMemberships
 }
 
 // CreateGrant stores a grant.
-func (repository *memoryPermissions) CreateGrant(_ context.Context, grant domain.PermissionGrant) (domain.PermissionGrant, error) {
+func (repository *memoryPermissions) CreateGrant(
+	_ context.Context,
+	groupID uuid.UUID,
+	grant domain.PermissionGrant,
+) (domain.PermissionGrant, error) {
 	for _, existing := range repository.grants {
 		if equivalentGrant(existing, grant) {
-			return existing, port.ErrConflict
+			if repository.assignments[existing.ID] == groupID {
+				return existing, port.ErrConflict
+			}
+			repository.assignments[existing.ID] = groupID
+			return existing, nil
 		}
 	}
 	repository.grants[grant.ID] = grant
+	repository.assignments[grant.ID] = groupID
 	return grant, nil
 }
 
@@ -442,40 +447,57 @@ func (repository *memoryPermissions) ListGrants(
 ) (pagination.Result[domain.PermissionGrant], error) {
 	items := []domain.PermissionGrant{}
 	for _, grant := range repository.grants {
+		if filter.GroupID != uuid.Nil && repository.assignments[grant.ID] != filter.GroupID {
+			continue
+		}
+		if filter.ActorUserID != uuid.Nil {
+			groupID := repository.assignments[grant.ID]
+			if groupID == uuid.Nil || !repository.actorCanUseGroup(filter.ActorUserID, groupID) {
+				continue
+			}
+		}
 		if filter.Action != "" && grant.Action != filter.Action {
 			continue
 		}
 		if filter.ScopeType != "" && grant.ScopeType != filter.ScopeType {
 			continue
 		}
-		if filter.ScopeID != uuid.Nil && grant.ScopeID != filter.ScopeID {
-			continue
-		}
-		if filter.SubjectType != "" && grant.SubjectType != filter.SubjectType {
-			continue
-		}
-		if filter.SubjectID != uuid.Nil && grant.SubjectID != filter.SubjectID {
-			continue
+		if filter.ScopeID != uuid.Nil {
+			if filter.IncludeAllScopes {
+				if grant.ScopeID != filter.ScopeID && grant.ScopeID != domain.AllScopeID() {
+					continue
+				}
+			} else if grant.ScopeID != filter.ScopeID {
+				continue
+			}
 		}
 		items = append(items, grant)
 	}
 	return pagination.Result[domain.PermissionGrant]{Items: items}, nil
 }
 
+// actorCanUseGroup reports whether actor has an active membership in an enabled group.
+func (repository *memoryPermissions) actorCanUseGroup(userID uuid.UUID, groupID uuid.UUID) bool {
+	group, ok := repository.groups.items[groupID]
+	if !ok || !group.GrantsPermissions() {
+		return false
+	}
+	membership, ok := repository.memberships.items[membershipKey(groupID, userID)]
+	return ok && membership.ActiveAt(time.Now().UTC())
+}
+
 // DeleteGrant soft deletes one grant.
-func (repository *memoryPermissions) DeleteGrant(_ context.Context, id uuid.UUID) error {
-	if _, ok := repository.grants[id]; !ok {
+func (repository *memoryPermissions) DeleteGrant(_ context.Context, groupID uuid.UUID, id uuid.UUID) error {
+	if repository.assignments[id] != groupID {
 		return port.ErrNotFound
 	}
-	delete(repository.grants, id)
+	delete(repository.assignments, id)
 	return nil
 }
 
 // equivalentGrant reports whether grants are equivalent.
 func equivalentGrant(left domain.PermissionGrant, right domain.PermissionGrant) bool {
-	return left.SubjectType == right.SubjectType &&
-		left.SubjectID == right.SubjectID &&
-		left.Action == right.Action &&
+	return left.Action == right.Action &&
 		left.ScopeType == right.ScopeType &&
 		left.ScopeID == right.ScopeID &&
 		left.Inherit == right.Inherit &&

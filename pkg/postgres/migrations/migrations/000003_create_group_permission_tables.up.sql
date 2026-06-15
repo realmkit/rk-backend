@@ -42,6 +42,37 @@ CREATE INDEX group_memberships_deleted_at_idx ON group_memberships (deleted_at);
 
 CREATE TABLE permission_grants (
     id uuid PRIMARY KEY,
+    action text NOT NULL,
+    scope_type text NOT NULL,
+    scope_id uuid NOT NULL,
+    inherit boolean NOT NULL DEFAULT false,
+    condition_key text NOT NULL DEFAULT '',
+    created_by_user_id uuid NULL,
+    created_at timestamptz NOT NULL,
+    deleted_at timestamptz NULL
+);
+
+CREATE UNIQUE INDEX permission_grants_unique_active_idx ON permission_grants (action, scope_type, scope_id, inherit, condition_key) WHERE deleted_at IS NULL;
+CREATE INDEX permission_grants_scope_action_idx ON permission_grants (scope_type, scope_id, action) WHERE deleted_at IS NULL;
+CREATE INDEX permission_grants_action_idx ON permission_grants (action) WHERE deleted_at IS NULL;
+CREATE INDEX permission_grants_deleted_at_idx ON permission_grants (deleted_at);
+
+CREATE TABLE group_permission_grants (
+    id uuid PRIMARY KEY,
+    group_id uuid NOT NULL,
+    grant_id uuid NOT NULL,
+    created_by_user_id uuid NULL,
+    created_at timestamptz NOT NULL,
+    deleted_at timestamptz NULL
+);
+
+CREATE UNIQUE INDEX group_permission_grants_unique_active_idx ON group_permission_grants (group_id, grant_id) WHERE deleted_at IS NULL;
+CREATE INDEX group_permission_grants_group_idx ON group_permission_grants (group_id) WHERE deleted_at IS NULL;
+CREATE INDEX group_permission_grants_grant_idx ON group_permission_grants (grant_id) WHERE deleted_at IS NULL;
+CREATE INDEX group_permission_grants_deleted_at_idx ON group_permission_grants (deleted_at);
+
+CREATE TABLE forum_permission_grants (
+    id uuid PRIMARY KEY,
     subject_type text NOT NULL,
     subject_id uuid NOT NULL,
     action text NOT NULL,
@@ -54,8 +85,8 @@ CREATE TABLE permission_grants (
     deleted_at timestamptz NULL
 );
 
-CREATE UNIQUE INDEX permission_grants_unique_active_idx ON permission_grants (subject_type, subject_id, action, scope_type, scope_id, inherit, condition_key) WHERE deleted_at IS NULL;
-CREATE INDEX permission_grants_scope_action_idx ON permission_grants (scope_type, scope_id, action) WHERE deleted_at IS NULL;
-CREATE INDEX permission_grants_subject_idx ON permission_grants (subject_type, subject_id) WHERE deleted_at IS NULL;
-CREATE INDEX permission_grants_action_idx ON permission_grants (action) WHERE deleted_at IS NULL;
-CREATE INDEX permission_grants_deleted_at_idx ON permission_grants (deleted_at);
+CREATE UNIQUE INDEX forum_permission_grants_unique_active_idx ON forum_permission_grants (subject_type, subject_id, action, scope_type, scope_id, inherit, condition_key) WHERE deleted_at IS NULL;
+CREATE INDEX forum_permission_grants_scope_action_idx ON forum_permission_grants (scope_type, scope_id, action) WHERE deleted_at IS NULL;
+CREATE INDEX forum_permission_grants_subject_idx ON forum_permission_grants (subject_type, subject_id) WHERE deleted_at IS NULL;
+CREATE INDEX forum_permission_grants_action_idx ON forum_permission_grants (action) WHERE deleted_at IS NULL;
+CREATE INDEX forum_permission_grants_deleted_at_idx ON forum_permission_grants (deleted_at);

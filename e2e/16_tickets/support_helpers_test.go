@@ -43,14 +43,15 @@ func (fixture ticketsFixture) grantTicketRelation(
 	userID uuid.UUID,
 ) {
 	t.Helper()
+	_ = objectID
+	groupID := fixture.createGroupWithMember(t, userID)
 	for _, action := range ticketActionsForRelation(relation) {
 		_, err := fixture.groups.CreatePermissionGrant(context.Background(), groupsport.CreatePermissionGrantCommand{
+			GroupID: groupID,
 			Grant: groupsdomain.PermissionGrant{
-				SubjectType: groupsdomain.SubjectUser,
-				SubjectID:   userID,
-				Action:      action,
-				ScopeType:   groupsdomain.ObjectTicket,
-				ScopeID:     objectID,
+				Action:    action,
+				ScopeType: groupsdomain.ObjectTicket,
+				ScopeID:   groupsdomain.AllScopeID(),
 			},
 		})
 		if err != nil {
@@ -62,18 +63,44 @@ func (fixture ticketsFixture) grantTicketRelation(
 // grantPunishmentRevoke grants a staff actor punishment revoke permission.
 func (fixture ticketsFixture) grantPunishmentRevoke(t *testing.T, punishmentID uuid.UUID, actor uuid.UUID) {
 	t.Helper()
+	_ = punishmentID
+	groupID := fixture.createGroupWithMember(t, actor)
 	_, err := fixture.groups.CreatePermissionGrant(context.Background(), groupsport.CreatePermissionGrantCommand{
+		GroupID: groupID,
 		Grant: groupsdomain.PermissionGrant{
-			SubjectType: groupsdomain.SubjectUser,
-			SubjectID:   actor,
-			Action:      groupsdomain.PermissionPunishmentsRevoke,
-			ScopeType:   groupsdomain.ObjectPunishment,
-			ScopeID:     punishmentID,
+			Action:    groupsdomain.PermissionPunishmentsRevoke,
+			ScopeType: groupsdomain.ObjectPunishment,
+			ScopeID:   groupsdomain.AllScopeID(),
 		},
 	})
 	if err != nil {
 		t.Fatalf("CreatePermissionGrant(punishment) error = %v", err)
 	}
+}
+
+// createGroupWithMember creates an active authorization group for one user.
+func (fixture ticketsFixture) createGroupWithMember(t *testing.T, userID uuid.UUID) uuid.UUID {
+	t.Helper()
+	group, err := fixture.groups.Create(context.Background(), groupsport.CreateGroupCommand{
+		Group: groupsdomain.Group{
+			ID: uuid.New(), Key: groupsdomain.Key("ticket_e2e_group_" + uuid.NewString()[:8]),
+			Name: "Ticket E2E Group", Color: "#3366ff", Weight: 10,
+			Status: groupsdomain.GroupStatusActive,
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateGroup() error = %v", err)
+	}
+	_, err = fixture.groups.Assign(context.Background(), groupsport.AssignMembershipCommand{
+		Membership: groupsdomain.Membership{
+			ID: uuid.New(), GroupID: group.ID, UserID: userID,
+			Status: groupsdomain.MembershipStatusActive,
+		},
+	})
+	if err != nil {
+		t.Fatalf("AssignMembership() error = %v", err)
+	}
+	return group.ID
 }
 
 // ticketActionsForRelation returns direct ticket actions for legacy e2e relations.

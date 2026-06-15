@@ -111,8 +111,6 @@ func membershipFromModel(model MembershipModel) domain.Membership {
 func grantModelFromDomain(grant domain.PermissionGrant) PermissionGrantModel {
 	return PermissionGrantModel{
 		ID:              orm.ID{ID: grant.ID},
-		SubjectType:     string(grant.SubjectType),
-		SubjectID:       grant.SubjectID,
 		Action:          string(grant.Action),
 		ScopeType:       string(grant.ScopeType),
 		ScopeID:         grant.ScopeID,
@@ -126,8 +124,6 @@ func grantModelFromDomain(grant domain.PermissionGrant) PermissionGrantModel {
 func grantFromModel(model PermissionGrantModel) domain.PermissionGrant {
 	return domain.PermissionGrant{
 		ID:              model.ID.ID,
-		SubjectType:     domain.SubjectType(model.SubjectType),
-		SubjectID:       model.SubjectID,
 		Action:          domain.Action(model.Action),
 		ScopeType:       domain.ScopeType(model.ScopeType),
 		ScopeID:         model.ScopeID,

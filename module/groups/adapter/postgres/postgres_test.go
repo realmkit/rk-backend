@@ -141,24 +141,23 @@ func TestMembershipRepositoryUpsertListAndDelete(t *testing.T) {
 // TestPermissionRepositoryGrantLifecycle verifies grant persistence.
 func TestPermissionRepositoryGrantLifecycle(t *testing.T) {
 	_, _, permissions := newRepositories(t)
+	groupID := uuid.New()
 	grant := domain.PermissionGrant{
-		ID:          uuid.New(),
-		SubjectType: domain.SubjectUser,
-		SubjectID:   uuid.New(),
-		Action:      "groups.update",
-		ScopeType:   domain.ObjectGroup,
-		ScopeID:     uuid.New(),
+		ID:        uuid.New(),
+		Action:    "groups.update",
+		ScopeType: domain.ObjectGroup,
+		ScopeID:   domain.AllScopeID(),
 	}
-	created, err := permissions.CreateGrant(context.Background(), grant)
+	created, err := permissions.CreateGrant(context.Background(), groupID, grant)
 	if err != nil {
 		t.Fatalf("CreateGrant() error = %v", err)
 	}
-	if _, err := permissions.CreateGrant(context.Background(), grant); !errors.Is(err, port.ErrConflict) {
+	if _, err := permissions.CreateGrant(context.Background(), groupID, grant); !errors.Is(err, port.ErrConflict) {
 		t.Fatalf("CreateGrant() duplicate error = %v, want %v", err, port.ErrConflict)
 	}
 	list, err := permissions.ListGrants(
 		context.Background(),
-		port.PermissionGrantFilter{Action: grant.Action, ScopeType: grant.ScopeType, ScopeID: grant.ScopeID},
+		port.PermissionGrantFilter{GroupID: groupID, Action: grant.Action, ScopeType: grant.ScopeType, ScopeID: grant.ScopeID},
 		pagination.Page{Limit: 10},
 	)
 	if err != nil {
@@ -167,12 +166,12 @@ func TestPermissionRepositoryGrantLifecycle(t *testing.T) {
 	if len(list.Items) != 1 {
 		t.Fatalf("ListGrants() items = %d, want 1", len(list.Items))
 	}
-	if err := permissions.DeleteGrant(context.Background(), created.ID); err != nil {
+	if err := permissions.DeleteGrant(context.Background(), groupID, created.ID); err != nil {
 		t.Fatalf("DeleteGrant() error = %v", err)
 	}
 	list, err = permissions.ListGrants(
 		context.Background(),
-		port.PermissionGrantFilter{Action: grant.Action, ScopeType: grant.ScopeType, ScopeID: grant.ScopeID},
+		port.PermissionGrantFilter{GroupID: groupID, Action: grant.Action, ScopeType: grant.ScopeType, ScopeID: grant.ScopeID},
 		pagination.Page{Limit: 10},
 	)
 	if err != nil {
@@ -180,6 +179,55 @@ func TestPermissionRepositoryGrantLifecycle(t *testing.T) {
 	}
 	if len(list.Items) != 0 {
 		t.Fatalf("ListGrants() after delete items = %d, want 0", len(list.Items))
+	}
+	if _, err := permissions.CreateGrant(context.Background(), groupID, grant); err != nil {
+		t.Fatalf("CreateGrant() after delete error = %v", err)
+	}
+	var assignmentRows int64
+	err = permissions.store.DB(context.Background()).
+		Unscoped().
+		Model(&GroupPermissionGrantModel{}).
+		Where("group_id = ? AND grant_id = ?", groupID, created.ID).
+		Count(&assignmentRows).
+		Error
+	if err != nil {
+		t.Fatalf("Count() assignment rows error = %v", err)
+	}
+	if assignmentRows != 1 {
+		t.Fatalf("assignment rows = %d, want 1", assignmentRows)
+	}
+}
+
+// TestPermissionRepositoryListIncludesAllScopeGrant verifies wildcard scope filtering.
+func TestPermissionRepositoryListIncludesAllScopeGrant(t *testing.T) {
+	_, _, permissions := newRepositories(t)
+	groupID := uuid.New()
+	targetID := uuid.New()
+	grant := domain.PermissionGrant{
+		ID:        uuid.New(),
+		Action:    "groups.manage_permissions",
+		ScopeType: domain.ObjectGroup,
+		ScopeID:   domain.AllScopeID(),
+	}
+	if _, err := permissions.CreateGrant(context.Background(), groupID, grant); err != nil {
+		t.Fatalf("CreateGrant() error = %v", err)
+	}
+	list, err := permissions.ListGrants(
+		context.Background(),
+		port.PermissionGrantFilter{
+			Action:           grant.Action,
+			GroupID:          groupID,
+			ScopeType:        grant.ScopeType,
+			ScopeID:          targetID,
+			IncludeAllScopes: true,
+		},
+		pagination.Page{Limit: 10},
+	)
+	if err != nil {
+		t.Fatalf("ListGrants() error = %v", err)
+	}
+	if len(list.Items) != 1 || list.Items[0].ScopeID != domain.AllScopeID() {
+		t.Fatalf("ListGrants() items = %+v, want all-scope grant", list.Items)
 	}
 }
 

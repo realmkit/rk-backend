@@ -59,15 +59,14 @@ func TestGroupsEmitLifecycleEvents(t *testing.T) {
 	steps.Log("create and delete a permission grant")
 	grant := fixture.createGrant(
 		t,
+		groupID,
 		domain.PermissionGrant{
-			SubjectType: domain.SubjectUser,
-			SubjectID:   userID,
-			Action:      domain.PermissionForumsView,
-			ScopeType:   domain.ObjectForum,
-			ScopeID:     uuid.New(),
+			Action:    domain.PermissionForumsView,
+			ScopeType: domain.ObjectForum,
+			ScopeID:   domain.AllScopeID(),
 		},
 	)
-	if err := fixture.service.DeletePermissionGrant(context.Background(), port.DeletePermissionGrantCommand{ID: grant.ID}); err != nil {
+	if err := fixture.service.DeletePermissionGrant(context.Background(), port.DeletePermissionGrantCommand{GroupID: groupID, ID: grant.ID}); err != nil {
 		t.Fatalf("DeletePermissionGrant() error = %v", err)
 	}
 

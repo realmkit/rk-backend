@@ -69,8 +69,8 @@ func TestActionAndGrantMappingCoversPermissionBuckets(t *testing.T) {
 		{SubjectType: string(groupsdomain.SubjectGroup), SubjectID: groupID},
 		{SubjectType: string(groupsdomain.SubjectUser), SubjectID: uuid.New()},
 	}
-	if ids := groupSubjectIDs(grants); len(ids) != 1 || ids[0] != groupID {
-		t.Fatalf("groupSubjectIDs() = %#v, want unique group id", ids)
+	if ids := grantGroupIDs(grants, nil); len(ids) != 1 || ids[0] != groupID {
+		t.Fatalf("grantGroupIDs() = %#v, want unique group id", ids)
 	}
 
 	settings := emptyPermissionSettings(uuid.New())

@@ -12903,7 +12903,8 @@
           },
           "scope_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Target resource ID. Permission checks must use a concrete resource ID."
           },
           "context": {
             "type": "object",
@@ -12926,13 +12927,6 @@
             "type": "string"
           },
           "matched_grant_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "matched_subject_type": {
-            "$ref": "#/components/schemas/AuthorizationSubjectType"
-          },
-          "matched_subject_id": {
             "type": "string",
             "format": "uuid"
           },
@@ -15515,8 +15509,6 @@
         "type": "object",
         "required": [
           "id",
-          "subject_type",
-          "subject_id",
           "action",
           "scope_type",
           "scope_id",
@@ -15528,19 +15520,6 @@
             "type": "string",
             "format": "uuid"
           },
-          "subject_type": {
-            "type": "string",
-            "enum": [
-              "public",
-              "authenticated",
-              "user",
-              "group"
-            ]
-          },
-          "subject_id": {
-            "type": "string",
-            "format": "uuid"
-          },
           "action": {
             "type": "string"
           },
@@ -15549,7 +15528,8 @@
           },
           "scope_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Granted resource ID. The zero UUID grants this action for every resource of the scope type."
           },
           "inherit": {
             "type": "boolean"
@@ -15614,7 +15594,8 @@
           },
           "scope_id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Granted resource ID. Use the zero UUID to grant this action for every resource of the scope type."
           },
           "inherit": {
             "type": "boolean",

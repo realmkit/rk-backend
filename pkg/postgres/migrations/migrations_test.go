@@ -97,6 +97,9 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	if !db.Migrator().HasTable("permission_grants") {
 		t.Fatalf("permission_grants table missing")
 	}
+	if !db.Migrator().HasTable("forum_permission_grants") {
+		t.Fatalf("forum_permission_grants table missing")
+	}
 	if !db.Migrator().HasTable("users") {
 		t.Fatalf("users table missing")
 	}

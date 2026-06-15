@@ -728,7 +728,7 @@ func createGrant(
 ) {
 	t.Helper()
 	err := db.Exec(
-		"INSERT INTO permission_grants (id, subject_type, subject_id, action, scope_type, scope_id, inherit, condition_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+		"INSERT INTO forum_permission_grants (id, subject_type, subject_id, action, scope_type, scope_id, inherit, condition_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
 		uuid.New(),
 		subjectType,
 		subjectID,

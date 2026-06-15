@@ -217,7 +217,10 @@ func (service Service) CreatePermissionGrant(
 			Message: "must match the permission scope",
 		}})
 	}
-	created, err := service.permissions.CreateGrant(ctx, grant)
+	if _, err := service.groups.FindByID(ctx, command.GroupID); err != nil {
+		return domain.PermissionGrant{}, err
+	}
+	created, err := service.permissions.CreateGrant(ctx, command.GroupID, grant)
 	if err != nil {
 		return domain.PermissionGrant{}, err
 	}
@@ -226,7 +229,10 @@ func (service Service) CreatePermissionGrant(
 
 // DeletePermissionGrant deletes a permission grant.
 func (service Service) DeletePermissionGrant(ctx context.Context, command port.DeletePermissionGrantCommand) error {
-	if err := service.permissions.DeleteGrant(ctx, command.ID); err != nil {
+	if _, err := service.groups.FindByID(ctx, command.GroupID); err != nil {
+		return err
+	}
+	if err := service.permissions.DeleteGrant(ctx, command.GroupID, command.ID); err != nil {
 		return err
 	}
 	return service.publishGrantDeleted(ctx, command.ID)

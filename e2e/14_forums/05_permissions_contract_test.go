@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/e2e/harness"
 	groupsdomain "github.com/realmkit/rk-backend/module/groups/domain"
-	groupsport "github.com/realmkit/rk-backend/module/groups/port"
 )
 
 func TestForumPermissionSubjectsAndDeleteGates(t *testing.T) {
@@ -142,17 +141,19 @@ func (fixture forumsFixture) grantSubject(
 ) {
 	t.Helper()
 	_ = subjectRelation
-	_, err := fixture.groups.CreatePermissionGrant(context.Background(), groupsport.CreatePermissionGrantCommand{
-		Grant: groupsdomain.PermissionGrant{
-			SubjectType: subjectType,
-			SubjectID:   subjectID,
-			Action:      forumActionForRelation(relation),
-			ScopeType:   groupsdomain.ObjectForum,
-			ScopeID:     objectID,
-		},
-	})
-	if err != nil {
-		t.Fatalf("CreatePermissionGrant(%s/%s) error = %v", subjectType, relation, err)
+	result := fixture.ecosystem.Database.DB.Exec(
+		"INSERT INTO forum_permission_grants (id, subject_type, subject_id, action, scope_type, scope_id, inherit, condition_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+		uuid.New(),
+		subjectType,
+		subjectID,
+		forumActionForRelation(relation),
+		groupsdomain.ObjectForum,
+		objectID,
+		false,
+		"",
+	)
+	if result.Error != nil {
+		t.Fatalf("CreatePermissionGrant(%s/%s) error = %v", subjectType, relation, result.Error)
 	}
 	if err := fixture.service.ClearReadCache(context.Background()); err != nil {
 		t.Fatalf("ClearReadCache() error = %v", err)

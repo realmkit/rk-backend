@@ -9,8 +9,8 @@ import (
 	"github.com/realmkit/rk-backend/module/groups/domain"
 )
 
-// TestGroupsPermissionSubjects verifies public, authenticated, user, and group grants.
-func TestGroupsPermissionSubjects(t *testing.T) {
+// TestGroupsPermissionGrants verifies group-owned permission grants.
+func TestGroupsPermissionGrants(t *testing.T) {
 	steps := harness.NewSteps(t)
 	fixture := newGroupsFixture(t)
 	userID := uuid.New()
@@ -21,28 +21,10 @@ func TestGroupsPermissionSubjects(t *testing.T) {
 	steps.Log("assign user to viewer group")
 	membershipVersion := assignMember(t, fixture, groupID, userID, "subject-permissions")
 
-	publicForum := uuid.New()
-	authForum := uuid.New()
-	userForum := uuid.New()
 	groupForum := uuid.New()
 
-	steps.Log("seed representative permission grants")
-	fixture.createGrant(t, forumViewGrant(publicForum, domain.SubjectPublic, domain.PublicSubjectID()))
-	fixture.createGrant(t, forumViewGrant(authForum, domain.SubjectAuthenticated, domain.AuthenticatedSubjectID()))
-	fixture.createGrant(t, forumViewGrant(userForum, domain.SubjectUser, userID))
-	fixture.createGrant(t, forumViewGrant(groupForum, domain.SubjectGroup, groupID))
-
-	steps.Log("public grants allow anonymous and authenticated users")
-	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(uuid.Nil, publicForum)), true)
-	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, publicForum)), true)
-
-	steps.Log("authenticated grants deny anonymous users")
-	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(uuid.Nil, authForum)), false)
-	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, authForum)), true)
-
-	steps.Log("direct user grants only allow the matching user")
-	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, userForum)), true)
-	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(otherID, userForum)), false)
+	steps.Log("seed representative permission grant")
+	fixture.createGrant(t, groupID, forumViewGrant())
 
 	steps.Log("group grants allow active members")
 	assertDecision(t, fixture.checkPermission(t, checkForumViewBody(userID, groupForum)), true)
@@ -75,17 +57,21 @@ func TestGroupsCatalogActionGrant(t *testing.T) {
 	steps := harness.NewSteps(t)
 	fixture := newGroupsFixture(t)
 	userID := uuid.New()
+	group := fixture.createGroup(t, "post_editors")
+	groupID := groupIDFrom(t, group)
 	postID := uuid.New()
+
+	steps.Log("assign user to editor group")
+	assignMember(t, fixture, groupID, userID, "catalog-permissions")
 
 	steps.Log("grant code-owned posts.update action")
 	fixture.createGrant(
 		t,
+		groupID,
 		domain.PermissionGrant{
-			SubjectType: domain.SubjectUser,
-			SubjectID:   userID,
-			Action:      domain.PermissionPostsUpdate,
-			ScopeType:   domain.ObjectForumPost,
-			ScopeID:     postID,
+			Action:    domain.PermissionPostsUpdate,
+			ScopeType: domain.ObjectForumPost,
+			ScopeID:   domain.AllScopeID(),
 		},
 	)
 
@@ -131,17 +117,11 @@ func removeMember(t *testing.T, fixture groupsFixture, groupID uuid.UUID, userID
 }
 
 // forumViewGrant creates one forum view grant.
-func forumViewGrant(
-	forumID uuid.UUID,
-	subjectType domain.SubjectType,
-	subjectID uuid.UUID,
-) domain.PermissionGrant {
+func forumViewGrant() domain.PermissionGrant {
 	return domain.PermissionGrant{
-		SubjectType: subjectType,
-		SubjectID:   subjectID,
-		Action:      domain.PermissionForumsView,
-		ScopeType:   domain.ObjectForum,
-		ScopeID:     forumID,
+		Action:    domain.PermissionForumsView,
+		ScopeType: domain.ObjectForum,
+		ScopeID:   domain.AllScopeID(),
 	}
 }
 

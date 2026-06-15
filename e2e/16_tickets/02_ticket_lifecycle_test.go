@@ -71,9 +71,10 @@ func TestTicketLifecycle(t *testing.T) {
 	steps.Do("ticket intake rejects missing permission and required fields", func() {
 		noGrantDefinition := fixture.createTicketDefinition(t, staff, "no_grant_support", "support")
 		noGrantID := ticketIDFrom(t, noGrantDefinition, "id")
+		noGrantUser := uuid.New()
 		forbidden := fixture.do(t, configureTicketRequest(
 			harness.JSONRequest(fiber.MethodPost, "/tickets", ticketBody(noGrantID, "No grant")),
-			withTicketUser(submitter),
+			withTicketUser(noGrantUser),
 			withTicketIdempotency("ticket-no-grant"),
 		))
 		assertTicketStatus(t, forbidden, fiber.StatusForbidden)

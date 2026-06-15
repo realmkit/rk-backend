@@ -87,12 +87,10 @@ func TestMembershipAndPermissionRoutes(t *testing.T) {
 		group:      group,
 		membership: domain.Membership{ID: uuid.New(), GroupID: group.ID, UserID: userID, Status: domain.MembershipStatusActive, Version: 1},
 		grant: domain.PermissionGrant{
-			ID:          uuid.New(),
-			SubjectType: domain.SubjectGroup,
-			SubjectID:   group.ID,
-			Action:      domain.PermissionForumsView,
-			ScopeType:   domain.ObjectForum,
-			ScopeID:     uuid.New(),
+			ID:        uuid.New(),
+			Action:    domain.PermissionForumsView,
+			ScopeType: domain.ObjectForum,
+			ScopeID:   domain.AllScopeID(),
 		},
 		decision: port.Decision{Allowed: true, Reason: "matched_grant"},
 	}
