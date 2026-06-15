@@ -125,6 +125,9 @@ type PermissionGrantFilter struct {
 
 	// IncludeAllScopes includes grants that apply to all resources of the scope type.
 	IncludeAllScopes bool
+
+	// AllScopeOnly filters to grants that apply to every resource of the scope type.
+	AllScopeOnly bool
 }
 
 // CheckRequest requests a permission decision.

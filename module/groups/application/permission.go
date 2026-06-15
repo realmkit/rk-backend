@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/groups/domain"
 	"github.com/realmkit/rk-backend/module/groups/port"
 	"github.com/realmkit/rk-backend/pkg/pagination"
@@ -14,7 +13,7 @@ func (service Service) Check(ctx context.Context, request port.CheckRequest) (po
 	if request.Action == "" {
 		return port.Decision{Allowed: false, Reason: "missing_action"}, nil
 	}
-	if request.ScopeType == "" || request.ScopeID == uuid.Nil {
+	if request.ScopeType == "" {
 		return port.Decision{Allowed: false, Reason: "missing_scope"}, nil
 	}
 	action, err := permissionAction(request.Action)
@@ -49,6 +48,7 @@ func (service Service) checkGrants(ctx context.Context, request port.CheckReques
 			ScopeType:        request.ScopeType,
 			ScopeID:          request.ScopeID,
 			IncludeAllScopes: true,
+			AllScopeOnly:     request.ScopeID == domain.AllScopeID(),
 		},
 		pagination.Page{Limit: 100},
 	)

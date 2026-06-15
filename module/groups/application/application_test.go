@@ -193,6 +193,84 @@ func TestServiceCheckAllowsAllScopeGroupGrant(t *testing.T) {
 	}
 }
 
+// TestServiceCheckAllowsAllScopeRequest verifies all-resource checks match all-resource grants.
+func TestServiceCheckAllowsAllScopeRequest(t *testing.T) {
+	service, groups, memberships, permissions := newTestService()
+	group := testGroup("administrator", domain.GroupStatusSystem)
+	groups.items[group.ID] = group
+	actorID := uuid.New()
+	memberships.items[membershipKey(group.ID, actorID)] = domain.Membership{
+		ID:      uuid.New(),
+		GroupID: group.ID,
+		UserID:  actorID,
+		Status:  domain.MembershipStatusActive,
+		Version: 1,
+	}
+	grantID := uuid.New()
+	permissions.grants[grantID] = domain.PermissionGrant{
+		ID:        grantID,
+		Action:    "groups.read",
+		ScopeType: domain.ObjectGroup,
+		ScopeID:   domain.AllScopeID(),
+	}
+	permissions.assignments[grantID] = group.ID
+
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{
+			ActorUserID: actorID,
+			Action:      "groups.read",
+			ScopeType:   domain.ObjectGroup,
+			ScopeID:     domain.AllScopeID(),
+		},
+	)
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !decision.Allowed || decision.MatchedGrantID != grantID {
+		t.Fatalf("decision = %+v, want all-scope grant", decision)
+	}
+}
+
+// TestServiceCheckDeniesSpecificGrantForAllScopeRequest verifies all-resource checks do not widen specific grants.
+func TestServiceCheckDeniesSpecificGrantForAllScopeRequest(t *testing.T) {
+	service, groups, memberships, permissions := newTestService()
+	group := testGroup("moderator", domain.GroupStatusActive)
+	groups.items[group.ID] = group
+	actorID := uuid.New()
+	memberships.items[membershipKey(group.ID, actorID)] = domain.Membership{
+		ID:      uuid.New(),
+		GroupID: group.ID,
+		UserID:  actorID,
+		Status:  domain.MembershipStatusActive,
+		Version: 1,
+	}
+	grantID := uuid.New()
+	permissions.grants[grantID] = domain.PermissionGrant{
+		ID:        grantID,
+		Action:    "groups.read",
+		ScopeType: domain.ObjectGroup,
+		ScopeID:   uuid.New(),
+	}
+	permissions.assignments[grantID] = group.ID
+
+	decision, err := service.Check(
+		context.Background(),
+		port.CheckRequest{
+			ActorUserID: actorID,
+			Action:      "groups.read",
+			ScopeType:   domain.ObjectGroup,
+			ScopeID:     domain.AllScopeID(),
+		},
+	)
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if decision.Allowed || decision.Reason != "no_matching_grant" {
+		t.Fatalf("decision = %+v, want denied all-scope request", decision)
+	}
+}
+
 // TestServiceCheckDeniesDisabledGroupGrant verifies disabled groups do not grant access.
 func TestServiceCheckDeniesDisabledGroupGrant(t *testing.T) {
 	service, groups, memberships, permissions := newTestService()
@@ -462,7 +540,11 @@ func (repository *memoryPermissions) ListGrants(
 		if filter.ScopeType != "" && grant.ScopeType != filter.ScopeType {
 			continue
 		}
-		if filter.ScopeID != uuid.Nil {
+		if filter.AllScopeOnly {
+			if grant.ScopeID != domain.AllScopeID() {
+				continue
+			}
+		} else if filter.ScopeID != uuid.Nil {
 			if filter.IncludeAllScopes {
 				if grant.ScopeID != filter.ScopeID && grant.ScopeID != domain.AllScopeID() {
 					continue

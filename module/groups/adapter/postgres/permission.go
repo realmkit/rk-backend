@@ -198,52 +198,6 @@ func (repository PermissionRepository) findEquivalentGrantModel(
 	return model, nil
 }
 
-// applyGrantFilter applies permission grant filters.
-func applyGrantFilter(query *gorm.DB, filter port.PermissionGrantFilter) *gorm.DB {
-	if filter.GroupID != uuid.Nil {
-		query = query.Joins(
-			"JOIN group_permission_grants ON group_permission_grants.grant_id = permission_grants.id",
-		).Where(
-			"group_permission_grants.group_id = ? AND group_permission_grants.deleted_at IS NULL",
-			filter.GroupID,
-		)
-	}
-	if filter.ActorUserID != uuid.Nil {
-		query = query.Joins(
-			"JOIN group_permission_grants actor_grants ON actor_grants.grant_id = permission_grants.id",
-		).Joins(
-			"JOIN group_memberships ON group_memberships.group_id = actor_grants.group_id",
-		).Joins(
-			"JOIN groups ON groups.id = actor_grants.group_id",
-		).Where(
-			"group_memberships.user_id = ? AND group_memberships.status = ? "+
-				"AND group_memberships.deleted_at IS NULL AND actor_grants.deleted_at IS NULL "+
-				"AND groups.deleted_at IS NULL AND groups.status IN ?",
-			filter.ActorUserID,
-			domain.MembershipStatusActive,
-			[]domain.GroupStatus{domain.GroupStatusActive, domain.GroupStatusSystem},
-		).Distinct("permission_grants.*")
-	}
-	if filter.Action != "" {
-		query = query.Where("permission_grants.action = ?", filter.Action)
-	}
-	if filter.ScopeType != "" {
-		query = query.Where("permission_grants.scope_type = ?", filter.ScopeType)
-	}
-	if filter.ScopeID != uuid.Nil {
-		if filter.IncludeAllScopes {
-			query = query.Where(
-				"(permission_grants.scope_id = ? OR permission_grants.scope_id = ?)",
-				filter.ScopeID,
-				domain.AllScopeID(),
-			)
-		} else {
-			query = query.Where("permission_grants.scope_id = ?", filter.ScopeID)
-		}
-	}
-	return query
-}
-
 // grantPage maps grant models into a page.
 func grantPage(models []PermissionGrantModel, limit int) pagination.Result[domain.PermissionGrant] {
 	next := ""
