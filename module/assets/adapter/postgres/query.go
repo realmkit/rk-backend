@@ -16,7 +16,7 @@ func applyAssetFilter(query *gorm.DB, filter port.AssetFilter) *gorm.DB {
 	if filter.Namespace != "" {
 		query = query.Where("namespace = ?", filter.Namespace)
 	}
-	if filter.Path != "" {
+	if filter.PathExact {
 		query = query.Where("path = ?", filter.Path)
 	}
 	if filter.PathPrefix != "" {
@@ -29,12 +29,8 @@ func applyAssetFilter(query *gorm.DB, filter port.AssetFilter) *gorm.DB {
 		query = query.Where("visibility = ?", filter.Visibility)
 	}
 	if !filter.Query.Empty() {
-		if query.Dialector.Name() == "postgres" {
-			query = query.Where("to_tsvector('simple', coalesce(path, '') || ' ' || coalesce(filename, '') || ' ' || coalesce(display_name, '')) @@ plainto_tsquery('simple', ?)", filter.Query.String())
-		} else {
-			like := filter.Query.LowerLike()
-			query = query.Where(assetSearchCondition(), like, like, like)
-		}
+		like := filter.Query.LowerLike()
+		query = query.Where(assetSearchCondition(), like, like, like)
 	}
 	return query
 }
@@ -138,5 +134,5 @@ func assetCursorValue(value string, key string) any {
 
 // assetFilterHash binds an asset cursor to current filters.
 func assetFilterHash(filter port.AssetFilter, sort search.Sort) string {
-	return search.HashFilter(filter.Namespace, filter.Path, filter.PathPrefix, filter.Status, filter.Visibility, filter.Query.String(), sort)
+	return search.HashFilter(filter.Namespace, filter.Path, filter.PathExact, filter.PathPrefix, filter.Status, filter.Visibility, filter.Query.String(), sort)
 }

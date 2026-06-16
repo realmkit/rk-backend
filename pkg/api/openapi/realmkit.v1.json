@@ -1370,6 +1370,44 @@
         "description": "Uses bounded cursor pagination; page_token resumes from a previous response token when supported."
       }
     },
+    "/assets/namespaces": {
+      "get": {
+        "operationId": "listAssetNamespaces",
+        "tags": [
+          "assets"
+        ],
+        "summary": "List asset namespaces",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AssetNamespaces"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
     "/assets/folders": {
       "get": {
         "operationId": "listAssetFolders",
@@ -11056,6 +11094,16 @@
           }
         }
       },
+      "AssetNamespaces": {
+        "description": "Asset namespace list response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AssetNamespaces"
+            }
+          }
+        }
+      },
       "AssetURL": {
         "description": "Asset signed URL response",
         "content": {
@@ -11991,11 +12039,15 @@
       "AssetUpdateRequest": {
         "type": "object",
         "required": [
+          "namespace",
           "display_name",
           "path",
           "visibility"
         ],
         "properties": {
+          "namespace": {
+            "$ref": "#/components/schemas/MachineKey"
+          },
           "display_name": {
             "type": "string",
             "maxLength": 160
@@ -12089,6 +12141,20 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "AssetNamespaces": {
+        "type": "object",
+        "required": [
+          "namespaces"
+        ],
+        "properties": {
+          "namespaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MachineKey"
             }
           }
         }

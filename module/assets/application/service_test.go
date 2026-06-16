@@ -131,6 +131,13 @@ func TestServiceMutableOperationsUseRepository(t *testing.T) {
 	if len(list.Items) != 1 {
 		t.Fatalf("List() items = %d, want 1", len(list.Items))
 	}
+	namespaces, err := service.ListNamespaces(context.Background())
+	if err != nil {
+		t.Fatalf("ListNamespaces() error = %v", err)
+	}
+	if len(namespaces) != 1 {
+		t.Fatalf("ListNamespaces() = %v, want one namespace", namespaces)
+	}
 	folders, err := service.ListFolders(context.Background(), port.FolderFilter{PathPrefix: " /brand/ "})
 	if err != nil {
 		t.Fatalf("ListFolders() error = %v", err)
@@ -142,6 +149,7 @@ func TestServiceMutableOperationsUseRepository(t *testing.T) {
 		context.Background(),
 		port.UpdateAssetCommand{
 			ID:              intent.Asset.ID,
+			Namespace:       intent.Asset.Namespace,
 			DisplayName:     "Updated",
 			Path:            "brand/updated",
 			Visibility:      domain.VisibilityAuthenticated,
@@ -181,6 +189,7 @@ func TestServicePublishesAssetLifecycleEvents(t *testing.T) {
 	}
 	updated, err := service.Update(context.Background(), port.UpdateAssetCommand{
 		ID:              uploaded.ID,
+		Namespace:       uploaded.Namespace,
 		DisplayName:     "Updated",
 		Path:            "brand/updated",
 		Visibility:      domain.VisibilityAuthenticated,
@@ -271,6 +280,11 @@ func (repository *memoryRepository) List(context.Context, port.AssetFilter, pagi
 		items = append(items, asset)
 	}
 	return pagination.Result[domain.Asset]{Items: items}, nil
+}
+
+// ListNamespaces returns active asset namespaces.
+func (repository *memoryRepository) ListNamespaces(context.Context) ([]string, error) {
+	return []string{"community"}, nil
 }
 
 // ListFolders returns direct child folders.

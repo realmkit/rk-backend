@@ -11,6 +11,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/orm"
 	"github.com/realmkit/rk-backend/pkg/pagination"
 	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
+	"github.com/realmkit/rk-backend/pkg/search"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -30,6 +31,7 @@ func TestAssetRepositoryLifecycle(t *testing.T) {
 		t.Fatalf("FindByID() StorageKey = %q, want %q", found.StorageKey, asset.StorageKey)
 	}
 	asset.DisplayName = "Updated Logo"
+	asset.Namespace = "community"
 	asset.Visibility = domain.VisibilityAuthenticated
 	updated, err := repository.Update(context.Background(), asset, asset.Version)
 	if err != nil {
@@ -48,6 +50,13 @@ func TestAssetRepositoryLifecycle(t *testing.T) {
 	}
 	if len(list.Items) != 1 {
 		t.Fatalf("List() items = %d, want 1", len(list.Items))
+	}
+	namespaces, err := repository.ListNamespaces(context.Background())
+	if err != nil {
+		t.Fatalf("ListNamespaces() error = %v", err)
+	}
+	if len(namespaces) != 1 || namespaces[0] != "community" {
+		t.Fatalf("ListNamespaces() = %v, want community", namespaces)
 	}
 	folders, err := repository.ListFolders(context.Background(), port.FolderFilter{Namespace: "community"})
 	if err != nil {
@@ -102,6 +111,81 @@ func TestAssetRepositoryListIsBounded(t *testing.T) {
 	}
 	if len(list.Items) != 1 || list.NextCursor == "" {
 		t.Fatalf("List() = %+v, want one bounded item and next cursor", list)
+	}
+}
+
+// TestAssetRepositoryExactRootPathExcludesNested verifies explorer roots only show root assets.
+func TestAssetRepositoryExactRootPathExcludesNested(t *testing.T) {
+	repository := newAssetRepository(t)
+	root := testAsset()
+	root.Path = ""
+	nested := testAsset()
+	nested.ID = uuid.New()
+	nested.Filename = "nested.png"
+	nested.StorageKey = "assets/community/" + uuid.NewString() + "/nested.png"
+	if _, err := repository.Create(context.Background(), root); err != nil {
+		t.Fatalf("Create(root) error = %v", err)
+	}
+	if _, err := repository.Create(context.Background(), nested); err != nil {
+		t.Fatalf("Create(nested) error = %v", err)
+	}
+
+	list, err := repository.List(
+		context.Background(),
+		port.AssetFilter{Namespace: "community", PathExact: true},
+		pagination.Page{Limit: 10},
+	)
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(list.Items) != 1 || list.Items[0].ID != root.ID {
+		t.Fatalf("List() = %+v, want only root asset", list.Items)
+	}
+}
+
+// TestAssetRepositoryListSearchMatchesPartialFilename verifies substring asset search.
+func TestAssetRepositoryListSearchMatchesPartialFilename(t *testing.T) {
+	repository := newAssetRepository(t)
+	asset := testAsset()
+	asset.Filename = "mine.jpg"
+	if _, err := repository.Create(context.Background(), asset); err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	query, err := search.NewTextQuery("mine.jp", search.QueryOptions{})
+	if err != nil {
+		t.Fatalf("NewTextQuery() error = %v", err)
+	}
+
+	list, err := repository.List(
+		context.Background(),
+		port.AssetFilter{Query: query},
+		pagination.Page{Limit: 10},
+	)
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(list.Items) != 1 || list.Items[0].ID != asset.ID {
+		t.Fatalf("List() = %+v, want partial filename match", list.Items)
+	}
+}
+
+// TestAssetRepositoryNamespacesIgnoresDeleted verifies deleted assets do not create explorer roots.
+func TestAssetRepositoryNamespacesIgnoresDeleted(t *testing.T) {
+	repository := newAssetRepository(t)
+	asset, err := repository.Create(context.Background(), testAsset())
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if err := repository.Delete(context.Background(), asset.ID, asset.Version); err != nil {
+		t.Fatalf("Delete() error = %v", err)
+	}
+
+	namespaces, err := repository.ListNamespaces(context.Background())
+	if err != nil {
+		t.Fatalf("ListNamespaces() error = %v", err)
+	}
+	if len(namespaces) != 0 {
+		t.Fatalf("ListNamespaces() = %v, want none", namespaces)
 	}
 }
 

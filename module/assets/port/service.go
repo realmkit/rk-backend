@@ -26,6 +26,9 @@ type Service interface {
 	// List returns matching assets.
 	List(ctx context.Context, filter AssetFilter, page pagination.Page) (pagination.Result[domain.Asset], error)
 
+	// ListNamespaces returns active asset namespaces.
+	ListNamespaces(ctx context.Context) ([]string, error)
+
 	// ListFolders returns direct virtual folder children.
 	ListFolders(ctx context.Context, filter FolderFilter) ([]string, error)
 

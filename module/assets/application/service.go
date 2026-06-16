@@ -127,6 +127,11 @@ func (service Service) List(ctx context.Context, filter port.AssetFilter, page p
 	return service.repository.List(ctx, normalizeFilter(filter), page)
 }
 
+// ListNamespaces returns active asset namespaces.
+func (service Service) ListNamespaces(ctx context.Context) ([]string, error) {
+	return service.repository.ListNamespaces(ctx)
+}
+
 // ListFolders returns direct virtual folder children.
 func (service Service) ListFolders(ctx context.Context, filter port.FolderFilter) ([]string, error) {
 	filter.PathPrefix = domain.NormalizePath(filter.PathPrefix)
@@ -139,6 +144,7 @@ func (service Service) Update(ctx context.Context, command port.UpdateAssetComma
 	if err != nil {
 		return domain.Asset{}, err
 	}
+	asset.Namespace = command.Namespace
 	asset.DisplayName = strings.TrimSpace(command.DisplayName)
 	asset.Path = domain.NormalizePath(command.Path)
 	asset.Visibility = command.Visibility

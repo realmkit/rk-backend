@@ -40,6 +40,9 @@ type UpdateAssetCommand struct {
 	// ID is the asset identifier.
 	ID uuid.UUID
 
+	// Namespace is the replacement namespace.
+	Namespace domain.Namespace
+
 	// DisplayName is the replacement display name.
 	DisplayName string
 
@@ -75,6 +78,9 @@ type AssetFilter struct {
 
 	// Path filters by exact virtual folder path.
 	Path domain.VirtualPath
+
+	// PathExact reports whether Path should filter even when it is empty.
+	PathExact bool
 
 	// PathPrefix filters by folder prefix.
 	PathPrefix domain.VirtualPath

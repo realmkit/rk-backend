@@ -43,6 +43,7 @@ func (repository AssetRepository) Update(ctx context.Context, asset domain.Asset
 		Model(&AssetModel{}).
 		Where("id = ? AND version = ?", asset.ID, expectedVersion).
 		Updates(map[string]any{
+			"namespace":    string(asset.Namespace),
 			"path":         string(asset.Path),
 			"display_name": asset.DisplayName,
 			"visibility":   string(asset.Visibility),
@@ -94,6 +95,21 @@ func (repository AssetRepository) List(
 		return pagination.Result[domain.Asset]{}, err
 	}
 	return assetPage(models, page.Limit, filterHash, sort)
+}
+
+// ListNamespaces returns active asset namespaces.
+func (repository AssetRepository) ListNamespaces(ctx context.Context) ([]string, error) {
+	var namespaces []string
+	err := repository.store.DB(ctx).
+		Model(&AssetModel{}).
+		Distinct("namespace").
+		Order("namespace ASC").
+		Pluck("namespace", &namespaces).
+		Error
+	if err != nil {
+		return nil, err
+	}
+	return namespaces, nil
 }
 
 // ListFolders returns direct child folders.

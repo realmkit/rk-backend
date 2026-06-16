@@ -22,6 +22,11 @@ type folderListResponse struct {
 	Folders []string `json:"folders"`
 }
 
+// namespaceListResponse contains asset namespaces.
+type namespaceListResponse struct {
+	Namespaces []string `json:"namespaces"`
+}
+
 // assetURLResponse contains a signed read URL.
 type assetURLResponse struct {
 	URL string `json:"url"`
@@ -105,6 +110,25 @@ func (handler handler) listAssets(ctx *fiber.Ctx) error {
 		Sort:          filter.Sort.Key,
 		Direction:     string(filter.Sort.Direction),
 	})
+}
+
+// listNamespaces lists active asset namespaces.
+func (handler handler) listNamespaces(ctx *fiber.Ctx) error {
+	if _, err := currentUserID(ctx); err != nil {
+		return err
+	}
+	if _, err := httpguard.Require(
+		ctx,
+		handler.services.Checker,
+		httpguard.All(groupsdomain.PermissionAssetsView, groupsdomain.ObjectAsset),
+	); err != nil {
+		return err
+	}
+	namespaces, err := handler.services.Assets.ListNamespaces(ctx.UserContext())
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	return writeJSON(ctx, fiber.StatusOK, namespaceListResponse{Namespaces: namespaces})
 }
 
 // listFolders lists virtual folders.

@@ -28,6 +28,7 @@ func assetFilterFromQuery(ctx *fiber.Ctx) (port.AssetFilter, error) {
 	return port.AssetFilter{
 		Namespace:  domain.Namespace(ctx.Query("namespace")),
 		Path:       domain.VirtualPath(ctx.Query("path")),
+		PathExact:  ctx.Context().QueryArgs().Has("path"),
 		PathPrefix: domain.VirtualPath(ctx.Query("path_prefix")),
 		Status:     domain.Status(ctx.Query("status")),
 		Visibility: domain.Visibility(ctx.Query("visibility")),

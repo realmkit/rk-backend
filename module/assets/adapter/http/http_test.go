@@ -65,7 +65,7 @@ func TestUpdateAssetRequiresIfMatch(t *testing.T) {
 	req := httptestRequest(
 		http.MethodPatch,
 		"/assets/"+testHTTPAsset().ID.String(),
-		`{"display_name":"Logo","path":"brand","visibility":"public"}`,
+		`{"namespace":"community","display_name":"Logo","path":"brand","visibility":"public"}`,
 	)
 
 	resp, err := app.Test(req)
@@ -109,6 +109,24 @@ func TestListFoldersReturnsFolders(t *testing.T) {
 	}
 }
 
+// TestListNamespacesReturnsNamespaces verifies namespace responses.
+func TestListNamespacesReturnsNamespaces(t *testing.T) {
+	app := testApp(&httpService{namespaces: []string{"community"}})
+	req := httptestRequest(http.MethodGet, "/assets/namespaces", "")
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("ReadAll() error = %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK || !strings.Contains(string(body), "community") {
+		t.Fatalf("status=%d body=%s, want namespaces", resp.StatusCode, body)
+	}
+}
+
 // TestAssetRoutesExerciseReadAndMutationPaths verifies remaining asset routes.
 func TestAssetRoutesExerciseReadAndMutationPaths(t *testing.T) {
 	asset := testHTTPAsset()
@@ -140,7 +158,7 @@ func TestAssetRoutesExerciseReadAndMutationPaths(t *testing.T) {
 			name:   "update",
 			method: http.MethodPatch,
 			path:   "/assets/" + asset.ID.String(),
-			body:   `{"display_name":"Logo","path":"brand","visibility":"public"}`,
+			body:   `{"namespace":"community","display_name":"Logo","path":"brand","visibility":"public"}`,
 			status: fiber.StatusOK,
 			header: map[string]string{headers.IfMatch: `"1"`},
 		},
@@ -177,6 +195,7 @@ func TestPrivateAssetRoutesRequireUser(t *testing.T) {
 		rawRequest(t, http.MethodGet, "/assets/"+assetID, ``),
 		rawRequest(t, http.MethodGet, "/assets/"+assetID+"/url", ``),
 		rawRequest(t, http.MethodGet, "/assets", ``),
+		rawRequest(t, http.MethodGet, "/assets/namespaces", ``),
 		rawRequest(t, http.MethodGet, "/assets/folders", ``),
 		rawRequest(t, http.MethodPatch, "/assets/"+assetID, `{}`),
 		rawRequest(t, http.MethodDelete, "/assets/"+assetID, ``),
@@ -260,6 +279,7 @@ func testHTTPAsset() domain.Asset {
 type httpService struct {
 	asset         domain.Asset
 	folders       []string
+	namespaces    []string
 	err           error
 	created       int
 	createCommand port.CreateUploadIntentCommand
@@ -308,6 +328,14 @@ func (service *httpService) List(context.Context, port.AssetFilter, pagination.P
 		return pagination.Result[domain.Asset]{}, service.err
 	}
 	return pagination.Result[domain.Asset]{Items: []domain.Asset{service.asset}}, nil
+}
+
+// ListNamespaces returns active asset namespaces.
+func (service *httpService) ListNamespaces(context.Context) ([]string, error) {
+	if service.err != nil {
+		return nil, service.err
+	}
+	return service.namespaces, nil
 }
 
 // ListFolders returns direct virtual folder children.

@@ -63,6 +63,11 @@ func (service assetService) List(context.Context, assetport.AssetFilter, paginat
 	return pagination.Result[assetdomain.Asset]{}, nil
 }
 
+// ListNamespaces returns asset namespaces.
+func (service assetService) ListNamespaces(context.Context) ([]string, error) {
+	return nil, nil
+}
+
 // ListFolders returns asset folders.
 func (service assetService) ListFolders(context.Context, assetport.FolderFilter) ([]string, error) {
 	return nil, nil

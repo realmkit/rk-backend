@@ -25,6 +25,7 @@ type uploadIntentRequest struct {
 
 // updateAssetRequest is the update asset request body.
 type updateAssetRequest struct {
+	Namespace   domain.Namespace   `json:"namespace"`
 	DisplayName string             `json:"display_name"`
 	Path        domain.VirtualPath `json:"path"`
 	Visibility  domain.Visibility  `json:"visibility"`
@@ -144,6 +145,7 @@ func (handler handler) updateAsset(ctx *fiber.Ctx) error {
 		ctx.UserContext(),
 		port.UpdateAssetCommand{
 			ID:              id,
+			Namespace:       request.Namespace,
 			DisplayName:     request.DisplayName,
 			Path:            request.Path,
 			Visibility:      request.Visibility,

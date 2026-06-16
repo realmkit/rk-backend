@@ -22,6 +22,7 @@ func Register(router fiber.Router, services Services) {
 	group.Post("/upload-intents", handler.createUploadIntent)
 	group.Get("", handler.listAssets)
 	group.Get("/", handler.listAssets)
+	group.Get("/namespaces", handler.listNamespaces)
 	group.Get("/folders", handler.listFolders)
 	group.Get("/:asset_id", handler.getAsset)
 	group.Get("/:asset_id/url", handler.getAssetURL)
