@@ -70,9 +70,6 @@ type SetValueCommand struct {
 	// Owner is the metadata owner.
 	Owner OwnerRef
 
-	// Namespace is the definition namespace.
-	Namespace domain.Namespace
-
 	// Key is the definition key.
 	Key domain.Key
 
@@ -91,9 +88,6 @@ type GetValueQuery struct {
 	// Owner is the metadata owner.
 	Owner OwnerRef
 
-	// Namespace is the definition namespace.
-	Namespace domain.Namespace
-
 	// Key is the definition key.
 	Key domain.Key
 }
@@ -106,9 +100,6 @@ type ListValuesForOwnerQuery struct {
 	// Owner is the metadata owner.
 	Owner OwnerRef
 
-	// Namespace filters definitions when present.
-	Namespace domain.Namespace
-
 	// IncludeEmpty reports whether absent values should be included.
 	IncludeEmpty bool
 }
@@ -120,9 +111,6 @@ type DeleteValueCommand struct {
 
 	// Owner is the metadata owner.
 	Owner OwnerRef
-
-	// Namespace is the definition namespace.
-	Namespace domain.Namespace
 
 	// Key is the definition key.
 	Key domain.Key

@@ -54,7 +54,7 @@ func TestMetafieldDefinitionRepositoryLifecycle(t *testing.T) {
 	active := true
 	list, err := repository.List(
 		context.Background(),
-		port.DefinitionFilter{OwnerType: domain.OwnerUser, Namespace: "profile", Active: &active},
+		port.DefinitionFilter{OwnerType: domain.OwnerUser, Active: &active},
 		testPage(),
 	)
 	if err != nil {
@@ -372,7 +372,6 @@ func newDB(t *testing.T) *gorm.DB {
 func testDefinition() domain.MetafieldDefinition {
 	return domain.MetafieldDefinition{
 		OwnerType: domain.OwnerUser,
-		Namespace: "profile",
 		Key:       "motto",
 		Name:      "Motto",
 		ValueType: domain.ValueSingleLineText,

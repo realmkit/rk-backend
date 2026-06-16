@@ -227,9 +227,6 @@
             "$ref": "#/components/parameters/OwnerTypeQuery"
           },
           {
-            "$ref": "#/components/parameters/NamespaceQuery"
-          },
-          {
             "$ref": "#/components/parameters/ActiveQuery"
           },
           {
@@ -436,9 +433,6 @@
             "$ref": "#/components/parameters/OwnerIdPath"
           },
           {
-            "$ref": "#/components/parameters/NamespaceQuery"
-          },
-          {
             "$ref": "#/components/parameters/IncludeEmptyQuery"
           },
           {
@@ -463,192 +457,6 @@
           },
           "406": {
             "$ref": "#/components/responses/NotAcceptable"
-          },
-          "429": {
-            "$ref": "#/components/responses/RateLimited"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          }
-        }
-      }
-    },
-    "/metadata/owners/{owner_type}/{owner_id}/metafields/{namespace}/{key}": {
-      "put": {
-        "operationId": "setOwnerMetafield",
-        "tags": [
-          "metadata"
-        ],
-        "summary": "Create or update an owner metafield value",
-        "description": "Requires Idempotency-Key. If-Match is optional on create and used for optimistic updates.",
-        "security": [],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/OwnerTypePath"
-          },
-          {
-            "$ref": "#/components/parameters/OwnerIdPath"
-          },
-          {
-            "$ref": "#/components/parameters/NamespacePath"
-          },
-          {
-            "$ref": "#/components/parameters/KeyPath"
-          },
-          {
-            "$ref": "#/components/parameters/AcceptHeader"
-          },
-          {
-            "$ref": "#/components/parameters/ContentTypeHeader"
-          },
-          {
-            "$ref": "#/components/parameters/IdempotencyKeyHeader"
-          },
-          {
-            "$ref": "#/components/parameters/OptionalIfMatchHeader"
-          },
-          {
-            "$ref": "#/components/parameters/RequestIdHeader"
-          },
-          {
-            "$ref": "#/components/parameters/CorrelationIdHeader"
-          }
-        ],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/MetafieldValue"
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/MetafieldValue"
-          },
-          "201": {
-            "$ref": "#/components/responses/MetafieldValueCreated"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "406": {
-            "$ref": "#/components/responses/NotAcceptable"
-          },
-          "409": {
-            "$ref": "#/components/responses/Conflict"
-          },
-          "412": {
-            "$ref": "#/components/responses/PreconditionFailed"
-          },
-          "415": {
-            "$ref": "#/components/responses/UnsupportedMediaType"
-          },
-          "422": {
-            "$ref": "#/components/responses/ValidationFailed"
-          },
-          "429": {
-            "$ref": "#/components/responses/RateLimited"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          }
-        }
-      },
-      "get": {
-        "operationId": "getOwnerMetafield",
-        "tags": [
-          "metadata"
-        ],
-        "summary": "Get one owner metafield value",
-        "security": [],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/OwnerTypePath"
-          },
-          {
-            "$ref": "#/components/parameters/OwnerIdPath"
-          },
-          {
-            "$ref": "#/components/parameters/NamespacePath"
-          },
-          {
-            "$ref": "#/components/parameters/KeyPath"
-          },
-          {
-            "$ref": "#/components/parameters/AcceptHeader"
-          },
-          {
-            "$ref": "#/components/parameters/RequestIdHeader"
-          },
-          {
-            "$ref": "#/components/parameters/CorrelationIdHeader"
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/MetafieldValue"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "406": {
-            "$ref": "#/components/responses/NotAcceptable"
-          },
-          "429": {
-            "$ref": "#/components/responses/RateLimited"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalError"
-          }
-        }
-      },
-      "delete": {
-        "operationId": "deleteOwnerMetafield",
-        "tags": [
-          "metadata"
-        ],
-        "summary": "Delete one owner metafield value",
-        "security": [],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/AcceptHeader"
-          },
-          {
-            "$ref": "#/components/parameters/OwnerTypePath"
-          },
-          {
-            "$ref": "#/components/parameters/OwnerIdPath"
-          },
-          {
-            "$ref": "#/components/parameters/NamespacePath"
-          },
-          {
-            "$ref": "#/components/parameters/KeyPath"
-          },
-          {
-            "$ref": "#/components/parameters/IfMatchHeader"
-          },
-          {
-            "$ref": "#/components/parameters/RequestIdHeader"
-          },
-          {
-            "$ref": "#/components/parameters/CorrelationIdHeader"
-          }
-        ],
-        "responses": {
-          "204": {
-            "$ref": "#/components/responses/NoContent"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "412": {
-            "$ref": "#/components/responses/PreconditionFailed"
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
@@ -10324,6 +10132,183 @@
           }
         ]
       }
+    },
+    "/metadata/owners/{owner_type}/{owner_id}/metafields/{key}": {
+      "put": {
+        "operationId": "setOwnerMetafield",
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Create or update an owner metafield value",
+        "description": "Requires Idempotency-Key. If-Match is optional on create and used for optimistic updates.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OwnerTypePath"
+          },
+          {
+            "$ref": "#/components/parameters/OwnerIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/KeyPath"
+          },
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/ContentTypeHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/OptionalIfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/MetafieldValue"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MetafieldValue"
+          },
+          "201": {
+            "$ref": "#/components/responses/MetafieldValueCreated"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "get": {
+        "operationId": "getOwnerMetafield",
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get one owner metafield value",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OwnerTypePath"
+          },
+          {
+            "$ref": "#/components/parameters/OwnerIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/KeyPath"
+          },
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MetafieldValue"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteOwnerMetafield",
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Delete one owner metafield value",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/OwnerTypePath"
+          },
+          {
+            "$ref": "#/components/parameters/OwnerIdPath"
+          },
+          {
+            "$ref": "#/components/parameters/KeyPath"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -11433,7 +11418,6 @@
         "additionalProperties": false,
         "required": [
           "owner_type",
-          "namespace",
           "key",
           "name",
           "value_type"
@@ -11441,9 +11425,6 @@
         "properties": {
           "owner_type": {
             "$ref": "#/components/schemas/OwnerType"
-          },
-          "namespace": {
-            "$ref": "#/components/schemas/MachineKey"
           },
           "key": {
             "$ref": "#/components/schemas/MachineKey"

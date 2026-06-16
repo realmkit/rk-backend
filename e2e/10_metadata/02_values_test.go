@@ -23,7 +23,7 @@ func TestMetadataValueLifecycle(t *testing.T) {
 	setResponse := fixture.doJSON(
 		t,
 		fiber.MethodPut,
-		"/metadata/owners/user/"+ownerID.String()+"/metafields/profile/motto",
+		"/metadata/owners/user/"+ownerID.String()+"/metafields/motto",
 		`{"value":"Ready"}`,
 		withIdempotency("set-motto"),
 	)
@@ -35,14 +35,14 @@ func TestMetadataValueLifecycle(t *testing.T) {
 	getResponse := fixture.doJSON(
 		t,
 		fiber.MethodGet,
-		"/metadata/owners/user/"+ownerID.String()+"/metafields/profile/motto",
+		"/metadata/owners/user/"+ownerID.String()+"/metafields/motto",
 		"",
 	)
 	assertStatus(t, getResponse, fiber.StatusOK)
 	listResponse := fixture.doJSON(
 		t,
 		fiber.MethodGet,
-		"/metadata/owners/user/"+ownerID.String()+"/metafields?namespace=profile&include_empty=false",
+		"/metadata/owners/user/"+ownerID.String()+"/metafields?include_empty=false",
 		"",
 	)
 	assertStatus(t, listResponse, fiber.StatusOK)
@@ -51,7 +51,7 @@ func TestMetadataValueLifecycle(t *testing.T) {
 	updateResponse := fixture.doJSON(
 		t,
 		fiber.MethodPut,
-		"/metadata/owners/user/"+ownerID.String()+"/metafields/profile/motto",
+		"/metadata/owners/user/"+ownerID.String()+"/metafields/motto",
 		`{"value":"Still ready"}`,
 		withIdempotency("update-motto"),
 		withIfMatch(version),
@@ -64,7 +64,7 @@ func TestMetadataValueLifecycle(t *testing.T) {
 	deleteResponse := fixture.doJSON(
 		t,
 		fiber.MethodDelete,
-		"/metadata/owners/user/"+ownerID.String()+"/metafields/profile/motto",
+		"/metadata/owners/user/"+ownerID.String()+"/metafields/motto",
 		"",
 		withIfMatch(nextVersion),
 	)
@@ -79,7 +79,7 @@ func TestMetadataValueValidationUsesDefinitionConstraints(t *testing.T) {
 	fixture.owners.AddOwner(domain.OwnerUser, ownerID)
 
 	steps.Log("create constrained enum definition")
-	body := `{"owner_type":"user","namespace":"profile","key":"rank","name":"Rank","value_type":"enum","rules":{"allowed_values":["member","mod"]}}`
+	body := `{"owner_type":"user","key":"rank","name":"Rank","value_type":"enum","rules":{"allowed_values":["member","mod"]}}`
 	response := fixture.doJSON(
 		t,
 		fiber.MethodPost,
@@ -93,7 +93,7 @@ func TestMetadataValueValidationUsesDefinitionConstraints(t *testing.T) {
 	invalid := fixture.doJSON(
 		t,
 		fiber.MethodPut,
-		"/metadata/owners/user/"+ownerID.String()+"/metafields/profile/rank",
+		"/metadata/owners/user/"+ownerID.String()+"/metafields/rank",
 		`{"value":"owner"}`,
 		withIdempotency("invalid-rank"),
 	)
@@ -103,7 +103,7 @@ func TestMetadataValueValidationUsesDefinitionConstraints(t *testing.T) {
 	valid := fixture.doJSON(
 		t,
 		fiber.MethodPut,
-		"/metadata/owners/user/"+ownerID.String()+"/metafields/profile/rank",
+		"/metadata/owners/user/"+ownerID.String()+"/metafields/rank",
 		`{"value":"member"}`,
 		withIdempotency("valid-rank"),
 	)
@@ -123,7 +123,7 @@ func TestMetadataValueRequiresExistingOwner(t *testing.T) {
 	response := fixture.doJSON(
 		t,
 		fiber.MethodPut,
-		"/metadata/owners/user/"+missingOwnerID.String()+"/metafields/profile/motto",
+		"/metadata/owners/user/"+missingOwnerID.String()+"/metafields/motto",
 		`{"value":"Ready"}`,
 		withIdempotency("missing-owner-value"),
 	)

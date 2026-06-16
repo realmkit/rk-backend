@@ -10,7 +10,6 @@ import (
 // definitionRequest contains metafield definition input.
 type definitionRequest struct {
 	OwnerType   domain.OwnerType `json:"owner_type"`
-	Namespace   domain.Namespace `json:"namespace"`
 	Key         domain.Key       `json:"key"`
 	Name        string           `json:"name"`
 	Description string           `json:"description"`
@@ -71,7 +70,6 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 	}
 	filter := port.DefinitionFilter{
 		OwnerType: domain.OwnerType(ctx.Query("owner_type")),
-		Namespace: domain.Namespace(ctx.Query("namespace")),
 	}
 	if ctx.Query("active") != "" {
 		active := ctx.QueryBool("active")
@@ -159,7 +157,6 @@ func definitionFromRequest(request definitionRequest) domain.MetafieldDefinition
 	return domain.MetafieldDefinition{
 		ID:          uuid.Nil,
 		OwnerType:   request.OwnerType,
-		Namespace:   request.Namespace,
 		Key:         request.Key,
 		Name:        request.Name,
 		Description: request.Description,

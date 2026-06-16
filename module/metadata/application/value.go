@@ -18,7 +18,7 @@ func (service Service) SetValue(ctx context.Context, command port.SetValueComman
 	if err := service.ensureOwner(ctx, command.Owner); err != nil {
 		return port.ValueView{}, false, err
 	}
-	definition, err := service.definitions.FindByKey(ctx, command.Owner.Type, command.Namespace, command.Key)
+	definition, err := service.definitions.FindByKey(ctx, command.Owner.Type, command.Key)
 	if err != nil {
 		return port.ValueView{}, false, err
 	}
@@ -75,7 +75,7 @@ func (service Service) GetValue(ctx context.Context, query port.GetValueQuery) (
 	if err := service.policy.CanReadOwnerMetadata(ctx, query.Actor, query.Owner); err != nil {
 		return port.ValueView{}, err
 	}
-	definition, err := service.definitions.FindByKey(ctx, query.Owner.Type, query.Namespace, query.Key)
+	definition, err := service.definitions.FindByKey(ctx, query.Owner.Type, query.Key)
 	if err != nil {
 		return port.ValueView{}, err
 	}
@@ -96,7 +96,6 @@ func (service Service) ListValuesForOwner(ctx context.Context, query port.ListVa
 	active := true
 	definitions, err := service.definitions.List(ctx, port.DefinitionFilter{
 		OwnerType: query.Owner.Type,
-		Namespace: query.Namespace,
 		Active:    &active,
 	}, unlimitedPage())
 	if err != nil {
@@ -117,7 +116,7 @@ func (service Service) DeleteValue(ctx context.Context, command port.DeleteValue
 	if err := service.policy.CanWriteOwnerMetadata(ctx, command.Actor, command.Owner); err != nil {
 		return err
 	}
-	definition, err := service.definitions.FindByKey(ctx, command.Owner.Type, command.Namespace, command.Key)
+	definition, err := service.definitions.FindByKey(ctx, command.Owner.Type, command.Key)
 	if err != nil {
 		return err
 	}

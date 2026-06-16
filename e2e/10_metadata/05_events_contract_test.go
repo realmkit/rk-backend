@@ -23,7 +23,7 @@ func TestMetadataEmitsDefinitionValueAndMetaobjectEvents(t *testing.T) {
 	valueResponse := fixture.doJSON(
 		t,
 		fiber.MethodPut,
-		"/metadata/owners/user/"+ownerID.String()+"/metafields/profile/motto",
+		"/metadata/owners/user/"+ownerID.String()+"/metafields/motto",
 		`{"value":"Ready"}`,
 		withIdempotency("event-value"),
 	)
@@ -34,7 +34,7 @@ func TestMetadataEmitsDefinitionValueAndMetaobjectEvents(t *testing.T) {
 	deleteResponse := fixture.doJSON(
 		t,
 		fiber.MethodDelete,
-		"/metadata/owners/user/"+ownerID.String()+"/metafields/profile/motto",
+		"/metadata/owners/user/"+ownerID.String()+"/metafields/motto",
 		"",
 		withIfMatch(versionFrom(t, value)),
 	)
@@ -72,10 +72,10 @@ func TestMetadataOpenAPICoversRoutes(t *testing.T) {
 		{fiber.MethodGet, "/metadata/metafield-definitions/{definition_id}"},
 		{fiber.MethodPatch, "/metadata/metafield-definitions/{definition_id}"},
 		{fiber.MethodDelete, "/metadata/metafield-definitions/{definition_id}"},
-		{fiber.MethodPut, "/metadata/owners/{owner_type}/{owner_id}/metafields/{namespace}/{key}"},
+		{fiber.MethodPut, "/metadata/owners/{owner_type}/{owner_id}/metafields/{key}"},
 		{fiber.MethodGet, "/metadata/owners/{owner_type}/{owner_id}/metafields"},
-		{fiber.MethodGet, "/metadata/owners/{owner_type}/{owner_id}/metafields/{namespace}/{key}"},
-		{fiber.MethodDelete, "/metadata/owners/{owner_type}/{owner_id}/metafields/{namespace}/{key}"},
+		{fiber.MethodGet, "/metadata/owners/{owner_type}/{owner_id}/metafields/{key}"},
+		{fiber.MethodDelete, "/metadata/owners/{owner_type}/{owner_id}/metafields/{key}"},
 		{fiber.MethodPost, "/metadata/metaobject-definitions"},
 		{fiber.MethodGet, "/metadata/metaobject-definitions"},
 		{fiber.MethodGet, "/metadata/metaobject-definitions/{definition_id}"},

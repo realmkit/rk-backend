@@ -189,7 +189,7 @@ func idFrom(t *testing.T, payload map[string]any, field string) uuid.UUID {
 // createUserTextDefinition creates the default user profile definition.
 func createUserTextDefinition(t *testing.T, fixture metadataFixture, key string) map[string]any {
 	t.Helper()
-	body := `{"owner_type":"user","namespace":"profile","key":"` + key + `","name":"Profile ` + key + `","value_type":"single_line_text","rules":{"max_length":80}}`
+	body := `{"owner_type":"user","key":"` + key + `","name":"Profile ` + key + `","value_type":"single_line_text","rules":{"max_length":80}}`
 	response := fixture.doJSON(t, fiber.MethodPost, "/metadata/metafield-definitions", body, withIdempotency("definition-"+key))
 	assertStatus(t, response, fiber.StatusCreated)
 	return decodeObject(t, response)

@@ -13,9 +13,6 @@ type DefinitionFilter struct {
 	// OwnerType filters by owner type when present.
 	OwnerType domain.OwnerType
 
-	// Namespace filters by namespace when present.
-	Namespace domain.Namespace
-
 	// Active filters by active state when present.
 	Active *bool
 }

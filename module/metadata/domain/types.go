@@ -9,10 +9,7 @@ import (
 // OwnerType identifies a RealmKit model that can receive metadata.
 type OwnerType string
 
-// Namespace identifies a logical metadata group.
-type Namespace string
-
-// Key identifies a metadata field within a namespace.
+// Key identifies a metadata field within an owner type.
 type Key string
 
 // Handle identifies a metaobject entry.
@@ -128,11 +125,6 @@ func ValidateOwnerType(field string, ownerType OwnerType) []Violation {
 		return []Violation{{Field: field, Message: "is not supported"}}
 	}
 	return nil
-}
-
-// ValidateNamespace validates namespace.
-func ValidateNamespace(field string, namespace Namespace) []Violation {
-	return validateMachineKey(field, string(namespace))
 }
 
 // ValidateKey validates key.

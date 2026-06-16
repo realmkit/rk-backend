@@ -41,7 +41,6 @@ func (handler handler) setValue(ctx *fiber.Ctx) error {
 	}
 	value, created, err := handler.services.Values.SetValue(ctx.UserContext(), port.SetValueCommand{
 		Owner:           owner,
-		Namespace:       domain.Namespace(ctx.Params("namespace")),
 		Key:             domain.Key(ctx.Params("key")),
 		RawValue:        request.Value,
 		ExpectedVersion: expected,
@@ -71,7 +70,6 @@ func (handler handler) listValues(ctx *fiber.Ctx) error {
 	}
 	view, err := handler.services.Values.ListValuesForOwner(ctx.UserContext(), port.ListValuesForOwnerQuery{
 		Owner:        owner,
-		Namespace:    domain.Namespace(ctx.Query("namespace")),
 		IncludeEmpty: includeEmpty,
 	})
 	if err != nil {
@@ -90,9 +88,8 @@ func (handler handler) getValue(ctx *fiber.Ctx) error {
 		return err
 	}
 	value, err := handler.services.Values.GetValue(ctx.UserContext(), port.GetValueQuery{
-		Owner:     owner,
-		Namespace: domain.Namespace(ctx.Params("namespace")),
-		Key:       domain.Key(ctx.Params("key")),
+		Owner: owner,
+		Key:   domain.Key(ctx.Params("key")),
 	})
 	if err != nil {
 		return handleError(ctx, err)
@@ -116,7 +113,6 @@ func (handler handler) deleteValue(ctx *fiber.Ctx) error {
 	}
 	err = handler.services.Values.DeleteValue(ctx.UserContext(), port.DeleteValueCommand{
 		Owner:           owner,
-		Namespace:       domain.Namespace(ctx.Params("namespace")),
 		Key:             domain.Key(ctx.Params("key")),
 		ExpectedVersion: version,
 	})

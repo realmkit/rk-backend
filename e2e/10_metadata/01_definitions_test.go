@@ -18,7 +18,7 @@ func TestMetadataDefinitionLifecycle(t *testing.T) {
 		t,
 		fiber.MethodPost,
 		"/metadata/metafield-definitions",
-		`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text"}`,
+		`{"owner_type":"user","key":"motto","name":"Motto","value_type":"single_line_text"}`,
 	)
 	assertStatus(t, missingKey, fiber.StatusBadRequest)
 	assertProblemCode(t, missingKey, "idempotency_key_required")
@@ -83,7 +83,7 @@ func TestMetadataDefinitionValidationRejectsUnsupportedInput(t *testing.T) {
 		t,
 		fiber.MethodPost,
 		"/metadata/metafield-definitions",
-		`{"owner_type":"forum_post","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text"}`,
+		`{"owner_type":"forum_post","key":"motto","name":"Motto","value_type":"single_line_text"}`,
 		withIdempotency("unsupported-owner"),
 	)
 	assertStatus(t, unsupportedOwner, fiber.StatusUnprocessableEntity)
@@ -93,7 +93,7 @@ func TestMetadataDefinitionValidationRejectsUnsupportedInput(t *testing.T) {
 		t,
 		fiber.MethodPost,
 		"/metadata/metafield-definitions",
-		`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"html"}`,
+		`{"owner_type":"user","key":"motto","name":"Motto","value_type":"html"}`,
 		withIdempotency("unsupported-value"),
 	)
 	assertStatus(t, unsupportedValue, fiber.StatusUnprocessableEntity)
@@ -104,7 +104,7 @@ func TestMetadataDefinitionValidationRejectsUnsupportedInput(t *testing.T) {
 		t,
 		fiber.MethodPost,
 		"/metadata/metafield-definitions",
-		`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text"}`,
+		`{"owner_type":"user","key":"motto","name":"Motto","value_type":"single_line_text"}`,
 		withIdempotency("duplicate-definition"),
 	)
 	assertStatus(t, duplicate, fiber.StatusConflict)

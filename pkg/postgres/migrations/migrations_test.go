@@ -19,8 +19,8 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if len(migrations) != 9 {
-		t.Fatalf("len(migrations) = %d, want 9", len(migrations))
+	if len(migrations) != 10 {
+		t.Fatalf("len(migrations) = %d, want 10", len(migrations))
 	}
 	if migrations[0].Version != 1 || migrations[0].Name != "create_metadata_tables" {
 		t.Fatalf("migration[0] = %+v, want metadata version 1", migrations[0])
@@ -48,6 +48,9 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	}
 	if migrations[8].Version != 9 || migrations[8].Name != "create_search_indexes" {
 		t.Fatalf("migration[8] = %+v, want search indexes version 9", migrations[8])
+	}
+	if migrations[9].Version != 10 || migrations[9].Name != "drop_metadata_definition_namespace" {
+		t.Fatalf("migration[9] = %+v, want metadata namespace removal version 10", migrations[9])
 	}
 }
 
@@ -79,8 +82,8 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Up() error = %v", err)
 	}
-	if len(status.Applied) != 9 || len(status.Pending) != 0 {
-		t.Fatalf("Status = %+v, want nine applied and no pending", status)
+	if len(status.Applied) != 10 || len(status.Pending) != 0 {
+		t.Fatalf("Status = %+v, want ten applied and no pending", status)
 	}
 	if !db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table missing")
@@ -199,12 +202,12 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	status, err := runner.Down(context.Background(), 9)
+	status, err := runner.Down(context.Background(), 10)
 	if err != nil {
 		t.Fatalf("Down() error = %v", err)
 	}
-	if len(status.Applied) != 0 || len(status.Pending) != 9 {
-		t.Fatalf("Status = %+v, want no applied and nine pending", status)
+	if len(status.Applied) != 0 || len(status.Pending) != 10 {
+		t.Fatalf("Status = %+v, want no applied and ten pending", status)
 	}
 	if db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table exists after Down()")

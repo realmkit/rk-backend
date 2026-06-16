@@ -49,7 +49,6 @@ func (service Service) UpdateDefinition(ctx context.Context, command port.Update
 		return port.DefinitionView{}, err
 	}
 	command.Definition.OwnerType = current.OwnerType
-	command.Definition.Namespace = current.Namespace
 	command.Definition.Key = current.Key
 	command.Definition.ValueType = current.ValueType
 	command.Definition.List = current.List

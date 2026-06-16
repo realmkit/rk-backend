@@ -16,9 +16,6 @@ type MetafieldDefinition struct {
 	// OwnerType is the allowlisted owner type.
 	OwnerType OwnerType `json:"owner_type"`
 
-	// Namespace is the logical metadata group.
-	Namespace Namespace `json:"namespace"`
-
 	// Key is the stable field key.
 	Key Key `json:"key"`
 
@@ -73,7 +70,6 @@ func (definition MetafieldDefinition) Field() FieldDefinition {
 func (definition MetafieldDefinition) Validate() error {
 	var violations []Violation
 	violations = append(violations, ValidateOwnerType("owner_type", definition.OwnerType)...)
-	violations = append(violations, ValidateNamespace("namespace", definition.Namespace)...)
 	violations = append(violations, definition.Field().Validate("definition")...)
 	return NewValidationError(violations)
 }

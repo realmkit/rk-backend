@@ -27,7 +27,7 @@ func TestMetadataSupportsForumOwners(t *testing.T) {
 	steps.Log("write metadata on every forum owner type")
 	for ownerType, ownerID := range owners {
 		createOwnerLabelDefinition(t, fixture, ownerType)
-		path := "/metadata/owners/" + string(ownerType) + "/" + ownerID.String() + "/metafields/display/label"
+		path := "/metadata/owners/" + string(ownerType) + "/" + ownerID.String() + "/metafields/label"
 		response := fixture.doJSON(
 			t,
 			fiber.MethodPut,
@@ -45,7 +45,7 @@ func TestMetadataSupportsForumOwners(t *testing.T) {
 		t,
 		fiber.MethodPost,
 		"/metadata/metafield-definitions",
-		`{"owner_type":"forum_post","namespace":"display","key":"label","name":"Label","value_type":"single_line_text"}`,
+		`{"owner_type":"forum_post","key":"label","name":"Label","value_type":"single_line_text"}`,
 		withIdempotency("forum-post-owner"),
 	)
 	assertStatus(t, response, fiber.StatusUnprocessableEntity)
@@ -73,7 +73,7 @@ func TestMetadataSupportsPunishmentAndTicketOwners(t *testing.T) {
 		response := fixture.doJSON(
 			t,
 			fiber.MethodPut,
-			"/metadata/owners/"+string(ownerType)+"/"+ownerID.String()+"/metafields/display/color",
+			"/metadata/owners/"+string(ownerType)+"/"+ownerID.String()+"/metafields/color",
 			`{"value":"#3366ff"}`,
 			withIdempotency("color-"+string(ownerType)),
 		)
@@ -84,7 +84,7 @@ func TestMetadataSupportsPunishmentAndTicketOwners(t *testing.T) {
 // createOwnerLabelDefinition creates a single-line owner label definition.
 func createOwnerLabelDefinition(t *testing.T, fixture metadataFixture, ownerType domain.OwnerType) {
 	t.Helper()
-	body := `{"owner_type":"` + string(ownerType) + `","namespace":"display","key":"label","name":"Label","value_type":"single_line_text"}`
+	body := `{"owner_type":"` + string(ownerType) + `","key":"label","name":"Label","value_type":"single_line_text"}`
 	response := fixture.doJSON(
 		t,
 		fiber.MethodPost,
@@ -98,7 +98,7 @@ func createOwnerLabelDefinition(t *testing.T, fixture metadataFixture, ownerType
 // createOwnerColorDefinition creates a color definition for owner presentation.
 func createOwnerColorDefinition(t *testing.T, fixture metadataFixture, ownerType domain.OwnerType) {
 	t.Helper()
-	body := `{"owner_type":"` + string(ownerType) + `","namespace":"display","key":"color","name":"Color","value_type":"color"}`
+	body := `{"owner_type":"` + string(ownerType) + `","key":"color","name":"Color","value_type":"color"}`
 	response := fixture.doJSON(
 		t,
 		fiber.MethodPost,

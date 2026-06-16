@@ -27,7 +27,7 @@ func (repository MetafieldDefinitionRepository) Create(
 	ctx context.Context,
 	definition domain.MetafieldDefinition,
 ) (domain.MetafieldDefinition, error) {
-	if _, err := repository.FindByKey(ctx, definition.OwnerType, definition.Namespace, definition.Key); err == nil {
+	if _, err := repository.FindByKey(ctx, definition.OwnerType, definition.Key); err == nil {
 		return domain.MetafieldDefinition{}, port.ErrConflict
 	} else if !errors.Is(err, port.ErrNotFound) {
 		return domain.MetafieldDefinition{}, err
@@ -79,15 +79,14 @@ func (repository MetafieldDefinitionRepository) FindByID(ctx context.Context, id
 	return definitionFromModel(model)
 }
 
-// FindByKey returns one definition by owner type, namespace, and key.
+// FindByKey returns one definition by owner type and key.
 func (repository MetafieldDefinitionRepository) FindByKey(
 	ctx context.Context,
 	ownerType domain.OwnerType,
-	namespace domain.Namespace,
 	key domain.Key,
 ) (domain.MetafieldDefinition, error) {
 	var model MetafieldDefinitionModel
-	err := repository.store.DB(ctx).First(&model, "owner_type = ? AND namespace = ? AND key = ?", ownerType, namespace, key).Error
+	err := repository.store.DB(ctx).First(&model, "owner_type = ? AND key = ?", ownerType, key).Error
 	if err != nil {
 		return domain.MetafieldDefinition{}, mapError(err)
 	}
@@ -125,9 +124,6 @@ func (repository MetafieldDefinitionRepository) Archive(ctx context.Context, id 
 func applyDefinitionFilter(query *gorm.DB, filter port.DefinitionFilter) *gorm.DB {
 	if filter.OwnerType != "" {
 		query = query.Where("owner_type = ?", filter.OwnerType)
-	}
-	if filter.Namespace != "" {
-		query = query.Where("namespace = ?", filter.Namespace)
 	}
 	if filter.Active != nil {
 		query = query.Where("active = ?", *filter.Active)

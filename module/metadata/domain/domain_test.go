@@ -13,7 +13,6 @@ func TestMetafieldDefinitionValidateAcceptsSupportedDefinition(t *testing.T) {
 	maxLength := 80
 	definition := MetafieldDefinition{
 		OwnerType: OwnerUser,
-		Namespace: "profile",
 		Key:       "motto",
 		Name:      "Motto",
 		ValueType: ValueSingleLineText,
@@ -30,7 +29,6 @@ func TestMetafieldDefinitionValidateAcceptsSupportedDefinition(t *testing.T) {
 func TestMetafieldDefinitionValidateRejectsUnsupportedOwner(t *testing.T) {
 	definition := MetafieldDefinition{
 		OwnerType: "raw_table_name",
-		Namespace: "profile",
 		Key:       "motto",
 		Name:      "Motto",
 		ValueType: ValueSingleLineText,

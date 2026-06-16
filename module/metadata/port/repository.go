@@ -19,11 +19,10 @@ type MetafieldDefinitionRepository interface {
 	// FindByID returns one definition by ID.
 	FindByID(ctx context.Context, id uuid.UUID) (domain.MetafieldDefinition, error)
 
-	// FindByKey returns one definition by owner type, namespace, and key.
+	// FindByKey returns one definition by owner type and key.
 	FindByKey(
 		ctx context.Context,
 		ownerType domain.OwnerType,
-		namespace domain.Namespace,
 		key domain.Key,
 	) (domain.MetafieldDefinition, error)
 

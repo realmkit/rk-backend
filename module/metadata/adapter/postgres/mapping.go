@@ -10,7 +10,6 @@ import (
 func definitionModelFromDomain(definition domain.MetafieldDefinition) MetafieldDefinitionModel {
 	return MetafieldDefinitionModel{
 		OwnerType:   string(definition.OwnerType),
-		Namespace:   string(definition.Namespace),
 		Key:         string(definition.Key),
 		Name:        definition.Name,
 		Description: definition.Description,
@@ -33,7 +32,6 @@ func definitionFromModel(model MetafieldDefinitionModel) (domain.MetafieldDefini
 	return domain.MetafieldDefinition{
 		ID:          model.ID.ID,
 		OwnerType:   domain.OwnerType(model.OwnerType),
-		Namespace:   domain.Namespace(model.Namespace),
 		Key:         domain.Key(model.Key),
 		Name:        model.Name,
 		Description: model.Description,

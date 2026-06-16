@@ -133,7 +133,6 @@ func metadataDefinitionPayload(definition domain.MetafieldDefinition) map[string
 	return map[string]any{
 		"id":         definition.ID,
 		"owner_type": definition.OwnerType,
-		"namespace":  definition.Namespace,
 		"key":        definition.Key,
 		"value_type": definition.ValueType,
 		"active":     definition.Active,

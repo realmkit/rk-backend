@@ -40,7 +40,6 @@ func (value *JSON) Scan(input any) error {
 type MetafieldDefinitionModel struct {
 	orm.ID
 	OwnerType   string `gorm:"size:64;not null;index"`
-	Namespace   string `gorm:"size:64;not null;index"`
 	Key         string `gorm:"size:64;not null;index"`
 	Name        string `gorm:"size:120;not null"`
 	Description string `gorm:"size:500"`

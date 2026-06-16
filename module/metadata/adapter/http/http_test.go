@@ -29,7 +29,7 @@ import (
 func TestCreateDefinitionReturnsCreated(t *testing.T) {
 	app := newTestApp(t)
 	body := []byte(
-		`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text","rules":{"max_length":80}}`,
+		`{"owner_type":"user","key":"motto","name":"Motto","value_type":"single_line_text","rules":{"max_length":80}}`,
 	)
 	req := httptest.NewRequest(fiber.MethodPost, "/metadata/metafield-definitions", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
@@ -52,7 +52,7 @@ func TestCreateDefinitionReturnsCreated(t *testing.T) {
 // TestCreateDefinitionRequiresIdempotencyKey verifies retryable creates require idempotency.
 func TestCreateDefinitionRequiresIdempotencyKey(t *testing.T) {
 	app := newTestApp(t)
-	body := []byte(`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text"}`)
+	body := []byte(`{"owner_type":"user","key":"motto","name":"Motto","value_type":"single_line_text"}`)
 	req := httptest.NewRequest(fiber.MethodPost, "/metadata/metafield-definitions", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 
@@ -148,7 +148,7 @@ func TestSetValueReturnsCanonicalValue(t *testing.T) {
 	createDefinition(t, app)
 	ownerID := "4d8decb9-2e4a-4cc7-9d76-5ee74a2dbad8"
 	body := []byte(`{"value":"Ready"}`)
-	req := httptest.NewRequest(fiber.MethodPut, "/metadata/owners/user/"+ownerID+"/metafields/profile/motto", bytes.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPut, "/metadata/owners/user/"+ownerID+"/metafields/motto", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "set-value")
 
@@ -181,7 +181,7 @@ func TestValueLifecycleExercisesReadListAndDelete(t *testing.T) {
 
 	listReq := httptest.NewRequest(
 		fiber.MethodGet,
-		"/metadata/owners/user/"+ownerID+"/metafields?namespace=profile&include_empty=false",
+		"/metadata/owners/user/"+ownerID+"/metafields?include_empty=false",
 		nil,
 	)
 	listRes, err := app.Test(listReq, -1)
@@ -193,7 +193,7 @@ func TestValueLifecycleExercisesReadListAndDelete(t *testing.T) {
 		t.Fatalf("list values StatusCode = %d, want %d", listRes.StatusCode, fiber.StatusOK)
 	}
 
-	getReq := httptest.NewRequest(fiber.MethodGet, "/metadata/owners/user/"+ownerID+"/metafields/profile/motto", nil)
+	getReq := httptest.NewRequest(fiber.MethodGet, "/metadata/owners/user/"+ownerID+"/metafields/motto", nil)
 	getRes, err := app.Test(getReq, -1)
 	if err != nil {
 		t.Fatalf("get value Test() error = %v", err)
@@ -203,7 +203,7 @@ func TestValueLifecycleExercisesReadListAndDelete(t *testing.T) {
 		t.Fatalf("get value StatusCode = %d, want %d", getRes.StatusCode, fiber.StatusOK)
 	}
 
-	deleteReq := httptest.NewRequest(fiber.MethodDelete, "/metadata/owners/user/"+ownerID+"/metafields/profile/motto", nil)
+	deleteReq := httptest.NewRequest(fiber.MethodDelete, "/metadata/owners/user/"+ownerID+"/metafields/motto", nil)
 	deleteReq.Header.Set(headers.IfMatch, quoteVersion(version))
 	deleteRes, err := app.Test(deleteReq, -1)
 	if err != nil {
@@ -221,7 +221,7 @@ func TestSetValueValidationFailureReturnsProblem(t *testing.T) {
 	createDefinition(t, app)
 	ownerID := "4d8decb9-2e4a-4cc7-9d76-5ee74a2dbad8"
 	body := []byte("{\"value\":\"line\\nbreak\"}")
-	req := httptest.NewRequest(fiber.MethodPut, "/metadata/owners/user/"+ownerID+"/metafields/profile/motto", bytes.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPut, "/metadata/owners/user/"+ownerID+"/metafields/motto", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "set-invalid-value")
 
@@ -496,7 +496,7 @@ func createDefinitionPayload(t *testing.T, app *fiber.App) map[string]any {
 // createDefinitionResponse creates the default definition and returns its response.
 func createDefinitionResponse(t *testing.T, app *fiber.App) *http.Response {
 	t.Helper()
-	body := []byte(`{"owner_type":"user","namespace":"profile","key":"motto","name":"Motto","value_type":"single_line_text"}`)
+	body := []byte(`{"owner_type":"user","key":"motto","name":"Motto","value_type":"single_line_text"}`)
 	req := httptest.NewRequest(fiber.MethodPost, "/metadata/metafield-definitions", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "create-definition")
@@ -514,7 +514,7 @@ func setOwnerValue(t *testing.T, app *fiber.App, ownerID string, value string) m
 	if err != nil {
 		t.Fatalf("Marshal() error = %v", err)
 	}
-	req := httptest.NewRequest(fiber.MethodPut, "/metadata/owners/user/"+ownerID+"/metafields/profile/motto", bytes.NewReader(body))
+	req := httptest.NewRequest(fiber.MethodPut, "/metadata/owners/user/"+ownerID+"/metafields/motto", bytes.NewReader(body))
 	req.Header.Set(headers.ContentType, "application/json")
 	req.Header.Set(headers.IdempotencyKey, "set-value-"+ownerID)
 	res, err := app.Test(req, -1)

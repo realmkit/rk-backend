@@ -29,10 +29,9 @@ func TestServiceSetValueCreatesCanonicalValue(t *testing.T) {
 	ownerID := uuid.New()
 
 	value, created, err := service.SetValue(context.Background(), port.SetValueCommand{
-		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
-		Namespace: definition.Namespace,
-		Key:       definition.Key,
-		RawValue:  json.RawMessage(`"hello"`),
+		Owner:    port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
+		Key:      definition.Key,
+		RawValue: json.RawMessage(`"hello"`),
 	})
 	if err != nil {
 		t.Fatalf("SetValue() error = %v", err)
@@ -54,10 +53,9 @@ func TestServiceSetValueRejectsMissingOwner(t *testing.T) {
 	}
 
 	_, _, err = service.SetValue(context.Background(), port.SetValueCommand{
-		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: uuid.New()},
-		Namespace: definition.Namespace,
-		Key:       definition.Key,
-		RawValue:  json.RawMessage(`"hello"`),
+		Owner:    port.OwnerRef{Type: definition.OwnerType, ID: uuid.New()},
+		Key:      definition.Key,
+		RawValue: json.RawMessage(`"hello"`),
 	})
 	if !errors.Is(err, port.ErrNotFound) {
 		t.Fatalf("SetValue() error = %v, want %v", err, port.ErrNotFound)
@@ -93,18 +91,16 @@ func TestServiceGetAndDeleteValue(t *testing.T) {
 	}
 	ownerID := uuid.New()
 	value, _, err := service.SetValue(context.Background(), port.SetValueCommand{
-		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
-		Namespace: definition.Namespace,
-		Key:       definition.Key,
-		RawValue:  json.RawMessage(`"hello"`),
+		Owner:    port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
+		Key:      definition.Key,
+		RawValue: json.RawMessage(`"hello"`),
 	})
 	if err != nil {
 		t.Fatalf("SetValue() error = %v", err)
 	}
 	found, err := service.GetValue(context.Background(), port.GetValueQuery{
-		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
-		Namespace: definition.Namespace,
-		Key:       definition.Key,
+		Owner: port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
+		Key:   definition.Key,
 	})
 	if err != nil {
 		t.Fatalf("GetValue() error = %v", err)
@@ -114,14 +110,13 @@ func TestServiceGetAndDeleteValue(t *testing.T) {
 	}
 	err = service.DeleteValue(context.Background(), port.DeleteValueCommand{
 		Owner:           port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
-		Namespace:       definition.Namespace,
 		Key:             definition.Key,
 		ExpectedVersion: value.Version,
 	})
 	if err != nil {
 		t.Fatalf("DeleteValue() error = %v", err)
 	}
-	if _, err := service.GetValue(context.Background(), port.GetValueQuery{Owner: port.OwnerRef{Type: definition.OwnerType, ID: ownerID}, Namespace: definition.Namespace, Key: definition.Key}); !errors.Is(
+	if _, err := service.GetValue(context.Background(), port.GetValueQuery{Owner: port.OwnerRef{Type: definition.OwnerType, ID: ownerID}, Key: definition.Key}); !errors.Is(
 		err,
 		port.ErrNotFound,
 	) {
@@ -143,11 +138,10 @@ func TestServicePublishesMetadataEvents(t *testing.T) {
 	}
 	ownerID := uuid.New()
 	value, _, err := service.SetValue(context.Background(), port.SetValueCommand{
-		Actor:     actor,
-		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
-		Namespace: definition.Namespace,
-		Key:       definition.Key,
-		RawValue:  json.RawMessage(`"hello"`),
+		Actor:    actor,
+		Owner:    port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
+		Key:      definition.Key,
+		RawValue: json.RawMessage(`"hello"`),
 	})
 	if err != nil {
 		t.Fatalf("SetValue() error = %v", err)
@@ -155,7 +149,6 @@ func TestServicePublishesMetadataEvents(t *testing.T) {
 	if err := service.DeleteValue(context.Background(), port.DeleteValueCommand{
 		Actor:           actor,
 		Owner:           port.OwnerRef{Type: definition.OwnerType, ID: ownerID},
-		Namespace:       definition.Namespace,
 		Key:             definition.Key,
 		ExpectedVersion: value.Version,
 	}); err != nil {
@@ -188,7 +181,6 @@ func TestServiceSetValueValidatesReferenceLists(t *testing.T) {
 	service := newServiceWithReferenceResolver(t, missingReferenceResolver{})
 	definition, err := service.CreateDefinition(context.Background(), port.CreateDefinitionCommand{Definition: domain.MetafieldDefinition{
 		OwnerType: domain.OwnerUser,
-		Namespace: "profile",
 		Key:       "friends",
 		Name:      "Friends",
 		ValueType: domain.ValueOwnerReference,
@@ -205,10 +197,9 @@ func TestServiceSetValueValidatesReferenceLists(t *testing.T) {
 	}
 
 	_, _, err = service.SetValue(context.Background(), port.SetValueCommand{
-		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: uuid.New()},
-		Namespace: definition.Namespace,
-		Key:       definition.Key,
-		RawValue:  raw,
+		Owner:    port.OwnerRef{Type: definition.OwnerType, ID: uuid.New()},
+		Key:      definition.Key,
+		RawValue: raw,
 	})
 	if !errors.Is(err, port.ErrNotFound) {
 		t.Fatalf("SetValue() reference error = %v, want %v", err, port.ErrNotFound)
@@ -220,7 +211,6 @@ func TestServiceSetValueValidatesMetaobjectReferences(t *testing.T) {
 	service := newServiceWithReferenceResolver(t, missingReferenceResolver{})
 	definition, err := service.CreateDefinition(context.Background(), port.CreateDefinitionCommand{Definition: domain.MetafieldDefinition{
 		OwnerType: domain.OwnerUser,
-		Namespace: "profile",
 		Key:       "card",
 		Name:      "Card",
 		ValueType: domain.ValueMetaobjectReference,
@@ -236,10 +226,9 @@ func TestServiceSetValueValidatesMetaobjectReferences(t *testing.T) {
 	}
 
 	_, _, err = service.SetValue(context.Background(), port.SetValueCommand{
-		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: uuid.New()},
-		Namespace: definition.Namespace,
-		Key:       definition.Key,
-		RawValue:  raw,
+		Owner:    port.OwnerRef{Type: definition.OwnerType, ID: uuid.New()},
+		Key:      definition.Key,
+		RawValue: raw,
 	})
 	if !errors.Is(err, port.ErrNotFound) {
 		t.Fatalf("SetValue() reference error = %v, want %v", err, port.ErrNotFound)
@@ -254,10 +243,9 @@ func TestServiceArchiveDefinitionRejectsActiveValues(t *testing.T) {
 		t.Fatalf("CreateDefinition() error = %v", err)
 	}
 	_, _, err = service.SetValue(context.Background(), port.SetValueCommand{
-		Owner:     port.OwnerRef{Type: definition.OwnerType, ID: uuid.New()},
-		Namespace: definition.Namespace,
-		Key:       definition.Key,
-		RawValue:  json.RawMessage(`"hello"`),
+		Owner:    port.OwnerRef{Type: definition.OwnerType, ID: uuid.New()},
+		Key:      definition.Key,
+		RawValue: json.RawMessage(`"hello"`),
 	})
 	if err != nil {
 		t.Fatalf("SetValue() error = %v", err)
@@ -532,7 +520,6 @@ func newServiceWithOwnerResolver(t *testing.T, resolver port.OwnerResolver) Serv
 func testDefinition() domain.MetafieldDefinition {
 	return domain.MetafieldDefinition{
 		OwnerType: domain.OwnerUser,
-		Namespace: "profile",
 		Key:       "motto",
 		Name:      "Motto",
 		ValueType: domain.ValueSingleLineText,
