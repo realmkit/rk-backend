@@ -71,7 +71,17 @@ func (definition MetafieldDefinition) Validate() error {
 	var violations []Violation
 	violations = append(violations, ValidateOwnerType("owner_type", definition.OwnerType)...)
 	violations = append(violations, definition.Field().Validate("definition")...)
+	violations = append(violations, validateAssetDefinitionRequired(definition)...)
 	return NewValidationError(violations)
+}
+
+// validateAssetDefinitionRequired rejects required fields for asset metadata.
+func validateAssetDefinitionRequired(definition MetafieldDefinition) []Violation {
+	if definition.OwnerType == OwnerAsset && definition.Required {
+		return []Violation{{Field: "required", Message: "cannot be true for asset definitions"}}
+	}
+
+	return nil
 }
 
 // MetafieldValue stores one canonical owner value.

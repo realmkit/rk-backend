@@ -11406,7 +11406,8 @@
           },
           "required": {
             "type": "boolean",
-            "default": false
+            "default": false,
+            "description": "Asset-owned metadata definitions must keep this false."
           },
           "rules": {
             "$ref": "#/components/schemas/Rules"
@@ -11476,7 +11477,8 @@
             "maxLength": 500
           },
           "required": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Asset-owned metadata definitions must keep this false."
           },
           "rules": {
             "$ref": "#/components/schemas/Rules"

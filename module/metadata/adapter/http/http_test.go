@@ -67,6 +67,27 @@ func TestCreateDefinitionRequiresIdempotencyKey(t *testing.T) {
 	}
 }
 
+// TestCreateDefinitionRejectsRequiredAsset verifies asset definitions stay optional.
+func TestCreateDefinitionRejectsRequiredAsset(t *testing.T) {
+	app := newTestApp(t)
+	body := []byte(
+		`{"owner_type":"asset","key":"license","name":"License","value_type":"single_line_text","required":true}`,
+	)
+	req := httptest.NewRequest(fiber.MethodPost, "/metadata/metafield-definitions", bytes.NewReader(body))
+	req.Header.Set(headers.ContentType, "application/json")
+	req.Header.Set(headers.IdempotencyKey, "create-required-asset-definition")
+
+	res, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Test() error = %v", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != fiber.StatusUnprocessableEntity {
+		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusUnprocessableEntity)
+	}
+}
+
 // TestOptionalExpectedVersionParsesHeaders verifies optional version parsing.
 func TestOptionalExpectedVersionParsesHeaders(t *testing.T) {
 	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})

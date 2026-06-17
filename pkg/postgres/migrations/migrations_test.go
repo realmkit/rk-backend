@@ -19,8 +19,8 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if len(migrations) != 11 {
-		t.Fatalf("len(migrations) = %d, want 11", len(migrations))
+	if len(migrations) != 12 {
+		t.Fatalf("len(migrations) = %d, want 12", len(migrations))
 	}
 	if migrations[0].Version != 1 || migrations[0].Name != "create_metadata_tables" {
 		t.Fatalf("migration[0] = %+v, want metadata version 1", migrations[0])
@@ -55,6 +55,9 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if migrations[10].Version != 11 || migrations[10].Name != "repair_metadata_definition_namespace_column" {
 		t.Fatalf("migration[10] = %+v, want metadata namespace repair version 11", migrations[10])
 	}
+	if migrations[11].Version != 12 || migrations[11].Name != "make_asset_metadata_optional" {
+		t.Fatalf("migration[11] = %+v, want asset metadata optional version 12", migrations[11])
+	}
 }
 
 // TestLoadRejectsVersionGaps verifies the global sequence has no gaps.
@@ -85,8 +88,8 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Up() error = %v", err)
 	}
-	if len(status.Applied) != 11 || len(status.Pending) != 0 {
-		t.Fatalf("Status = %+v, want eleven applied and no pending", status)
+	if len(status.Applied) != 12 || len(status.Pending) != 0 {
+		t.Fatalf("Status = %+v, want twelve applied and no pending", status)
 	}
 	if !db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table missing")
@@ -154,6 +157,42 @@ func TestRunnerUpIsIdempotent(t *testing.T) {
 	}
 }
 
+// TestRunnerUpMakesAssetMetadataOptional verifies stale required asset definitions are repaired.
+func TestRunnerUpMakesAssetMetadataOptional(t *testing.T) {
+	db := newDB(t)
+	migrations, err := Load(DefaultSource())
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if _, err := NewRunner(db, sourceFromMigrations(migrations[:11])).Up(context.Background()); err != nil {
+		t.Fatalf("initial Up() error = %v", err)
+	}
+
+	insertAssetDefinition := `
+		INSERT INTO metadata_metafield_definitions
+			(id, owner_type, key, name, value_type, is_list, is_required, rules, sort_order, active, version, created_at, updated_at)
+		VALUES
+			('asset-definition-id', 'asset', 'license', 'License', 'single_line_text', false, true, '{}', 0, true, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`
+	if err := db.Exec(insertAssetDefinition).Error; err != nil {
+		t.Fatalf("insert asset definition error = %v", err)
+	}
+	if _, err := NewRunner(db, DefaultSource()).Up(context.Background()); err != nil {
+		t.Fatalf("repair Up() error = %v", err)
+	}
+
+	var required bool
+	if err := db.Raw(
+		"SELECT is_required FROM metadata_metafield_definitions WHERE id = ?",
+		"asset-definition-id",
+	).Scan(&required).Error; err != nil {
+		t.Fatalf("query asset definition error = %v", err)
+	}
+	if required {
+		t.Fatalf("is_required = true, want false")
+	}
+}
+
 // TestRunnerValidateRejectsChecksumChanges verifies applied migrations are immutable.
 func TestRunnerValidateRejectsChecksumChanges(t *testing.T) {
 	db := newDB(t)
@@ -208,12 +247,12 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	status, err := runner.Down(context.Background(), 11)
+	status, err := runner.Down(context.Background(), 12)
 	if err != nil {
 		t.Fatalf("Down() error = %v", err)
 	}
-	if len(status.Applied) != 0 || len(status.Pending) != 11 {
-		t.Fatalf("Status = %+v, want no applied and eleven pending", status)
+	if len(status.Applied) != 0 || len(status.Pending) != 12 {
+		t.Fatalf("Status = %+v, want no applied and twelve pending", status)
 	}
 	if db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table exists after Down()")
@@ -310,4 +349,14 @@ func testSource(files map[string]string) fs.FS {
 		source[name] = &fstest.MapFile{Data: []byte(content)}
 	}
 	return source
+}
+
+// sourceFromMigrations creates an in-memory source from loaded migrations.
+func sourceFromMigrations(migrations []Migration) Source {
+	files := map[string]string{}
+	for _, migration := range migrations {
+		files["migrations/"+migration.UpPath] = migration.UpSQL
+		files["migrations/"+migration.DownPath] = migration.DownSQL
+	}
+	return Source{FS: testSource(files), Root: "migrations"}
 }

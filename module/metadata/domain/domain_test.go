@@ -40,6 +40,39 @@ func TestMetafieldDefinitionValidateRejectsUnsupportedOwner(t *testing.T) {
 	}
 }
 
+// TestMetafieldDefinitionValidateRejectsRequiredAsset verifies asset metadata stays optional.
+func TestMetafieldDefinitionValidateRejectsRequiredAsset(t *testing.T) {
+	definition := MetafieldDefinition{
+		OwnerType: OwnerAsset,
+		Key:       "license",
+		Name:      "License",
+		ValueType: ValueSingleLineText,
+		Required:  true,
+	}
+
+	err := definition.Validate()
+	if !errors.Is(err, ErrInvalid) {
+		t.Fatalf("Validate() error = %v, want %v", err, ErrInvalid)
+	}
+	if !hasViolation(err, "required", "cannot be true for asset definitions") {
+		t.Fatalf("Validate() error = %v, want required asset violation", err)
+	}
+}
+
+// hasViolation reports whether an error contains a matching validation violation.
+func hasViolation(err error, field string, message string) bool {
+	var validationError ValidationError
+	if !errors.As(err, &validationError) {
+		return false
+	}
+	for _, violation := range validationError.Violations {
+		if violation.Field == field && violation.Message == message {
+			return true
+		}
+	}
+	return false
+}
+
 // TestAllowedOwnerTypesIncludeForumOwners verifies forum metadata ownership.
 func TestAllowedOwnerTypesIncludeForumOwners(t *testing.T) {
 	for _, ownerType := range []OwnerType{OwnerForumCategory, OwnerForum, OwnerForumThread} {
