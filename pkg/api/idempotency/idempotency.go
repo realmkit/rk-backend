@@ -51,6 +51,9 @@ type Store interface {
 
 	// Complete stores the response for key.
 	Complete(ctx context.Context, key string, entry Entry) error
+
+	// Release removes an incomplete reservation for key and fingerprint.
+	Release(ctx context.Context, key string, fingerprint string) error
 }
 
 // Option changes idempotency middleware behavior.
@@ -104,6 +107,9 @@ func Middleware(store Store, options ...Option) fiber.Handler {
 
 		logDecision(settings.log, ctx, key, fingerprint, "reserved")
 		if err := ctx.Next(); err != nil {
+			if releaseErr := store.Release(ctx.UserContext(), key, fingerprint); releaseErr != nil {
+				settings.log.Error("release idempotency reservation failed", zap.Error(releaseErr))
+			}
 			return err
 		}
 

@@ -76,6 +76,40 @@ func TestMiddlewareRejectsConflictingRequests(t *testing.T) {
 	}
 }
 
+// TestMiddlewareReleasesReservationAfterHandlerError verifies failed writes can be retried.
+func TestMiddlewareReleasesReservationAfterHandlerError(t *testing.T) {
+	store, closeStore := newRedisStore(t)
+	defer closeStore()
+	app := fiber.New(fiber.Config{ErrorHandler: problem.Handler})
+	app.Use(Middleware(store))
+	calls := 0
+	app.Post("/create", func(ctx *fiber.Ctx) error {
+		calls++
+		if calls == 1 {
+			return errors.New("temporary failure")
+		}
+		return ctx.Status(fiber.StatusCreated).SendString("created")
+	})
+
+	firstRes, err := app.Test(requestWithKey("same", "value"), -1)
+	if err != nil {
+		t.Fatalf("first Test() error = %v", err)
+	}
+	defer firstRes.Body.Close()
+	secondRes, err := app.Test(requestWithKey("same", "value"), -1)
+	if err != nil {
+		t.Fatalf("second Test() error = %v", err)
+	}
+	defer secondRes.Body.Close()
+
+	if calls != 2 {
+		t.Fatalf("calls = %d, want %d", calls, 2)
+	}
+	if secondRes.StatusCode != fiber.StatusCreated {
+		t.Fatalf("StatusCode = %d, want %d", secondRes.StatusCode, fiber.StatusCreated)
+	}
+}
+
 // TestMiddlewareIgnoresSafeMethods verifies GET requests bypass idempotency.
 func TestMiddlewareIgnoresSafeMethods(t *testing.T) {
 	store, closeStore := newRedisStore(t)
@@ -188,6 +222,26 @@ func TestRedisStoreReturnsExistingDifferentFingerprint(t *testing.T) {
 	}
 	if !exists || entry.Fingerprint != "first" {
 		t.Fatalf("Reserve() = (%+v, %v), want existing first fingerprint", entry, exists)
+	}
+}
+
+// TestRedisStoreReleaseRemovesIncompleteReservation verifies failed reservations can be removed.
+func TestRedisStoreReleaseRemovesIncompleteReservation(t *testing.T) {
+	store, closeStore := newRedisStore(t)
+	defer closeStore()
+
+	if _, _, err := store.Reserve(context.Background(), "key-1", "fingerprint", time.Hour); err != nil {
+		t.Fatalf("Reserve() error = %v", err)
+	}
+	if err := store.Release(context.Background(), "key-1", "fingerprint"); err != nil {
+		t.Fatalf("Release() error = %v", err)
+	}
+	_, exists, err := store.Reserve(context.Background(), "key-1", "fingerprint", time.Hour)
+	if err != nil {
+		t.Fatalf("Reserve() after release error = %v", err)
+	}
+	if exists {
+		t.Fatalf("Reserve() exists = true, want fresh reservation")
 	}
 }
 

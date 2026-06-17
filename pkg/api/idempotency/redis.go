@@ -105,6 +105,26 @@ func (store RedisStore) Complete(ctx context.Context, key string, entry Entry) e
 	}
 }
 
+// Release removes an incomplete reservation for key and fingerprint.
+func (store RedisStore) Release(ctx context.Context, key string, fingerprint string) error {
+	result, err := redisReleaseScript.Run(ctx, store.client, []string{store.key(key)}, fingerprint).Result()
+	if err != nil {
+		return fmt.Errorf("release idempotency key: %w", err)
+	}
+	state, err := completeResult(result)
+	if err != nil {
+		return err
+	}
+	switch state {
+	case "ok", "missing", "complete":
+		return nil
+	case "conflict":
+		return ErrEntryConflict
+	default:
+		return fmt.Errorf("unknown idempotency release state %q", state)
+	}
+}
+
 // key returns the Redis key for a client idempotency key.
 func (store RedisStore) key(key string) string {
 	return strings.Join([]string{redisKeyPrefix, store.scope, keyHash(key)}, ":")
@@ -167,5 +187,22 @@ if ttl <= 0 then
   return {"expired"}
 end
 redis.call("SET", KEYS[1], ARGV[2], "PX", ttl)
+return {"ok"}
+`)
+
+// redisReleaseScript atomically releases a matching incomplete idempotency entry.
+var redisReleaseScript = goredis.NewScript(`
+local existing = redis.call("GET", KEYS[1])
+if not existing then
+  return {"missing"}
+end
+local decoded = cjson.decode(existing)
+if decoded["fingerprint"] ~= ARGV[1] then
+  return {"conflict"}
+end
+if decoded["complete"] then
+  return {"complete"}
+end
+redis.call("DEL", KEYS[1])
 return {"ok"}
 `)

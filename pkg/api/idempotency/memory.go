@@ -46,5 +46,17 @@ func (store *MemoryStore) Complete(_ context.Context, key string, entry Entry) e
 	return nil
 }
 
+// Release removes an incomplete reservation for key and fingerprint.
+func (store *MemoryStore) Release(_ context.Context, key string, fingerprint string) error {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	entry, ok := store.entries[key]
+	if !ok || entry.Complete || entry.Fingerprint != fingerprint {
+		return nil
+	}
+	delete(store.entries, key)
+	return nil
+}
+
 // Ensure MemoryStore implements Store.
 var _ Store = (*MemoryStore)(nil)
