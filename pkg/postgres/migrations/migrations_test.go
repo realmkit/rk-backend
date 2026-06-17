@@ -19,8 +19,8 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if len(migrations) != 10 {
-		t.Fatalf("len(migrations) = %d, want 10", len(migrations))
+	if len(migrations) != 11 {
+		t.Fatalf("len(migrations) = %d, want 11", len(migrations))
 	}
 	if migrations[0].Version != 1 || migrations[0].Name != "create_metadata_tables" {
 		t.Fatalf("migration[0] = %+v, want metadata version 1", migrations[0])
@@ -52,6 +52,9 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if migrations[9].Version != 10 || migrations[9].Name != "drop_metadata_definition_namespace" {
 		t.Fatalf("migration[9] = %+v, want metadata namespace removal version 10", migrations[9])
 	}
+	if migrations[10].Version != 11 || migrations[10].Name != "repair_metadata_definition_namespace_column" {
+		t.Fatalf("migration[10] = %+v, want metadata namespace repair version 11", migrations[10])
+	}
 }
 
 // TestLoadRejectsVersionGaps verifies the global sequence has no gaps.
@@ -82,11 +85,14 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Up() error = %v", err)
 	}
-	if len(status.Applied) != 10 || len(status.Pending) != 0 {
-		t.Fatalf("Status = %+v, want ten applied and no pending", status)
+	if len(status.Applied) != 11 || len(status.Pending) != 0 {
+		t.Fatalf("Status = %+v, want eleven applied and no pending", status)
 	}
 	if !db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table missing")
+	}
+	if db.Migrator().HasColumn("metadata_metafield_definitions", "namespace") {
+		t.Fatalf("metadata_metafield_definitions namespace column exists")
 	}
 	if !db.Migrator().HasTable("assets") {
 		t.Fatalf("assets table missing")
@@ -202,12 +208,12 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	status, err := runner.Down(context.Background(), 10)
+	status, err := runner.Down(context.Background(), 11)
 	if err != nil {
 		t.Fatalf("Down() error = %v", err)
 	}
-	if len(status.Applied) != 0 || len(status.Pending) != 10 {
-		t.Fatalf("Status = %+v, want no applied and ten pending", status)
+	if len(status.Applied) != 0 || len(status.Pending) != 11 {
+		t.Fatalf("Status = %+v, want no applied and eleven pending", status)
 	}
 	if db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table exists after Down()")

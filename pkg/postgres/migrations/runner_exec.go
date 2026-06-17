@@ -101,6 +101,8 @@ func isPostgresOnlyStatement(statement string) bool {
 	return strings.Contains(statement, "USING gin") ||
 		strings.Contains(statement, "USING GIN") ||
 		strings.Contains(statement, "to_tsvector") ||
+		strings.Contains(statement, "DROP COLUMN IF EXISTS") ||
+		strings.Contains(statement, "ADD COLUMN IF NOT EXISTS") ||
 		strings.Contains(statement, "::text")
 }
 

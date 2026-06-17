@@ -33,7 +33,7 @@ func (repository MetaobjectEntryRepository) Create(ctx context.Context, entry do
 		model.Version = 1
 	}
 	if err := repository.store.DB(ctx).Create(&model).Error; err != nil {
-		return domain.MetaobjectEntry{}, port.ErrConflict
+		return domain.MetaobjectEntry{}, mapCreateError(err)
 	}
 	return metaobjectEntryFromModel(model)
 }

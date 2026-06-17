@@ -37,7 +37,7 @@ func (repository MetaobjectDefinitionRepository) Create(
 		model.Version = 1
 	}
 	if err := repository.store.DB(ctx).Create(&model).Error; err != nil {
-		return domain.MetaobjectDefinition{}, port.ErrConflict
+		return domain.MetaobjectDefinition{}, mapCreateError(err)
 	}
 	return metaobjectDefinitionFromModel(model)
 }

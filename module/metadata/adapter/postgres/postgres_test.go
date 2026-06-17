@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/realmkit/rk-backend/module/metadata/domain"
 	"github.com/realmkit/rk-backend/module/metadata/port"
 	"github.com/realmkit/rk-backend/pkg/orm"
@@ -26,6 +27,18 @@ func TestMetafieldDefinitionRepositoryCreateRejectsDuplicate(t *testing.T) {
 	}
 	if _, err := repository.Create(context.Background(), definition); !errors.Is(err, port.ErrConflict) {
 		t.Fatalf("Create() duplicate error = %v, want %v", err, port.ErrConflict)
+	}
+}
+
+// TestMapCreateErrorOnlyMapsUniqueViolations verifies schema errors do not look like duplicates.
+func TestMapCreateErrorOnlyMapsUniqueViolations(t *testing.T) {
+	uniqueErr := &pgconn.PgError{Code: orm.PostgresUniqueViolationCode}
+	if err := mapCreateError(uniqueErr); !errors.Is(err, port.ErrConflict) {
+		t.Fatalf("mapCreateError(unique) = %v, want %v", err, port.ErrConflict)
+	}
+	notNullErr := &pgconn.PgError{Code: "23502"}
+	if err := mapCreateError(notNullErr); errors.Is(err, port.ErrConflict) {
+		t.Fatalf("mapCreateError(not null) = %v, want non-conflict", err)
 	}
 }
 

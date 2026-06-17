@@ -37,7 +37,7 @@ func (repository MetafieldDefinitionRepository) Create(
 		model.Version = 1
 	}
 	if err := repository.store.DB(ctx).Create(&model).Error; err != nil {
-		return domain.MetafieldDefinition{}, port.ErrConflict
+		return domain.MetafieldDefinition{}, mapCreateError(err)
 	}
 	return definitionFromModel(model)
 }
@@ -155,4 +155,13 @@ func mapError(err error) error {
 		return port.ErrNotFound
 	}
 	return err
+}
+
+// mapCreateError maps insert errors into metadata errors.
+func mapCreateError(err error) error {
+	translated := orm.TranslateError(err)
+	if errors.Is(translated, orm.ErrConflict) {
+		return port.ErrConflict
+	}
+	return translated
 }

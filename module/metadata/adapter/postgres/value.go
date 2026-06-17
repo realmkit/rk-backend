@@ -43,7 +43,7 @@ func (repository MetafieldValueRepository) Upsert(
 	model := valueModelFromDomain(value)
 	model.Version = 1
 	if err := repository.store.DB(ctx).Create(&model).Error; err != nil {
-		return domain.MetafieldValue{}, false, port.ErrConflict
+		return domain.MetafieldValue{}, false, mapCreateError(err)
 	}
 	return valueFromModel(model), true, nil
 }
