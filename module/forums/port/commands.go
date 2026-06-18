@@ -173,6 +173,9 @@ type ForumFilter struct {
 
 	// Status filters by forum status.
 	Status domain.ForumStatus
+
+	// Query filters by key, slug, name, or description.
+	Query search.TextQuery
 }
 
 // Page aliases the shared pagination page.

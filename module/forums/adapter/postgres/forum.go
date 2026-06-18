@@ -193,6 +193,26 @@ func applyForumFilter(query *gorm.DB, filter port.ForumFilter) *gorm.DB {
 	if filter.Status != "" {
 		query = query.Where("status = ?", filter.Status)
 	}
+	if !filter.Query.Empty() {
+		like := filter.Query.LowerLike()
+		if query.Dialector.Name() == "postgres" {
+			query = query.Where(
+				"key = ? OR slug = ? OR LOWER(name) LIKE ? OR LOWER(description) LIKE ?",
+				filter.Query.String(),
+				filter.Query.String(),
+				like,
+				like,
+			)
+		} else {
+			query = query.Where(
+				"LOWER(key) LIKE ? OR LOWER(slug) LIKE ? OR LOWER(name) LIKE ? OR LOWER(description) LIKE ?",
+				like,
+				like,
+				like,
+				like,
+			)
+		}
+	}
 	return query
 }
 

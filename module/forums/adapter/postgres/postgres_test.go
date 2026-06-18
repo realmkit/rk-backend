@@ -112,6 +112,50 @@ func TestCategoryRepositoryListFilters(t *testing.T) {
 	}
 }
 
+// TestForumRepositoryListFilters verifies forum status, category, and text filters.
+func TestForumRepositoryListFilters(t *testing.T) {
+	categories, forums, _ := newRepositories(t)
+	category, err := categories.Create(context.Background(), testCategory())
+	if err != nil {
+		t.Fatalf("Create category error = %v", err)
+	}
+	official := testForum(category.ID, nil, "official-news")
+	official.Name = "Official News"
+	official.Description = "Staff announcements"
+	community := testForum(category.ID, nil, "community")
+	community.ID = uuid.New()
+	community.Key = "community"
+	community.Slug = "community"
+	community.Name = "Community"
+	community.Description = "Player spaces"
+	community.Path = "/" + community.ID.String() + "/"
+	community.Status = domain.ForumStatusHidden
+	for _, forum := range []domain.Forum{official, community} {
+		if _, err := forums.Create(context.Background(), forum); err != nil {
+			t.Fatalf("Create forum error = %v", err)
+		}
+	}
+	query, err := search.NewTextQuery("player", search.QueryOptions{})
+	if err != nil {
+		t.Fatalf("NewTextQuery() error = %v", err)
+	}
+	result, err := forums.List(
+		context.Background(),
+		port.ForumFilter{
+			CategoryID: category.ID,
+			Query:      query,
+			Status:     domain.ForumStatusHidden,
+		},
+		pagination.Page{Limit: 10},
+	)
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(result.Items) != 1 || result.Items[0].Key != "community" {
+		t.Fatalf("List() items = %+v, want hidden community forum", result.Items)
+	}
+}
+
 // TestForumRepositoryMoveUpdatesDescendantPaths verifies materialized path moves.
 func TestForumRepositoryMoveUpdatesDescendantPaths(t *testing.T) {
 	categories, forums, _ := newRepositories(t)

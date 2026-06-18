@@ -6,6 +6,7 @@ import (
 	"github.com/realmkit/rk-backend/module/forums/adapter/http/shared"
 	"github.com/realmkit/rk-backend/module/forums/domain"
 	"github.com/realmkit/rk-backend/module/forums/port"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // tree returns the visible forum tree.
@@ -66,7 +67,11 @@ func (handler handler) listForums(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	result, err := handler.services.Structure.ListForums(ctx.UserContext(), forumFilterFromQuery(ctx), page)
+	filter, err := forumFilterFromQuery(ctx)
+	if err != nil {
+		return err
+	}
+	result, err := handler.services.Structure.ListForums(ctx.UserContext(), filter, page)
 	if err != nil {
 		return shared.HandleError(ctx, err)
 	}
@@ -175,7 +180,7 @@ func (handler handler) reorderForums(ctx *fiber.Ctx) error {
 }
 
 // forumFilterFromQuery returns forum filters from query params.
-func forumFilterFromQuery(ctx *fiber.Ctx) port.ForumFilter {
+func forumFilterFromQuery(ctx *fiber.Ctx) (port.ForumFilter, error) {
 	var parentID *uuid.UUID
 	if value := ctx.Query("parent_forum_id"); value != "" {
 		parsed, err := uuid.Parse(value)
@@ -184,9 +189,14 @@ func forumFilterFromQuery(ctx *fiber.Ctx) port.ForumFilter {
 		}
 	}
 	categoryID, _ := uuid.Parse(ctx.Query("category_id"))
+	query, err := search.NewTextQuery(ctx.Query("q"), search.QueryOptions{})
+	if err != nil {
+		return port.ForumFilter{}, shared.InvalidQuery(ctx)
+	}
 	return port.ForumFilter{
 		CategoryID:    categoryID,
 		ParentForumID: parentID,
 		Status:        domain.ForumStatus(ctx.Query("status")),
-	}
+		Query:         query,
+	}, nil
 }
