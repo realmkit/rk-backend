@@ -1062,6 +1062,31 @@
             "$ref": "#/components/parameters/AcceptHeader"
           },
           {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 120
+            },
+            "description": "Search text matched against category key, name, or description."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ForumCategoryStatus"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
+          },
+          {
             "$ref": "#/components/parameters/RequestIdHeader"
           },
           {
@@ -2499,6 +2524,31 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 120
+            },
+            "description": "Search text matched against category key, name, or description."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ForumCategoryStatus"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/PageSizeQuery"
+          },
+          {
+            "$ref": "#/components/parameters/PageTokenQuery"
           },
           {
             "$ref": "#/components/parameters/RequestIdHeader"

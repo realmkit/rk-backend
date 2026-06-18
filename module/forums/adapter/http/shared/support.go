@@ -88,6 +88,12 @@ func PageFromQuery(ctx *fiber.Ctx) (pagination.Page, error) {
 	return page, nil
 }
 
+// InvalidQuery returns a standardized invalid query problem.
+func InvalidQuery(ctx *fiber.Ctx) error {
+	payload := problem.New(fiber.StatusBadRequest, "invalid_query", "Query parameters are invalid.")
+	return problem.Error{Problem: payload}
+}
+
 // ExpectedVersion returns the required If-Match version.
 func ExpectedVersion(ctx *fiber.Ctx) (uint64, error) {
 	value := strings.Trim(ctx.Get(headers.IfMatch), `" `)

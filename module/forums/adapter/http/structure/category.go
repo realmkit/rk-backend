@@ -6,6 +6,7 @@ import (
 	"github.com/realmkit/rk-backend/module/forums/adapter/http/shared"
 	"github.com/realmkit/rk-backend/module/forums/domain"
 	"github.com/realmkit/rk-backend/module/forums/port"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // createCategory creates a category.
@@ -53,7 +54,14 @@ func (handler handler) listCategories(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	filter := port.CategoryFilter{Status: domain.CategoryStatus(ctx.Query("status"))}
+	query, err := search.NewTextQuery(ctx.Query("q"), search.QueryOptions{})
+	if err != nil {
+		return shared.InvalidQuery(ctx)
+	}
+	filter := port.CategoryFilter{
+		Query:  query,
+		Status: domain.CategoryStatus(ctx.Query("status")),
+	}
 	result, err := handler.services.Structure.ListCategories(ctx.UserContext(), filter, page)
 	if err != nil {
 		return shared.HandleError(ctx, err)

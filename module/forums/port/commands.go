@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/forums/domain"
 	"github.com/realmkit/rk-backend/pkg/pagination"
+	"github.com/realmkit/rk-backend/pkg/search"
 )
 
 // CreateCategoryCommand creates a forum category.
@@ -157,6 +158,9 @@ type ReorderForumsCommand struct {
 type CategoryFilter struct {
 	// Status filters by category status.
 	Status domain.CategoryStatus
+
+	// Query filters by key, name, or description.
+	Query search.TextQuery
 }
 
 // ForumFilter filters forums.

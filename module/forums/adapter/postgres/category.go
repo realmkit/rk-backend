@@ -65,10 +65,9 @@ func (repository CategoryRepository) List(
 	filter port.CategoryFilter,
 	page pagination.Page,
 ) (pagination.Result[domain.ForumCategory], error) {
-	query := repository.store.DB(ctx).Model(&CategoryModel{}).Order("display_order asc, id asc").Limit(page.Limit + 1)
-	if filter.Status != "" {
-		query = query.Where("status = ?", filter.Status)
-	}
+	query := applyCategoryFilter(repository.store.DB(ctx).Model(&CategoryModel{}), filter).
+		Order("display_order asc, id asc").
+		Limit(page.Limit + 1)
 	var models []CategoryModel
 	if err := query.Find(&models).Error; err != nil {
 		return pagination.Result[domain.ForumCategory]{}, err
@@ -113,6 +112,32 @@ func categoryUpdates(category domain.ForumCategory, expectedVersion uint64) map[
 		"status":        string(category.Status),
 		"version":       expectedVersion + 1,
 	}
+}
+
+// applyCategoryFilter applies category list filters.
+func applyCategoryFilter(query *gorm.DB, filter port.CategoryFilter) *gorm.DB {
+	if filter.Status != "" {
+		query = query.Where("status = ?", filter.Status)
+	}
+	if !filter.Query.Empty() {
+		like := filter.Query.LowerLike()
+		if query.Dialector.Name() == "postgres" {
+			query = query.Where(
+				"key = ? OR LOWER(name) LIKE ? OR LOWER(description) LIKE ?",
+				filter.Query.String(),
+				like,
+				like,
+			)
+		} else {
+			query = query.Where(
+				"LOWER(key) LIKE ? OR LOWER(name) LIKE ? OR LOWER(description) LIKE ?",
+				like,
+				like,
+				like,
+			)
+		}
+	}
+	return query
 }
 
 // categoryPage maps models into a page.

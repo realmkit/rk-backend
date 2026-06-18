@@ -13,6 +13,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/orm"
 	"github.com/realmkit/rk-backend/pkg/pagination"
 	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
+	"github.com/realmkit/rk-backend/pkg/search"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -73,6 +74,41 @@ func TestCategoryRepositoryPreconditionAndSoftDelete(t *testing.T) {
 	}
 	if _, err := categories.FindByID(context.Background(), category.ID); !errors.Is(err, port.ErrNotFound) {
 		t.Fatalf("FindByID() error = %v, want %v", err, port.ErrNotFound)
+	}
+}
+
+// TestCategoryRepositoryListFilters verifies category status and text search filters.
+func TestCategoryRepositoryListFilters(t *testing.T) {
+	categories, _, _ := newRepositories(t)
+	official := testCategory()
+	official.Key = "official"
+	official.Name = "Official News"
+	official.Description = "Staff announcements"
+	community := testCategory()
+	community.ID = uuid.New()
+	community.Key = "community"
+	community.Name = "Community"
+	community.Description = "Player spaces"
+	community.Status = domain.CategoryStatusHidden
+	for _, category := range []domain.ForumCategory{official, community} {
+		if _, err := categories.Create(context.Background(), category); err != nil {
+			t.Fatalf("Create category error = %v", err)
+		}
+	}
+	query, err := search.NewTextQuery("player", search.QueryOptions{})
+	if err != nil {
+		t.Fatalf("NewTextQuery() error = %v", err)
+	}
+	result, err := categories.List(
+		context.Background(),
+		port.CategoryFilter{Query: query, Status: domain.CategoryStatusHidden},
+		pagination.Page{Limit: 10},
+	)
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if len(result.Items) != 1 || result.Items[0].Key != "community" {
+		t.Fatalf("List() items = %+v, want hidden community category", result.Items)
 	}
 }
 
