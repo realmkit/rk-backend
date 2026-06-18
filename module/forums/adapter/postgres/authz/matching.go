@@ -107,6 +107,7 @@ type groupMembershipRow struct {
 func viewActions() []groupsdomain.Action {
 	return []groupsdomain.Action{
 		groupsdomain.PermissionForumsView,
+		groupsdomain.PermissionForumsAdministrativeAccess,
 		groupsdomain.PermissionForumsManageForum,
 	}
 }
@@ -120,6 +121,7 @@ func manageActions() []groupsdomain.Action {
 func createThreadActions() []groupsdomain.Action {
 	return []groupsdomain.Action{
 		groupsdomain.PermissionForumsCreateThread,
+		groupsdomain.PermissionForumsAdministrativeAccess,
 		groupsdomain.PermissionForumsManageForum,
 	}
 }
@@ -128,6 +130,7 @@ func createThreadActions() []groupsdomain.Action {
 func replyActions() []groupsdomain.Action {
 	return []groupsdomain.Action{
 		groupsdomain.PermissionForumsReply,
+		groupsdomain.PermissionForumsAdministrativeAccess,
 		groupsdomain.PermissionForumsManageForum,
 	}
 }
@@ -136,14 +139,52 @@ func replyActions() []groupsdomain.Action {
 func likeActions() []groupsdomain.Action {
 	return []groupsdomain.Action{
 		groupsdomain.PermissionForumsLikePosts,
+		groupsdomain.PermissionForumsAdministrativeAccess,
 		groupsdomain.PermissionForumsManageForum,
 	}
 }
 
-// moderateActions returns actions that grant moderation.
-func moderateActions() []groupsdomain.Action {
+// pinThreadActions returns actions that grant sticky thread changes.
+func pinThreadActions() []groupsdomain.Action {
+	return []groupsdomain.Action{
+		groupsdomain.PermissionForumsPinThreads,
+		groupsdomain.PermissionForumsAdministrativeAccess,
+		groupsdomain.PermissionForumsManageForum,
+	}
+}
+
+// threadManageActions returns actions that grant thread moderation.
+func threadManageActions() []groupsdomain.Action {
 	return []groupsdomain.Action{
 		groupsdomain.PermissionForumsManageThreads,
+		groupsdomain.PermissionForumsAdministrativeAccess,
+		groupsdomain.PermissionForumsManageForum,
+	}
+}
+
+// postManageActions returns actions that grant post moderation.
+func postManageActions() []groupsdomain.Action {
+	return []groupsdomain.Action{
+		groupsdomain.PermissionForumsManagePosts,
+		groupsdomain.PermissionForumsAdministrativeAccess,
+		groupsdomain.PermissionForumsManageForum,
+	}
+}
+
+// limitBypassActions returns actions that grant thread limit bypasses.
+func limitBypassActions() []groupsdomain.Action {
+	return []groupsdomain.Action{
+		groupsdomain.PermissionForumsBypassThreadLimits,
+		groupsdomain.PermissionForumsAdministrativeAccess,
+		groupsdomain.PermissionForumsManageForum,
+	}
+}
+
+// viewAllThreadActions returns actions that grant full thread visibility.
+func viewAllThreadActions() []groupsdomain.Action {
+	return []groupsdomain.Action{
+		groupsdomain.PermissionForumsViewAllThreads,
+		groupsdomain.PermissionForumsAdministrativeAccess,
 		groupsdomain.PermissionForumsManageForum,
 	}
 }

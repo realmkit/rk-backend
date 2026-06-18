@@ -17,8 +17,12 @@ var managedForumActions = []groupsdomain.Action{
 	groupsdomain.PermissionForumsCreateThread,
 	groupsdomain.PermissionForumsReply,
 	groupsdomain.PermissionForumsLikePosts,
+	groupsdomain.PermissionForumsViewAllThreads,
+	groupsdomain.PermissionForumsBypassThreadLimits,
+	groupsdomain.PermissionForumsPinThreads,
 	groupsdomain.PermissionForumsManageThreads,
-	groupsdomain.PermissionForumsManageForum,
+	groupsdomain.PermissionForumsManagePosts,
+	groupsdomain.PermissionForumsAdministrativeAccess,
 }
 
 // VisibilityAuthorizer resolves forum permissions from authorization tuples.
@@ -55,6 +59,9 @@ func (authorizer VisibilityAuthorizer) CanCreateThread(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
+	if actorUserID == uuid.Nil {
+		return false, nil
+	}
 	return authorizer.allowed(ctx, actorUserID, forumID, createThreadActions())
 }
 
@@ -64,6 +71,9 @@ func (authorizer VisibilityAuthorizer) CanReply(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
+	if actorUserID == uuid.Nil {
+		return false, nil
+	}
 	return authorizer.allowed(ctx, actorUserID, forumID, replyActions())
 }
 
@@ -73,6 +83,9 @@ func (authorizer VisibilityAuthorizer) CanLikePosts(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
+	if actorUserID == uuid.Nil {
+		return false, nil
+	}
 	return authorizer.allowed(ctx, actorUserID, forumID, likeActions())
 }
 
@@ -82,7 +95,10 @@ func (authorizer VisibilityAuthorizer) CanManageThreads(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
-	return authorizer.allowed(ctx, actorUserID, forumID, moderateActions())
+	if actorUserID == uuid.Nil {
+		return false, nil
+	}
+	return authorizer.allowed(ctx, actorUserID, forumID, threadManageActions())
 }
 
 // CanManagePosts reports whether actor can manage posts in forum.
@@ -91,7 +107,10 @@ func (authorizer VisibilityAuthorizer) CanManagePosts(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
 ) (bool, error) {
-	return authorizer.allowed(ctx, actorUserID, forumID, moderateActions())
+	if actorUserID == uuid.Nil {
+		return false, nil
+	}
+	return authorizer.allowed(ctx, actorUserID, forumID, postManageActions())
 }
 
 // allowed reports whether actor matches any relation for one forum.

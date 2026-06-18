@@ -128,8 +128,9 @@ func permissionBody(forumID uuid.UUID, groupID uuid.UUID) string {
 	groupGrant := `{"subject_type":"group","subject_id":"` + groupID.String() + `"}`
 	publicGrant := `{"subject_type":"public","subject_id":"` + publicID + `"}`
 	return `{"forum_id":"` + forumID.String() + `","viewers":[` + publicGrant + `],` +
-		`"creators":[` + groupGrant + `],"replyers":[],"likers":[],"moderators":[],` +
-		`"managers":[` + publicGrant + `]}`
+		`"creators":[` + groupGrant + `],"replyers":[],"likers":[],` +
+		`"thread_pinners":[],"thread_managers":[],"post_managers":[],` +
+		`"limit_bypassers":[],"all_thread_viewers":[],"administrators":[]}`
 }
 
 func (fixture forumsFixture) createGroupWithMember(t *testing.T, userID uuid.UUID) uuid.UUID {

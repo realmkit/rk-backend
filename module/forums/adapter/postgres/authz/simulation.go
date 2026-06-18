@@ -92,18 +92,26 @@ func simulationActions(permission string) ([]groupsdomain.Action, error) {
 		groupsdomain.PermissionPostsLike:
 		return likeActions(), nil
 	case groupsdomain.PermissionForumsPinThreads,
-		groupsdomain.PermissionForumsManageThreads,
-		groupsdomain.PermissionForumsManagePosts,
-		groupsdomain.PermissionThreadsUpdate,
+		groupsdomain.PermissionThreadsPin:
+		return pinThreadActions(), nil
+	case groupsdomain.PermissionForumsManageThreads,
 		groupsdomain.PermissionThreadsClose,
 		groupsdomain.PermissionThreadsOpen,
-		groupsdomain.PermissionThreadsDelete,
-		groupsdomain.PermissionThreadsPin,
+		groupsdomain.PermissionThreadsUpdate,
+		groupsdomain.PermissionThreadsDelete:
+		return threadManageActions(), nil
+	case groupsdomain.PermissionForumsManagePosts,
 		groupsdomain.PermissionPostsUpdate,
-		groupsdomain.PermissionPostsDelete,
+		groupsdomain.PermissionPostsDelete:
+		return postManageActions(), nil
+	case groupsdomain.PermissionForumsBypassThreadLimits:
+		return limitBypassActions(), nil
+	case groupsdomain.PermissionForumsViewAllThreads,
 		groupsdomain.PermissionPostsViewHidden,
 		groupsdomain.PermissionPostsViewRevisions:
-		return moderateActions(), nil
+		return viewAllThreadActions(), nil
+	case groupsdomain.PermissionForumsAdministrativeAccess:
+		return []groupsdomain.Action{groupsdomain.PermissionForumsAdministrativeAccess}, nil
 	default:
 		return nil, unsupportedSimulationPermission()
 	}

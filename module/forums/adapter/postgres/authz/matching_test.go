@@ -82,16 +82,21 @@ func TestActionAndGrantMappingCoversPermissionBuckets(t *testing.T) {
 	addGrantToSettings(&settings, groupsdomain.PermissionForumsCreateThread, grant)
 	addGrantToSettings(&settings, groupsdomain.PermissionForumsReply, grant)
 	addGrantToSettings(&settings, groupsdomain.PermissionForumsLikePosts, grant)
+	addGrantToSettings(&settings, groupsdomain.PermissionForumsViewAllThreads, grant)
+	addGrantToSettings(&settings, groupsdomain.PermissionForumsBypassThreadLimits, grant)
+	addGrantToSettings(&settings, groupsdomain.PermissionForumsPinThreads, grant)
 	addGrantToSettings(&settings, groupsdomain.PermissionForumsManageThreads, grant)
+	addGrantToSettings(&settings, groupsdomain.PermissionForumsManagePosts, grant)
+	addGrantToSettings(&settings, groupsdomain.PermissionForumsAdministrativeAccess, grant)
 	addGrantToSettings(&settings, groupsdomain.PermissionForumsManageForum, grant)
-	if len(allPermissionGrants(settings)) != 6 {
-		t.Fatalf("allPermissionGrants() count = %d, want 6", len(allPermissionGrants(settings)))
+	if len(allPermissionGrants(settings)) != 10 {
+		t.Fatalf("allPermissionGrants() count = %d, want 10", len(allPermissionGrants(settings)))
 	}
 
 	now := time.Now().UTC()
 	rows := rowsFromPermissionSettings(settings, uuid.New(), now)
-	if len(rows) != 6 {
-		t.Fatalf("rowsFromPermissionSettings() count = %d, want 6", len(rows))
+	if len(rows) != 10 {
+		t.Fatalf("rowsFromPermissionSettings() count = %d, want 10", len(rows))
 	}
 	if rows[0].CreatedByUserID == nil {
 		t.Fatalf("expected created_by_user_id when actor is present")
@@ -112,7 +117,12 @@ func TestSimulationActionMappingCoversForumPermissions(t *testing.T) {
 		groupsdomain.PermissionForumsCreateThread,
 		groupsdomain.PermissionForumsReply,
 		groupsdomain.PermissionForumsLikePosts,
+		groupsdomain.PermissionForumsPinThreads,
 		groupsdomain.PermissionForumsManageThreads,
+		groupsdomain.PermissionForumsManagePosts,
+		groupsdomain.PermissionForumsViewAllThreads,
+		groupsdomain.PermissionForumsBypassThreadLimits,
+		groupsdomain.PermissionForumsAdministrativeAccess,
 	}
 	for _, permission := range permissions {
 		actions, err := simulationActions(string(permission))

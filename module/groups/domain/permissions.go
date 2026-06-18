@@ -76,6 +76,12 @@ const (
 	// PermissionForumsLikePosts allows liking posts inside a forum.
 	PermissionForumsLikePosts Permission = "forums.like_posts"
 
+	// PermissionForumsViewAllThreads allows bypassing forum thread visibility filtering.
+	PermissionForumsViewAllThreads Permission = "forums.view_all_threads"
+
+	// PermissionForumsBypassThreadLimits allows bypassing configured thread limits.
+	PermissionForumsBypassThreadLimits Permission = "forums.bypass_thread_limits"
+
 	// PermissionForumsPinThreads allows pinning threads inside a forum.
 	PermissionForumsPinThreads Permission = "forums.pin_threads"
 
@@ -84,6 +90,9 @@ const (
 
 	// PermissionForumsManagePosts allows moderating posts inside a forum.
 	PermissionForumsManagePosts Permission = "forums.manage_posts"
+
+	// PermissionForumsAdministrativeAccess allows all forum moderation actions.
+	PermissionForumsAdministrativeAccess Permission = "forums.administrative_access"
 
 	// PermissionThreadsView allows reading a thread.
 	PermissionThreadsView Permission = "threads.view"

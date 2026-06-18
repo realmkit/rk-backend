@@ -294,10 +294,10 @@ func TestVisibilityAuthorizerPermissionSettingsAndSimulation(t *testing.T) {
 	createGroup(t, db, groupID)
 	createMembership(t, db, groupID, memberID)
 	settings := domain.ForumPermissionSettings{
-		ForumID:    forumID,
-		Viewers:    []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectPublic}},
-		Creators:   []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectUser, SubjectID: userID}},
-		Moderators: []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectGroup, SubjectID: groupID}},
+		ForumID:        forumID,
+		Viewers:        []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectPublic}},
+		Creators:       []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectUser, SubjectID: userID}},
+		ThreadManagers: []domain.ForumPermissionGrant{{SubjectType: domain.PermissionSubjectGroup, SubjectID: groupID}},
 	}
 
 	if err := authorizer.UpdateForumPermissionSettings(context.Background(), actorID, settings); err != nil {
@@ -308,7 +308,7 @@ func TestVisibilityAuthorizerPermissionSettingsAndSimulation(t *testing.T) {
 		t.Fatalf("ForumPermissionSettings() error = %v", err)
 	}
 	if len(found.Viewers) != 1 || found.Viewers[0].SubjectID != domain.PublicPermissionSubjectID() || len(found.Creators) != 1 ||
-		len(found.Moderators) != 1 {
+		len(found.ThreadManagers) != 1 {
 		t.Fatalf("found = %+v, want persisted normalized grants", found)
 	}
 	publicResult, err := authorizer.SimulateForumPermission(
@@ -348,7 +348,7 @@ func TestVisibilityAuthorizerPermissionSettingsAndSimulation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ForumPermissionSettings cleared error = %v", err)
 	}
-	if len(cleared.Viewers) != 0 || len(cleared.Creators) != 0 || len(cleared.Moderators) != 0 {
+	if len(cleared.Viewers) != 0 || len(cleared.Creators) != 0 || len(cleared.ThreadManagers) != 0 {
 		t.Fatalf("cleared = %+v, want no managed grants", cleared)
 	}
 }
@@ -369,6 +369,29 @@ func TestVisibilityAuthorizerRejectsMissingGrantSubjects(t *testing.T) {
 	var validation domain.ValidationError
 	if !errors.As(err, &validation) {
 		t.Fatalf("UpdateForumPermissionSettings() error = %v, want validation", err)
+	}
+}
+
+// TestVisibilityAuthorizerRejectsAnonymousWriteGrants verifies stale public writes are ignored.
+func TestVisibilityAuthorizerRejectsAnonymousWriteGrants(t *testing.T) {
+	_, _, db := newRepositories(t)
+	authorizer := NewVisibilityAuthorizer(orm.NewStore(db))
+	forumID := uuid.New()
+	createGrant(
+		t,
+		db,
+		forumID,
+		groupsdomain.SubjectPublic,
+		groupsdomain.PublicSubjectID(),
+		groupsdomain.PermissionForumsCreateThread,
+	)
+
+	allowed, err := authorizer.CanCreateThread(context.Background(), uuid.Nil, forumID)
+	if err != nil {
+		t.Fatalf("CanCreateThread() error = %v", err)
+	}
+	if allowed {
+		t.Fatalf("CanCreateThread() = true, want anonymous writes denied")
 	}
 }
 

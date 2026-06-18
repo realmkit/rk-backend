@@ -111,10 +111,10 @@ func TestForumSettingsValidateRejectsExternalURLOnDiscussion(t *testing.T) {
 // TestForumPermissionSettingsNormalizeReservedSubjects verifies grant normalization.
 func TestForumPermissionSettingsNormalizeReservedSubjects(t *testing.T) {
 	settings := ForumPermissionSettings{
-		ForumID:    uuid.New(),
-		Viewers:    []ForumPermissionGrant{{SubjectType: PermissionSubjectPublic}},
-		Replyers:   []ForumPermissionGrant{{SubjectType: PermissionSubjectAuthenticated}},
-		Moderators: []ForumPermissionGrant{{SubjectType: PermissionSubjectGroup, SubjectID: uuid.New()}},
+		ForumID:        uuid.New(),
+		Viewers:        []ForumPermissionGrant{{SubjectType: PermissionSubjectPublic}},
+		Replyers:       []ForumPermissionGrant{{SubjectType: PermissionSubjectAuthenticated}},
+		ThreadManagers: []ForumPermissionGrant{{SubjectType: PermissionSubjectGroup, SubjectID: uuid.New()}},
 	}.Normalize()
 	if err := settings.Validate(); err != nil {
 		t.Fatalf("Validate() error = %v", err)

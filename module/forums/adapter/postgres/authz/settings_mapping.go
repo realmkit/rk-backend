@@ -23,10 +23,18 @@ func addGrantToSettings(
 		settings.Replyers = append(settings.Replyers, grant)
 	case groupsdomain.PermissionForumsLikePosts:
 		settings.Likers = append(settings.Likers, grant)
+	case groupsdomain.PermissionForumsViewAllThreads:
+		settings.AllThreadViewers = append(settings.AllThreadViewers, grant)
+	case groupsdomain.PermissionForumsBypassThreadLimits:
+		settings.LimitBypassers = append(settings.LimitBypassers, grant)
+	case groupsdomain.PermissionForumsPinThreads:
+		settings.ThreadPinners = append(settings.ThreadPinners, grant)
 	case groupsdomain.PermissionForumsManageThreads:
-		settings.Moderators = append(settings.Moderators, grant)
-	case groupsdomain.PermissionForumsManageForum:
-		settings.Managers = append(settings.Managers, grant)
+		settings.ThreadManagers = append(settings.ThreadManagers, grant)
+	case groupsdomain.PermissionForumsManagePosts:
+		settings.PostManagers = append(settings.PostManagers, grant)
+	case groupsdomain.PermissionForumsAdministrativeAccess:
+		settings.Administrators = append(settings.Administrators, grant)
 	}
 }
 
@@ -53,8 +61,12 @@ func rowsFromPermissionSettings(
 	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsCreateThread, settings.Creators, actor, now)...)
 	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsReply, settings.Replyers, actor, now)...)
 	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsLikePosts, settings.Likers, actor, now)...)
-	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsManageThreads, settings.Moderators, actor, now)...)
-	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsManageForum, settings.Managers, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsViewAllThreads, settings.AllThreadViewers, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsBypassThreadLimits, settings.LimitBypassers, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsPinThreads, settings.ThreadPinners, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsManageThreads, settings.ThreadManagers, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsManagePosts, settings.PostManagers, actor, now)...)
+	rows = append(rows, rowsFromGrants(settings.ForumID, groupsdomain.PermissionForumsAdministrativeAccess, settings.Administrators, actor, now)...)
 	return rows
 }
 
@@ -91,7 +103,11 @@ func allPermissionGrants(settings forumsdomain.ForumPermissionSettings) []forums
 	grants = append(grants, settings.Creators...)
 	grants = append(grants, settings.Replyers...)
 	grants = append(grants, settings.Likers...)
-	grants = append(grants, settings.Moderators...)
-	grants = append(grants, settings.Managers...)
+	grants = append(grants, settings.AllThreadViewers...)
+	grants = append(grants, settings.LimitBypassers...)
+	grants = append(grants, settings.ThreadPinners...)
+	grants = append(grants, settings.ThreadManagers...)
+	grants = append(grants, settings.PostManagers...)
+	grants = append(grants, settings.Administrators...)
 	return grants
 }

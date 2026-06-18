@@ -29,7 +29,7 @@ func TestForumPermissionGrantNormalizeAndValidate(t *testing.T) {
 		SubjectType: PermissionSubjectGroup,
 		SubjectID:   uuid.New(),
 	}.Normalize()
-	if violations := groupGrant.Validate("moderators[0]"); len(violations) != 0 {
+	if violations := groupGrant.Validate("thread_managers[0]"); len(violations) != 0 {
 		t.Fatalf("expected group grant to validate: %#v", violations)
 	}
 
@@ -70,7 +70,7 @@ func TestForumPermissionSettingsNormalizeAndValidate(t *testing.T) {
 		Creators: []ForumPermissionGrant{
 			{SubjectType: PermissionSubjectAuthenticated},
 		},
-		Managers: []ForumPermissionGrant{
+		Administrators: []ForumPermissionGrant{
 			{SubjectType: PermissionSubjectGroup, SubjectID: uuid.New()},
 		},
 	}.Normalize()
@@ -85,6 +85,18 @@ func TestForumPermissionSettingsNormalizeAndValidate(t *testing.T) {
 	settings.Likers = []ForumPermissionGrant{{SubjectType: PermissionSubjectUser}}
 	if err := settings.Validate(); err == nil {
 		t.Fatalf("expected invalid settings to fail")
+	}
+}
+
+// TestForumPermissionSettingsRejectsPublicNonViewGrants covers anonymous write denial.
+func TestForumPermissionSettingsRejectsPublicNonViewGrants(t *testing.T) {
+	settings := ForumPermissionSettings{
+		ForumID:  uuid.New(),
+		Creators: []ForumPermissionGrant{{SubjectType: PermissionSubjectPublic}},
+	}.Normalize()
+
+	if err := settings.Validate(); err == nil {
+		t.Fatalf("expected public creator grant to fail")
 	}
 }
 

@@ -4842,7 +4842,7 @@
           "forum-admin"
         ],
         "summary": "Get forum settings",
-        "description": "Requires forums.manage_forum for the target forum. Returns behavior settings used by backend enforcement.",
+        "description": "Requires global forums.manage_forum. Returns behavior settings used by backend enforcement.",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestIdHeader"
@@ -4906,7 +4906,7 @@
           "forum-admin"
         ],
         "summary": "Update forum settings",
-        "description": "Requires forums.manage_forum, Idempotency-Key, and If-Match. Changing visibility or policy settings clears forum read caches.",
+        "description": "Requires global forums.manage_forum, Idempotency-Key, and If-Match. Changing visibility or policy settings clears forum read caches.",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestIdHeader"
@@ -4997,7 +4997,7 @@
           "forum-admin"
         ],
         "summary": "Get forum permission settings",
-        "description": "Requires forums.manage_forum. Returns relation grants that power forum visibility and actions.",
+        "description": "Requires global forums.manage_forum. Returns per-forum view, participation, and moderation grants. Public subjects are valid only for viewers.",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestIdHeader"
@@ -5061,7 +5061,7 @@
           "forum-admin"
         ],
         "summary": "Replace forum permission settings",
-        "description": "Requires forums.manage_forum and Idempotency-Key. Empty grant arrays disable that relation. User and group grants are validated before storage.",
+        "description": "Requires global forums.manage_forum and Idempotency-Key. Empty grant arrays disable that relation. Public subjects are valid only for viewers; moderation grants are per-forum.",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestIdHeader"
@@ -5136,7 +5136,7 @@
           "forum-admin"
         ],
         "summary": "Simulate forum permission",
-        "description": "Requires forums.manage_forum. Explains whether the selected actor would be allowed by current forum relation grants.",
+        "description": "Requires global forums.manage_forum. Explains whether the selected actor would be allowed by current forum relation grants.",
         "parameters": [
           {
             "$ref": "#/components/parameters/RequestIdHeader"
@@ -12319,6 +12319,9 @@
           "forums.view",
           "forums.create_thread",
           "forums.reply",
+          "forums.pin_threads",
+          "forums.view_all_threads",
+          "forums.administrative_access",
           "threads.view",
           "posts.view"
         ]
@@ -14248,13 +14251,37 @@
               "$ref": "#/components/schemas/ForumPermissionGrant"
             }
           },
-          "moderators": {
+          "thread_pinners": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ForumPermissionGrant"
             }
           },
-          "managers": {
+          "thread_managers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumPermissionGrant"
+            }
+          },
+          "post_managers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumPermissionGrant"
+            }
+          },
+          "limit_bypassers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumPermissionGrant"
+            }
+          },
+          "all_thread_viewers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumPermissionGrant"
+            }
+          },
+          "administrators": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ForumPermissionGrant"

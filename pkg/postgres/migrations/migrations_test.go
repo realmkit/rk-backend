@@ -19,8 +19,8 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if len(migrations) != 12 {
-		t.Fatalf("len(migrations) = %d, want 12", len(migrations))
+	if len(migrations) != 13 {
+		t.Fatalf("len(migrations) = %d, want 13", len(migrations))
 	}
 	if migrations[0].Version != 1 || migrations[0].Name != "create_metadata_tables" {
 		t.Fatalf("migration[0] = %+v, want metadata version 1", migrations[0])
@@ -58,6 +58,9 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if migrations[11].Version != 12 || migrations[11].Name != "make_asset_metadata_optional" {
 		t.Fatalf("migration[11] = %+v, want asset metadata optional version 12", migrations[11])
 	}
+	if migrations[12].Version != 13 || migrations[12].Name != "repair_forum_permission_grants" {
+		t.Fatalf("migration[12] = %+v, want forum permission repair version 13", migrations[12])
+	}
 }
 
 // TestLoadRejectsVersionGaps verifies the global sequence has no gaps.
@@ -88,8 +91,8 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Up() error = %v", err)
 	}
-	if len(status.Applied) != 12 || len(status.Pending) != 0 {
-		t.Fatalf("Status = %+v, want twelve applied and no pending", status)
+	if len(status.Applied) != 13 || len(status.Pending) != 0 {
+		t.Fatalf("Status = %+v, want thirteen applied and no pending", status)
 	}
 	if !db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table missing")
@@ -193,6 +196,44 @@ func TestRunnerUpMakesAssetMetadataOptional(t *testing.T) {
 	}
 }
 
+// TestRunnerUpRepairsForumPermissionGrants verifies stale forum grants are retired.
+func TestRunnerUpRepairsForumPermissionGrants(t *testing.T) {
+	db := newDB(t)
+	migrations, err := Load(DefaultSource())
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if _, err := NewRunner(db, sourceFromMigrations(migrations[:12])).Up(context.Background()); err != nil {
+		t.Fatalf("initial Up() error = %v", err)
+	}
+
+	insertForumPermissionGrants := `
+		INSERT INTO forum_permission_grants
+			(id, subject_type, subject_id, action, scope_type, scope_id, inherit, condition_key, created_at)
+		VALUES
+			('00000000-0000-0000-0000-000000001301', 'public', '00000000-0000-0000-0000-000000000001', 'forums.create_thread', 'forum', '00000000-0000-0000-0000-000000000301', false, '', CURRENT_TIMESTAMP),
+			('00000000-0000-0000-0000-000000001302', 'group', '00000000-0000-0000-0000-000000000101', 'forums.manage_forum', 'forum', '00000000-0000-0000-0000-000000000301', false, '', CURRENT_TIMESTAMP),
+			('00000000-0000-0000-0000-000000001303', 'public', '00000000-0000-0000-0000-000000000001', 'forums.view', 'forum', '00000000-0000-0000-0000-000000000301', false, '', CURRENT_TIMESTAMP)
+	`
+	if err := db.Exec(insertForumPermissionGrants).Error; err != nil {
+		t.Fatalf("insert forum permission grants error = %v", err)
+	}
+	if _, err := NewRunner(db, DefaultSource()).Up(context.Background()); err != nil {
+		t.Fatalf("repair Up() error = %v", err)
+	}
+
+	var activeInvalidCount int64
+	if err := db.Table("forum_permission_grants").
+		Where("deleted_at IS NULL").
+		Where("action = ? OR (subject_type = ? AND action <> ?)", "forums.manage_forum", "public", "forums.view").
+		Count(&activeInvalidCount).Error; err != nil {
+		t.Fatalf("query active invalid grants error = %v", err)
+	}
+	if activeInvalidCount != 0 {
+		t.Fatalf("activeInvalidCount = %d, want 0", activeInvalidCount)
+	}
+}
+
 // TestRunnerValidateRejectsChecksumChanges verifies applied migrations are immutable.
 func TestRunnerValidateRejectsChecksumChanges(t *testing.T) {
 	db := newDB(t)
@@ -247,12 +288,12 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	status, err := runner.Down(context.Background(), 12)
+	status, err := runner.Down(context.Background(), 13)
 	if err != nil {
 		t.Fatalf("Down() error = %v", err)
 	}
-	if len(status.Applied) != 0 || len(status.Pending) != 12 {
-		t.Fatalf("Status = %+v, want no applied and twelve pending", status)
+	if len(status.Applied) != 0 || len(status.Pending) != 13 {
+		t.Fatalf("Status = %+v, want no applied and thirteen pending", status)
 	}
 	if db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table exists after Down()")

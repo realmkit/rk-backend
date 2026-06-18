@@ -52,6 +52,10 @@ func permissionGrantCount(settings domain.ForumPermissionSettings) int {
 		len(settings.Creators) +
 		len(settings.Replyers) +
 		len(settings.Likers) +
-		len(settings.Moderators) +
-		len(settings.Managers)
+		len(settings.ThreadPinners) +
+		len(settings.ThreadManagers) +
+		len(settings.PostManagers) +
+		len(settings.LimitBypassers) +
+		len(settings.AllThreadViewers) +
+		len(settings.Administrators)
 }

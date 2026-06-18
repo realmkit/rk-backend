@@ -1308,12 +1308,23 @@ func (authorizer *memoryAuthorizer) SimulateForumPermission(
 ) (domain.ForumPermissionSimulationResult, error) {
 	settings, _ := authorizer.ForumPermissionSettings(context.Background(), forumID)
 	result := domain.ForumPermissionSimulationResult{
-		Allowed:        false,
-		Reason:         "no_matching_grant",
-		Permission:     request.Permission,
-		ObjectType:     request.ObjectType,
-		ObjectID:       request.ObjectID,
-		CheckedActions: []string{"forums.view", "forums.create_thread", "forums.reply", "forums.like_posts", "forums.manage_threads", "forums.manage_forum"},
+		Allowed:    false,
+		Reason:     "no_matching_grant",
+		Permission: request.Permission,
+		ObjectType: request.ObjectType,
+		ObjectID:   request.ObjectID,
+		CheckedActions: []string{
+			"forums.view",
+			"forums.create_thread",
+			"forums.reply",
+			"forums.like_posts",
+			"forums.pin_threads",
+			"forums.manage_threads",
+			"forums.manage_posts",
+			"forums.view_all_threads",
+			"forums.bypass_thread_limits",
+			"forums.administrative_access",
+		},
 	}
 	for _, grant := range settings.Creators {
 		if grant.SubjectType == domain.PermissionSubjectUser && grant.SubjectID == request.ActorUserID &&

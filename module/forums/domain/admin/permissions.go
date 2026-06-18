@@ -65,11 +65,23 @@ type ForumPermissionSettings struct {
 	// Likers can like posts.
 	Likers []ForumPermissionGrant `json:"likers"`
 
-	// Moderators can moderate threads, posts, and sticky state.
-	Moderators []ForumPermissionGrant `json:"moderators"`
+	// ThreadPinners can pin and unpin threads.
+	ThreadPinners []ForumPermissionGrant `json:"thread_pinners"`
 
-	// Managers can manage forum settings and permissions.
-	Managers []ForumPermissionGrant `json:"managers"`
+	// ThreadManagers can close, open, update, or delete threads.
+	ThreadManagers []ForumPermissionGrant `json:"thread_managers"`
+
+	// PostManagers can update or delete posts.
+	PostManagers []ForumPermissionGrant `json:"post_managers"`
+
+	// LimitBypassers can bypass configured thread limits.
+	LimitBypassers []ForumPermissionGrant `json:"limit_bypassers"`
+
+	// AllThreadViewers can see all threads despite forum visibility filtering.
+	AllThreadViewers []ForumPermissionGrant `json:"all_thread_viewers"`
+
+	// Administrators receive all forum moderation permissions.
+	Administrators []ForumPermissionGrant `json:"administrators"`
 }
 
 // Normalize returns normalized permission settings.
@@ -78,8 +90,12 @@ func (settings ForumPermissionSettings) Normalize() ForumPermissionSettings {
 	settings.Creators = normalizePermissionGrants(settings.Creators)
 	settings.Replyers = normalizePermissionGrants(settings.Replyers)
 	settings.Likers = normalizePermissionGrants(settings.Likers)
-	settings.Moderators = normalizePermissionGrants(settings.Moderators)
-	settings.Managers = normalizePermissionGrants(settings.Managers)
+	settings.ThreadPinners = normalizePermissionGrants(settings.ThreadPinners)
+	settings.ThreadManagers = normalizePermissionGrants(settings.ThreadManagers)
+	settings.PostManagers = normalizePermissionGrants(settings.PostManagers)
+	settings.LimitBypassers = normalizePermissionGrants(settings.LimitBypassers)
+	settings.AllThreadViewers = normalizePermissionGrants(settings.AllThreadViewers)
+	settings.Administrators = normalizePermissionGrants(settings.Administrators)
 	return settings
 }
 
@@ -90,11 +106,15 @@ func (settings ForumPermissionSettings) Validate() error {
 		violations = AppendViolation(violations, "forum_id", "is required")
 	}
 	violations = append(violations, validatePermissionGrants("viewers", settings.Viewers)...)
-	violations = append(violations, validatePermissionGrants("creators", settings.Creators)...)
-	violations = append(violations, validatePermissionGrants("replyers", settings.Replyers)...)
-	violations = append(violations, validatePermissionGrants("likers", settings.Likers)...)
-	violations = append(violations, validatePermissionGrants("moderators", settings.Moderators)...)
-	violations = append(violations, validatePermissionGrants("managers", settings.Managers)...)
+	violations = append(violations, validatePrivatePermissionGrants("creators", settings.Creators)...)
+	violations = append(violations, validatePrivatePermissionGrants("replyers", settings.Replyers)...)
+	violations = append(violations, validatePrivatePermissionGrants("likers", settings.Likers)...)
+	violations = append(violations, validatePrivatePermissionGrants("thread_pinners", settings.ThreadPinners)...)
+	violations = append(violations, validatePrivatePermissionGrants("thread_managers", settings.ThreadManagers)...)
+	violations = append(violations, validatePrivatePermissionGrants("post_managers", settings.PostManagers)...)
+	violations = append(violations, validatePrivatePermissionGrants("limit_bypassers", settings.LimitBypassers)...)
+	violations = append(violations, validatePrivatePermissionGrants("all_thread_viewers", settings.AllThreadViewers)...)
+	violations = append(violations, validatePrivatePermissionGrants("administrators", settings.Administrators)...)
 	return NewValidationError(violations)
 }
 
@@ -121,6 +141,22 @@ func validatePermissionGrants(field string, grants []ForumPermissionGrant) []Vio
 	for index, grant := range grants {
 		itemField := field + "[" + strconv.Itoa(index) + "]"
 		violations = append(violations, grant.Validate(itemField)...)
+	}
+	return violations
+}
+
+func validatePrivatePermissionGrants(field string, grants []ForumPermissionGrant) []Violation {
+	var violations []Violation
+	for index, grant := range grants {
+		itemField := field + "[" + strconv.Itoa(index) + "]"
+		violations = append(violations, grant.Validate(itemField)...)
+		if grant.SubjectType == PermissionSubjectPublic {
+			violations = AppendViolation(
+				violations,
+				itemField+".subject_type",
+				"anonymous users can only view forums",
+			)
+		}
 	}
 	return violations
 }

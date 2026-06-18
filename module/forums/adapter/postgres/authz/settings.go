@@ -142,13 +142,17 @@ type permissionGrantInsertRow struct {
 // emptyPermissionSettings returns an initialized settings value.
 func emptyPermissionSettings(forumID uuid.UUID) forumsdomain.ForumPermissionSettings {
 	return forumsdomain.ForumPermissionSettings{
-		ForumID:    forumID,
-		Viewers:    []forumsdomain.ForumPermissionGrant{},
-		Creators:   []forumsdomain.ForumPermissionGrant{},
-		Replyers:   []forumsdomain.ForumPermissionGrant{},
-		Likers:     []forumsdomain.ForumPermissionGrant{},
-		Moderators: []forumsdomain.ForumPermissionGrant{},
-		Managers:   []forumsdomain.ForumPermissionGrant{},
+		ForumID:          forumID,
+		Viewers:          []forumsdomain.ForumPermissionGrant{},
+		Creators:         []forumsdomain.ForumPermissionGrant{},
+		Replyers:         []forumsdomain.ForumPermissionGrant{},
+		Likers:           []forumsdomain.ForumPermissionGrant{},
+		ThreadPinners:    []forumsdomain.ForumPermissionGrant{},
+		ThreadManagers:   []forumsdomain.ForumPermissionGrant{},
+		PostManagers:     []forumsdomain.ForumPermissionGrant{},
+		LimitBypassers:   []forumsdomain.ForumPermissionGrant{},
+		AllThreadViewers: []forumsdomain.ForumPermissionGrant{},
+		Administrators:   []forumsdomain.ForumPermissionGrant{},
 	}
 }
 
