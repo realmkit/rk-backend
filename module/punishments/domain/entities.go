@@ -158,6 +158,9 @@ func (definition Definition) Validate() error {
 
 // Normalize returns a normalized action.
 func (action ActionTemplate) Normalize() ActionTemplate {
+	if action.ID == uuid.Nil {
+		action.ID = uuid.New()
+	}
 	if action.Status == "" {
 		action.Status = DefinitionActive
 	}

@@ -27,6 +27,18 @@ func TestActionValidationRejectsMismatchedTargetAction(t *testing.T) {
 	}
 }
 
+// TestActionNormalizeAssignsMissingID verifies clients need not provide action IDs.
+func TestActionNormalizeAssignsMissingID(t *testing.T) {
+	action := validAction()
+	action.ID = uuid.Nil
+
+	normalized := action.Normalize()
+
+	if normalized.ID == uuid.Nil {
+		t.Fatalf("ID = nil, want generated UUID")
+	}
+}
+
 // TestIssueDurationValidationEnforcesDefinitionLimits verifies duration policy.
 func TestIssueDurationValidationEnforcesDefinitionLimits(t *testing.T) {
 	minimum := int64(60)
