@@ -79,6 +79,15 @@ var staticPermissionActions = map[domain.Action]domain.PermissionAction{
 	domain.PermissionTicketsAcceptAppeal:           staticAction(domain.PermissionTicketsAcceptAppeal, "tickets", domain.ObjectTicket, "Accept appeals", domain.WarningLevelDangerous),
 	domain.PermissionTicketsRejectAppeal:           staticAction(domain.PermissionTicketsRejectAppeal, "tickets", domain.ObjectTicket, "Reject appeals", domain.WarningLevelDangerous),
 	domain.PermissionTicketsLinkPunishment:         staticAction(domain.PermissionTicketsLinkPunishment, "tickets", domain.ObjectTicket, "Link punishments", domain.WarningLevelSensitive),
+	domain.Action("themes.view"):                   staticAction("themes.view", "themes", domain.ObjectTheme, "View themes", domain.WarningLevelSensitive),
+	domain.Action("themes.import"):                 staticAction("themes.import", "themes", domain.ObjectTheme, "Import themes", domain.WarningLevelDangerous),
+	domain.Action("themes.edit"):                   staticAction("themes.edit", "themes", domain.ObjectTheme, "Edit themes", domain.WarningLevelDangerous),
+	domain.Action("themes.validate"):               staticAction("themes.validate", "themes", domain.ObjectTheme, "Validate themes", domain.WarningLevelDangerous),
+	domain.Action("themes.publish"):                staticAction("themes.publish", "themes", domain.ObjectTheme, "Publish themes", domain.WarningLevelDangerous),
+	domain.Action("themes.rollback"):               staticAction("themes.rollback", "themes", domain.ObjectTheme, "Roll back themes", domain.WarningLevelDangerous),
+	domain.Action("themes.delete"):                 staticAction("themes.delete", "themes", domain.ObjectTheme, "Delete themes", domain.WarningLevelDangerous),
+	domain.Action("themes.preview"):                staticAction("themes.preview", "themes", domain.ObjectTheme, "Preview themes", domain.WarningLevelSensitive),
+	domain.Action("themes.activate"):               staticAction("themes.activate", "themes", domain.ObjectTheme, "Activate themes", domain.WarningLevelDangerous),
 }
 
 // staticAction creates one built-in action definition.

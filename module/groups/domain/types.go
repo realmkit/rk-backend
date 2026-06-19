@@ -109,6 +109,9 @@ const (
 
 	// ObjectTicket is a ticket authorization object.
 	ObjectTicket ObjectType = "ticket"
+
+	// ObjectTheme is a theme administration authorization object.
+	ObjectTheme ObjectType = "theme"
 )
 
 const (
