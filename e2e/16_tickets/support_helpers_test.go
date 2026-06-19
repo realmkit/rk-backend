@@ -162,8 +162,8 @@ func appealPunishmentDefinition(target uuid.UUID) punishmentsdomain.Definition {
 		AllowPermanent: true, RequiresReason: true,
 		Actions: []punishmentsdomain.ActionTemplate{{
 			ID: uuid.New(), TargetSystem: punishmentsdomain.TargetRealmKit,
-			ActionKey: punishmentsdomain.ActionForumsReply, Effect: punishmentsdomain.EffectRestrict,
-			Status: punishmentsdomain.DefinitionActive,
+			ActionType: punishmentsdomain.ActionForumsReply,
+			Status:     punishmentsdomain.DefinitionActive,
 		}},
 	}
 }

@@ -37,8 +37,7 @@ type ActionModel struct {
 	orm.ID
 	DefinitionID      uuid.UUID `gorm:"type:uuid;not null;index"`
 	TargetSystem      string    `gorm:"size:64;not null;index"`
-	ActionKey         string    `gorm:"size:160;not null;index"`
-	Effect            string    `gorm:"size:64;not null;index"`
+	ActionType        string    `gorm:"size:160;not null;index"`
 	ConfigurationJSON string    `gorm:"type:jsonb;not null"`
 	DisplayOrder      int       `gorm:"not null;default:0;index"`
 	Status            string    `gorm:"size:64;not null;index"`
@@ -83,8 +82,7 @@ type SnapshotModel struct {
 	PunishmentID       uuid.UUID `gorm:"type:uuid;not null;index"`
 	DefinitionActionID uuid.UUID `gorm:"type:uuid;not null;index"`
 	TargetSystem       string    `gorm:"size:64;not null;index"`
-	ActionKey          string    `gorm:"size:160;not null;index"`
-	Effect             string    `gorm:"size:64;not null;index"`
+	ActionType         string    `gorm:"size:160;not null;index"`
 	ConfigurationJSON  string    `gorm:"type:jsonb;not null"`
 	Status             string    `gorm:"size:64;not null;index"`
 	CreatedAt          time.Time `gorm:"not null"`

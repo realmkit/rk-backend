@@ -120,6 +120,9 @@ func (service Service) UpdateThreadTitle(
 			return domain.Thread{}, err
 		}
 	}
+	if err := service.requireUnrestricted(ctx, command.ActorUserID, "realmkit.forums.update_thread"); err != nil {
+		return domain.Thread{}, err
+	}
 	thread.Title = command.Title
 	thread.Slug = command.Slug
 	thread = thread.Normalize()

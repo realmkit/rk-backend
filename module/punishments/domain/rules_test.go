@@ -80,14 +80,15 @@ func TestDurationRulesCoverPermanentAndBounds(t *testing.T) {
 // TestActionSnapshotAndRestrictionRules covers snapshots, clones, and active windows.
 func TestActionSnapshotAndRestrictionRules(t *testing.T) {
 	punishment := validPunishment()
-	notify := validAction()
-	notify.Effect = EffectNotify
-	snapshot := SnapshotFromTemplate(punishment.ID, notify)
-	if snapshot.Effect != EffectNotify {
-		t.Fatalf("snapshot effect = %q, want notify", snapshot.Effect)
+	webhook := validAction()
+	webhook.TargetSystem = TargetWebhook
+	webhook.ActionType = ActionWebhookDispatch
+	snapshot := SnapshotFromTemplate(punishment.ID, webhook)
+	if snapshot.ActionType != ActionWebhookDispatch {
+		t.Fatalf("snapshot action type = %q, want webhook dispatch", snapshot.ActionType)
 	}
 	if _, ok := RestrictionFromSnapshot(punishment, snapshot); ok {
-		t.Fatalf("notify action should not create restriction")
+		t.Fatalf("webhook action should not create restriction")
 	}
 	if err := snapshot.Validate(); err != nil {
 		t.Fatalf("expected snapshot to validate: %v", err)
@@ -124,7 +125,7 @@ func TestValidationHelpersCoverInvalidBranches(t *testing.T) {
 		ValidateActionKey("action_key", "bad-action"),
 		ValidateDefinitionStatus("status", "paused"),
 		ValidateTargetSystem("target", "matrix"),
-		ValidateEffect("effect", "freeze"),
+		ValidateActionType("action_type", TargetRealmKit, ActionWebhookDispatch),
 		ValidateIssuerType("issuer_type", "robot"),
 		ValidatePunishmentStatus("status", "paused"),
 	}

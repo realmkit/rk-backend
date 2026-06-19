@@ -14573,10 +14573,7 @@
           "target_system": {
             "type": "string"
           },
-          "action_key": {
-            "type": "string"
-          },
-          "effect": {
+          "action_type": {
             "type": "string"
           },
           "configuration_json": {
@@ -14793,10 +14790,7 @@
           "target_system": {
             "type": "string"
           },
-          "action_key": {
-            "type": "string"
-          },
-          "effect": {
+          "action_type": {
             "type": "string"
           },
           "status": {

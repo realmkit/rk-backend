@@ -28,8 +28,7 @@ CREATE TABLE punishment_definition_actions (
     id uuid PRIMARY KEY,
     definition_id uuid NOT NULL,
     target_system text NOT NULL,
-    action_key text NOT NULL,
-    effect text NOT NULL,
+    action_type text NOT NULL,
     configuration_json jsonb NOT NULL DEFAULT '{}',
     display_order integer NOT NULL DEFAULT 0,
     status text NOT NULL,
@@ -39,7 +38,7 @@ CREATE TABLE punishment_definition_actions (
 );
 
 CREATE INDEX punishment_definition_actions_definition_order_idx ON punishment_definition_actions (definition_id, display_order) WHERE deleted_at IS NULL;
-CREATE INDEX punishment_definition_actions_target_action_idx ON punishment_definition_actions (target_system, action_key) WHERE deleted_at IS NULL;
+CREATE INDEX punishment_definition_actions_target_action_idx ON punishment_definition_actions (target_system, action_type) WHERE deleted_at IS NULL;
 CREATE INDEX punishment_definition_actions_deleted_at_idx ON punishment_definition_actions (deleted_at);
 
 CREATE TABLE punishments (
@@ -79,8 +78,7 @@ CREATE TABLE punishment_action_snapshots (
     punishment_id uuid NOT NULL,
     definition_action_id uuid NOT NULL,
     target_system text NOT NULL,
-    action_key text NOT NULL,
-    effect text NOT NULL,
+    action_type text NOT NULL,
     configuration_json jsonb NOT NULL DEFAULT '{}',
     status text NOT NULL,
     created_at timestamptz NOT NULL,
@@ -88,7 +86,7 @@ CREATE TABLE punishment_action_snapshots (
 );
 
 CREATE INDEX punishment_action_snapshots_punishment_idx ON punishment_action_snapshots (punishment_id) WHERE deleted_at IS NULL;
-CREATE INDEX punishment_action_snapshots_target_action_idx ON punishment_action_snapshots (target_system, action_key) WHERE deleted_at IS NULL;
+CREATE INDEX punishment_action_snapshots_target_action_idx ON punishment_action_snapshots (target_system, action_type) WHERE deleted_at IS NULL;
 CREATE INDEX punishment_action_snapshots_deleted_at_idx ON punishment_action_snapshots (deleted_at);
 
 CREATE TABLE punishment_active_restrictions (

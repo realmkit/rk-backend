@@ -15,7 +15,10 @@ func (service Service) requireLikePosts(
 	forumID uuid.UUID,
 ) error {
 	allowed, err := service.authorizer.CanLikePosts(ctx, actorUserID, forumID)
-	return decisionError(allowed, err)
+	if err := decisionError(allowed, err); err != nil {
+		return err
+	}
+	return service.requireUnrestricted(ctx, actorUserID, "realmkit.forums.like_posts")
 }
 
 // requireManageThreads verifies thread-management permission.

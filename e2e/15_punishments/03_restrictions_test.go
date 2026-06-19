@@ -34,7 +34,7 @@ func TestRestrictionChecks(t *testing.T) {
 	})
 
 	steps.Do("unrelated action remains allowed", func() {
-		result := restrictionCheck(t, fixture, actor, target, domain.ActionAssetsUpload)
+		result := restrictionCheck(t, fixture, actor, target, domain.ActionForumsUpdateThread)
 		if result["allowed"] != true {
 			t.Fatalf("allowed = %v, want true", result["allowed"])
 		}

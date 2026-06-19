@@ -78,7 +78,7 @@ func (fixture punishmentsFixture) createDefinition(
 	t *testing.T,
 	actor uuid.UUID,
 	key string,
-	actions ...string,
+	actions ...punishmentsdomain.ActionType,
 ) map[string]any {
 	t.Helper()
 	response := fixture.do(
@@ -117,17 +117,17 @@ func (fixture punishmentsFixture) issuePunishment(
 }
 
 // definitionBody returns a valid punishment definition JSON body.
-func definitionBody(key string, actions ...string) string {
+func definitionBody(key string, actions ...punishmentsdomain.ActionType) string {
 	if len(actions) == 0 {
-		actions = []string{punishmentsdomain.ActionForumsReply}
+		actions = []punishmentsdomain.ActionType{punishmentsdomain.ActionForumsReply}
 	}
 	rawActions := ""
 	for index, action := range actions {
 		if index > 0 {
 			rawActions += ","
 		}
-		rawActions += `{"target_system":"realmkit","action_key":"` + action +
-			`","effect":"restrict","configuration_json":{},"display_order":` +
+		rawActions += `{"target_system":"realmkit","action_type":"` + string(action) +
+			`","configuration_json":{},"display_order":` +
 			strconv.Itoa(index+1) + `,"status":"active"}`
 	}
 	return `{"key":"` + key + `","name":"` + key + `","color":"#ff5555",` +

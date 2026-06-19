@@ -92,8 +92,7 @@ func SnapshotFromTemplate(punishmentID uuid.UUID, action ActionTemplate) ActionS
 		PunishmentID:       punishmentID,
 		DefinitionActionID: action.ID,
 		TargetSystem:       action.TargetSystem,
-		ActionKey:          action.ActionKey,
-		Effect:             action.Effect,
+		ActionType:         action.ActionType,
 		ConfigurationJSON:  cloneJSON(action.ConfigurationJSON),
 		Status:             DefinitionActive,
 		CreatedAt:          time.Now().UTC(),
@@ -102,14 +101,14 @@ func SnapshotFromTemplate(punishmentID uuid.UUID, action ActionTemplate) ActionS
 
 // RestrictionFromSnapshot creates an active restriction when applicable.
 func RestrictionFromSnapshot(punishment Punishment, snapshot ActionSnapshot) (ActiveRestriction, bool) {
-	if snapshot.TargetSystem != TargetRealmKit || snapshot.Effect != EffectRestrict {
+	if snapshot.TargetSystem != TargetRealmKit {
 		return ActiveRestriction{}, false
 	}
 	return ActiveRestriction{
 		ID:           uuid.New(),
 		PunishmentID: punishment.ID,
 		TargetUserID: punishment.TargetUserID,
-		ActionKey:    snapshot.ActionKey,
+		ActionKey:    string(snapshot.ActionType),
 		StartsAt:     punishment.StartsAt,
 		ExpiresAt:    punishment.ExpiresAt,
 		CreatedAt:    time.Now().UTC(),
@@ -120,8 +119,7 @@ func RestrictionFromSnapshot(punishment Punishment, snapshot ActionSnapshot) (Ac
 func (snapshot ActionSnapshot) Validate() error {
 	action := ActionTemplate{
 		TargetSystem:      snapshot.TargetSystem,
-		ActionKey:         snapshot.ActionKey,
-		Effect:            snapshot.Effect,
+		ActionType:        snapshot.ActionType,
 		ConfigurationJSON: snapshot.ConfigurationJSON,
 		Status:            snapshot.Status,
 	}

@@ -30,7 +30,7 @@ func TestDefinitionLifecycle(t *testing.T) {
 	})
 
 	steps.Do("definition can be created, listed, updated, reordered, and deleted", func() {
-		created := fixture.createDefinition(t, actor, "forum_mute", "realmkit.forums.reply", "realmkit.messages.send")
+		created := fixture.createDefinition(t, actor, "forum_mute", "realmkit.forums.reply", "realmkit.forums.update_thread")
 		id := idFrom(t, created, "id")
 		version := versionFrom(created)
 		if created["color"] != "#ff5555" {

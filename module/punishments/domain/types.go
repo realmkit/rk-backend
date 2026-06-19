@@ -20,8 +20,8 @@ type DefinitionStatus string
 // TargetSystem identifies where an action applies.
 type TargetSystem string
 
-// Effect identifies what an action does.
-type Effect string
+// ActionType identifies a concrete punishment action capability.
+type ActionType string
 
 // IssuerType identifies who or what issued a punishment.
 type IssuerType string
@@ -41,23 +41,8 @@ const (
 const (
 	// TargetRealmKit applies inside RealmKit.
 	TargetRealmKit TargetSystem = "realmkit"
-	// TargetMinecraft is a Minecraft integration target.
-	TargetMinecraft TargetSystem = "minecraft"
-	// TargetSAMP is a SAMP integration target.
-	TargetSAMP TargetSystem = "samp"
-	// TargetDiscord is a Discord integration target.
-	TargetDiscord TargetSystem = "discord"
-	// TargetCustom is a community-defined integration target.
-	TargetCustom TargetSystem = "custom"
-)
-
-const (
-	// EffectRestrict denies a RealmKit action while active.
-	EffectRestrict Effect = "restrict"
-	// EffectNotify emits a notification-oriented event.
-	EffectNotify Effect = "notify"
-	// EffectExternalEvent emits an integration event.
-	EffectExternalEvent Effect = "external_event"
+	// TargetWebhook dispatches action events to a configured webhook.
+	TargetWebhook TargetSystem = "webhook"
 )
 
 const (
@@ -95,12 +80,10 @@ const (
 	ActionForumsReply = "realmkit.forums.reply"
 	// ActionForumsLikePosts denies forum likes.
 	ActionForumsLikePosts = "realmkit.forums.like_posts"
-	// ActionMessagesSend denies sending messages.
-	ActionMessagesSend = "realmkit.messages.send"
-	// ActionAssetsUpload denies asset uploads.
-	ActionAssetsUpload = "realmkit.assets.upload"
-	// ActionProfileUpdate denies profile updates.
-	ActionProfileUpdate = "realmkit.profile.update"
+	// ActionForumsUpdateThread denies forum thread title updates.
+	ActionForumsUpdateThread = "realmkit.forums.update_thread"
+	// ActionWebhookDispatch dispatches a punishment action webhook.
+	ActionWebhookDispatch = "webhook.dispatch"
 )
 
 var (
@@ -175,15 +158,18 @@ func ValidateDefinitionStatus(field string, status DefinitionStatus) []Violation
 
 // ValidateTargetSystem validates target system.
 func ValidateTargetSystem(field string, target TargetSystem) []Violation {
-	if slices.Contains([]TargetSystem{TargetRealmKit, TargetMinecraft, TargetSAMP, TargetDiscord, TargetCustom}, target) {
+	if slices.Contains([]TargetSystem{TargetRealmKit, TargetWebhook}, target) {
 		return nil
 	}
 	return []Violation{{Field: field, Message: "is not supported"}}
 }
 
-// ValidateEffect validates action effect.
-func ValidateEffect(field string, effect Effect) []Violation {
-	if slices.Contains([]Effect{EffectRestrict, EffectNotify, EffectExternalEvent}, effect) {
+// ValidateActionType validates an action type for a target system.
+func ValidateActionType(field string, target TargetSystem, actionType ActionType) []Violation {
+	if target == TargetRealmKit && slices.Contains(realmKitActionTypes(), actionType) {
+		return nil
+	}
+	if target == TargetWebhook && actionType == ActionWebhookDispatch {
 		return nil
 	}
 	return []Violation{{Field: field, Message: "is not supported"}}
@@ -209,4 +195,14 @@ func ValidatePunishmentStatus(field string, status PunishmentStatus) []Violation
 		return nil
 	}
 	return []Violation{{Field: field, Message: "is not supported"}}
+}
+
+// realmKitActionTypes returns supported RealmKit action capabilities.
+func realmKitActionTypes() []ActionType {
+	return []ActionType{
+		ActionForumsCreateThread,
+		ActionForumsReply,
+		ActionForumsLikePosts,
+		ActionForumsUpdateThread,
+	}
 }

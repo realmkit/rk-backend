@@ -180,8 +180,7 @@ func validDefinitionBody() string {
 		"actions":[{
 			"id":"` + uuid.NewString() + `",
 			"target_system":"realmkit",
-			"action_key":"` + domain.ActionForumsReply + `",
-			"effect":"restrict",
+			"action_type":"` + string(domain.ActionForumsReply) + `",
 			"configuration_json":{},
 			"status":"active"
 		}]

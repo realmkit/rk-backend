@@ -35,8 +35,7 @@ type ActionTemplate struct {
 	ID                uuid.UUID        `json:"id"`
 	DefinitionID      uuid.UUID        `json:"definition_id"`
 	TargetSystem      TargetSystem     `json:"target_system"`
-	ActionKey         string           `json:"action_key"`
-	Effect            Effect           `json:"effect"`
+	ActionType        ActionType       `json:"action_type"`
 	ConfigurationJSON json.RawMessage  `json:"configuration_json"`
 	DisplayOrder      int              `json:"display_order"`
 	Status            DefinitionStatus `json:"status"`
@@ -76,8 +75,7 @@ type ActionSnapshot struct {
 	PunishmentID       uuid.UUID        `json:"punishment_id"`
 	DefinitionActionID uuid.UUID        `json:"definition_action_id"`
 	TargetSystem       TargetSystem     `json:"target_system"`
-	ActionKey          string           `json:"action_key"`
-	Effect             Effect           `json:"effect"`
+	ActionType         ActionType       `json:"action_type"`
 	ConfigurationJSON  json.RawMessage  `json:"configuration_json"`
 	Status             DefinitionStatus `json:"status"`
 	CreatedAt          time.Time        `json:"created_at"`
@@ -151,9 +149,6 @@ func (definition Definition) Validate() error {
 	if definition.Severity < 0 {
 		violations = AddViolation(violations, "severity", "must be nonnegative")
 	}
-	if len(definition.Actions) == 0 {
-		violations = AddViolation(violations, "actions", "must include at least one action")
-	}
 	violations = append(violations, validateDurations(definition)...)
 	for _, action := range definition.Actions {
 		violations = append(violations, validationViolations(action.Validate())...)
@@ -163,7 +158,6 @@ func (definition Definition) Validate() error {
 
 // Normalize returns a normalized action.
 func (action ActionTemplate) Normalize() ActionTemplate {
-	action.ActionKey = strings.TrimSpace(action.ActionKey)
 	if action.Status == "" {
 		action.Status = DefinitionActive
 	}
@@ -177,12 +171,8 @@ func (action ActionTemplate) Normalize() ActionTemplate {
 func (action ActionTemplate) Validate() error {
 	var violations []Violation
 	violations = append(violations, ValidateTargetSystem("target_system", action.TargetSystem)...)
-	violations = append(violations, ValidateEffect("effect", action.Effect)...)
-	violations = append(violations, ValidateActionKey("action_key", action.ActionKey)...)
+	violations = append(violations, ValidateActionType("action_type", action.TargetSystem, action.ActionType)...)
 	violations = append(violations, ValidateDefinitionStatus("status", action.Status)...)
-	if action.TargetSystem != TargetRealmKit && action.Effect == EffectRestrict {
-		violations = AddViolation(violations, "effect", "restrict is only valid for realmkit")
-	}
 	if !json.Valid(action.ConfigurationJSON) {
 		violations = AddViolation(violations, "configuration_json", "must be valid JSON")
 	}

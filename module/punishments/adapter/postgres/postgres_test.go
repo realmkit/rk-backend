@@ -108,8 +108,7 @@ func testDefinition() domain.Definition {
 	action := domain.ActionTemplate{
 		ID:                uuid.New(),
 		TargetSystem:      domain.TargetRealmKit,
-		ActionKey:         domain.ActionForumsReply,
-		Effect:            domain.EffectRestrict,
+		ActionType:        domain.ActionForumsReply,
 		ConfigurationJSON: []byte(`{}`),
 		Status:            domain.DefinitionActive,
 	}.Normalize()

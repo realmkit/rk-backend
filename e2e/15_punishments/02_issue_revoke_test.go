@@ -134,7 +134,7 @@ func createRawDefinition(t *testing.T, fixture punishmentsFixture, actor uuid.UU
 	t.Helper()
 	body := `{"key":"` + key + `","name":"` + key + `","color":"#ff5555","severity":1,` +
 		override + `,"requires_reason":true,"actions":[{"target_system":"realmkit",` +
-		`"action_key":"realmkit.forums.reply","effect":"restrict","status":"active"}]}`
+		`"action_type":"realmkit.forums.reply","status":"active"}]}`
 	response := fixture.do(t, configureRequest(
 		harness.JSONRequest(fiber.MethodPost, "/punishment-definitions", body),
 		withPunishmentUser(actor),

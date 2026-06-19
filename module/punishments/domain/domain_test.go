@@ -7,20 +7,20 @@ import (
 	"github.com/google/uuid"
 )
 
-// TestDefinitionValidationRequiresAction verifies definitions always carry consequences.
-func TestDefinitionValidationRequiresAction(t *testing.T) {
+// TestDefinitionValidationAllowsActionlessDefinitions verifies definitions can be query-only.
+func TestDefinitionValidationAllowsActionlessDefinitions(t *testing.T) {
 	definition := validDefinition()
 	definition.Actions = nil
 
-	if err := definition.Normalize().Validate(); err == nil {
-		t.Fatalf("Validate() error = nil, want validation error")
+	if err := definition.Normalize().Validate(); err != nil {
+		t.Fatalf("Validate() error = %v, want nil", err)
 	}
 }
 
-// TestActionValidationRejectsNonRealmKitRestrict verifies restrict stays RealmKit-owned.
-func TestActionValidationRejectsNonRealmKitRestrict(t *testing.T) {
+// TestActionValidationRejectsMismatchedTargetAction verifies target-owned actions.
+func TestActionValidationRejectsMismatchedTargetAction(t *testing.T) {
 	action := validAction()
-	action.TargetSystem = TargetMinecraft
+	action.TargetSystem = TargetWebhook
 
 	if err := action.Normalize().Validate(); err == nil {
 		t.Fatalf("Validate() error = nil, want validation error")
@@ -86,8 +86,7 @@ func validAction() ActionTemplate {
 		ID:                uuid.New(),
 		DefinitionID:      uuid.New(),
 		TargetSystem:      TargetRealmKit,
-		ActionKey:         ActionForumsReply,
-		Effect:            EffectRestrict,
+		ActionType:        ActionForumsReply,
 		ConfigurationJSON: []byte(`{}`),
 		Status:            DefinitionActive,
 	}.Normalize()

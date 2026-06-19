@@ -235,7 +235,7 @@ func TestCheckRestrictionAllowsAnonymousAndCachesMisses(t *testing.T) {
 	userID := uuid.New()
 	result, err := service.CheckRestriction(context.Background(), port.CheckCommand{
 		UserID:    userID,
-		ActionKey: domain.ActionMessagesSend,
+		ActionKey: domain.ActionForumsUpdateThread,
 	})
 	if err != nil {
 		t.Fatalf("miss CheckRestriction() error = %v", err)
@@ -243,7 +243,7 @@ func TestCheckRestrictionAllowsAnonymousAndCachesMisses(t *testing.T) {
 	if !result.Allowed {
 		t.Fatalf("missing restriction should allow")
 	}
-	if cached, ok := cache.values[domain.ActionMessagesSend]; !ok || !cached.Allowed {
+	if cached, ok := cache.values[domain.ActionForumsUpdateThread]; !ok || !cached.Allowed {
 		t.Fatalf("expected allowed miss to be cached")
 	}
 }
