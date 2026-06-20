@@ -41,7 +41,7 @@ func (service Service) Import(ctx context.Context, command Command) (Result, err
 	if err != nil && err != port.ErrNotFound {
 		return Result{}, err
 	}
-	files, issues, err := extractPackage(command.Package, command.PackageSizeBytes, service.cfg)
+	files, issues, err := extractPackage(ctx, command.Package, command.PackageSizeBytes, service.cfg)
 	if err != nil {
 		return Result{}, err
 	}
@@ -225,4 +225,14 @@ func (service Service) verifySignature(ctx context.Context, files []packageFile,
 		return signing.Result{}
 	}
 	return service.verifier.Verify(ctx, manifest, findFileBytes(files, "realmkit-theme.sig.json"))
+}
+
+// sourceReference returns the stored idempotency source reference.
+func sourceReference(key string) string {
+	return "upload:idempotency:" + strings.TrimSpace(key)
+}
+
+// storageKey returns an immutable object key for a version file.
+func storageKey(prefix string, versionID uuid.UUID, filePath domain.FilePath) string {
+	return strings.Trim(prefix, "/") + "/" + versionID.String() + "/" + string(filePath)
 }

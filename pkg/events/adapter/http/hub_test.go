@@ -42,7 +42,7 @@ func TestHubAddRemovePublishAndMatch(t *testing.T) {
 	if err := hub.Publish(context.Background(), event); err != nil {
 		t.Fatalf("Publish() error = %v", err)
 	}
-	hub.Broadcast(event)
+	hub.Broadcast(context.Background(), event)
 
 	hub.remove(client.id)
 	if got := len(hub.clients); got != 0 {

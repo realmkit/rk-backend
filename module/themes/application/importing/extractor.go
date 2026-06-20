@@ -3,6 +3,7 @@ package importing
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -29,7 +30,10 @@ type manifestPayload struct {
 }
 
 // extractPackage reads a bounded zip package into normalized files.
-func extractPackage(reader io.Reader, packageSize int64, cfg Config) ([]packageFile, []domain.ThemeValidationIssue, error) {
+func extractPackage(ctx context.Context, reader io.Reader, packageSize int64, cfg Config) ([]packageFile, []domain.ThemeValidationIssue, error) {
+	if err := checkContext(ctx); err != nil {
+		return nil, nil, err
+	}
 	if reader == nil {
 		return nil, []domain.ThemeValidationIssue{newIssue(domain.IssuePackageTooLarge, "", "Package body is required.")}, nil
 	}
@@ -40,6 +44,9 @@ func extractPackage(reader io.Reader, packageSize int64, cfg Config) ([]packageF
 	if err != nil {
 		return nil, nil, err
 	}
+	if err := checkContext(ctx); err != nil {
+		return nil, nil, err
+	}
 	if int64(len(data)) > cfg.MaxPackageBytes {
 		return nil, []domain.ThemeValidationIssue{newIssue(domain.IssuePackageTooLarge, "", "Theme package is larger than allowed.")}, nil
 	}
@@ -47,16 +54,19 @@ func extractPackage(reader io.Reader, packageSize int64, cfg Config) ([]packageF
 	if err != nil {
 		return nil, []domain.ThemeValidationIssue{newIssue(domain.IssueInvalidManifest, "", "Theme package must be a valid zip archive.")}, nil
 	}
-	return extractArchiveFiles(archive, cfg)
+	return extractArchiveFiles(ctx, archive, cfg)
 }
 
 // extractArchiveFiles reads normalized files from a zip archive.
-func extractArchiveFiles(archive *zip.Reader, cfg Config) ([]packageFile, []domain.ThemeValidationIssue, error) {
+func extractArchiveFiles(ctx context.Context, archive *zip.Reader, cfg Config) ([]packageFile, []domain.ThemeValidationIssue, error) {
 	seen := map[domain.FilePath]struct{}{}
 	files := make([]packageFile, 0, len(archive.File))
 	issues := make([]domain.ThemeValidationIssue, 0)
 	var extracted int64
 	for _, entry := range archive.File {
+		if err := checkContext(ctx); err != nil {
+			return nil, nil, err
+		}
 		if entry.FileInfo().IsDir() {
 			continue
 		}
@@ -64,7 +74,7 @@ func extractArchiveFiles(archive *zip.Reader, cfg Config) ([]packageFile, []doma
 			issues = append(issues, newIssue(domain.IssueFileCountTooLarge, "", "Theme package contains too many files."))
 			continue
 		}
-		file, fileIssues, err := extractArchiveFile(entry, cfg, seen)
+		file, fileIssues, err := extractArchiveFile(ctx, entry, cfg, seen)
 		issues = append(issues, fileIssues...)
 		if err != nil {
 			return nil, nil, err
@@ -84,10 +94,14 @@ func extractArchiveFiles(archive *zip.Reader, cfg Config) ([]packageFile, []doma
 
 // extractArchiveFile reads one zip entry.
 func extractArchiveFile(
+	ctx context.Context,
 	entry *zip.File,
 	cfg Config,
 	seen map[domain.FilePath]struct{},
 ) (packageFile, []domain.ThemeValidationIssue, error) {
+	if err := checkContext(ctx); err != nil {
+		return packageFile{}, nil, err
+	}
 	issues := make([]domain.ThemeValidationIssue, 0)
 	filePath, ok := normalizePackagePath(entry.Name)
 	if !ok {
@@ -100,7 +114,7 @@ func extractArchiveFile(
 	if ratioTooHigh(entry, cfg.MaxCompressionRatio) {
 		issues = append(issues, newIssue(domain.IssueCompressionRatioTooLarge, filePath, "Theme package compression ratio is suspicious."))
 	}
-	content, err := readZipEntry(entry, cfg.MaxExtractedBytes)
+	content, err := readZipEntry(ctx, entry, cfg.MaxExtractedBytes)
 	if err != nil {
 		return packageFile{}, nil, err
 	}
@@ -123,13 +137,31 @@ func extractArchiveFile(
 }
 
 // readZipEntry reads one zip entry with a hard cap.
-func readZipEntry(entry *zip.File, limit int64) ([]byte, error) {
+func readZipEntry(ctx context.Context, entry *zip.File, limit int64) ([]byte, error) {
+	if err := checkContext(ctx); err != nil {
+		return nil, err
+	}
 	handle, err := entry.Open()
 	if err != nil {
 		return nil, fmt.Errorf("open zip entry %q: %w", entry.Name, err)
 	}
 	defer handle.Close()
-	return io.ReadAll(io.LimitReader(handle, limit+1))
+	content, err := io.ReadAll(io.LimitReader(handle, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if err := checkContext(ctx); err != nil {
+		return nil, err
+	}
+	return content, nil
+}
+
+// checkContext returns ctx cancellation when present.
+func checkContext(ctx context.Context) error {
+	if ctx == nil {
+		return nil
+	}
+	return ctx.Err()
 }
 
 // ratioTooHigh reports suspicious compression ratios.
@@ -184,16 +216,6 @@ func findFileBytes(files []packageFile, filePath domain.FilePath) []byte {
 		}
 	}
 	return nil
-}
-
-// sourceReference returns the stored idempotency source reference.
-func sourceReference(key string) string {
-	return "upload:idempotency:" + strings.TrimSpace(key)
-}
-
-// storageKey returns an immutable object key for a version file.
-func storageKey(prefix string, versionID uuid.UUID, filePath domain.FilePath) string {
-	return strings.Trim(prefix, "/") + "/" + versionID.String() + "/" + string(filePath)
 }
 
 // integrityFiles maps package files into version integrity inputs.

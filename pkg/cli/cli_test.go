@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 
@@ -17,7 +18,7 @@ func TestRootCommandShowsHelpByDefault(t *testing.T) {
 	cmd.SetErr(&output)
 	cmd.SetArgs(nil)
 
-	if err := cmd.Execute(); err != nil {
+	if err := cmd.ExecuteContext(context.Background()); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
 	if !strings.Contains(output.String(), "start") || !strings.Contains(output.String(), "seed") ||
@@ -35,7 +36,7 @@ func TestRootCommandHelpPrintsUsage(t *testing.T) {
 	cmd.SetErr(&output)
 	cmd.SetArgs([]string{"help"})
 
-	if err := cmd.Execute(); err != nil {
+	if err := cmd.ExecuteContext(context.Background()); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
 	if !strings.Contains(output.String(), "Usage:") {
@@ -46,7 +47,7 @@ func TestRootCommandHelpPrintsUsage(t *testing.T) {
 // TestRunPrintsHelp verifies the production entry point exposes command help.
 func TestRunPrintsHelp(t *testing.T) {
 	activeLogger := zap.NewNop()
-	if err := Run([]string{"help"}, &activeLogger); err != nil {
+	if err := Run(context.Background(), []string{"help"}, &activeLogger); err != nil {
 		t.Fatalf("Run() error = %v", err)
 	}
 }
@@ -60,7 +61,7 @@ func TestRootCommandErrorDoesNotPrintUsage(t *testing.T) {
 	cmd.SetErr(&output)
 	cmd.SetArgs([]string{"migrate", "repair"})
 
-	if err := cmd.Execute(); err == nil {
+	if err := cmd.ExecuteContext(context.Background()); err == nil {
 		t.Fatalf("Execute() error = nil, want error")
 	}
 	if strings.Contains(output.String(), "Usage:") {

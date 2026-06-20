@@ -28,7 +28,7 @@ func Register(router fiber.Router, services Services) {
 	handler := handler{services: services}
 	group := router.Group("/events")
 	group.Get("", handler.listEvents)
-	group.Get("/ws", websocket.New(handler.webSocket))
+	group.Get("/ws", handler.attachSocketContext, websocket.New(handler.webSocket))
 	group.Get("/:event_id", handler.getEvent)
 	group.Post("/:event_id/replay", handler.replayEvent)
 	group.Post("/:event_id/cancel", handler.cancelEvent)
@@ -37,4 +37,10 @@ func Register(router fiber.Router, services Services) {
 // handler contains event route dependencies.
 type handler struct {
 	services Services
+}
+
+// attachSocketContext copies the Fiber user context into websocket locals.
+func (handler handler) attachSocketContext(ctx *fiber.Ctx) error {
+	ctx.Locals(socketContextKey, ctx.UserContext())
+	return ctx.Next()
 }

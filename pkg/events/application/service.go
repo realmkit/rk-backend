@@ -102,6 +102,9 @@ func (service Service) DispatchOnce(ctx context.Context, workerID string) (Dispa
 	}
 	result := DispatchResult{Claimed: len(events)}
 	for _, event := range events {
+		if err := ctx.Err(); err != nil {
+			return result, err
+		}
 		if err := service.dispatch(ctx, event); err != nil {
 			result.Failed++
 			return result, err

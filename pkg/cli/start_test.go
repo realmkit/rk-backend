@@ -23,10 +23,10 @@ func TestExecuteReturnsStartErrors(t *testing.T) {
 	activeLogger := zap.NewNop()
 	want := errors.New("listen failed")
 	deps := testCommandDeps(t)
-	deps.listenServer = func(*fiber.App, string) error {
+	deps.serveServer = func(context.Context, *fiber.App, string, server.Config) error {
 		return want
 	}
-	err := execute(&activeLogger, []string{"start"}, deps)
+	err := execute(context.Background(), &activeLogger, []string{"start"}, deps)
 	if !errors.Is(err, want) {
 		t.Fatalf("execute() error = %v, want %v", err, want)
 	}
@@ -57,17 +57,37 @@ func TestRunStartLogsStartup(t *testing.T) {
 		}
 		return fiber.New()
 	}
-	deps.listenServer = func(_ *fiber.App, address string) error {
+	deps.serveServer = func(_ context.Context, _ *fiber.App, address string, _ server.Config) error {
 		if address != "127.0.0.1:9090" {
 			t.Fatalf("address = %q, want %q", address, "127.0.0.1:9090")
 		}
 		return nil
 	}
-	if err := execute(&activeLogger, []string{"start"}, deps); err != nil {
+	if err := execute(context.Background(), &activeLogger, []string{"start"}, deps); err != nil {
 		t.Fatalf("execute() error = %v", err)
 	}
 	if !bytes.Contains(output.Bytes(), []byte("starting realmkit backend")) {
 		t.Fatalf("output = %q, want startup log", output.String())
+	}
+}
+
+// TestRunStartPassesRootContextToServer verifies serving uses command context.
+func TestRunStartPassesRootContextToServer(t *testing.T) {
+	activeLogger := zap.NewNop()
+	deps := testCommandDeps(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var served context.Context
+	deps.serveServer = func(ctx context.Context, _ *fiber.App, _ string, _ server.Config) error {
+		served = ctx
+		return nil
+	}
+
+	if err := execute(ctx, &activeLogger, []string{"start"}, deps); err != nil {
+		t.Fatalf("execute() error = %v", err)
+	}
+	if served != ctx {
+		t.Fatalf("served context = %v, want command context", served)
 	}
 }
 
@@ -94,7 +114,7 @@ func TestRunStartUsesRedisStores(t *testing.T) {
 		}
 		return fiber.New()
 	}
-	if err := execute(&activeLogger, []string{"start"}, deps); err != nil {
+	if err := execute(context.Background(), &activeLogger, []string{"start"}, deps); err != nil {
 		t.Fatalf("execute() error = %v", err)
 	}
 	if !opened || !closed {
@@ -114,7 +134,7 @@ func TestRunStartReturnsRedisErrors(t *testing.T) {
 		t.Fatalf("newServer called after redis failure")
 		return nil
 	}
-	err := execute(&activeLogger, []string{"start"}, deps)
+	err := execute(context.Background(), &activeLogger, []string{"start"}, deps)
 	if !errors.Is(err, want) {
 		t.Fatalf("execute() error = %v, want %v", err, want)
 	}
@@ -132,7 +152,7 @@ func TestRunStartReturnsStorageHealthErrors(t *testing.T) {
 		t.Fatalf("newServer called after storage health failure")
 		return nil
 	}
-	err := execute(&activeLogger, []string{"start"}, deps)
+	err := execute(context.Background(), &activeLogger, []string{"start"}, deps)
 	if !errors.Is(err, want) {
 		t.Fatalf("execute() error = %v, want %v", err, want)
 	}
@@ -155,7 +175,7 @@ func TestRunStartLogsDependencyConnectionsInDevelopment(t *testing.T) {
 	deps.newLogger = func(logger.Config) (*zap.Logger, error) {
 		return zap.New(core), nil
 	}
-	if err := execute(&activeLogger, []string{"start"}, deps); err != nil {
+	if err := execute(context.Background(), &activeLogger, []string{"start"}, deps); err != nil {
 		t.Fatalf("execute() error = %v", err)
 	}
 	messages := observed.FilterMessageSnippet("connection established").All()

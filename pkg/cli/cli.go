@@ -9,6 +9,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/api/idempotency"
 	"github.com/realmkit/rk-backend/pkg/api/ratelimit"
 	"github.com/realmkit/rk-backend/pkg/cli/seedcmd"
+	"github.com/realmkit/rk-backend/pkg/cli/serverrun"
 	"github.com/realmkit/rk-backend/pkg/config"
 	eventshttp "github.com/realmkit/rk-backend/pkg/events/adapter/http"
 	"github.com/realmkit/rk-backend/pkg/logger"
@@ -29,7 +30,7 @@ type commandDeps struct {
 	loadConfig    func() (config.Config, error)
 	newLogger     func(logger.Config) (*zap.Logger, error)
 	newServer     func(*zap.Logger, bool, ...server.Option) *fiber.App
-	listenServer  func(*fiber.App, string) error
+	serveServer   func(context.Context, *fiber.App, string, server.Config) error
 	openPostgres  func(context.Context, postgres.Config) (*gorm.DB, error)
 	closePostgres func(*gorm.DB) error
 	openRedis     func(context.Context, realmkitredis.Config) (*goredis.Client, error)
@@ -39,8 +40,8 @@ type commandDeps struct {
 }
 
 // Run executes the RealmKit CLI.
-func Run(args []string, activeLogger **zap.Logger) error {
-	return execute(activeLogger, args, defaultCommandDeps())
+func Run(ctx context.Context, args []string, activeLogger **zap.Logger) error {
+	return execute(ctx, activeLogger, args, defaultCommandDeps())
 }
 
 // defaultCommandDeps returns production command dependencies.
@@ -55,7 +56,7 @@ func defaultCommandDeps() commandDeps {
 		newServer: func(log *zap.Logger, development bool, options ...server.Option) *fiber.App {
 			return server.New(log, development, options...)
 		},
-		listenServer: listen,
+		serveServer: serverrun.Serve,
 		openPostgres: func(ctx context.Context, cfg postgres.Config) (*gorm.DB, error) {
 			return postgres.Open(ctx, cfg)
 		},
@@ -65,8 +66,7 @@ func defaultCommandDeps() commandDeps {
 		},
 		closeRedis: realmkitredis.Close,
 		newStorage: func(ctx context.Context, cfg storage.Config) (storage.Store, error) {
-			store, err := storage.NewS3Store(ctx, cfg)
-			return store, err
+			return storage.NewS3Store(ctx, cfg)
 		},
 		newRunner: func(db *gorm.DB, log *zap.Logger) migrations.Runner {
 			return migrations.NewRunner(db, migrations.DefaultSource(), migrations.WithLogger(log), migrations.WithExecutor("realmkit-cli"))
@@ -75,10 +75,11 @@ func defaultCommandDeps() commandDeps {
 }
 
 // execute executes the root command with dependencies.
-func execute(activeLogger **zap.Logger, args []string, deps commandDeps) error {
+func execute(ctx context.Context, activeLogger **zap.Logger, args []string, deps commandDeps) error {
 	cmd := newRootCommand(activeLogger, deps)
+	cmd.SetContext(ctx)
 	cmd.SetArgs(args)
-	return cmd.Execute()
+	return cmd.ExecuteContext(ctx)
 }
 
 // newRootCommand creates the RealmKit CLI root command.
@@ -121,14 +122,17 @@ func runStart(ctx context.Context, activeLogger **zap.Logger, deps commandDeps) 
 	if err != nil {
 		return err
 	}
-	options, closeRuntime, err := runtimeServerOptions(ctx, cfg, log, deps)
+	cfg.Server = cfg.Server.Defaults()
+	startupCtx, cancel := context.WithTimeout(ctx, cfg.Server.StartupTimeout)
+	defer cancel()
+	options, closeRuntime, err := runtimeServerOptions(startupCtx, cfg, log, deps)
 	if err != nil {
 		return err
 	}
 	defer closeRuntime(log)
-	app := deps.newServer(log, cfg.Runtime.IsDevelopment(), options...)
+	app := deps.newServer(log, cfg.Runtime.IsDevelopment(), append([]server.Option{server.WithConfig(cfg.Server)}, options...)...)
 	log.Info("starting realmkit backend", zap.String("address", cfg.Server.Address()))
-	return deps.listenServer(app, cfg.Server.Address())
+	return deps.serveServer(ctx, app, cfg.Server.Address(), cfg.Server)
 }
 
 // runtimeServerOptions creates server options from runtime dependencies.

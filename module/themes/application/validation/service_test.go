@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -71,6 +72,21 @@ func TestValidateMarksValidAndBuildsManifest(t *testing.T) {
 	}
 	if manifest["route_coverage"] == nil || manifest["dependency_graph"] == nil {
 		t.Fatalf("manifest = %v, want coverage and dependencies", manifest)
+	}
+}
+
+// TestValidateHonorsCancellation verifies validation stops when context is done.
+func TestValidateHonorsCancellation(t *testing.T) {
+	repositories := validationRepositories([]domain.ThemeFile{
+		testFile("layout/theme.liquid", domain.FileKindLayout, `<main></main>`),
+	})
+	service := NewService(repositories)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := service.Validate(ctx, Command{VersionID: repositories.Versions.(*fakeVersionRepository).version.ID})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("Validate() error = %v, want canceled", err)
 	}
 }
 

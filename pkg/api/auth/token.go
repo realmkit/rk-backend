@@ -27,12 +27,15 @@ type Token struct {
 // Validator validates bearer access tokens.
 type Validator struct {
 	config Config
+	client *http.Client
 	keys   *keySet
 }
 
 // NewValidator creates an OIDC validator.
 func NewValidator(config Config) *Validator {
-	return &Validator{config: config, keys: newKeySet(config.IssuerURL)}
+	config = config.Defaults()
+	client := &http.Client{Timeout: config.HTTPTimeout}
+	return &Validator{config: config, client: client, keys: newKeySet(config.IssuerURL, client)}
 }
 
 // Validate validates one bearer token.
@@ -122,7 +125,7 @@ func (validator *Validator) userInfoClaims(ctx context.Context, raw string) (map
 		return nil, err
 	}
 	request.Header.Set("Authorization", "Bearer "+raw)
-	response, err := http.DefaultClient.Do(request)
+	response, err := validator.client.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +151,7 @@ func (validator *Validator) userInfoEndpoint(ctx context.Context) (string, error
 	if err != nil {
 		return "", err
 	}
-	response, err := http.DefaultClient.Do(request)
+	response, err := validator.client.Do(request)
 	if err != nil {
 		return "", err
 	}

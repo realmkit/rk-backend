@@ -24,11 +24,15 @@ func WithClient(client *goredis.Client) Option {
 
 // Open creates a Redis client and verifies it with Ping.
 func Open(ctx context.Context, cfg Config, options ...Option) (*goredis.Client, error) {
+	cfg = cfg.Defaults()
 	settings := settings{
 		client: goredis.NewClient(&goredis.Options{
-			Addr:     cfg.Address,
-			Password: cfg.Password,
-			DB:       cfg.Database,
+			Addr:         cfg.Address,
+			Password:     cfg.Password,
+			DB:           cfg.Database,
+			DialTimeout:  cfg.DialTimeout,
+			ReadTimeout:  cfg.ReadTimeout,
+			WriteTimeout: cfg.WriteTimeout,
 		}),
 	}
 	for _, option := range options {

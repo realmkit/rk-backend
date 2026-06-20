@@ -6,7 +6,6 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/gofiber/fiber/v2"
 	forumsapp "github.com/realmkit/rk-backend/module/forums/application"
 	groupsapp "github.com/realmkit/rk-backend/module/groups/application"
 	punishmentsapp "github.com/realmkit/rk-backend/module/punishments/application"
@@ -234,9 +233,4 @@ func closeDatabase(log *zap.Logger, closePostgres func(*gorm.DB) error, db *gorm
 	if err := closePostgres(db); err != nil {
 		log.Error("close postgres failed", zap.Error(err))
 	}
-}
-
-// listen starts the Fiber application on the configured address.
-func listen(app *fiber.App, address string) error {
-	return app.Listen(address)
 }

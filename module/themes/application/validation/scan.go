@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"regexp"
 	"slices"
 	"strings"
@@ -35,11 +36,15 @@ func validateRequiredStructure(index map[domain.FilePath]domain.ThemeFile) []dom
 
 // validateLiquidFiles validates Liquid syntax and dependencies.
 func validateLiquidFiles(
+	ctx context.Context,
 	files []domain.ThemeFile,
 	index map[domain.FilePath]domain.ThemeFile,
 ) []domain.ThemeValidationIssue {
 	issues := make([]domain.ThemeValidationIssue, 0)
 	for _, file := range files {
+		if err := checkContext(ctx); err != nil {
+			return issues
+		}
 		if !isLiquid(file) {
 			continue
 		}
@@ -55,9 +60,12 @@ func validateLiquidFiles(
 }
 
 // validateRouteCoverage verifies every route has a route template.
-func validateRouteCoverage(index map[domain.FilePath]domain.ThemeFile) []domain.ThemeValidationIssue {
+func validateRouteCoverage(ctx context.Context, index map[domain.FilePath]domain.ThemeFile) []domain.ThemeValidationIssue {
 	issues := make([]domain.ThemeValidationIssue, 0)
 	for _, route := range domain.RouteKinds() {
+		if err := checkContext(ctx); err != nil {
+			return issues
+		}
 		filePath := routeTemplatePath(route)
 		if _, ok := index[filePath]; !ok {
 			issues = append(issues, issue(domain.IssueMissingRequiredTemplate, filePath, "Required route template is missing."))

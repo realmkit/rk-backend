@@ -4,7 +4,9 @@ package cronjob_e2e
 import (
 	"context"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/realmkit/rk-backend/e2e/harness"
@@ -23,10 +25,14 @@ func TestCronjobManualRunThroughHTTP(t *testing.T) {
 	steps.Log("create shared migrated database and cron service")
 	database := harness.NewSQLiteDatabase(t)
 	repository := cronpostgres.NewRepository(database.Store)
+	var sawAdminDeadline atomic.Bool
 	service := cronapp.NewService(
 		cronapp.Dependencies{Repository: repository, WorkerID: "e2e-worker"},
 		map[string]port.Handler{
-			"e2e.job": port.HandlerFunc(func(context.Context, port.RunContext) (domain.Result, error) {
+			"e2e.job": port.HandlerFunc(func(ctx context.Context, _ port.RunContext) (domain.Result, error) {
+				if deadline, ok := ctx.Deadline(); ok && time.Until(deadline) > 30*time.Second {
+					sawAdminDeadline.Store(true)
+				}
 				return domain.Result{ProcessedCount: 1, ChangedCount: 1}, nil
 			}),
 		},
@@ -41,6 +47,7 @@ func TestCronjobManualRunThroughHTTP(t *testing.T) {
 		harness.WithDevelopment(true),
 		harness.WithDatabase(database),
 		harness.WithServerOptions(
+			server.WithConfig(server.Config{RequestTimeout: time.Second, AdminRequestTimeout: time.Minute}),
 			server.WithAuth(auth.Config{DevelopmentBypass: true}, harness.DevProvisioner{}),
 			server.WithCron(cronhttp.Services{Cron: service, Checker: harness.AllowChecker{}}),
 		),
@@ -53,6 +60,9 @@ func TestCronjobManualRunThroughHTTP(t *testing.T) {
 	body := harness.ResponseBody(t, response)
 	if response.StatusCode != fiber.StatusOK {
 		t.Fatalf("StatusCode = %d, want %d body = %q", response.StatusCode, fiber.StatusOK, body)
+	}
+	if !sawAdminDeadline.Load() {
+		t.Fatalf("cron handler did not receive admin request deadline")
 	}
 
 	steps.Log("verify run history through HTTP")

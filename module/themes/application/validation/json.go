@@ -1,13 +1,14 @@
 package validation
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/realmkit/rk-backend/module/themes/domain"
 )
 
 // validateJSONFiles validates settings and locale JSON files.
-func validateJSONFiles(version domain.ThemeVersion, files []domain.ThemeFile) []domain.ThemeValidationIssue {
+func validateJSONFiles(ctx context.Context, version domain.ThemeVersion, files []domain.ThemeFile) []domain.ThemeValidationIssue {
 	issues := make([]domain.ThemeValidationIssue, 0)
 	if _, err := decodeObject(settingsSchemaJSON(files)); err != nil {
 		issues = append(issues, issue(domain.IssueInvalidSettingsSchema, "config/settings_schema.json", "Settings schema JSON is invalid."))
@@ -20,6 +21,9 @@ func validateJSONFiles(version domain.ThemeVersion, files []domain.ThemeFile) []
 		issues = append(issues, validateRequiredSettings(schema, settings)...)
 	}
 	for _, file := range files {
+		if err := checkContext(ctx); err != nil {
+			return issues
+		}
 		if file.Kind == domain.FileKindLocale {
 			if _, err := decodeObject([]byte(file.ContentText)); err != nil {
 				issues = append(issues, issue(domain.IssueInvalidLocale, file.Path, "Locale JSON is invalid."))

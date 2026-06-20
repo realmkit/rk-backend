@@ -64,6 +64,27 @@ func TestDispatchOnceMarksDeadAfterBrokerFailure(t *testing.T) {
 	}
 }
 
+// TestDispatchOnceStopsWhenContextCancels verifies claimed batches honor cancellation.
+func TestDispatchOnceStopsWhenContextCancels(t *testing.T) {
+	repo := &memoryEvents{}
+	_, _ = repo.Publish(context.Background(), testDraft(), testNow())
+	service := NewService(Dependencies{
+		Repository: repo,
+		Broker:     &recordBroker{},
+		Clock:      fixedClock{now: testNow()},
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	result, err := service.DispatchOnce(ctx, "worker")
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("DispatchOnce() error = %v, want canceled", err)
+	}
+	if result.Claimed != 1 || result.Processed != 0 {
+		t.Fatalf("result = %+v, want claimed without processed", result)
+	}
+}
+
 // TestReplayAndCancelUpdateStatus verifies operator state changes.
 func TestReplayAndCancelUpdateStatus(t *testing.T) {
 	repo := &memoryEvents{}

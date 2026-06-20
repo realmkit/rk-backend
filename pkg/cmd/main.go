@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 	"syscall"
 
 	"github.com/realmkit/rk-backend/pkg/cli"
@@ -24,7 +26,10 @@ func main() {
 		finish(activeLogger, runErr, os.Exit)
 	}()
 
-	runErr = cli.Run(os.Args[1:], &activeLogger)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	runErr = cli.Run(ctx, os.Args[1:], &activeLogger)
 }
 
 // finish logs final errors, syncs the logger, and exits when needed.

@@ -107,7 +107,7 @@ func TestWebSocketScopeAuthorizationPreventsLeaks(t *testing.T) {
 	userID := uuid.New()
 	otherUserID := uuid.New()
 	privateScope := domain.Scope{Type: domain.ScopeTicket, ID: uuid.NewString()}
-	client := &client{userID: userID, scopes: map[string]domain.Scope{}}
+	client := &client{ctx: context.Background(), userID: userID, scopes: map[string]domain.Scope{}}
 	for _, scope := range []domain.Scope{
 		{Type: domain.ScopeUser, ID: otherUserID.String()},
 		{Type: domain.ScopeStaff},
@@ -131,7 +131,7 @@ func TestWebSocketScopeAuthorizationPreventsLeaks(t *testing.T) {
 // TestWebSocketScopeAuthorizationAllowsGlobalAndOwnUser verifies safe self-service subscriptions.
 func TestWebSocketScopeAuthorizationAllowsGlobalAndOwnUser(t *testing.T) {
 	userID := uuid.New()
-	client := &client{userID: userID, scopes: map[string]domain.Scope{}}
+	client := &client{ctx: context.Background(), userID: userID, scopes: map[string]domain.Scope{}}
 	if !client.canSubscribe(domain.Scope{Type: domain.ScopeGlobal}) {
 		t.Fatalf("canSubscribe(global) = false, want true")
 	}

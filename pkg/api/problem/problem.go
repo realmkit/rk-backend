@@ -1,13 +1,16 @@
 package problem
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // ContentType is the problem response media type.
@@ -79,6 +82,9 @@ func Handler(ctx *fiber.Ctx, err error) error {
 	if problemErr, ok := err.(Error); ok {
 		return Write(ctx, problemErr.Problem)
 	}
+	if payload, ok := FromContextError(err); ok {
+		return Write(ctx, payload)
+	}
 
 	status := fiber.StatusInternalServerError
 	detail := "Internal server error."
@@ -88,6 +94,20 @@ func Handler(ctx *fiber.Ctx, err error) error {
 	}
 
 	return Write(ctx, New(status, codeFor(status), detail))
+}
+
+// FromContextError maps cancellation and deadline errors to problem responses.
+func FromContextError(err error) (Problem, bool) {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return New(499, "request_cancelled", "Request was cancelled."), true
+	case errors.Is(err, context.DeadlineExceeded):
+		return New(fiber.StatusGatewayTimeout, "request_timeout", "Request deadline was exceeded."), true
+	case errors.Is(err, orm.ErrUnavailable):
+		return New(fiber.StatusServiceUnavailable, "dependency_unavailable", "A required dependency is unavailable."), true
+	default:
+		return Problem{}, false
+	}
 }
 
 // Write writes a problem response to ctx.

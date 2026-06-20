@@ -37,6 +37,7 @@ type Option func(*options)
 // options contains optional server modules.
 type options struct {
 	cors                  realmkitcors.Config
+	config                Config
 	idempotencyConfigured bool
 	idempotencyStore      idempotency.Store
 	assets                *assetshttp.Services
@@ -51,6 +52,13 @@ type options struct {
 	rateLimitStore        ratelimit.Store
 	tickets               *ticketshttp.Services
 	users                 *userhttp.Services
+}
+
+// WithConfig configures server timeouts and network behavior.
+func WithConfig(config Config) Option {
+	return func(options *options) {
+		options.config = config.Defaults()
+	}
 }
 
 // WithEvents registers event routes with services.
@@ -152,13 +160,18 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 		log = zap.NewNop()
 	}
 	options := optionsFrom(opts)
+	config := options.config.Defaults()
 
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: !development,
 		ErrorHandler:          problem.Handler,
+		IdleTimeout:           config.IdleTimeout,
 		ReadBufferSize:        DefaultReadBufferSize,
+		ReadTimeout:           config.ReadTimeout,
+		WriteTimeout:          config.WriteTimeout,
 	})
 	app.Use(recover.New())
+	app.Use(requestContextMiddleware(config))
 	app.Use(headers.Middleware())
 	app.Use(realmkitcors.New(options.cors))
 	app.Use(fiberzap.New(fiberzap.Config{
@@ -215,6 +228,7 @@ func health(ctx *fiber.Ctx) error {
 func optionsFrom(opts []Option) options {
 	options := options{
 		cors:           realmkitcors.Config{Enabled: true, AllowOrigins: "http://localhost:3000,http://127.0.0.1:3000"},
+		config:         Config{}.Defaults(),
 		rateLimitStore: ratelimit.NewMemoryStore(),
 	}
 	for _, opt := range opts {

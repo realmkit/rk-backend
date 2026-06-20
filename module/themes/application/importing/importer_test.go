@@ -3,6 +3,7 @@ package importing
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -107,7 +108,7 @@ func TestExtractPackageEnforcesLimits(t *testing.T) {
 		"realmkit-theme.json": []byte(`{"name":"Starter"}`),
 		"layout/theme.liquid": bytes.Repeat([]byte("a"), 128),
 	})
-	_, issues, err := extractPackage(reader, size, Config{
+	_, issues, err := extractPackage(context.Background(), reader, size, Config{
 		MaxPackageBytes:     DefaultMaxPackageBytes,
 		MaxExtractedBytes:   DefaultMaxExtractedBytes,
 		MaxFileCount:        1,
@@ -121,11 +122,25 @@ func TestExtractPackageEnforcesLimits(t *testing.T) {
 	assertIssue(t, codes, domain.IssueFileCountTooLarge)
 	assertIssue(t, codes, domain.IssueTextFileTooLarge)
 	assertIssue(t, codes, domain.IssueCompressionRatioTooLarge)
-	_, packageIssues, err := extractPackage(bytes.NewReader([]byte("too large")), 99, Config{MaxPackageBytes: 4}.Defaults())
+	_, packageIssues, err := extractPackage(context.Background(), bytes.NewReader([]byte("too large")), 99, Config{MaxPackageBytes: 4}.Defaults())
 	if err != nil {
 		t.Fatalf("extractPackage(large) error = %v", err)
 	}
 	assertIssue(t, issueCodes(packageIssues), domain.IssuePackageTooLarge)
+}
+
+// TestExtractPackageHonorsCancellation verifies extraction exits on cancellation.
+func TestExtractPackageHonorsCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	reader, size := zipPackage(t, map[string][]byte{
+		"realmkit-theme.json": []byte(`{"name":"Starter"}`),
+	})
+
+	_, _, err := extractPackage(ctx, reader, size, Config{}.Defaults())
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("extractPackage() error = %v, want canceled", err)
+	}
 }
 
 // TestServicePersistsSignatureResult verifies verifier output persistence.

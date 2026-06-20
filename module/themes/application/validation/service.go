@@ -21,8 +21,11 @@ func (service Service) Validate(ctx context.Context, command Command) (Result, e
 	if err != nil {
 		return Result{}, err
 	}
-	issues := validateVersionFiles(version, files)
-	manifest, err := compiledManifest(version, files, issues)
+	issues, err := validateVersionFiles(ctx, version, files)
+	if err != nil {
+		return Result{}, err
+	}
+	manifest, err := compiledManifest(ctx, version, files, issues)
 	if err != nil {
 		return Result{}, err
 	}
@@ -43,16 +46,34 @@ func (service Service) Validate(ctx context.Context, command Command) (Result, e
 }
 
 // validateVersionFiles returns all static validation issues.
-func validateVersionFiles(version domain.ThemeVersion, files []domain.ThemeFile) []domain.ThemeValidationIssue {
+func validateVersionFiles(ctx context.Context, version domain.ThemeVersion, files []domain.ThemeFile) ([]domain.ThemeValidationIssue, error) {
+	if err := checkContext(ctx); err != nil {
+		return nil, err
+	}
 	index := indexFiles(files)
 	issues := make([]domain.ThemeValidationIssue, 0)
 	issues = append(issues, validateRequiredStructure(index)...)
-	issues = append(issues, validateJSONFiles(version, files)...)
-	issues = append(issues, validateLiquidFiles(files, index)...)
-	issues = append(issues, validateCSSFiles(files)...)
-	issues = append(issues, validateJavaScriptFiles(files)...)
-	issues = append(issues, validateRouteCoverage(index)...)
-	return issues
+	if err := checkContext(ctx); err != nil {
+		return nil, err
+	}
+	issues = append(issues, validateJSONFiles(ctx, version, files)...)
+	if err := checkContext(ctx); err != nil {
+		return nil, err
+	}
+	issues = append(issues, validateLiquidFiles(ctx, files, index)...)
+	if err := checkContext(ctx); err != nil {
+		return nil, err
+	}
+	issues = append(issues, validateCSSFiles(ctx, files)...)
+	if err := checkContext(ctx); err != nil {
+		return nil, err
+	}
+	issues = append(issues, validateJavaScriptFiles(ctx, files)...)
+	if err := checkContext(ctx); err != nil {
+		return nil, err
+	}
+	issues = append(issues, validateRouteCoverage(ctx, index)...)
+	return issues, nil
 }
 
 // validationStatus returns the final version status for issues.
@@ -72,4 +93,12 @@ func integrityFiles(files []domain.ThemeFile) []domain.IntegrityFile {
 		inputs = append(inputs, domain.IntegrityFile{Path: file.Path, ContentSHA256: file.ContentSHA256})
 	}
 	return inputs
+}
+
+// checkContext returns ctx cancellation when present.
+func checkContext(ctx context.Context) error {
+	if ctx == nil {
+		return nil
+	}
+	return ctx.Err()
 }

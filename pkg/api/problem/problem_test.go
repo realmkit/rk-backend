@@ -1,6 +1,7 @@
 package problem
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http/httptest"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/realmkit/rk-backend/pkg/api/headers"
+	"github.com/realmkit/rk-backend/pkg/orm"
 )
 
 // TestHandlerWritesFiberErrors verifies Fiber errors become problem responses.
@@ -86,5 +88,38 @@ func TestHandlerWritesInternalErrors(t *testing.T) {
 
 	if res.StatusCode != fiber.StatusInternalServerError {
 		t.Fatalf("StatusCode = %d, want %d", res.StatusCode, fiber.StatusInternalServerError)
+	}
+}
+
+// TestFromContextErrorMapsDeadline verifies deadline errors become timeouts.
+func TestFromContextErrorMapsDeadline(t *testing.T) {
+	payload, ok := FromContextError(context.DeadlineExceeded)
+	if !ok {
+		t.Fatalf("FromContextError() ok = false, want true")
+	}
+	if payload.Status != fiber.StatusGatewayTimeout || payload.Code != "request_timeout" {
+		t.Fatalf("payload = %+v, want timeout problem", payload)
+	}
+}
+
+// TestFromContextErrorMapsCancellation verifies cancellation errors are explicit.
+func TestFromContextErrorMapsCancellation(t *testing.T) {
+	payload, ok := FromContextError(context.Canceled)
+	if !ok {
+		t.Fatalf("FromContextError() ok = false, want true")
+	}
+	if payload.Status != 499 || payload.Code != "request_cancelled" {
+		t.Fatalf("payload = %+v, want cancellation problem", payload)
+	}
+}
+
+// TestFromContextErrorMapsUnavailable verifies dependency failures are explicit.
+func TestFromContextErrorMapsUnavailable(t *testing.T) {
+	payload, ok := FromContextError(orm.ErrUnavailable)
+	if !ok {
+		t.Fatalf("FromContextError() ok = false, want true")
+	}
+	if payload.Status != fiber.StatusServiceUnavailable || payload.Code != "dependency_unavailable" {
+		t.Fatalf("payload = %+v, want unavailable problem", payload)
 	}
 }

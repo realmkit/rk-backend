@@ -34,7 +34,7 @@ func testCommandDeps(t *testing.T) commandDeps {
 		newServer: func(*zap.Logger, bool, ...server.Option) *fiber.App {
 			return fiber.New()
 		},
-		listenServer: func(*fiber.App, string) error {
+		serveServer: func(context.Context, *fiber.App, string, server.Config) error {
 			return nil
 		},
 		openPostgres: func(context.Context, postgres.Config) (*gorm.DB, error) {
@@ -106,7 +106,7 @@ func executeCommand(t *testing.T, args []string, deps commandDeps) (string, erro
 	cmd.SetOut(&output)
 	cmd.SetErr(&output)
 	cmd.SetArgs(args)
-	err := cmd.Execute()
+	err := cmd.ExecuteContext(context.Background())
 	return output.String(), err
 }
 

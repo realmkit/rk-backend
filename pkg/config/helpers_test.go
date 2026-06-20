@@ -7,6 +7,14 @@ func clearRealmKitEnv(t *testing.T) {
 	t.Helper()
 	t.Setenv("REALMKIT_HOST", "")
 	t.Setenv("REALMKIT_PORT", "")
+	t.Setenv("REALMKIT_READ_TIMEOUT", "")
+	t.Setenv("REALMKIT_WRITE_TIMEOUT", "")
+	t.Setenv("REALMKIT_IDLE_TIMEOUT", "")
+	t.Setenv("REALMKIT_STARTUP_TIMEOUT", "")
+	t.Setenv("REALMKIT_SHUTDOWN_TIMEOUT", "")
+	t.Setenv("REALMKIT_REQUEST_TIMEOUT", "")
+	t.Setenv("REALMKIT_ADMIN_REQUEST_TIMEOUT", "")
+	t.Setenv("REALMKIT_UPLOAD_REQUEST_TIMEOUT", "")
 	t.Setenv("REALMKIT_ENVIRONMENT", "")
 	t.Setenv("REALMKIT_LOG_LEVEL", "")
 	t.Setenv("REALMKIT_TOKEN", "")
@@ -20,6 +28,9 @@ func clearRealmKitEnv(t *testing.T) {
 	t.Setenv("REALMKIT_REDIS_ADDRESS", "")
 	t.Setenv("REALMKIT_REDIS_PASSWORD", "")
 	t.Setenv("REALMKIT_REDIS_DATABASE", "")
+	t.Setenv("REALMKIT_REDIS_DIAL_TIMEOUT", "")
+	t.Setenv("REALMKIT_REDIS_READ_TIMEOUT", "")
+	t.Setenv("REALMKIT_REDIS_WRITE_TIMEOUT", "")
 	t.Setenv("REALMKIT_STORAGE_BUCKET", "")
 	t.Setenv("REALMKIT_STORAGE_REGION", "")
 	t.Setenv("REALMKIT_STORAGE_ENDPOINT", "")
@@ -34,6 +45,7 @@ func clearRealmKitEnv(t *testing.T) {
 	t.Setenv("REALMKIT_AUTH_CLIENT_ID", "")
 	t.Setenv("REALMKIT_AUTH_SCOPES", "")
 	t.Setenv("REALMKIT_AUTH_DEVELOPMENT_BYPASS", "")
+	t.Setenv("REALMKIT_AUTH_HTTP_TIMEOUT", "")
 }
 
 // setRequiredRootEnv sets required root variables for root config tests.

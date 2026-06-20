@@ -1,6 +1,9 @@
 package auth
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 // DevUserIDHeader is the development-only local user bypass header.
 const DevUserIDHeader = "X-RealmKit-Dev-User-ID"
@@ -24,6 +27,9 @@ type Config struct {
 
 	// DevelopmentBypass enables local user ID bypass in development only.
 	DevelopmentBypass bool `mapstructure:"development_bypass" default:"false"`
+
+	// HTTPTimeout limits OIDC discovery, JWKS, and userinfo calls.
+	HTTPTimeout time.Duration `mapstructure:"http_timeout" default:"5s"`
 }
 
 // Public contains frontend-safe auth configuration.
@@ -58,4 +64,12 @@ func (config Config) Public() Public {
 // ScopeList returns configured scopes split on whitespace.
 func (config Config) ScopeList() []string {
 	return strings.Fields(config.Scopes)
+}
+
+// Defaults returns config with package defaults applied.
+func (config Config) Defaults() Config {
+	if config.HTTPTimeout <= 0 {
+		config.HTTPTimeout = 5 * time.Second
+	}
+	return config
 }

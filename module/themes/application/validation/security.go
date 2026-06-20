@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"path"
 	"strings"
 
@@ -10,9 +11,12 @@ import (
 )
 
 // validateCSSFiles validates CSS assets and embedded stylesheet blocks.
-func validateCSSFiles(files []domain.ThemeFile) []domain.ThemeValidationIssue {
+func validateCSSFiles(ctx context.Context, files []domain.ThemeFile) []domain.ThemeValidationIssue {
 	issues := make([]domain.ThemeValidationIssue, 0)
 	for _, file := range files {
+		if err := checkContext(ctx); err != nil {
+			return issues
+		}
 		if strings.EqualFold(path.Ext(string(file.Path)), ".css") {
 			issues = append(issues, cssIssues(file.Path, cssadapter.Validate(file.ContentText))...)
 		}
@@ -24,9 +28,12 @@ func validateCSSFiles(files []domain.ThemeFile) []domain.ThemeValidationIssue {
 }
 
 // validateJavaScriptFiles validates JS assets and embedded JavaScript blocks.
-func validateJavaScriptFiles(files []domain.ThemeFile) []domain.ThemeValidationIssue {
+func validateJavaScriptFiles(ctx context.Context, files []domain.ThemeFile) []domain.ThemeValidationIssue {
 	issues := make([]domain.ThemeValidationIssue, 0)
 	for _, file := range files {
+		if err := checkContext(ctx); err != nil {
+			return issues
+		}
 		if strings.EqualFold(path.Ext(string(file.Path)), ".js") {
 			issues = append(issues, jsIssues(file.Path, jsadapter.Validate(file.ContentText))...)
 		}

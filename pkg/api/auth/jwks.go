@@ -51,8 +51,11 @@ type jwk struct {
 }
 
 // newKeySet creates a key cache.
-func newKeySet(issuer string) *keySet {
-	return &keySet{issuer: strings.TrimRight(issuer, "/"), client: http.DefaultClient, keys: map[string]any{}}
+func newKeySet(issuer string, client *http.Client) *keySet {
+	if client == nil {
+		client = &http.Client{Timeout: 5 * time.Second}
+	}
+	return &keySet{issuer: strings.TrimRight(issuer, "/"), client: client, keys: map[string]any{}}
 }
 
 // Key returns the verification key for token.

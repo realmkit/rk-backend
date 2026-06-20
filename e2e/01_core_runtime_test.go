@@ -17,7 +17,7 @@ func TestCoreCLIHelpRuns(t *testing.T) {
 	steps := harness.NewSteps(t)
 	steps.Log("execute root CLI help command")
 	active := zap.NewNop()
-	if err := cli.Run([]string{"--help"}, &active); err != nil {
+	if err := cli.Run(context.Background(), []string{"--help"}, &active); err != nil {
 		t.Fatalf("cli.Run() error = %v", err)
 	}
 }

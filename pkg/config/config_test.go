@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 // TestLoadUsesTaggedDefaults verifies Load returns tag defaults when no external configuration exists.
@@ -48,6 +49,15 @@ func TestLoadUsesTaggedDefaults(t *testing.T) {
 	}
 	if cfg.Auth.Provider != "generic_oidc" {
 		t.Fatalf("Auth.Provider = %q, want generic_oidc", cfg.Auth.Provider)
+	}
+	if cfg.Server.RequestTimeout != 15*time.Second {
+		t.Fatalf("RequestTimeout = %s, want 15s", cfg.Server.RequestTimeout)
+	}
+	if cfg.Redis.DialTimeout != 5*time.Second {
+		t.Fatalf("Redis.DialTimeout = %s, want 5s", cfg.Redis.DialTimeout)
+	}
+	if cfg.Auth.HTTPTimeout != 5*time.Second {
+		t.Fatalf("Auth.HTTPTimeout = %s, want 5s", cfg.Auth.HTTPTimeout)
 	}
 }
 

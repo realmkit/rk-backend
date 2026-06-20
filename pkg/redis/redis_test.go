@@ -3,10 +3,22 @@ package redis
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis/v2"
 	goredis "github.com/redis/go-redis/v9"
 )
+
+// TestConfigDefaults verifies Redis timeout defaults are bounded.
+func TestConfigDefaults(t *testing.T) {
+	cfg := Config{}.Defaults()
+	if cfg.DialTimeout != 5*time.Second {
+		t.Fatalf("DialTimeout = %s, want 5s", cfg.DialTimeout)
+	}
+	if cfg.ReadTimeout != 3*time.Second || cfg.WriteTimeout != 3*time.Second {
+		t.Fatalf("timeouts = %s/%s, want 3s/3s", cfg.ReadTimeout, cfg.WriteTimeout)
+	}
+}
 
 // TestOpenConnectsToRedis verifies Open creates a healthy client.
 func TestOpenConnectsToRedis(t *testing.T) {

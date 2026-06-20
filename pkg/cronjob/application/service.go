@@ -27,6 +27,9 @@ type Dependencies struct {
 	// LockDuration controls lease duration.
 	LockDuration time.Duration
 
+	// RunTimeout bounds one handler execution.
+	RunTimeout time.Duration
+
 	// Events publishes cron lifecycle events.
 	Events emitter.Publisher
 }
@@ -38,6 +41,7 @@ type Service struct {
 	handlers     map[string]port.Handler
 	workerID     string
 	lockDuration time.Duration
+	runTimeout   time.Duration
 	events       emitter.Publisher
 }
 
@@ -49,6 +53,7 @@ func NewService(deps Dependencies, handlers map[string]port.Handler) Service {
 		handlers:     handlers,
 		workerID:     deps.WorkerID,
 		lockDuration: deps.LockDuration,
+		runTimeout:   deps.RunTimeout,
 		events:       deps.Events,
 	}
 	if service.clock == nil {
@@ -59,6 +64,9 @@ func NewService(deps Dependencies, handlers map[string]port.Handler) Service {
 	}
 	if service.lockDuration <= 0 {
 		service.lockDuration = 5 * time.Minute
+	}
+	if service.runTimeout <= 0 {
+		service.runTimeout = 5 * time.Minute
 	}
 	return service
 }
@@ -160,7 +168,9 @@ func (service Service) run(ctx context.Context, definition domain.Definition, tr
 	if err := service.publishRunEvent(ctx, "cronjob.run.started", run, domain.Result{}); err != nil {
 		return RunSummary{}, err
 	}
-	result, err := handler.Run(ctx, port.RunContext{
+	runCtx, cancel := context.WithTimeout(ctx, service.runTimeout)
+	defer cancel()
+	result, err := handler.Run(runCtx, port.RunContext{
 		RunID:        run.ID,
 		JobKey:       run.JobKey,
 		ScheduledFor: run.ScheduledFor,
