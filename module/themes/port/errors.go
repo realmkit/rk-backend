@@ -11,4 +11,10 @@ var (
 
 	// ErrPreconditionFailed reports stale optimistic version state.
 	ErrPreconditionFailed = errors.New("theme precondition failed")
+
+	// ErrPermissionDenied reports denied theme access.
+	ErrPermissionDenied = errors.New("theme permission denied")
+
+	// ErrInvalidState reports a command blocked by theme lifecycle state.
+	ErrInvalidState = errors.New("theme invalid state")
 )

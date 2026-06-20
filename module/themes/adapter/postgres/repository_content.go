@@ -30,7 +30,7 @@ func (repository FileRepository) ReplaceVersionFiles(
 		return err
 	}
 	return repository.store.DB(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("version_id = ?", versionID).Delete(&FileModel{}).Error; err != nil {
+		if err := tx.Unscoped().Where("version_id = ?", versionID).Delete(&FileModel{}).Error; err != nil {
 			return err
 		}
 		for _, file := range files {
@@ -98,7 +98,7 @@ func (repository AssetRepository) ReplaceVersionAssets(
 		return err
 	}
 	return repository.store.DB(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("version_id = ?", versionID).Delete(&AssetModel{}).Error; err != nil {
+		if err := tx.Unscoped().Where("version_id = ?", versionID).Delete(&AssetModel{}).Error; err != nil {
 			return err
 		}
 		for _, asset := range assets {

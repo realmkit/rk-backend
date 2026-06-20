@@ -1,0 +1,52 @@
+package config
+
+import "testing"
+
+// clearRealmKitEnv clears REALMKIT variables that can affect loader tests.
+func clearRealmKitEnv(t *testing.T) {
+	t.Helper()
+	t.Setenv("REALMKIT_HOST", "")
+	t.Setenv("REALMKIT_PORT", "")
+	t.Setenv("REALMKIT_ENVIRONMENT", "")
+	t.Setenv("REALMKIT_LOG_LEVEL", "")
+	t.Setenv("REALMKIT_TOKEN", "")
+	t.Setenv("REALMKIT_ENABLED", "")
+	t.Setenv("REALMKIT_POSTGRES_HOST", "")
+	t.Setenv("REALMKIT_POSTGRES_PORT", "")
+	t.Setenv("REALMKIT_POSTGRES_DATABASE", "")
+	t.Setenv("REALMKIT_POSTGRES_USERNAME", "")
+	t.Setenv("REALMKIT_POSTGRES_PASSWORD", "")
+	t.Setenv("REALMKIT_POSTGRES_SSL_MODE", "")
+	t.Setenv("REALMKIT_REDIS_ADDRESS", "")
+	t.Setenv("REALMKIT_REDIS_PASSWORD", "")
+	t.Setenv("REALMKIT_REDIS_DATABASE", "")
+	t.Setenv("REALMKIT_STORAGE_BUCKET", "")
+	t.Setenv("REALMKIT_STORAGE_REGION", "")
+	t.Setenv("REALMKIT_STORAGE_ENDPOINT", "")
+	t.Setenv("REALMKIT_STORAGE_ACCESS_KEY_ID", "")
+	t.Setenv("REALMKIT_STORAGE_SECRET_ACCESS_KEY", "")
+	t.Setenv("REALMKIT_STORAGE_PUBLIC_BASE_URL", "")
+	t.Setenv("REALMKIT_CORS_ENABLED", "")
+	t.Setenv("REALMKIT_CORS_ALLOW_ORIGINS", "")
+	t.Setenv("REALMKIT_AUTH_PROVIDER", "")
+	t.Setenv("REALMKIT_AUTH_ISSUER_URL", "")
+	t.Setenv("REALMKIT_AUTH_AUDIENCE", "")
+	t.Setenv("REALMKIT_AUTH_CLIENT_ID", "")
+	t.Setenv("REALMKIT_AUTH_SCOPES", "")
+	t.Setenv("REALMKIT_AUTH_DEVELOPMENT_BYPASS", "")
+}
+
+// setRequiredRootEnv sets required root variables for root config tests.
+func setRequiredRootEnv(t *testing.T) {
+	t.Helper()
+	t.Setenv("REALMKIT_POSTGRES_DATABASE", "realmkit")
+	t.Setenv("REALMKIT_POSTGRES_USERNAME", "realmkit")
+	t.Setenv("REALMKIT_POSTGRES_PASSWORD", "realmkit")
+	t.Setenv("REALMKIT_STORAGE_BUCKET", "realmkit-assets")
+	t.Setenv("REALMKIT_STORAGE_ENDPOINT", "http://localhost:9000")
+	t.Setenv("REALMKIT_STORAGE_ACCESS_KEY_ID", "realmkit")
+	t.Setenv("REALMKIT_STORAGE_SECRET_ACCESS_KEY", "realmkit")
+	t.Setenv("REALMKIT_AUTH_ISSUER_URL", "http://localhost:3001")
+	t.Setenv("REALMKIT_AUTH_AUDIENCE", "realmkit-api")
+	t.Setenv("REALMKIT_AUTH_CLIENT_ID", "realmkit-frontend")
+}

@@ -96,6 +96,7 @@ type ActivationModel struct {
 	Environment       string    `gorm:"not null;index"`
 	IsCurrent         bool      `gorm:"not null;default:true;index"`
 	Reason            string    `gorm:"not null;default:''"`
+	SettingsDataJSON  string    `gorm:"type:jsonb;not null;default:'{}'"`
 	ActivatedByUserID *uuid.UUID
 	ActivatedAt       time.Time `gorm:"not null;index"`
 	CreatedAt         time.Time `gorm:"not null"`

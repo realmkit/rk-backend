@@ -1,0 +1,42 @@
+package config
+
+// rootConfigFieldKeys returns the expected root config schema keys.
+func rootConfigFieldKeys() []string {
+	return []string{
+		"host",
+		"port",
+		"environment",
+		"log.level",
+		"postgres.host",
+		"postgres.port",
+		"postgres.database",
+		"postgres.username",
+		"postgres.password",
+		"postgres.ssl_mode",
+		"redis.address",
+		"redis.password",
+		"redis.database",
+		"storage.bucket",
+		"storage.region",
+		"storage.endpoint",
+		"storage.access_key_id",
+		"storage.secret_access_key",
+		"storage.public_base_url",
+		"cors.enabled",
+		"cors.allow_origins",
+		"auth.provider",
+		"auth.issuer_url",
+		"auth.audience",
+		"auth.client_id",
+		"auth.scopes",
+		"auth.development_bypass",
+		"themes.signing_keys_json",
+		"themes.importing.max_package_bytes",
+		"themes.importing.max_extracted_bytes",
+		"themes.importing.max_file_count",
+		"themes.importing.max_text_file_bytes",
+		"themes.importing.max_compression_ratio",
+		"themes.importing.storage_prefix",
+		"themes.signing.allow_unsigned_packages",
+	}
+}

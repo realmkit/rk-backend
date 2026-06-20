@@ -134,6 +134,7 @@ CREATE TABLE theme_activations (
     environment text NOT NULL,
     is_current boolean NOT NULL DEFAULT true,
     reason text NOT NULL DEFAULT '',
+    settings_data_json jsonb NOT NULL DEFAULT '{}',
     activated_by_user_id uuid NULL,
     activated_at timestamptz NOT NULL,
     created_at timestamptz NOT NULL,

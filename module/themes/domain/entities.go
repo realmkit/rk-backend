@@ -97,15 +97,16 @@ type ThemeAsset struct {
 
 // ThemeActivation points one environment at an immutable theme version.
 type ThemeActivation struct {
-	ID          uuid.UUID
-	ThemeID     uuid.UUID
-	VersionID   uuid.UUID
-	Environment ActivationEnvironment
-	IsCurrent   bool
-	Reason      string
-	ActivatedBy *uuid.UUID
-	ActivatedAt time.Time
-	CreatedAt   time.Time
+	ID               uuid.UUID
+	ThemeID          uuid.UUID
+	VersionID        uuid.UUID
+	Environment      ActivationEnvironment
+	IsCurrent        bool
+	Reason           string
+	SettingsDataJSON []byte
+	ActivatedBy      *uuid.UUID
+	ActivatedAt      time.Time
+	CreatedAt        time.Time
 }
 
 // ThemeValidationIssue stores a structured validation diagnostic.

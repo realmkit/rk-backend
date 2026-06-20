@@ -48,6 +48,7 @@ type AssetRepository interface {
 type ActivationRepository interface {
 	Activate(context.Context, domain.ThemeActivation) (domain.ThemeActivation, error)
 	Current(context.Context, domain.ActivationEnvironment) (domain.ThemeActivation, error)
+	FindByID(context.Context, uuid.UUID) (domain.ThemeActivation, error)
 	ListByTheme(context.Context, uuid.UUID) ([]domain.ThemeActivation, error)
 }
 

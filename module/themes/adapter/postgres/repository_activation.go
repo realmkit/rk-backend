@@ -62,6 +62,15 @@ func (repository ActivationRepository) Current(
 	return activationFromModel(model), nil
 }
 
+// FindByID returns one activation history entry.
+func (repository ActivationRepository) FindByID(ctx context.Context, id uuid.UUID) (domain.ThemeActivation, error) {
+	var model ActivationModel
+	if err := repository.store.DB(ctx).First(&model, "id = ?", id).Error; err != nil {
+		return domain.ThemeActivation{}, mapError(err)
+	}
+	return activationFromModel(model), nil
+}
+
 // ListByTheme returns activation history for a theme.
 func (repository ActivationRepository) ListByTheme(
 	ctx context.Context,
@@ -92,6 +101,7 @@ func activationModel(activation domain.ThemeActivation) ActivationModel {
 		Environment:       string(activation.Environment),
 		IsCurrent:         activation.IsCurrent,
 		Reason:            activation.Reason,
+		SettingsDataJSON:  jsonString(activation.SettingsDataJSON),
 		ActivatedByUserID: activation.ActivatedBy,
 		ActivatedAt:       activation.ActivatedAt,
 	}
@@ -100,15 +110,16 @@ func activationModel(activation domain.ThemeActivation) ActivationModel {
 // activationFromModel maps persistence to activation.
 func activationFromModel(model ActivationModel) domain.ThemeActivation {
 	return domain.ThemeActivation{
-		ID:          model.ID.ID,
-		ThemeID:     model.ThemeID,
-		VersionID:   model.VersionID,
-		Environment: domain.ActivationEnvironment(model.Environment),
-		IsCurrent:   model.IsCurrent,
-		Reason:      model.Reason,
-		ActivatedBy: model.ActivatedByUserID,
-		ActivatedAt: model.ActivatedAt,
-		CreatedAt:   model.CreatedAt,
+		ID:               model.ID.ID,
+		ThemeID:          model.ThemeID,
+		VersionID:        model.VersionID,
+		Environment:      domain.ActivationEnvironment(model.Environment),
+		IsCurrent:        model.IsCurrent,
+		Reason:           model.Reason,
+		SettingsDataJSON: []byte(model.SettingsDataJSON),
+		ActivatedBy:      model.ActivatedByUserID,
+		ActivatedAt:      model.ActivatedAt,
+		CreatedAt:        model.CreatedAt,
 	}
 }
 
