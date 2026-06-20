@@ -3,6 +3,7 @@ package config
 import (
 	"strings"
 
+	themeapplication "github.com/realmkit/rk-backend/module/themes/application"
 	"github.com/realmkit/rk-backend/pkg/api/auth"
 	"github.com/realmkit/rk-backend/pkg/api/cors"
 	"github.com/realmkit/rk-backend/pkg/logger"
@@ -37,6 +38,9 @@ type Config struct {
 
 	// Auth contains OAuth and OIDC settings.
 	Auth auth.Config `mapstructure:"auth"`
+
+	// Themes contains public theming settings.
+	Themes themeapplication.Config `mapstructure:"themes"`
 }
 
 // Runtime contains the essential runtime settings required to start RealmKit.

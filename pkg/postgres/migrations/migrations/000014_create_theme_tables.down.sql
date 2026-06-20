@@ -1,0 +1,12 @@
+DROP TABLE IF EXISTS theme_preview_tokens;
+DROP TABLE IF EXISTS theme_signing_keys;
+DROP TABLE IF EXISTS theme_package_signatures;
+DROP TABLE IF EXISTS theme_validation_issues;
+DROP TABLE IF EXISTS theme_activations;
+DROP TABLE IF EXISTS theme_snippets;
+DROP TABLE IF EXISTS theme_sections;
+DROP TABLE IF EXISTS theme_templates;
+DROP TABLE IF EXISTS theme_assets;
+DROP TABLE IF EXISTS theme_files;
+DROP TABLE IF EXISTS theme_versions;
+DROP TABLE IF EXISTS themes;

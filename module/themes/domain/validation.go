@@ -1,5 +1,19 @@
 package domain
 
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"path"
+	"sort"
+	"strings"
+)
+
+// IntegrityFile is one path and content digest pair used by version hashing.
+type IntegrityFile struct {
+	Path          FilePath
+	ContentSHA256 Digest
+}
+
 const (
 	// IssuePackageTooLarge reports an uploaded package above size limits.
 	IssuePackageTooLarge ValidationIssueCode = "package.too_large"
@@ -76,4 +90,39 @@ func ValidationIssueCodes() []ValidationIssueCode {
 		IssueUnsafeJavaScript,
 		IssueRouteDataUnavailable,
 	}
+}
+
+// CalculateVersionIntegritySHA256 returns a stable digest for version contents.
+func CalculateVersionIntegritySHA256(files []IntegrityFile) Digest {
+	normalized := make([]IntegrityFile, 0, len(files))
+	for _, file := range files {
+		normalized = append(normalized, IntegrityFile{
+			Path:          NormalizeFilePath(file.Path),
+			ContentSHA256: Digest(strings.ToLower(strings.TrimSpace(string(file.ContentSHA256)))),
+		})
+	}
+	sort.SliceStable(normalized, func(left int, right int) bool {
+		if normalized[left].Path == normalized[right].Path {
+			return normalized[left].ContentSHA256 < normalized[right].ContentSHA256
+		}
+		return normalized[left].Path < normalized[right].Path
+	})
+	hash := sha256.New()
+	for _, file := range normalized {
+		hash.Write([]byte(file.Path))
+		hash.Write([]byte{0})
+		hash.Write([]byte(file.ContentSHA256))
+		hash.Write([]byte{'\n'})
+	}
+	return Digest(hex.EncodeToString(hash.Sum(nil)))
+}
+
+// NormalizeFilePath returns a slash-separated package path without root escapes.
+func NormalizeFilePath(filePath FilePath) FilePath {
+	cleaned := strings.TrimSpace(strings.ReplaceAll(string(filePath), "\\", "/"))
+	cleaned = strings.TrimPrefix(path.Clean("/"+cleaned), "/")
+	if cleaned == "." {
+		return ""
+	}
+	return FilePath(cleaned)
 }

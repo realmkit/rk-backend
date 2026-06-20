@@ -356,6 +356,7 @@ func TestSchemaCollectsSquashedFields(t *testing.T) {
 		"auth.client_id",
 		"auth.scopes",
 		"auth.development_bypass",
+		"themes.signing_keys_json",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fields = %v, want %v", got, want)

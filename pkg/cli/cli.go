@@ -8,13 +8,13 @@ import (
 	assetsapp "github.com/realmkit/rk-backend/module/assets/application"
 	"github.com/realmkit/rk-backend/pkg/api/idempotency"
 	"github.com/realmkit/rk-backend/pkg/api/ratelimit"
+	"github.com/realmkit/rk-backend/pkg/cli/seedcmd"
 	"github.com/realmkit/rk-backend/pkg/config"
 	eventshttp "github.com/realmkit/rk-backend/pkg/events/adapter/http"
 	"github.com/realmkit/rk-backend/pkg/logger"
 	"github.com/realmkit/rk-backend/pkg/orm"
 	"github.com/realmkit/rk-backend/pkg/postgres"
 	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
-	"github.com/realmkit/rk-backend/pkg/postgres/seeding"
 	realmkitredis "github.com/realmkit/rk-backend/pkg/redis"
 	"github.com/realmkit/rk-backend/pkg/server"
 	"github.com/realmkit/rk-backend/pkg/storage"
@@ -36,7 +36,6 @@ type commandDeps struct {
 	closeRedis    func(*goredis.Client) error
 	newStorage    func(context.Context, storage.Config) (storage.Store, error)
 	newRunner     func(*gorm.DB, *zap.Logger) migrations.Runner
-	newSeedRunner func(*gorm.DB, *zap.Logger) seeding.Runner
 }
 
 // Run executes the RealmKit CLI.
@@ -72,9 +71,6 @@ func defaultCommandDeps() commandDeps {
 		newRunner: func(db *gorm.DB, log *zap.Logger) migrations.Runner {
 			return migrations.NewRunner(db, migrations.DefaultSource(), migrations.WithLogger(log), migrations.WithExecutor("realmkit-cli"))
 		},
-		newSeedRunner: func(db *gorm.DB, log *zap.Logger) seeding.Runner {
-			return seeding.NewRunner(db, seeding.DefaultSource(), seeding.WithLogger(log), seeding.WithExecutor("realmkit-cli"))
-		},
 	}
 }
 
@@ -98,7 +94,7 @@ func newRootCommand(activeLogger **zap.Logger, deps commandDeps) *cobra.Command 
 	}
 	cmd.AddCommand(newStartCommand(activeLogger, deps))
 	cmd.AddCommand(newMigrateCommand(activeLogger, deps))
-	cmd.AddCommand(newSeedCommand(activeLogger, deps))
+	cmd.AddCommand(seedcmd.New(activeLogger, deps.loadConfig, deps.newLogger, deps.openPostgres, deps.closePostgres))
 	cmd.AddCommand(newEventsCommand(activeLogger, deps))
 	cmd.AddCommand(newCronCommand(activeLogger, deps))
 	cmd.AddCommand(newForumsCommand(activeLogger, deps))
@@ -130,11 +126,9 @@ func runStart(ctx context.Context, activeLogger **zap.Logger, deps commandDeps) 
 		return err
 	}
 	defer closeRuntime(log)
-	development := cfg.Runtime.IsDevelopment()
-	app := deps.newServer(log, development, options...)
-	address := cfg.Server.Address()
-	log.Info("starting realmkit backend", zap.String("address", address))
-	return deps.listenServer(app, address)
+	app := deps.newServer(log, cfg.Runtime.IsDevelopment(), options...)
+	log.Info("starting realmkit backend", zap.String("address", cfg.Server.Address()))
+	return deps.listenServer(app, cfg.Server.Address())
 }
 
 // runtimeServerOptions creates server options from runtime dependencies.
@@ -172,6 +166,11 @@ func runtimeServerOptions(
 		zap.Int("port", cfg.Postgres.Port),
 		zap.String("database", cfg.Postgres.Database),
 	)
+	if err := seedcmd.SeedThemeSigningKeys(ctx, db, cfg); err != nil {
+		closeDatabase(zap.NewNop(), deps.closePostgres, db)
+		deps.closeRedis(client)
+		return nil, nil, err
+	}
 	assetStorage, err := deps.newStorage(ctx, cfg.Storage)
 	if err != nil {
 		closeDatabase(zap.NewNop(), deps.closePostgres, db)
@@ -190,10 +189,9 @@ func runtimeServerOptions(
 		zap.String("bucket", cfg.Storage.Bucket),
 		zap.String("endpoint", cfg.Storage.Endpoint),
 	)
-	assetRepository := assetspostgres.NewAssetRepository(orm.NewStore(db))
 	eventHub := eventshttp.NewHub()
 	eventService := eventsService(db, client, eventHub)
-	assetService := assetsapp.NewService(assetRepository, assetStorage, cfg.Storage.Bucket).WithEvents(eventService)
+	assetService := assetsapp.NewService(assetspostgres.NewAssetRepository(orm.NewStore(db)), assetStorage, cfg.Storage.Bucket).WithEvents(eventService)
 	groupService := groupsService(db, eventService)
 	punishmentService := punishmentsService(db, client, eventService)
 	forumService := forumsService(db, client, assetService, punishmentService, eventService)
@@ -218,8 +216,7 @@ func runtimeServerOptions(
 		server.WithTickets(ticketshttpServices(ticketService, groupService)),
 		server.WithUsers(usershttpServices(userService, groupService)),
 	)
-	options = append(options, infraOptions...)
-	return options, func(log *zap.Logger) {
+	return append(options, infraOptions...), func(log *zap.Logger) {
 		closeDatabase(log, deps.closePostgres, db)
 		if err := deps.closeRedis(client); err != nil {
 			log.Error("close redis failed", zap.Error(err))

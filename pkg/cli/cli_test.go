@@ -15,7 +15,6 @@ import (
 	"github.com/realmkit/rk-backend/pkg/logger"
 	"github.com/realmkit/rk-backend/pkg/postgres"
 	"github.com/realmkit/rk-backend/pkg/postgres/migrations"
-	"github.com/realmkit/rk-backend/pkg/postgres/seeding"
 	realmkitredis "github.com/realmkit/rk-backend/pkg/redis"
 	"github.com/realmkit/rk-backend/pkg/server"
 	"github.com/realmkit/rk-backend/pkg/storage"
@@ -98,8 +97,8 @@ func TestMigrateStatusReportsPendingMigration(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if !strings.Contains(output.String(), "pending=13") {
-		t.Fatalf("output = %q, want pending=13", output.String())
+	if !strings.Contains(output.String(), "pending=14") {
+		t.Fatalf("output = %q, want pending=14", output.String())
 	}
 }
 
@@ -129,24 +128,24 @@ func TestMigrateCommandsApplyValidateAndReset(t *testing.T) {
 	if err != nil {
 		t.Fatalf("up Execute() error = %v", err)
 	}
-	if !strings.Contains(output, "applied=13 pending=0") {
-		t.Fatalf("up output = %q, want applied=13 pending=0", output)
+	if !strings.Contains(output, "applied=14 pending=0") {
+		t.Fatalf("up output = %q, want applied=14 pending=0", output)
 	}
 
 	output, err = executeCommand(t, []string{"migrate", "validate"}, deps)
 	if err != nil {
 		t.Fatalf("validate Execute() error = %v", err)
 	}
-	if !strings.Contains(output, "applied=13 pending=0") {
-		t.Fatalf("validate output = %q, want applied=13 pending=0", output)
+	if !strings.Contains(output, "applied=14 pending=0") {
+		t.Fatalf("validate output = %q, want applied=14 pending=0", output)
 	}
 
 	output, err = executeCommand(t, []string{"migrate", "reset", "--i-understand-this-can-destroy-data"}, deps)
 	if err != nil {
 		t.Fatalf("reset Execute() error = %v", err)
 	}
-	if !strings.Contains(output, "applied=0 pending=13") {
-		t.Fatalf("reset output = %q, want applied=0 pending=13", output)
+	if !strings.Contains(output, "applied=0 pending=14") {
+		t.Fatalf("reset output = %q, want applied=0 pending=14", output)
 	}
 }
 
@@ -479,9 +478,6 @@ func testCommandDeps(t *testing.T) commandDeps {
 		},
 		newRunner: func(db *gorm.DB, log *zap.Logger) migrations.Runner {
 			return migrations.NewRunner(db, migrations.DefaultSource(), migrations.WithLogger(log))
-		},
-		newSeedRunner: func(db *gorm.DB, log *zap.Logger) seeding.Runner {
-			return seeding.NewRunner(db, seeding.DefaultSource(), seeding.WithLogger(log))
 		},
 	}
 }

@@ -1,3 +1,4 @@
+// Package domain owns theme contract types and pure validation catalogs.
 package domain
 
 // ThemeStatus is the lifecycle state of a theme family.

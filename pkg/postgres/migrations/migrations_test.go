@@ -19,8 +19,8 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if len(migrations) != 13 {
-		t.Fatalf("len(migrations) = %d, want 13", len(migrations))
+	if len(migrations) != 14 {
+		t.Fatalf("len(migrations) = %d, want 14", len(migrations))
 	}
 	if migrations[0].Version != 1 || migrations[0].Name != "create_metadata_tables" {
 		t.Fatalf("migration[0] = %+v, want metadata version 1", migrations[0])
@@ -61,6 +61,9 @@ func TestLoadReturnsDefaultMigrations(t *testing.T) {
 	if migrations[12].Version != 13 || migrations[12].Name != "repair_forum_permission_grants" {
 		t.Fatalf("migration[12] = %+v, want forum permission repair version 13", migrations[12])
 	}
+	if migrations[13].Version != 14 || migrations[13].Name != "create_theme_tables" {
+		t.Fatalf("migration[13] = %+v, want theme tables version 14", migrations[13])
+	}
 }
 
 // TestLoadRejectsVersionGaps verifies the global sequence has no gaps.
@@ -91,8 +94,8 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Up() error = %v", err)
 	}
-	if len(status.Applied) != 13 || len(status.Pending) != 0 {
-		t.Fatalf("Status = %+v, want thirteen applied and no pending", status)
+	if len(status.Applied) != 14 || len(status.Pending) != 0 {
+		t.Fatalf("Status = %+v, want fourteen applied and no pending", status)
 	}
 	if !db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table missing")
@@ -141,6 +144,30 @@ func TestRunnerUpAppliesDefaultMigrations(t *testing.T) {
 	}
 	if !db.Migrator().HasTable("ticket_definitions") {
 		t.Fatalf("ticket_definitions table missing")
+	}
+	if !db.Migrator().HasTable("themes") {
+		t.Fatalf("themes table missing")
+	}
+	if !db.Migrator().HasTable("theme_versions") {
+		t.Fatalf("theme_versions table missing")
+	}
+	if !db.Migrator().HasTable("theme_files") {
+		t.Fatalf("theme_files table missing")
+	}
+	if !db.Migrator().HasTable("theme_assets") {
+		t.Fatalf("theme_assets table missing")
+	}
+	if !db.Migrator().HasTable("theme_activations") {
+		t.Fatalf("theme_activations table missing")
+	}
+	if !db.Migrator().HasTable("theme_validation_issues") {
+		t.Fatalf("theme_validation_issues table missing")
+	}
+	if !db.Migrator().HasTable("theme_signing_keys") {
+		t.Fatalf("theme_signing_keys table missing")
+	}
+	if !db.Migrator().HasTable("theme_preview_tokens") {
+		t.Fatalf("theme_preview_tokens table missing")
 	}
 }
 
@@ -288,12 +315,12 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	status, err := runner.Down(context.Background(), 13)
+	status, err := runner.Down(context.Background(), 14)
 	if err != nil {
 		t.Fatalf("Down() error = %v", err)
 	}
-	if len(status.Applied) != 0 || len(status.Pending) != 13 {
-		t.Fatalf("Status = %+v, want no applied and thirteen pending", status)
+	if len(status.Applied) != 0 || len(status.Pending) != 14 {
+		t.Fatalf("Status = %+v, want no applied and fourteen pending", status)
 	}
 	if db.Migrator().HasTable("metadata_metafield_definitions") {
 		t.Fatalf("metadata_metafield_definitions table exists after Down()")
@@ -312,6 +339,9 @@ func TestRunnerDownRollsBackMigration(t *testing.T) {
 	}
 	if db.Migrator().HasTable("punishments") {
 		t.Fatalf("punishments table exists after Down()")
+	}
+	if db.Migrator().HasTable("themes") {
+		t.Fatalf("themes table exists after Down()")
 	}
 }
 
