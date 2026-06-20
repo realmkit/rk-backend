@@ -35,6 +35,13 @@ func TestThemeRepositoriesLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create(version) error = %v", err)
 	}
+	foundBySource, err := repositories.versions.FindBySourceReference(ctx, theme.ID, version.SourceReference)
+	if err != nil {
+		t.Fatalf("FindBySourceReference() error = %v", err)
+	}
+	if foundBySource.ID != version.ID {
+		t.Fatalf("FindBySourceReference() = %v, want %v", foundBySource.ID, version.ID)
+	}
 	files := []domain.ThemeFile{
 		testFile(version.ID, "layout/theme.liquid"),
 		testFile(version.ID, "assets\\app.css"),
@@ -67,6 +74,16 @@ func TestThemeRepositoriesLifecycle(t *testing.T) {
 	}
 	if err := repositories.issues.ReplaceVersionIssues(ctx, version.ID, []domain.ThemeValidationIssue{testIssue(version.ID)}); err != nil {
 		t.Fatalf("ReplaceVersionIssues() error = %v", err)
+	}
+	if err := repositories.signatures.ReplaceVersionSignature(ctx, version.ID, testSignature(version.ID)); err != nil {
+		t.Fatalf("ReplaceVersionSignature() error = %v", err)
+	}
+	signature, err := repositories.signatures.FindByVersion(ctx, version.ID)
+	if err != nil {
+		t.Fatalf("FindByVersion(signature) error = %v", err)
+	}
+	if signature.VerificationStatus != domain.SignatureVerified {
+		t.Fatalf("signature status = %q, want verified", signature.VerificationStatus)
 	}
 	activation, err := repositories.activations.Activate(ctx, testActivation(theme.ID, version.ID))
 	if err != nil {
@@ -140,6 +157,7 @@ type testRepositories struct {
 	assets        AssetRepository
 	activations   ActivationRepository
 	issues        ValidationIssueRepository
+	signatures    SignatureRepository
 	signingKeys   SigningKeyRepository
 	previewTokens PreviewTokenRepository
 }
@@ -162,6 +180,7 @@ func newRepositories(t *testing.T) testRepositories {
 		assets:        NewAssetRepository(store),
 		activations:   NewActivationRepository(store),
 		issues:        NewValidationIssueRepository(store),
+		signatures:    NewSignatureRepository(store),
 		signingKeys:   NewSigningKeyRepository(store),
 		previewTokens: NewPreviewTokenRepository(store),
 	}
@@ -188,6 +207,7 @@ func testVersion(themeID uuid.UUID) domain.ThemeVersion {
 		Label:              "Initial",
 		Status:             domain.VersionStatusDraft,
 		SourceKind:         domain.SourceEditor,
+		SourceReference:    "editor:test",
 		ManifestJSON:       []byte(`{"name":"Main"}`),
 		SettingsSchemaJSON: []byte(`{}`),
 		SettingsDataJSON:   []byte(`{}`),
@@ -237,6 +257,21 @@ func testIssue(versionID uuid.UUID) domain.ThemeValidationIssue {
 		Line:      1,
 		Column:    1,
 		Details:   []byte(`{"rule":"external-import"}`),
+	}
+}
+
+// testSignature returns package signature data.
+func testSignature(versionID uuid.UUID) domain.ThemePackageSignature {
+	now := time.Now().UTC()
+	return domain.ThemePackageSignature{
+		ID:                 uuid.New(),
+		VersionID:          versionID,
+		KeyID:              "realmkit:test",
+		Algorithm:          domain.SignatureAlgorithmEd25519,
+		VerificationStatus: domain.SignatureVerified,
+		Signature:          "signature",
+		SignedManifestHash: "manifest-sha",
+		VerifiedAt:         &now,
 	}
 }
 

@@ -185,6 +185,50 @@ func (repository ValidationIssueRepository) ListByVersion(
 	return issues, nil
 }
 
+// SignatureRepository stores signature verification data in PostgreSQL.
+type SignatureRepository struct {
+	store orm.Store
+}
+
+// NewSignatureRepository creates a package signature repository.
+func NewSignatureRepository(store orm.Store) SignatureRepository {
+	return SignatureRepository{store: store}
+}
+
+// ReplaceVersionSignature replaces signature data for a version.
+func (repository SignatureRepository) ReplaceVersionSignature(
+	ctx context.Context,
+	versionID uuid.UUID,
+	signature domain.ThemePackageSignature,
+) error {
+	if err := ensureVersionEditable(ctx, repository.store, versionID); err != nil {
+		return err
+	}
+	return repository.store.DB(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("version_id = ?", versionID).Delete(&SignatureModel{}).Error; err != nil {
+			return err
+		}
+		signature.VersionID = versionID
+		model := signatureModel(signature)
+		if err := tx.Create(&model).Error; err != nil {
+			return port.ErrConflict
+		}
+		return nil
+	})
+}
+
+// FindByVersion returns package signature data for a version.
+func (repository SignatureRepository) FindByVersion(
+	ctx context.Context,
+	versionID uuid.UUID,
+) (domain.ThemePackageSignature, error) {
+	var model SignatureModel
+	if err := repository.store.DB(ctx).First(&model, "version_id = ?", versionID).Error; err != nil {
+		return domain.ThemePackageSignature{}, mapError(err)
+	}
+	return signatureFromModel(model), nil
+}
+
 // ensureVersionEditable verifies a version can receive content writes.
 func ensureVersionEditable(ctx context.Context, store orm.Store, versionID uuid.UUID) error {
 	var model VersionModel
@@ -199,4 +243,5 @@ var (
 	_ port.FileRepository            = FileRepository{}
 	_ port.AssetRepository           = AssetRepository{}
 	_ port.ValidationIssueRepository = ValidationIssueRepository{}
+	_ port.SignatureRepository       = SignatureRepository{}
 )

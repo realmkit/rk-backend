@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/realmkit/rk-backend/module/themes/application/importing"
+	"github.com/realmkit/rk-backend/module/themes/application/signing"
 	"github.com/realmkit/rk-backend/module/themes/domain"
 	"github.com/realmkit/rk-backend/module/themes/port"
 )
@@ -15,6 +17,10 @@ import (
 type Config struct {
 	// SigningKeysJSON is a JSON array of trusted package signing keys.
 	SigningKeysJSON string `mapstructure:"signing_keys_json" default:"[]"`
+	// Importing contains theme package intake limits.
+	Importing importing.Config `mapstructure:"importing"`
+	// Signing contains package signature verification policy.
+	Signing signing.Config `mapstructure:"signing"`
 }
 
 // SigningKeySeed is one configured package signing key.

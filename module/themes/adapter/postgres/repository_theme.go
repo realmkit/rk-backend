@@ -171,6 +171,22 @@ func (repository VersionRepository) FindByID(ctx context.Context, id uuid.UUID) 
 	return versionFromModel(model), nil
 }
 
+// FindBySourceReference returns one version by retry-safe source reference.
+func (repository VersionRepository) FindBySourceReference(
+	ctx context.Context,
+	themeID uuid.UUID,
+	sourceReference string,
+) (domain.ThemeVersion, error) {
+	var model VersionModel
+	err := repository.store.DB(ctx).
+		First(&model, "theme_id = ? AND source_reference = ?", themeID, sourceReference).
+		Error
+	if err != nil {
+		return domain.ThemeVersion{}, mapError(err)
+	}
+	return versionFromModel(model), nil
+}
+
 // ListByTheme returns versions for a theme family.
 func (repository VersionRepository) ListByTheme(ctx context.Context, themeID uuid.UUID) ([]domain.ThemeVersion, error) {
 	var models []VersionModel

@@ -357,6 +357,13 @@ func TestSchemaCollectsSquashedFields(t *testing.T) {
 		"auth.scopes",
 		"auth.development_bypass",
 		"themes.signing_keys_json",
+		"themes.importing.max_package_bytes",
+		"themes.importing.max_extracted_bytes",
+		"themes.importing.max_file_count",
+		"themes.importing.max_text_file_bytes",
+		"themes.importing.max_compression_ratio",
+		"themes.importing.storage_prefix",
+		"themes.signing.allow_unsigned_packages",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("fields = %v, want %v", got, want)

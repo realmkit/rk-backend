@@ -180,6 +180,35 @@ func issueFromModel(model IssueModel) domain.ThemeValidationIssue {
 	}
 }
 
+// signatureModel maps signature verification data to persistence.
+func signatureModel(signature domain.ThemePackageSignature) SignatureModel {
+	return SignatureModel{
+		ID:                 orm.ID{ID: signature.ID},
+		VersionID:          signature.VersionID,
+		KeyID:              signature.KeyID,
+		Algorithm:          string(signature.Algorithm),
+		VerificationStatus: string(signature.VerificationStatus),
+		Signature:          signature.Signature,
+		SignedManifestHash: string(signature.SignedManifestHash),
+		VerifiedAt:         signature.VerifiedAt,
+	}
+}
+
+// signatureFromModel maps persistence to signature verification data.
+func signatureFromModel(model SignatureModel) domain.ThemePackageSignature {
+	return domain.ThemePackageSignature{
+		ID:                 model.ID.ID,
+		VersionID:          model.VersionID,
+		KeyID:              model.KeyID,
+		Algorithm:          domain.SignatureAlgorithm(model.Algorithm),
+		VerificationStatus: domain.SignatureVerificationStatus(model.VerificationStatus),
+		Signature:          model.Signature,
+		SignedManifestHash: domain.Digest(model.SignedManifestHash),
+		VerifiedAt:         model.VerifiedAt,
+		CreatedAt:          model.CreatedAt,
+	}
+}
+
 // jsonString returns an object literal for absent JSON blobs.
 func jsonString(value []byte) string {
 	if len(value) == 0 {

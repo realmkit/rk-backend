@@ -19,10 +19,14 @@ const (
 	IssuePackageTooLarge ValidationIssueCode = "package.too_large"
 	// IssueExtractedPackageTooLarge reports extracted package size above limits.
 	IssueExtractedPackageTooLarge ValidationIssueCode = "package.extracted_too_large"
+	// IssueCompressionRatioTooLarge reports suspicious zip compression ratios.
+	IssueCompressionRatioTooLarge ValidationIssueCode = "package.compression_ratio_too_large"
 	// IssueFileCountTooLarge reports too many package files.
 	IssueFileCountTooLarge ValidationIssueCode = "package.too_many_files"
 	// IssueTextFileTooLarge reports an editor-backed file above limits.
 	IssueTextFileTooLarge ValidationIssueCode = "file.text_too_large"
+	// IssueInvalidUTF8 reports non-UTF-8 content in a text theme file.
+	IssueInvalidUTF8 ValidationIssueCode = "file.invalid_utf8"
 	// IssueUnsafePath reports absolute or traversing paths.
 	IssueUnsafePath ValidationIssueCode = "file.unsafe_path"
 	// IssueDuplicatePath reports duplicate normalized paths.
@@ -31,8 +35,12 @@ const (
 	IssueInvalidManifest ValidationIssueCode = "manifest.invalid"
 	// IssueInvalidSignature reports malformed or tampered signature data.
 	IssueInvalidSignature ValidationIssueCode = "signature.invalid"
+	// IssueMissingSignature reports an unsigned package when signatures are required.
+	IssueMissingSignature ValidationIssueCode = "signature.missing"
 	// IssueUntrustedSignature reports an unknown signing key.
 	IssueUntrustedSignature ValidationIssueCode = "signature.untrusted"
+	// IssueRetiredSignature reports a signing key used outside its retirement policy.
+	IssueRetiredSignature ValidationIssueCode = "signature.retired"
 	// IssueRevokedSignature reports a revoked signing key.
 	IssueRevokedSignature ValidationIssueCode = "signature.revoked"
 	// IssueMissingRequiredDirectory reports a required theme directory is absent.
@@ -68,13 +76,17 @@ func ValidationIssueCodes() []ValidationIssueCode {
 	return []ValidationIssueCode{
 		IssuePackageTooLarge,
 		IssueExtractedPackageTooLarge,
+		IssueCompressionRatioTooLarge,
 		IssueFileCountTooLarge,
 		IssueTextFileTooLarge,
+		IssueInvalidUTF8,
 		IssueUnsafePath,
 		IssueDuplicatePath,
 		IssueInvalidManifest,
 		IssueInvalidSignature,
+		IssueMissingSignature,
 		IssueUntrustedSignature,
+		IssueRetiredSignature,
 		IssueRevokedSignature,
 		IssueMissingRequiredDirectory,
 		IssueMissingRequiredTemplate,

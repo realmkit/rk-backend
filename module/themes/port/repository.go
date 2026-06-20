@@ -27,6 +27,7 @@ type VersionRepository interface {
 	Update(context.Context, domain.ThemeVersion, uint64) (domain.ThemeVersion, error)
 	Archive(context.Context, uuid.UUID, uint64) error
 	FindByID(context.Context, uuid.UUID) (domain.ThemeVersion, error)
+	FindBySourceReference(context.Context, uuid.UUID, string) (domain.ThemeVersion, error)
 	ListByTheme(context.Context, uuid.UUID) ([]domain.ThemeVersion, error)
 }
 
@@ -54,6 +55,12 @@ type ActivationRepository interface {
 type ValidationIssueRepository interface {
 	ReplaceVersionIssues(context.Context, uuid.UUID, []domain.ThemeValidationIssue) error
 	ListByVersion(context.Context, uuid.UUID) ([]domain.ThemeValidationIssue, error)
+}
+
+// SignatureRepository stores package signature verification data.
+type SignatureRepository interface {
+	ReplaceVersionSignature(context.Context, uuid.UUID, domain.ThemePackageSignature) error
+	FindByVersion(context.Context, uuid.UUID) (domain.ThemePackageSignature, error)
 }
 
 // SigningKeyRepository stores trusted package signing keys.
