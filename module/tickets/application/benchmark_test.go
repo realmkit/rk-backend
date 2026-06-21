@@ -1,7 +1,9 @@
 package application
 
 import (
+	"context"
 	"encoding/json"
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"
@@ -45,5 +47,44 @@ func BenchmarkPrepareTicket(b *testing.B) {
 		benchmarkTicket = ticket
 		benchmarkMessage = message
 		benchmarkEvidence = evidence
+	}
+}
+
+// BenchmarkCreateTicket measures full ticket intake orchestration over in-memory ports.
+func BenchmarkCreateTicket(b *testing.B) {
+	service, fakes := newTestService()
+	definition := appealDefinition()
+	fakes.definitions.items[definition.ID] = definition
+	submitterID := uuid.New()
+	punishmentID := uuid.New()
+	assetID := uuid.New()
+	fakes.assets.exists[assetID] = true
+	fakes.punishments.summary = port.PunishmentSummary{
+		ID:           punishmentID,
+		TargetUserID: submitterID,
+	}
+	command := port.CreateTicketCommand{
+		ActorUserID:         submitterID,
+		DefinitionID:        definition.ID,
+		Title:               "Appeal benchmark",
+		SubmitterUserID:     &submitterID,
+		PunishmentID:        &punishmentID,
+		ContentDocumentJSON: json.RawMessage(`{"type":"doc","content":[{"type":"text","text":"hello"}]}`),
+		ContentText:         "hello",
+		EvidenceAssetIDs:    []uuid.UUID{assetID},
+	}
+	ctx := context.Background()
+
+	b.ReportAllocs()
+	for index := 0; index < b.N; index++ {
+		command.IdempotencyKey = "benchmark-" + strconv.Itoa(index)
+		ticket, err := service.CreateTicket(ctx, command)
+		if err != nil {
+			b.Fatalf("CreateTicket() error = %v", err)
+		}
+		delete(fakes.tickets.items, ticket.ID)
+		delete(fakes.tickets.messages, ticket.ID)
+		delete(fakes.tickets.evidence, ticket.ID)
+		benchmarkTicket = ticket
 	}
 }

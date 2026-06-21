@@ -41,6 +41,21 @@ func BenchmarkValidateLiquidFiles(b *testing.B) {
 	}
 }
 
+// BenchmarkValidateLargeLiquidGraph measures Liquid scanning across a larger dependency graph.
+func BenchmarkValidateLargeLiquidGraph(b *testing.B) {
+	files := attachVersion(uuid.New(), benchmarkLargeValidationFiles())
+	index := indexFiles(files)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		issues := validateLiquidFiles(context.Background(), files, index)
+		if len(issues) != 0 {
+			b.Fatalf("validateLiquidFiles() issues = %d, want 0", len(issues))
+		}
+	}
+}
+
 // benchmarkValidationFiles returns a realistic valid theme package.
 func benchmarkValidationFiles() []domain.ThemeFile {
 	files := []domain.ThemeFile{
@@ -63,6 +78,27 @@ func benchmarkValidationFiles() []domain.ThemeFile {
 				domain.FilePath(fmt.Sprintf("snippets/item_%02d.liquid", index)),
 				domain.FileKindSnippet,
 				`<span>{{ item.name }}</span>`,
+			),
+		)
+	}
+	return files
+}
+
+// benchmarkLargeValidationFiles returns a large valid Liquid graph.
+func benchmarkLargeValidationFiles() []domain.ThemeFile {
+	files := benchmarkValidationFiles()
+	for index := 0; index < 160; index++ {
+		files = append(
+			files,
+			testFile(
+				domain.FilePath(fmt.Sprintf("sections/block_%03d.liquid", index)),
+				domain.FileKindSection,
+				fmt.Sprintf(`{%% render "item_%02d" %%}{{ "asset_%03d.css" | asset_url }}`, index%24, index),
+			),
+			testFile(
+				domain.FilePath(fmt.Sprintf("assets/asset_%03d.css", index)),
+				domain.FileKindAsset,
+				`.block{display:block}`,
 			),
 		)
 	}
