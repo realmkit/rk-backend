@@ -14,36 +14,36 @@ import (
 
 // Structure exposes structure use cases through the facade.
 type Structure struct {
-	structureapp.Service
+	structureapp.Service // Service embeds shared fields.
 }
 
 // Content exposes content use cases through the facade.
 type Content struct {
-	contentapp.Service
+	contentapp.Service // Service embeds shared fields.
 }
 
 // Interaction exposes interaction use cases through the facade.
 type Interaction struct {
-	interactionapp.Service
+	interactionapp.Service // Service embeds shared fields.
 }
 
 // Operations exposes operations use cases through the facade.
 type Operations struct {
-	operationsapp.Service
+	operationsapp.Service // Service embeds shared fields.
 }
 
 // Admin exposes admin use cases through the facade.
 type Admin struct {
-	adminapp.Service
+	adminapp.Service // Service embeds shared fields.
 }
 
 // Service composes concern-owned forum use-case services.
 type Service struct {
-	Structure
-	Content
-	Interaction
-	Operations
-	Admin
+	Structure   // Structure embeds shared fields.
+	Content     // Content embeds shared fields.
+	Interaction // Interaction embeds shared fields.
+	Operations  // Operations embeds shared fields.
+	Admin       // Admin embeds shared fields.
 }
 
 // Dependencies contains forum service dependencies.

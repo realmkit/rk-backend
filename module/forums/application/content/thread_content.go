@@ -169,6 +169,7 @@ func (service Service) DeleteThread(
 	)
 }
 
+// openerThreadAndPost supports package behavior.
 func openerThreadAndPost(
 	forum domain.Forum,
 	command port.CreateThreadCommand,

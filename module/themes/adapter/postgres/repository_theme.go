@@ -13,7 +13,7 @@ import (
 
 // ThemeRepository stores theme families in PostgreSQL.
 type ThemeRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewThemeRepository creates a theme repository.
@@ -100,7 +100,7 @@ func (repository ThemeRepository) List(ctx context.Context, filter port.ThemeFil
 
 // VersionRepository stores theme versions in PostgreSQL.
 type VersionRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewVersionRepository creates a theme version repository.

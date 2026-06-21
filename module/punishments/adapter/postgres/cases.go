@@ -15,7 +15,7 @@ import (
 
 // CaseRepository stores issued punishments and restriction projections.
 type CaseRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewCaseRepository creates a punishment case repository.
@@ -169,6 +169,7 @@ func (repository CaseRepository) List(
 	return pagination.Result[domain.Punishment]{Items: items, NextCursor: next}, nil
 }
 
+// snapshots supports package behavior.
 func (repository CaseRepository) snapshots(ctx context.Context, punishmentID uuid.UUID) []SnapshotModel {
 	var snapshots []SnapshotModel
 	_ = repository.store.DB(ctx).Where("punishment_id = ?", punishmentID).Order("created_at, id").Find(&snapshots).Error

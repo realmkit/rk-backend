@@ -18,46 +18,46 @@ import (
 
 // updateCurrentRequest is the local current-user update body.
 type updateCurrentRequest struct {
-	AvatarAssetID *uuid.UUID `json:"avatar_asset_id"`
+	AvatarAssetID *uuid.UUID `json:"avatar_asset_id"` // AvatarAssetID stores the avatar asset i d value.
 }
 
 // currentUserResponse is the current user response body.
 type currentUserResponse struct {
-	User           domain.User        `json:"user"`
-	ProviderClaims *claimCacheSummary `json:"provider_claims,omitempty"`
-	Groups         *port.UserGroups   `json:"groups,omitempty"`
+	User           domain.User        `json:"user"`                      // User stores the user value.
+	ProviderClaims *claimCacheSummary `json:"provider_claims,omitempty"` // ProviderClaims stores the provider claims value.
+	Groups         *port.UserGroups   `json:"groups,omitempty"`          // Groups stores the groups value.
 }
 
 // userListResponse contains one user list page.
 type userListResponse struct {
-	Items         []userSummaryResponse `json:"items"`
-	NextPageToken string                `json:"next_page_token,omitempty"`
-	Query         string                `json:"query,omitempty"`
-	Sort          string                `json:"sort,omitempty"`
-	Direction     string                `json:"direction,omitempty"`
+	Items         []userSummaryResponse `json:"items"`                     // Items stores the items value.
+	NextPageToken string                `json:"next_page_token,omitempty"` // NextPageToken stores the next page token value.
+	Query         string                `json:"query,omitempty"`           // Query stores the query value.
+	Sort          string                `json:"sort,omitempty"`            // Sort stores the sort value.
+	Direction     string                `json:"direction,omitempty"`       // Direction stores the direction value.
 }
 
 // userSummaryResponse contains one admin user list item.
 type userSummaryResponse struct {
-	User           domain.User        `json:"user"`
-	ProviderClaims *claimCacheSummary `json:"provider_claims,omitempty"`
+	User           domain.User        `json:"user"`                      // User stores the user value.
+	ProviderClaims *claimCacheSummary `json:"provider_claims,omitempty"` // ProviderClaims stores the provider claims value.
 }
 
 // claimCacheSummary exposes provider-owned cache data without raw subject.
 type claimCacheSummary struct {
-	Username        string    `json:"username"`
-	Email           string    `json:"email"`
-	EmailVerified   bool      `json:"email_verified"`
-	DisplayName     string    `json:"display_name"`
-	PictureURL      string    `json:"picture_url"`
-	PreferredLocale string    `json:"preferred_locale"`
-	ClaimsHash      string    `json:"claims_hash"`
-	SyncedAt        time.Time `json:"synced_at"`
+	Username        string    `json:"username"`         // Username stores the username value.
+	Email           string    `json:"email"`            // Email stores the email value.
+	EmailVerified   bool      `json:"email_verified"`   // EmailVerified stores the email verified value.
+	DisplayName     string    `json:"display_name"`     // DisplayName stores the display name value.
+	PictureURL      string    `json:"picture_url"`      // PictureURL stores the picture u r l value.
+	PreferredLocale string    `json:"preferred_locale"` // PreferredLocale stores the preferred locale value.
+	ClaimsHash      string    `json:"claims_hash"`      // ClaimsHash stores the claims hash value.
+	SyncedAt        time.Time `json:"synced_at"`        // SyncedAt stores the synced at value.
 }
 
 // accountURLResponse contains a provider account URL.
 type accountURLResponse struct {
-	URL string `json:"url"`
+	URL string `json:"url"` // URL stores the u r l value.
 }
 
 // currentUser returns the authenticated current user.

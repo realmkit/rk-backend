@@ -87,8 +87,11 @@ const (
 )
 
 var (
-	keyPattern    = regexp.MustCompile(`^[a-z][a-z0-9_]{1,62}[a-z0-9]$`)
-	colorPattern  = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+	// keyPattern stores package state.
+	keyPattern = regexp.MustCompile(`^[a-z][a-z0-9_]{1,62}[a-z0-9]$`)
+	// colorPattern stores package state.
+	colorPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+	// actionPattern stores package state.
 	actionPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$`)
 )
 
@@ -97,13 +100,13 @@ var ErrValidation = errors.New("punishment validation failed")
 
 // Violation describes one invalid field.
 type Violation struct {
-	Field   string `json:"field"`
-	Message string `json:"message"`
+	Field   string `json:"field"`   // Field stores the field value.
+	Message string `json:"message"` // Message stores the message value.
 }
 
 // ValidationError contains all validation violations.
 type ValidationError struct {
-	Violations []Violation `json:"violations"`
+	Violations []Violation `json:"violations"` // Violations stores the violations value.
 }
 
 // Error returns the validation error message.

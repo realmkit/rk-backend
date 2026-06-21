@@ -7,8 +7,8 @@ import (
 
 // Steps writes readable progress logs for e2e scenarios.
 type Steps struct {
-	t     testing.TB
-	index int
+	t     testing.TB // t stores the t value.
+	index int        // index stores the index value.
 }
 
 // NewSteps creates a readable scenario step logger.

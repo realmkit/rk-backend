@@ -49,5 +49,5 @@ func Register(router fiber.Router, services Services) {
 
 // handler contains metadata route dependencies.
 type handler struct {
-	services Services
+	services Services // services stores the services value.
 }

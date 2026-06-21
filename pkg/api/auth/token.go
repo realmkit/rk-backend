@@ -26,9 +26,9 @@ type Token struct {
 
 // Validator validates bearer access tokens.
 type Validator struct {
-	config Config
-	client *http.Client
-	keys   *keySet
+	config Config       // config stores the config value.
+	client *http.Client // client stores the client value.
+	keys   *keySet      // keys stores the keys value.
 }
 
 // NewValidator creates an OIDC validator.

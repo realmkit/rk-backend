@@ -15,41 +15,41 @@ import (
 
 // membershipRequest is the membership assign body.
 type membershipRequest struct {
-	Status           domain.MembershipStatus `json:"status"`
-	AssignedByUserID *uuid.UUID              `json:"assigned_by_user_id"`
-	AssignedReason   string                  `json:"assigned_reason"`
-	StartsAt         *time.Time              `json:"starts_at"`
-	ExpiresAt        *time.Time              `json:"expires_at"`
+	Status           domain.MembershipStatus `json:"status"`              // Status stores the status value.
+	AssignedByUserID *uuid.UUID              `json:"assigned_by_user_id"` // AssignedByUserID stores the assigned by user i d value.
+	AssignedReason   string                  `json:"assigned_reason"`     // AssignedReason stores the assigned reason value.
+	StartsAt         *time.Time              `json:"starts_at"`           // StartsAt stores the starts at value.
+	ExpiresAt        *time.Time              `json:"expires_at"`          // ExpiresAt stores the expires at value.
 }
 
 // membershipListResponse contains one membership page.
 type membershipListResponse struct {
-	Items         []membershipListItem `json:"items"`
-	NextPageToken string               `json:"next_page_token,omitempty"`
+	Items         []membershipListItem `json:"items"`                     // Items stores the items value.
+	NextPageToken string               `json:"next_page_token,omitempty"` // NextPageToken stores the next page token value.
 }
 
 // membershipListItem contains a membership with optional local user display data.
 type membershipListItem struct {
-	Membership domain.Membership       `json:"membership"`
-	User       *membershipUserResponse `json:"user,omitempty"`
+	Membership domain.Membership       `json:"membership"`     // Membership stores the membership value.
+	User       *membershipUserResponse `json:"user,omitempty"` // User stores the user value.
 }
 
 // membershipUserResponse contains one display-safe local user summary.
 type membershipUserResponse struct {
-	User           userdomain.User       `json:"user"`
-	ProviderClaims *membershipClaimCache `json:"provider_claims,omitempty"`
+	User           userdomain.User       `json:"user"`                      // User stores the user value.
+	ProviderClaims *membershipClaimCache `json:"provider_claims,omitempty"` // ProviderClaims stores the provider claims value.
 }
 
 // membershipClaimCache exposes provider-owned display claims without raw subject.
 type membershipClaimCache struct {
-	Username        string    `json:"username"`
-	Email           string    `json:"email"`
-	EmailVerified   bool      `json:"email_verified"`
-	DisplayName     string    `json:"display_name"`
-	PictureURL      string    `json:"picture_url"`
-	PreferredLocale string    `json:"preferred_locale"`
-	ClaimsHash      string    `json:"claims_hash"`
-	SyncedAt        time.Time `json:"synced_at"`
+	Username        string    `json:"username"`         // Username stores the username value.
+	Email           string    `json:"email"`            // Email stores the email value.
+	EmailVerified   bool      `json:"email_verified"`   // EmailVerified stores the email verified value.
+	DisplayName     string    `json:"display_name"`     // DisplayName stores the display name value.
+	PictureURL      string    `json:"picture_url"`      // PictureURL stores the picture u r l value.
+	PreferredLocale string    `json:"preferred_locale"` // PreferredLocale stores the preferred locale value.
+	ClaimsHash      string    `json:"claims_hash"`      // ClaimsHash stores the claims hash value.
+	SyncedAt        time.Time `json:"synced_at"`        // SyncedAt stores the synced at value.
 }
 
 // listGroupMembers lists memberships for a group.

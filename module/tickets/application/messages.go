@@ -140,6 +140,7 @@ func (service Service) ListEvidence(
 	return service.tickets.ListEvidence(ctx, ticketID, includeStaffOnly)
 }
 
+// requirePrivateVisibility supports package behavior.
 func (service Service) requirePrivateVisibility(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -154,6 +155,7 @@ func (service Service) requirePrivateVisibility(
 	})
 }
 
+// messageFromCommand supports package behavior.
 func messageFromCommand(ticketID uuid.UUID, actorUserID uuid.UUID, document json.RawMessage, text string) domain.Message {
 	return domain.Message{
 		ID:                  uuid.New(),
@@ -170,6 +172,7 @@ func messageFromCommand(ticketID uuid.UUID, actorUserID uuid.UUID, document json
 	}
 }
 
+// systemMessage supports package behavior.
 func systemMessage(ticketID uuid.UUID, text string) domain.Message {
 	now := time.Now().UTC()
 	return domain.Message{
@@ -186,6 +189,7 @@ func systemMessage(ticketID uuid.UUID, text string) domain.Message {
 	}
 }
 
+// ensureJSON supports package behavior.
 func ensureJSON(document json.RawMessage) json.RawMessage {
 	if len(document) == 0 || !json.Valid(document) {
 		return json.RawMessage(`{"type":"doc","content":[]}`)

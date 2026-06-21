@@ -52,5 +52,5 @@ func normalizeFiberPath(path string) string {
 
 // contractDocument contains the OpenAPI fields needed by contract checks.
 type contractDocument struct {
-	Paths map[string]map[string]any `json:"paths"`
+	Paths map[string]map[string]any `json:"paths"` // Paths stores the paths value.
 }

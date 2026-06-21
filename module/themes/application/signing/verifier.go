@@ -17,15 +17,15 @@ type Clock func() time.Time
 
 // Verifier verifies detached package signatures.
 type Verifier struct {
-	keys  port.SigningKeyRepository
-	cfg   Config
-	clock Clock
+	keys  port.SigningKeyRepository // keys stores the keys value.
+	cfg   Config                    // cfg stores the cfg value.
+	clock Clock                     // clock stores the clock value.
 }
 
 // Result is the signature verification result.
 type Result struct {
-	Signature domain.ThemePackageSignature
-	Issues    []domain.ThemeValidationIssue
+	Signature domain.ThemePackageSignature  // Signature stores the signature value.
+	Issues    []domain.ThemeValidationIssue // Issues stores the issues value.
 }
 
 // NewVerifier creates a package signature verifier.

@@ -142,6 +142,7 @@ func (service Service) SimulateForumPermission(
 	return service.permissions.SimulateForumPermission(ctx, command.ForumID, request)
 }
 
+// forumWithSettings supports package behavior.
 func forumWithSettings(
 	forum domain.Forum,
 	settings domain.ForumSettings,

@@ -15,6 +15,6 @@ var (
 	// ErrPermissionDenied reports denied theme access.
 	ErrPermissionDenied = errors.New("theme permission denied")
 
-	// ErrInvalidState reports a command blocked by theme lifecycle state.
+	// ErrInvalidState reports a command blocked by the theme lifecycle state.
 	ErrInvalidState = errors.New("theme invalid state")
 )

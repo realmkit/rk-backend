@@ -2,8 +2,6 @@ package postgres
 
 import (
 	"context"
-	"strconv"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/realmkit/rk-backend/module/punishments/domain"
@@ -16,7 +14,7 @@ import (
 
 // DefinitionRepository stores punishment definitions.
 type DefinitionRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewDefinitionRepository creates a punishment definition repository.
@@ -197,33 +195,6 @@ func definitionCursor(model DefinitionModel, filterHash string, sort search.Sort
 	})
 }
 
-// definitionModelSortValue returns the cursor value.
-func definitionModelSortValue(model DefinitionModel, key string) string {
-	switch key {
-	case "name":
-		return model.Name
-	case "severity":
-		return strconv.Itoa(model.Severity)
-	case "created_at":
-		return model.CreatedAt.Format(time.RFC3339Nano)
-	default:
-		return strconv.Itoa(model.DisplayOrder)
-	}
-}
-
-// definitionCursorValue converts a cursor value to the matching SQL type.
-func definitionCursorValue(value string, key string) any {
-	if key == "created_at" {
-		parsed, _ := time.Parse(time.RFC3339Nano, value)
-		return parsed
-	}
-	if key == "severity" || key == "display_order" || key == "" {
-		parsed, _ := strconv.Atoi(value)
-		return parsed
-	}
-	return value
-}
-
 // ReorderActions updates action display order.
 func (repository DefinitionRepository) ReorderActions(ctx context.Context, definitionID uuid.UUID, actionIDs []uuid.UUID) error {
 	for index, id := range actionIDs {
@@ -240,10 +211,12 @@ func (repository DefinitionRepository) ReorderActions(ctx context.Context, defin
 	return nil
 }
 
+// actions supports package behavior.
 func (repository DefinitionRepository) actions(ctx context.Context, definitionID uuid.UUID) []ActionModel {
 	var actions []ActionModel
 	_ = repository.store.DB(ctx).Where("definition_id = ?", definitionID).Order("display_order, id").Find(&actions).Error
 	return actions
 }
 
+// DefinitionRepositoryContract verifies repository interface conformance.
 var _ port.DefinitionRepository = DefinitionRepository{}

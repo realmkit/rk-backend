@@ -20,9 +20,9 @@ const (
 
 // RedisStore stores rate limit windows in Redis.
 type RedisStore struct {
-	client *goredis.Client
-	scope  string
-	now    func() time.Time
+	client *goredis.Client  // client stores the client value.
+	scope  string           // scope stores the scope value.
+	now    func() time.Time // now stores the now value.
 }
 
 // RedisOption changes RedisStore behavior.

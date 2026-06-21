@@ -13,8 +13,8 @@ const DefaultChannel = "events:pubsub:v1"
 
 // Broker publishes events to Redis pub/sub.
 type Broker struct {
-	client  *goredis.Client
-	channel string
+	client  *goredis.Client // client stores the client value.
+	channel string          // channel stores the channel value.
 }
 
 // NewBroker creates a Redis event broker.

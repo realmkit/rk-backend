@@ -9,6 +9,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/search"
 )
 
+// issuePunishment supports package behavior.
 func (handler handler) issuePunishment(ctx *fiber.Ctx) error {
 	if err := requireIdempotency(ctx); err != nil {
 		return err
@@ -32,6 +33,7 @@ func (handler handler) issuePunishment(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusCreated, issued)
 }
 
+// listPunishments supports package behavior.
 func (handler handler) listPunishments(ctx *fiber.Ctx) error {
 	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsView, uuid.Nil); err != nil {
 		return err
@@ -51,6 +53,7 @@ func (handler handler) listPunishments(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusOK, result)
 }
 
+// getPunishment supports package behavior.
 func (handler handler) getPunishment(ctx *fiber.Ctx) error {
 	id, err := idFromParam(ctx, "punishment_id")
 	if err != nil {
@@ -67,6 +70,7 @@ func (handler handler) getPunishment(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusOK, punishment)
 }
 
+// updatePunishment supports package behavior.
 func (handler handler) updatePunishment(ctx *fiber.Ctx) error {
 	actor, err := currentUserID(ctx)
 	if err != nil {
@@ -104,6 +108,7 @@ func (handler handler) updatePunishment(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusOK, updated)
 }
 
+// revokePunishment supports package behavior.
 func (handler handler) revokePunishment(ctx *fiber.Ctx) error {
 	if err := requireIdempotency(ctx); err != nil {
 		return err
@@ -139,6 +144,7 @@ func (handler handler) revokePunishment(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
+// listUserPunishments supports package behavior.
 func (handler handler) listUserPunishments(ctx *fiber.Ctx) error {
 	userID, err := idFromParam(ctx, "user_id")
 	if err != nil {
@@ -162,6 +168,7 @@ func (handler handler) listUserPunishments(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusOK, result)
 }
 
+// checkRestriction supports package behavior.
 func (handler handler) checkRestriction(ctx *fiber.Ctx) error {
 	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsView, uuid.Nil); err != nil {
 		return err
@@ -183,6 +190,7 @@ func (handler handler) checkRestriction(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusOK, result)
 }
 
+// listRestrictions supports package behavior.
 func (handler handler) listRestrictions(ctx *fiber.Ctx) error {
 	userID, err := idFromParam(ctx, "user_id")
 	if err != nil {

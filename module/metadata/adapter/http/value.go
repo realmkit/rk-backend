@@ -10,13 +10,13 @@ import (
 
 // valueRequest contains an owner metafield value.
 type valueRequest struct {
-	Value json.RawMessage `json:"value"`
+	Value json.RawMessage `json:"value"` // Value stores the value value.
 }
 
 // ownerMetadataResponse contains owner metadata output.
 type ownerMetadataResponse struct {
-	Owner      port.OwnerRef             `json:"owner"`
-	Metafields []port.OwnerMetafieldView `json:"metafields"`
+	Owner      port.OwnerRef             `json:"owner"`      // Owner stores the owner value.
+	Metafields []port.OwnerMetafieldView `json:"metafields"` // Metafields stores the metafields value.
 }
 
 // setValue handles owner value upserts.

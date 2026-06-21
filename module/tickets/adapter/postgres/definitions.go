@@ -17,7 +17,7 @@ import (
 
 // DefinitionRepository stores ticket definitions.
 type DefinitionRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewDefinitionRepository creates a definition repository.

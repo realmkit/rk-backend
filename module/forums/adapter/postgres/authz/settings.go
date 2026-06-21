@@ -127,16 +127,16 @@ func (authorizer VisibilityAuthorizer) groupExists(ctx context.Context, groupID 
 
 // permissionGrantInsertRow is a write model for permission grants.
 type permissionGrantInsertRow struct {
-	ID              uuid.UUID  `gorm:"column:id"`
-	SubjectType     string     `gorm:"column:subject_type"`
-	SubjectID       uuid.UUID  `gorm:"column:subject_id"`
-	Action          string     `gorm:"column:action"`
-	ScopeType       string     `gorm:"column:scope_type"`
-	ScopeID         uuid.UUID  `gorm:"column:scope_id"`
-	Inherit         bool       `gorm:"column:inherit"`
-	ConditionKey    string     `gorm:"column:condition_key"`
-	CreatedByUserID *uuid.UUID `gorm:"column:created_by_user_id"`
-	CreatedAt       time.Time  `gorm:"column:created_at"`
+	ID              uuid.UUID  `gorm:"column:id"`                 // ID stores the i d value.
+	SubjectType     string     `gorm:"column:subject_type"`       // SubjectType stores the subject type value.
+	SubjectID       uuid.UUID  `gorm:"column:subject_id"`         // SubjectID stores the subject i d value.
+	Action          string     `gorm:"column:action"`             // Action stores the action value.
+	ScopeType       string     `gorm:"column:scope_type"`         // ScopeType stores the scope type value.
+	ScopeID         uuid.UUID  `gorm:"column:scope_id"`           // ScopeID stores the scope i d value.
+	Inherit         bool       `gorm:"column:inherit"`            // Inherit stores the inherit value.
+	ConditionKey    string     `gorm:"column:condition_key"`      // ConditionKey stores the condition key value.
+	CreatedByUserID *uuid.UUID `gorm:"column:created_by_user_id"` // CreatedByUserID stores the created by user i d value.
+	CreatedAt       time.Time  `gorm:"column:created_at"`         // CreatedAt stores the created at value.
 }
 
 // emptyPermissionSettings returns an initialized settings value.

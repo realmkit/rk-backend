@@ -19,35 +19,35 @@ import (
 
 // keySet caches OIDC JSON web keys.
 type keySet struct {
-	issuer  string
-	client  *http.Client
-	mu      sync.RWMutex
-	jwksURI string
-	keys    map[string]any
-	expires time.Time
+	issuer  string         // issuer stores the issuer value.
+	client  *http.Client   // client stores the client value.
+	mu      sync.RWMutex   // mu stores the mu value.
+	jwksURI string         // jwksURI stores the jwks u r i value.
+	keys    map[string]any // keys stores the keys value.
+	expires time.Time      // expires stores the expires value.
 }
 
 // discoveryDocument contains OIDC discovery metadata.
 type discoveryDocument struct {
-	JWKSURI string `json:"jwks_uri"`
+	JWKSURI string `json:"jwks_uri"` // JWKSURI stores the j w k s u r i value.
 }
 
 // jwkSet contains JSON web keys.
 type jwkSet struct {
-	Keys []jwk `json:"keys"`
+	Keys []jwk `json:"keys"` // Keys stores the keys value.
 }
 
 // jwk contains one JSON web key.
 type jwk struct {
-	KeyID     string `json:"kid"`
-	KeyType   string `json:"kty"`
-	Algorithm string `json:"alg"`
-	Use       string `json:"use"`
-	Modulus   string `json:"n"`
-	Exponent  string `json:"e"`
-	Curve     string `json:"crv"`
-	X         string `json:"x"`
-	Y         string `json:"y"`
+	KeyID     string `json:"kid"` // KeyID stores the key i d value.
+	KeyType   string `json:"kty"` // KeyType stores the key type value.
+	Algorithm string `json:"alg"` // Algorithm stores the algorithm value.
+	Use       string `json:"use"` // Use stores the use value.
+	Modulus   string `json:"n"`   // Modulus stores the modulus value.
+	Exponent  string `json:"e"`   // Exponent stores the exponent value.
+	Curve     string `json:"crv"` // Curve stores the curve value.
+	X         string `json:"x"`   // X stores the x value.
+	Y         string `json:"y"`   // Y stores the y value.
 }
 
 // newKeySet creates a key cache.

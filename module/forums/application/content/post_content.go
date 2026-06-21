@@ -180,6 +180,7 @@ func (service Service) ListPostRevisions(
 	return service.posts.ListRevisions(ctx, postID, page)
 }
 
+// replyPost supports package behavior.
 func (service Service) replyPost(
 	ctx context.Context,
 	thread domain.Thread,
@@ -206,6 +207,7 @@ func (service Service) replyPost(
 	return post, nil
 }
 
+// replyReferences supports package behavior.
 func (service Service) replyReferences(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -225,6 +227,7 @@ func (service Service) replyReferences(
 	return references, nil
 }
 
+// updatedPost supports package behavior.
 func updatedPost(current domain.Post, command port.UpdatePostCommand) domain.Post {
 	updated := current
 	updated.ContentDocumentJSON = command.ContentDocumentJSON

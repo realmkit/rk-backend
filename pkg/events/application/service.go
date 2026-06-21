@@ -37,13 +37,13 @@ type Dependencies struct {
 
 // Service implements event use cases.
 type Service struct {
-	repository   port.Repository
-	broker       port.Broker
-	clock        port.Clock
-	batchSize    int
-	maxAttempts  int
-	lockDuration time.Duration
-	retryDelay   time.Duration
+	repository   port.Repository // repository stores the repository value.
+	broker       port.Broker     // broker stores the broker value.
+	clock        port.Clock      // clock stores the clock value.
+	batchSize    int             // batchSize stores the batch size value.
+	maxAttempts  int             // maxAttempts stores the max attempts value.
+	lockDuration time.Duration   // lockDuration stores the lock duration value.
+	retryDelay   time.Duration   // retryDelay stores the retry delay value.
 }
 
 // NewService creates an event service.

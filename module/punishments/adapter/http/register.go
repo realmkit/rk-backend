@@ -36,6 +36,7 @@ func Register(router fiber.Router, services Services) {
 	router.Get("/users/:user_id/punishments/restrictions", handler.listRestrictions)
 }
 
+// handler defines package data.
 type handler struct {
-	services Services
+	services Services // services stores the services value.
 }

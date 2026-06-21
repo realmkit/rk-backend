@@ -76,58 +76,58 @@ func AllowedTicketSorts() []search.SortOption {
 
 // CreateTicketCommand opens one ticket.
 type CreateTicketCommand struct {
-	ActorUserID         uuid.UUID
-	DefinitionID        uuid.UUID
-	Title               string
-	SubmitterUserID     *uuid.UUID
-	TargetUserID        *uuid.UUID
-	PunishmentID        *uuid.UUID
-	ContentDocumentJSON json.RawMessage
-	ContentText         string
-	EvidenceAssetIDs    []uuid.UUID
-	IdempotencyKey      string
+	ActorUserID         uuid.UUID       // ActorUserID stores the actor user i d value.
+	DefinitionID        uuid.UUID       // DefinitionID stores the definition i d value.
+	Title               string          // Title stores the title value.
+	SubmitterUserID     *uuid.UUID      // SubmitterUserID stores the submitter user i d value.
+	TargetUserID        *uuid.UUID      // TargetUserID stores the target user i d value.
+	PunishmentID        *uuid.UUID      // PunishmentID stores the punishment i d value.
+	ContentDocumentJSON json.RawMessage // ContentDocumentJSON stores the content document j s o n value.
+	ContentText         string          // ContentText stores the content text value.
+	EvidenceAssetIDs    []uuid.UUID     // EvidenceAssetIDs stores the evidence asset i ds value.
+	IdempotencyKey      string          // IdempotencyKey stores the idempotency key value.
 }
 
 // MessageCommand creates a ticket message.
 type MessageCommand struct {
-	ActorUserID         uuid.UUID
-	TicketID            uuid.UUID
-	Visibility          domain.MessageVisibility
-	ContentDocumentJSON json.RawMessage
-	ContentText         string
-	IdempotencyKey      string
+	ActorUserID         uuid.UUID                // ActorUserID stores the actor user i d value.
+	TicketID            uuid.UUID                // TicketID stores the ticket i d value.
+	Visibility          domain.MessageVisibility // Visibility stores the visibility value.
+	ContentDocumentJSON json.RawMessage          // ContentDocumentJSON stores the content document j s o n value.
+	ContentText         string                   // ContentText stores the content text value.
+	IdempotencyKey      string                   // IdempotencyKey stores the idempotency key value.
 }
 
 // EvidenceCommand adds ticket evidence.
 type EvidenceCommand struct {
-	ActorUserID    uuid.UUID
-	TicketID       uuid.UUID
-	MessageID      *uuid.UUID
-	AssetID        *uuid.UUID
-	ExternalURL    string
-	Label          string
-	Description    string
-	Visibility     domain.MessageVisibility
-	IdempotencyKey string
+	ActorUserID    uuid.UUID                // ActorUserID stores the actor user i d value.
+	TicketID       uuid.UUID                // TicketID stores the ticket i d value.
+	MessageID      *uuid.UUID               // MessageID stores the message i d value.
+	AssetID        *uuid.UUID               // AssetID stores the asset i d value.
+	ExternalURL    string                   // ExternalURL stores the external u r l value.
+	Label          string                   // Label stores the label value.
+	Description    string                   // Description stores the description value.
+	Visibility     domain.MessageVisibility // Visibility stores the visibility value.
+	IdempotencyKey string                   // IdempotencyKey stores the idempotency key value.
 }
 
 // StaffCommand changes ticket workflow state.
 type StaffCommand struct {
-	ActorUserID     uuid.UUID
-	TicketID        uuid.UUID
-	AssigneeUserID  *uuid.UUID
-	TeamGroupID     *uuid.UUID
-	Reason          string
-	ExpectedVersion uint64
-	IdempotencyKey  string
+	ActorUserID     uuid.UUID  // ActorUserID stores the actor user i d value.
+	TicketID        uuid.UUID  // TicketID stores the ticket i d value.
+	AssigneeUserID  *uuid.UUID // AssigneeUserID stores the assignee user i d value.
+	TeamGroupID     *uuid.UUID // TeamGroupID stores the team group i d value.
+	Reason          string     // Reason stores the reason value.
+	ExpectedVersion uint64     // ExpectedVersion stores the expected version value.
+	IdempotencyKey  string     // IdempotencyKey stores the idempotency key value.
 }
 
 // AppealDecisionCommand accepts or rejects an appeal.
 type AppealDecisionCommand struct {
-	ActorUserID      uuid.UUID
-	TicketID         uuid.UUID
-	Reason           string
-	RevokePunishment bool
-	ExpectedVersion  uint64
-	IdempotencyKey   string
+	ActorUserID      uuid.UUID // ActorUserID stores the actor user i d value.
+	TicketID         uuid.UUID // TicketID stores the ticket i d value.
+	Reason           string    // Reason stores the reason value.
+	RevokePunishment bool      // RevokePunishment stores the revoke punishment value.
+	ExpectedVersion  uint64    // ExpectedVersion stores the expected version value.
+	IdempotencyKey   string    // IdempotencyKey stores the idempotency key value.
 }

@@ -136,6 +136,7 @@ func (thread Thread) Replyable() bool {
 	return thread.Status == ThreadStatusOpen
 }
 
+// hasNegativeCounts supports package behavior.
 func (thread Thread) hasNegativeCounts() bool {
 	return thread.ReplyCount < 0 ||
 		thread.VisibleReplyCount < 0 ||

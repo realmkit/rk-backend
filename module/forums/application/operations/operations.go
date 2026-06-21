@@ -95,6 +95,7 @@ func (service Service) ClearReadCache(ctx context.Context) error {
 	return service.cache.ClearAll(ctx)
 }
 
+// threadViewIncrements supports package behavior.
 func threadViewIncrements(raw map[string]int64) (map[uuid.UUID]int64, int64) {
 	increments := map[uuid.UUID]int64{}
 	var total int64

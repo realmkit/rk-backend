@@ -10,26 +10,26 @@ import (
 
 // assetListResponse contains one asset page.
 type assetListResponse struct {
-	Items         []domain.Asset `json:"items"`
-	NextPageToken string         `json:"next_page_token,omitempty"`
-	Query         string         `json:"query,omitempty"`
-	Sort          string         `json:"sort,omitempty"`
-	Direction     string         `json:"direction,omitempty"`
+	Items         []domain.Asset `json:"items"`                     // Items stores the items value.
+	NextPageToken string         `json:"next_page_token,omitempty"` // NextPageToken stores the next page token value.
+	Query         string         `json:"query,omitempty"`           // Query stores the query value.
+	Sort          string         `json:"sort,omitempty"`            // Sort stores the sort value.
+	Direction     string         `json:"direction,omitempty"`       // Direction stores the direction value.
 }
 
 // folderListResponse contains virtual folders.
 type folderListResponse struct {
-	Folders []string `json:"folders"`
+	Folders []string `json:"folders"` // Folders stores the folders value.
 }
 
 // namespaceListResponse contains asset namespaces.
 type namespaceListResponse struct {
-	Namespaces []string `json:"namespaces"`
+	Namespaces []string `json:"namespaces"` // Namespaces stores the namespaces value.
 }
 
 // assetURLResponse contains a signed read URL.
 type assetURLResponse struct {
-	URL string `json:"url"`
+	URL string `json:"url"` // URL stores the u r l value.
 }
 
 // getAsset returns one asset.

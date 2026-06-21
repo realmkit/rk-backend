@@ -81,43 +81,43 @@ func AllowedPunishmentSorts() []search.SortOption {
 
 // IssueCommand issues a punishment.
 type IssueCommand struct {
-	ActorUserID    uuid.UUID
-	DefinitionID   uuid.UUID
-	TargetUserID   uuid.UUID
-	TargetIPHash   string
-	IssuerType     domain.IssuerType
-	IssuerUserID   *uuid.UUID
-	IssuerKey      string
-	Reason         string
-	PrivateReason  string
-	StartsAt       time.Time
-	ExpiresAt      *time.Time
-	Source         string
-	IdempotencyKey string
+	ActorUserID    uuid.UUID         // ActorUserID stores the actor user i d value.
+	DefinitionID   uuid.UUID         // DefinitionID stores the definition i d value.
+	TargetUserID   uuid.UUID         // TargetUserID stores the target user i d value.
+	TargetIPHash   string            // TargetIPHash stores the target i p hash value.
+	IssuerType     domain.IssuerType // IssuerType stores the issuer type value.
+	IssuerUserID   *uuid.UUID        // IssuerUserID stores the issuer user i d value.
+	IssuerKey      string            // IssuerKey stores the issuer key value.
+	Reason         string            // Reason stores the reason value.
+	PrivateReason  string            // PrivateReason stores the private reason value.
+	StartsAt       time.Time         // StartsAt stores the starts at value.
+	ExpiresAt      *time.Time        // ExpiresAt stores the expires at value.
+	Source         string            // Source stores the source value.
+	IdempotencyKey string            // IdempotencyKey stores the idempotency key value.
 }
 
 // RevokeCommand revokes a punishment.
 type RevokeCommand struct {
-	ActorUserID     uuid.UUID
-	PunishmentID    uuid.UUID
-	Reason          string
-	ExpectedVersion uint64
-	IdempotencyKey  string
+	ActorUserID     uuid.UUID // ActorUserID stores the actor user i d value.
+	PunishmentID    uuid.UUID // PunishmentID stores the punishment i d value.
+	Reason          string    // Reason stores the reason value.
+	ExpectedVersion uint64    // ExpectedVersion stores the expected version value.
+	IdempotencyKey  string    // IdempotencyKey stores the idempotency key value.
 }
 
 // UpdateCommand updates non-state punishment fields.
 type UpdateCommand struct {
-	ActorUserID     uuid.UUID
-	PunishmentID    uuid.UUID
-	Reason          string
-	PrivateReason   string
-	ExpectedVersion uint64
+	ActorUserID     uuid.UUID // ActorUserID stores the actor user i d value.
+	PunishmentID    uuid.UUID // PunishmentID stores the punishment i d value.
+	Reason          string    // Reason stores the reason value.
+	PrivateReason   string    // PrivateReason stores the private reason value.
+	ExpectedVersion uint64    // ExpectedVersion stores the expected version value.
 }
 
 // CheckCommand checks whether an action is restricted.
 type CheckCommand struct {
-	UserID    uuid.UUID
-	ActionKey string
+	UserID    uuid.UUID // UserID stores the user i d value.
+	ActionKey string    // ActionKey stores the action key value.
 }
 
 // DefinitionRepository stores definitions and action templates.

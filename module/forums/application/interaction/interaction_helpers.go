@@ -11,6 +11,7 @@ import (
 	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
+// newPostLike supports package behavior.
 func newPostLike(post domain.Post, actorUserID uuid.UUID) domain.PostLike {
 	return domain.PostLike{
 		ID:        uuid.New(),
@@ -22,6 +23,7 @@ func newPostLike(post domain.Post, actorUserID uuid.UUID) domain.PostLike {
 	}
 }
 
+// postLikeSummary supports package behavior.
 func (service Service) postLikeSummary(
 	ctx context.Context,
 	postID uuid.UUID,
@@ -38,6 +40,7 @@ func (service Service) postLikeSummary(
 	}, nil
 }
 
+// threadReadState supports package behavior.
 func threadReadState(
 	command port.MarkThreadReadCommand,
 	thread domain.Thread,
@@ -56,6 +59,7 @@ func threadReadState(
 	}
 }
 
+// latestPostsCacheKey supports package behavior.
 func latestPostsCacheKey(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
@@ -71,6 +75,7 @@ func latestPostsCacheKey(
 		strconv.Itoa(page.Limit)
 }
 
+// mostLikedCacheKey supports package behavior.
 func mostLikedCacheKey(
 	actorUserID uuid.UUID,
 	forumID uuid.UUID,
@@ -86,6 +91,7 @@ func mostLikedCacheKey(
 		strconv.Itoa(page.Limit)
 }
 
+// widgetScope supports package behavior.
 func widgetScope(forumID uuid.UUID) string {
 	if forumID == uuid.Nil {
 		return "global:all"
@@ -93,6 +99,7 @@ func widgetScope(forumID uuid.UUID) string {
 	return "forum:" + forumID.String()
 }
 
+// actorScope supports package behavior.
 func actorScope(actorUserID uuid.UUID) string {
 	if actorUserID == uuid.Nil {
 		return "anonymous"

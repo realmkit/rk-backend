@@ -100,7 +100,7 @@ func groupGrantMatchesActor(
 
 // groupMembershipRow is a compact group membership projection.
 type groupMembershipRow struct {
-	GroupID uuid.UUID
+	GroupID uuid.UUID // GroupID stores the group i d value.
 }
 
 // viewActions returns actions that grant viewing.

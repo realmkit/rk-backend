@@ -14,7 +14,7 @@ import (
 
 // MetaobjectDefinitionRepository stores metaobject definitions in PostgreSQL.
 type MetaobjectDefinitionRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewMetaobjectDefinitionRepository creates a metaobject definition repository.

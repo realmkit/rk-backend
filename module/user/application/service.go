@@ -39,13 +39,13 @@ type Dependencies struct {
 
 // Service manages users and identity provisioning.
 type Service struct {
-	users        port.UserRepository
-	links        port.IdentityLinkRepository
-	claims       port.ClaimCacheRepository
-	transactions transaction.Runner
-	provider     string
-	clock        func() time.Time
-	events       emitter.Publisher
+	users        port.UserRepository         // users stores the users value.
+	links        port.IdentityLinkRepository // links stores the links value.
+	claims       port.ClaimCacheRepository   // claims stores the claims value.
+	transactions transaction.Runner          // transactions stores the transactions value.
+	provider     string                      // provider stores the provider value.
+	clock        func() time.Time            // clock stores the clock value.
+	events       emitter.Publisher           // events stores the events value.
 }
 
 // NewService creates a user service.

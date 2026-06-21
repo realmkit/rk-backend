@@ -109,6 +109,7 @@ func (service Service) ClearRestrictionCache(ctx context.Context) error {
 	return service.cache.ClearAll(ctx)
 }
 
+// prepareIssue supports package behavior.
 func (service Service) prepareIssue(
 	command port.IssueCommand,
 	definition domain.Definition,
@@ -161,6 +162,7 @@ func (service Service) prepareIssue(
 	return punishment, restrictions, nil
 }
 
+// withinTx supports package behavior.
 func (service Service) withinTx(ctx context.Context, fn func(context.Context) error) error {
 	if service.transactions == nil {
 		return fn(ctx)
@@ -168,6 +170,7 @@ func (service Service) withinTx(ctx context.Context, fn func(context.Context) er
 	return service.transactions.WithinTx(ctx, fn)
 }
 
+// clearUser supports package behavior.
 func (service Service) clearUser(ctx context.Context, userID uuid.UUID) error {
 	if service.cache == nil {
 		return nil
@@ -175,6 +178,7 @@ func (service Service) clearUser(ctx context.Context, userID uuid.UUID) error {
 	return service.cache.ClearUser(ctx, userID)
 }
 
+// cacheResult supports package behavior.
 func (service Service) cacheResult(ctx context.Context, command port.CheckCommand, result domain.CheckResult) {
 	if service.cache != nil {
 		_ = service.cache.Set(ctx, command.UserID, command.ActionKey, result, restrictionCacheTTL)

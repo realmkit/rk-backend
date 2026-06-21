@@ -17,7 +17,7 @@ import (
 
 // Repository stores forum interactions in PostgreSQL.
 type Repository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewRepository creates an interaction repository.

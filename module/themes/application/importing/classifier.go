@@ -12,12 +12,12 @@ import (
 
 // packageFile is one safe normalized package file.
 type packageFile struct {
-	path        domain.FilePath
-	kind        domain.FileKind
-	bytes       []byte
-	sha256      domain.Digest
-	contentType string
-	text        bool
+	path        domain.FilePath // path stores the path value.
+	kind        domain.FileKind // kind stores the kind value.
+	bytes       []byte          // bytes stores the bytes value.
+	sha256      domain.Digest   // sha256 stores the sha256 value.
+	contentType string          // contentType stores the content type value.
+	text        bool            // text stores the text value.
 }
 
 // normalizePackagePath returns a safe POSIX package path.

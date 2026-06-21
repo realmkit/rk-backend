@@ -15,6 +15,7 @@ const authorPostEditWindow = 10 * time.Minute
 // authorPostDeleteWindow is the default author self-delete window before admin configuration exists.
 const authorPostDeleteWindow = 5 * time.Minute
 
+// validateReferences supports package behavior.
 func (service Service) validateReferences(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -39,6 +40,7 @@ func (service Service) validateReferences(
 	return nil
 }
 
+// requirePostUpdate supports package behavior.
 func (service Service) requirePostUpdate(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -57,6 +59,7 @@ func (service Service) requirePostUpdate(
 	return nil
 }
 
+// requirePostDelete supports package behavior.
 func (service Service) requirePostDelete(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -75,6 +78,7 @@ func (service Service) requirePostDelete(
 	return nil
 }
 
+// authorCanUpdatePost supports package behavior.
 func (service Service) authorCanUpdatePost(
 	ctx context.Context,
 	post domain.Post,
@@ -93,6 +97,7 @@ func (service Service) authorCanUpdatePost(
 	return thread.Replyable(), nil
 }
 
+// authorCanDeletePost supports package behavior.
 func (service Service) authorCanDeletePost(
 	ctx context.Context,
 	post domain.Post,
@@ -108,6 +113,7 @@ func (service Service) authorCanDeletePost(
 	), nil
 }
 
+// insideAuthorWindow supports package behavior.
 func insideAuthorWindow(
 	createdAt time.Time,
 	configuredSeconds int,
@@ -123,6 +129,7 @@ func insideAuthorWindow(
 	return time.Since(createdAt) <= window
 }
 
+// requireThreadCreate supports package behavior.
 func (service Service) requireThreadCreate(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -135,6 +142,7 @@ func (service Service) requireThreadCreate(
 	return service.requireUnrestricted(ctx, actorUserID, "realmkit.forums.create_thread")
 }
 
+// requireReply supports package behavior.
 func (service Service) requireReply(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -147,6 +155,7 @@ func (service Service) requireReply(
 	return service.requireUnrestricted(ctx, actorUserID, "realmkit.forums.reply")
 }
 
+// requireLikePosts supports package behavior.
 func (service Service) requireLikePosts(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -156,6 +165,7 @@ func (service Service) requireLikePosts(
 	return decisionError(allowed, err)
 }
 
+// requireManageThreads supports package behavior.
 func (service Service) requireManageThreads(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -165,6 +175,7 @@ func (service Service) requireManageThreads(
 	return decisionError(allowed, err)
 }
 
+// requireManagePosts supports package behavior.
 func (service Service) requireManagePosts(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -174,6 +185,7 @@ func (service Service) requireManagePosts(
 	return decisionError(allowed, err)
 }
 
+// requireThreadView supports package behavior.
 func (service Service) requireThreadView(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -192,6 +204,7 @@ func (service Service) requireThreadView(
 	return service.requireManageThreads(ctx, actorUserID, thread.ForumID)
 }
 
+// decisionError supports package behavior.
 func decisionError(allowed bool, err error) error {
 	if err != nil {
 		return err
@@ -202,6 +215,7 @@ func decisionError(allowed bool, err error) error {
 	return nil
 }
 
+// requireUnrestricted supports package behavior.
 func (service Service) requireUnrestricted(
 	ctx context.Context,
 	actorUserID uuid.UUID,

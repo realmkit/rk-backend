@@ -148,6 +148,7 @@ const (
 	ScopeSystem ScopeType = "system"
 )
 
+// eventKeyPattern stores package state.
 var eventKeyPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$`)
 
 // ValidateEventKey validates a dotted event key.

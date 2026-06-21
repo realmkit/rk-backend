@@ -8,6 +8,7 @@ import (
 	"github.com/realmkit/rk-backend/module/forums/port"
 )
 
+// visibleForumIDs supports package behavior.
 func (service Service) visibleForumIDs(
 	ctx context.Context,
 	actorUserID uuid.UUID,
@@ -30,6 +31,7 @@ func (service Service) visibleForumIDs(
 	return result, nil
 }
 
+// candidateForumIDs supports package behavior.
 func (service Service) candidateForumIDs(
 	ctx context.Context,
 	forumID uuid.UUID,
@@ -52,6 +54,7 @@ func (service Service) candidateForumIDs(
 	return forumIDs, nil
 }
 
+// clearInteractionCaches supports package behavior.
 func (service Service) clearInteractionCaches(ctx context.Context) error {
 	if service.cache == nil {
 		return nil

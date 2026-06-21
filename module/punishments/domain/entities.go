@@ -10,115 +10,115 @@ import (
 
 // Definition is an admin-configured punishment type.
 type Definition struct {
-	ID                     uuid.UUID        `json:"id"`
-	Key                    Key              `json:"key"`
-	Name                   string           `json:"name"`
-	Description            string           `json:"description"`
-	Color                  Color            `json:"color"`
-	Severity               int              `json:"severity"`
-	Status                 DefinitionStatus `json:"status"`
-	DefaultDurationSeconds *int64           `json:"default_duration_seconds,omitempty"`
-	MinDurationSeconds     *int64           `json:"min_duration_seconds,omitempty"`
-	MaxDurationSeconds     *int64           `json:"max_duration_seconds,omitempty"`
-	AllowPermanent         bool             `json:"allow_permanent"`
-	RequiresReason         bool             `json:"requires_reason"`
-	RequiresTargetIP       bool             `json:"requires_target_ip"`
-	DisplayOrder           int              `json:"display_order"`
-	Version                uint64           `json:"version"`
-	Actions                []ActionTemplate `json:"actions,omitempty"`
-	CreatedAt              time.Time        `json:"created_at"`
-	UpdatedAt              time.Time        `json:"updated_at"`
+	ID                     uuid.UUID        `json:"id"`                                 // ID stores the i d value.
+	Key                    Key              `json:"key"`                                // Key stores the key value.
+	Name                   string           `json:"name"`                               // Name stores the name value.
+	Description            string           `json:"description"`                        // Description stores the description value.
+	Color                  Color            `json:"color"`                              // Color stores the color value.
+	Severity               int              `json:"severity"`                           // Severity stores the severity value.
+	Status                 DefinitionStatus `json:"status"`                             // Status stores the status value.
+	DefaultDurationSeconds *int64           `json:"default_duration_seconds,omitempty"` // DefaultDurationSeconds stores the default duration seconds value.
+	MinDurationSeconds     *int64           `json:"min_duration_seconds,omitempty"`     // MinDurationSeconds stores the min duration seconds value.
+	MaxDurationSeconds     *int64           `json:"max_duration_seconds,omitempty"`     // MaxDurationSeconds stores the max duration seconds value.
+	AllowPermanent         bool             `json:"allow_permanent"`                    // AllowPermanent stores the allow permanent value.
+	RequiresReason         bool             `json:"requires_reason"`                    // RequiresReason stores the requires reason value.
+	RequiresTargetIP       bool             `json:"requires_target_ip"`                 // RequiresTargetIP stores the requires target i p value.
+	DisplayOrder           int              `json:"display_order"`                      // DisplayOrder stores the display order value.
+	Version                uint64           `json:"version"`                            // Version stores the version value.
+	Actions                []ActionTemplate `json:"actions,omitempty"`                  // Actions stores the actions value.
+	CreatedAt              time.Time        `json:"created_at"`                         // CreatedAt stores the created at value.
+	UpdatedAt              time.Time        `json:"updated_at"`                         // UpdatedAt stores the updated at value.
 }
 
 // ActionTemplate describes one consequence of a definition.
 type ActionTemplate struct {
-	ID                uuid.UUID        `json:"id"`
-	DefinitionID      uuid.UUID        `json:"definition_id"`
-	TargetSystem      TargetSystem     `json:"target_system"`
-	ActionType        ActionType       `json:"action_type"`
-	ConfigurationJSON json.RawMessage  `json:"configuration_json"`
-	DisplayOrder      int              `json:"display_order"`
-	Status            DefinitionStatus `json:"status"`
-	CreatedAt         time.Time        `json:"created_at"`
-	UpdatedAt         time.Time        `json:"updated_at"`
+	ID                uuid.UUID        `json:"id"`                 // ID stores the i d value.
+	DefinitionID      uuid.UUID        `json:"definition_id"`      // DefinitionID stores the definition i d value.
+	TargetSystem      TargetSystem     `json:"target_system"`      // TargetSystem stores the target system value.
+	ActionType        ActionType       `json:"action_type"`        // ActionType stores the action type value.
+	ConfigurationJSON json.RawMessage  `json:"configuration_json"` // ConfigurationJSON stores the configuration j s o n value.
+	DisplayOrder      int              `json:"display_order"`      // DisplayOrder stores the display order value.
+	Status            DefinitionStatus `json:"status"`             // Status stores the status value.
+	CreatedAt         time.Time        `json:"created_at"`         // CreatedAt stores the created at value.
+	UpdatedAt         time.Time        `json:"updated_at"`         // UpdatedAt stores the updated at value.
 }
 
 // Punishment is one issued moderation case.
 type Punishment struct {
-	ID                 uuid.UUID        `json:"id"`
-	DefinitionID       uuid.UUID        `json:"definition_id"`
-	TargetUserID       uuid.UUID        `json:"target_user_id"`
-	TargetIPHash       string           `json:"target_ip_hash,omitempty"`
-	TargetIPCiphertext string           `json:"-"`
-	IssuerType         IssuerType       `json:"issuer_type"`
-	IssuerUserID       *uuid.UUID       `json:"issuer_user_id,omitempty"`
-	IssuerKey          string           `json:"issuer_key,omitempty"`
-	Reason             string           `json:"reason"`
-	PrivateReason      string           `json:"private_reason,omitempty"`
-	Status             PunishmentStatus `json:"status"`
-	StartsAt           time.Time        `json:"starts_at"`
-	ExpiresAt          *time.Time       `json:"expires_at,omitempty"`
-	RevokedAt          *time.Time       `json:"revoked_at,omitempty"`
-	RevokedByUserID    *uuid.UUID       `json:"revoked_by_user_id,omitempty"`
-	RevocationReason   string           `json:"revocation_reason,omitempty"`
-	Source             string           `json:"source,omitempty"`
-	IdempotencyKey     string           `json:"idempotency_key,omitempty"`
-	Version            uint64           `json:"version"`
-	Snapshots          []ActionSnapshot `json:"actions,omitempty"`
-	CreatedAt          time.Time        `json:"created_at"`
-	UpdatedAt          time.Time        `json:"updated_at"`
+	ID                 uuid.UUID        `json:"id"`                           // ID stores the i d value.
+	DefinitionID       uuid.UUID        `json:"definition_id"`                // DefinitionID stores the definition i d value.
+	TargetUserID       uuid.UUID        `json:"target_user_id"`               // TargetUserID stores the target user i d value.
+	TargetIPHash       string           `json:"target_ip_hash,omitempty"`     // TargetIPHash stores the target i p hash value.
+	TargetIPCiphertext string           `json:"-"`                            // TargetIPCiphertext stores the target i p ciphertext value.
+	IssuerType         IssuerType       `json:"issuer_type"`                  // IssuerType stores the issuer type value.
+	IssuerUserID       *uuid.UUID       `json:"issuer_user_id,omitempty"`     // IssuerUserID stores the issuer user i d value.
+	IssuerKey          string           `json:"issuer_key,omitempty"`         // IssuerKey stores the issuer key value.
+	Reason             string           `json:"reason"`                       // Reason stores the reason value.
+	PrivateReason      string           `json:"private_reason,omitempty"`     // PrivateReason stores the private reason value.
+	Status             PunishmentStatus `json:"status"`                       // Status stores the status value.
+	StartsAt           time.Time        `json:"starts_at"`                    // StartsAt stores the starts at value.
+	ExpiresAt          *time.Time       `json:"expires_at,omitempty"`         // ExpiresAt stores the expires at value.
+	RevokedAt          *time.Time       `json:"revoked_at,omitempty"`         // RevokedAt stores the revoked at value.
+	RevokedByUserID    *uuid.UUID       `json:"revoked_by_user_id,omitempty"` // RevokedByUserID stores the revoked by user i d value.
+	RevocationReason   string           `json:"revocation_reason,omitempty"`  // RevocationReason stores the revocation reason value.
+	Source             string           `json:"source,omitempty"`             // Source stores the source value.
+	IdempotencyKey     string           `json:"idempotency_key,omitempty"`    // IdempotencyKey stores the idempotency key value.
+	Version            uint64           `json:"version"`                      // Version stores the version value.
+	Snapshots          []ActionSnapshot `json:"actions,omitempty"`            // Snapshots stores the snapshots value.
+	CreatedAt          time.Time        `json:"created_at"`                   // CreatedAt stores the created at value.
+	UpdatedAt          time.Time        `json:"updated_at"`                   // UpdatedAt stores the updated at value.
 }
 
 // ActionSnapshot preserves one issued action.
 type ActionSnapshot struct {
-	ID                 uuid.UUID        `json:"id"`
-	PunishmentID       uuid.UUID        `json:"punishment_id"`
-	DefinitionActionID uuid.UUID        `json:"definition_action_id"`
-	TargetSystem       TargetSystem     `json:"target_system"`
-	ActionType         ActionType       `json:"action_type"`
-	ConfigurationJSON  json.RawMessage  `json:"configuration_json"`
-	Status             DefinitionStatus `json:"status"`
-	CreatedAt          time.Time        `json:"created_at"`
+	ID                 uuid.UUID        `json:"id"`                   // ID stores the i d value.
+	PunishmentID       uuid.UUID        `json:"punishment_id"`        // PunishmentID stores the punishment i d value.
+	DefinitionActionID uuid.UUID        `json:"definition_action_id"` // DefinitionActionID stores the definition action i d value.
+	TargetSystem       TargetSystem     `json:"target_system"`        // TargetSystem stores the target system value.
+	ActionType         ActionType       `json:"action_type"`          // ActionType stores the action type value.
+	ConfigurationJSON  json.RawMessage  `json:"configuration_json"`   // ConfigurationJSON stores the configuration j s o n value.
+	Status             DefinitionStatus `json:"status"`               // Status stores the status value.
+	CreatedAt          time.Time        `json:"created_at"`           // CreatedAt stores the created at value.
 }
 
 // ActiveRestriction is the fast restriction projection.
 type ActiveRestriction struct {
-	ID           uuid.UUID  `json:"id"`
-	PunishmentID uuid.UUID  `json:"punishment_id"`
-	TargetUserID uuid.UUID  `json:"target_user_id"`
-	ActionKey    string     `json:"action_key"`
-	StartsAt     time.Time  `json:"starts_at"`
-	ExpiresAt    *time.Time `json:"expires_at,omitempty"`
-	CreatedAt    time.Time  `json:"created_at"`
+	ID           uuid.UUID  `json:"id"`                   // ID stores the i d value.
+	PunishmentID uuid.UUID  `json:"punishment_id"`        // PunishmentID stores the punishment i d value.
+	TargetUserID uuid.UUID  `json:"target_user_id"`       // TargetUserID stores the target user i d value.
+	ActionKey    string     `json:"action_key"`           // ActionKey stores the action key value.
+	StartsAt     time.Time  `json:"starts_at"`            // StartsAt stores the starts at value.
+	ExpiresAt    *time.Time `json:"expires_at,omitempty"` // ExpiresAt stores the expires at value.
+	CreatedAt    time.Time  `json:"created_at"`           // CreatedAt stores the created at value.
 }
 
 // CheckResult describes whether an action is allowed.
 type CheckResult struct {
-	Allowed     bool               `json:"allowed"`
-	Punishment  *PunishmentSummary `json:"punishment,omitempty"`
-	Restriction *ActiveRestriction `json:"restriction,omitempty"`
+	Allowed     bool               `json:"allowed"`               // Allowed stores the allowed value.
+	Punishment  *PunishmentSummary `json:"punishment,omitempty"`  // Punishment stores the punishment value.
+	Restriction *ActiveRestriction `json:"restriction,omitempty"` // Restriction stores the restriction value.
 }
 
 // PunishmentSummary is a safe denial summary.
 type PunishmentSummary struct {
-	ID        uuid.UUID  `json:"id"`
-	Reason    string     `json:"reason"`
-	StartsAt  time.Time  `json:"starts_at"`
-	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	ID        uuid.UUID  `json:"id"`                   // ID stores the i d value.
+	Reason    string     `json:"reason"`               // Reason stores the reason value.
+	StartsAt  time.Time  `json:"starts_at"`            // StartsAt stores the starts at value.
+	ExpiresAt *time.Time `json:"expires_at,omitempty"` // ExpiresAt stores the expires at value.
 }
 
 // CounterDrift reports one projection mismatch.
 type CounterDrift struct {
-	PunishmentID uuid.UUID `json:"punishment_id"`
-	ActionKey    string    `json:"action_key"`
-	Expected     bool      `json:"expected"`
-	Actual       bool      `json:"actual"`
+	PunishmentID uuid.UUID `json:"punishment_id"` // PunishmentID stores the punishment i d value.
+	ActionKey    string    `json:"action_key"`    // ActionKey stores the action key value.
+	Expected     bool      `json:"expected"`      // Expected stores the expected value.
+	Actual       bool      `json:"actual"`        // Actual stores the actual value.
 }
 
 // DriftReport reports restriction projection drift.
 type DriftReport struct {
-	Mismatches []CounterDrift `json:"mismatches"`
-	Repaired   bool           `json:"repaired"`
+	Mismatches []CounterDrift `json:"mismatches"` // Mismatches stores the mismatches value.
+	Repaired   bool           `json:"repaired"`   // Repaired stores the repaired value.
 }
 
 // Normalize returns a normalized definition.

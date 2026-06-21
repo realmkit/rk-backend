@@ -36,7 +36,7 @@ func Register(router fiber.Router, services Services) {
 
 // handler contains event route dependencies.
 type handler struct {
-	services Services
+	services Services // services stores the services value.
 }
 
 // attachSocketContext copies the Fiber user context into websocket locals.

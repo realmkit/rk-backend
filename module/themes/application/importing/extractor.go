@@ -18,15 +18,15 @@ import (
 
 // manifestDocument contains importer-facing manifest metadata.
 type manifestDocument struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
+	Name    string `json:"name"`    // Name stores the name value.
+	Version string `json:"version"` // Version stores the version value.
 }
 
 // manifestPayload contains decoded manifest import data.
 type manifestPayload struct {
-	raw      []byte
-	document manifestDocument
-	files    []packageFile
+	raw      []byte           // raw stores the raw value.
+	document manifestDocument // document stores the document value.
+	files    []packageFile    // files stores the files value.
 }
 
 // extractPackage reads a bounded zip package into normalized files.

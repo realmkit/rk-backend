@@ -117,6 +117,7 @@ func (forum Forum) Settings() ForumSettings {
 	}
 }
 
+// normalizeDefaults supports package behavior.
 func (forum Forum) normalizeDefaults() Forum {
 	if forum.Kind == "" {
 		forum.Kind = ForumKindDiscussion
@@ -142,6 +143,7 @@ func (forum Forum) normalizeDefaults() Forum {
 	return forum
 }
 
+// validateIdentity supports package behavior.
 func (forum Forum) validateIdentity() []Violation {
 	var violations []Violation
 	violations = append(violations, ValidateKey("key", forum.Key)...)
@@ -154,6 +156,7 @@ func (forum Forum) validateIdentity() []Violation {
 	return violations
 }
 
+// validateSettings supports package behavior.
 func (forum Forum) validateSettings() []Violation {
 	var violations []Violation
 	violations = append(violations, ValidateDisplayOrder("display_order", forum.DisplayOrder)...)
@@ -170,6 +173,7 @@ func (forum Forum) validateSettings() []Violation {
 	return validateForumBehavior(forum, violations)
 }
 
+// validateStructure supports package behavior.
 func (forum Forum) validateStructure() []Violation {
 	var violations []Violation
 	if forum.Depth < 0 || forum.Depth > 5 {

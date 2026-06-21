@@ -13,7 +13,7 @@ import (
 
 // ActivationRepository stores active theme pointers in PostgreSQL.
 type ActivationRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewActivationRepository creates an activation repository.

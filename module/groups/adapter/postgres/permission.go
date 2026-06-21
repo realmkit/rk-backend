@@ -15,7 +15,7 @@ import (
 
 // PermissionRepository stores permission records in PostgreSQL.
 type PermissionRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewPermissionRepository creates a permission repository.

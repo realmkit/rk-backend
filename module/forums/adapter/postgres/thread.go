@@ -14,7 +14,7 @@ import (
 
 // ThreadRepository stores forum threads in PostgreSQL.
 type ThreadRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewThreadRepository creates a thread repository.
@@ -141,6 +141,79 @@ func threadPage(models []ThreadModel, limit int) pagination.Result[domain.Thread
 		items = append(items, threadFromModel(model))
 	}
 	return pagination.Result[domain.Thread]{Items: items, NextCursor: next}
+}
+
+// applyForumFilter applies forum filters.
+func applyForumFilter(query *gorm.DB, filter port.ForumFilter) *gorm.DB {
+	if filter.CategoryID != uuid.Nil {
+		query = query.Where("category_id = ?", filter.CategoryID)
+	}
+	if filter.ParentForumID != nil {
+		query = query.Where("parent_forum_id = ?", *filter.ParentForumID)
+	}
+	if filter.Status != "" {
+		query = query.Where("status = ?", filter.Status)
+	}
+	if !filter.Query.Empty() {
+		like := filter.Query.LowerLike()
+		if query.Dialector.Name() == "postgres" {
+			query = query.Where(
+				"key = ? OR slug = ? OR LOWER(name) LIKE ? OR LOWER(description) LIKE ?",
+				filter.Query.String(),
+				filter.Query.String(),
+				like,
+				like,
+			)
+		} else {
+			query = query.Where(
+				"LOWER(key) LIKE ? OR LOWER(slug) LIKE ? OR LOWER(name) LIKE ? OR LOWER(description) LIKE ?",
+				like,
+				like,
+				like,
+				like,
+			)
+		}
+	}
+	return query
+}
+
+// forumUpdates returns update fields.
+func forumUpdates(forum domain.Forum, expectedVersion uint64) map[string]any {
+	return map[string]any{
+		"category_id":                       forum.CategoryID,
+		"parent_forum_id":                   forum.ParentForumID,
+		"kind":                              string(forum.Kind),
+		"key":                               string(forum.Key),
+		"slug":                              string(forum.Slug),
+		"name":                              forum.Name,
+		"description":                       forum.Description,
+		"display_order":                     forum.DisplayOrder,
+		"path":                              forum.Path,
+		"depth":                             forum.Depth,
+		"external_url":                      forum.ExternalURL,
+		"icon_asset_id":                     forum.IconAssetID,
+		"thread_visibility_mode":            string(forum.ThreadVisibilityMode),
+		"max_sticky_threads":                forum.MaxStickyThreads,
+		"default_thread_status":             string(forum.DefaultThreadStatus),
+		"author_post_edit_window_seconds":   forum.AuthorPostEditWindowSeconds,
+		"author_post_delete_window_seconds": forum.AuthorPostDeleteWindowSeconds,
+		"status":                            string(forum.Status),
+		"version":                           expectedVersion + 1,
+	}
+}
+
+// descendantMoveUpdates returns update fields for one moved descendant.
+func descendantMoveUpdates(
+	forum domain.Forum,
+	descendant ForumModel,
+	nextPath string,
+	depthDelta int,
+) map[string]any {
+	return map[string]any{
+		"path":        nextPath,
+		"category_id": forum.CategoryID,
+		"depth":       descendant.Depth + depthDelta,
+	}
 }
 
 // Ensure ThreadRepository implements port.ThreadRepository.

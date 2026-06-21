@@ -104,6 +104,7 @@ func (service Service) RejectAppeal(ctx context.Context, command port.AppealDeci
 	})
 }
 
+// staffTransition supports package behavior.
 func (service Service) staffTransition(
 	ctx context.Context,
 	command port.StaffCommand,
@@ -145,6 +146,7 @@ func (service Service) staffTransition(
 	return updated, service.publishTicket(ctx, "tickets.ticket.status_changed", updated)
 }
 
+// requireAppealPunishmentRevoke supports package behavior.
 func (service Service) requireAppealPunishmentRevoke(
 	ctx context.Context,
 	command port.AppealDecisionCommand,
@@ -163,6 +165,7 @@ func (service Service) requireAppealPunishmentRevoke(
 	})
 }
 
+// action supports package behavior.
 func action(command port.StaffCommand, actionType domain.ActionType) domain.Action {
 	payload, _ := json.Marshal(map[string]string{"reason": command.Reason})
 	now := time.Now().UTC()

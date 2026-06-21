@@ -10,6 +10,7 @@ import (
 	"github.com/realmkit/rk-backend/module/forums/domain"
 )
 
+// checksum supports package behavior.
 func checksum(provided string, content []byte) string {
 	if strings.TrimSpace(provided) != "" {
 		return strings.TrimSpace(provided)
@@ -18,6 +19,7 @@ func checksum(provided string, content []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// prepareReferences supports package behavior.
 func prepareReferences(
 	sourcePostID uuid.UUID,
 	references []domain.PostReference,
@@ -31,6 +33,7 @@ func prepareReferences(
 	return prepared
 }
 
+// contentText supports package behavior.
 func contentText(explicit string, document []byte) string {
 	if strings.TrimSpace(explicit) != "" {
 		return strings.TrimSpace(explicit)
@@ -44,6 +47,7 @@ func contentText(explicit string, document []byte) string {
 	return strings.TrimSpace(strings.Join(parts, " "))
 }
 
+// collectText supports package behavior.
 func collectText(value any, parts *[]string) {
 	switch typed := value.(type) {
 	case map[string]any:
@@ -60,6 +64,7 @@ func collectText(value any, parts *[]string) {
 	}
 }
 
+// extractReferences supports package behavior.
 func extractReferences(document []byte) []domain.PostReference {
 	var payload any
 	if err := json.Unmarshal(document, &payload); err != nil {
@@ -70,6 +75,7 @@ func extractReferences(document []byte) []domain.PostReference {
 	return references
 }
 
+// collectReferences supports package behavior.
 func collectReferences(value any, references *[]domain.PostReference) {
 	switch typed := value.(type) {
 	case map[string]any:
@@ -84,6 +90,7 @@ func collectReferences(value any, references *[]domain.PostReference) {
 	}
 }
 
+// appendNodeReference supports package behavior.
 func appendNodeReference(
 	node map[string]any,
 	references *[]domain.PostReference,
@@ -104,6 +111,7 @@ func appendNodeReference(
 	}
 }
 
+// appendMentionReference supports package behavior.
 func appendMentionReference(
 	attrs map[string]any,
 	references *[]domain.PostReference,
@@ -116,6 +124,7 @@ func appendMentionReference(
 	}
 }
 
+// appendAttachmentReference supports package behavior.
 func appendAttachmentReference(
 	attrs map[string]any,
 	references *[]domain.PostReference,
@@ -128,6 +137,7 @@ func appendAttachmentReference(
 	}
 }
 
+// appendQuoteReference supports package behavior.
 func appendQuoteReference(
 	attrs map[string]any,
 	references *[]domain.PostReference,
@@ -142,6 +152,7 @@ func appendQuoteReference(
 	}
 }
 
+// appendReplyReference supports package behavior.
 func appendReplyReference(
 	attrs map[string]any,
 	references *[]domain.PostReference,
@@ -154,6 +165,7 @@ func appendReplyReference(
 	}
 }
 
+// appendLinkReference supports package behavior.
 func appendLinkReference(
 	attrs map[string]any,
 	references *[]domain.PostReference,
@@ -167,6 +179,7 @@ func appendLinkReference(
 	}
 }
 
+// uuidFromAttr supports package behavior.
 func uuidFromAttr(attrs map[string]any, keys ...string) uuid.UUID {
 	for _, key := range keys {
 		if raw, ok := attrs[key].(string); ok {

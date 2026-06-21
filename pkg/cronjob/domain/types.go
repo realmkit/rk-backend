@@ -102,6 +102,7 @@ const (
 	TriggerManual TriggerType = "manual"
 )
 
+// jobKeyPattern stores package state.
 var jobKeyPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(\.[a-z][a-z0-9-]*)+$`)
 
 // ValidateJobKey validates a dotted cron job key.

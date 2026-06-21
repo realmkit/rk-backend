@@ -3,6 +3,8 @@ package postgres
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
+	"time"
 
 	"github.com/realmkit/rk-backend/module/punishments/domain"
 	"github.com/realmkit/rk-backend/module/punishments/port"
@@ -62,6 +64,33 @@ func definitionFromModel(model DefinitionModel, actions []ActionModel) domain.De
 // definitionFilterHash binds cursors to definition filters.
 func definitionFilterHash(filter port.DefinitionFilter, sort search.Sort) string {
 	return search.HashFilter(filter.Status, filter.Query.String(), sort)
+}
+
+// definitionModelSortValue returns the cursor value.
+func definitionModelSortValue(model DefinitionModel, key string) string {
+	switch key {
+	case "name":
+		return model.Name
+	case "severity":
+		return strconv.Itoa(model.Severity)
+	case "created_at":
+		return model.CreatedAt.Format(time.RFC3339Nano)
+	default:
+		return strconv.Itoa(model.DisplayOrder)
+	}
+}
+
+// definitionCursorValue converts a cursor value to the matching SQL type.
+func definitionCursorValue(value string, key string) any {
+	if key == "created_at" {
+		parsed, _ := time.Parse(time.RFC3339Nano, value)
+		return parsed
+	}
+	if key == "severity" || key == "display_order" || key == "" {
+		parsed, _ := strconv.Atoi(value)
+		return parsed
+	}
+	return value
 }
 
 // mapError translates GORM and ORM errors to punishment ports.

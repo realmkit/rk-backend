@@ -38,20 +38,20 @@ func (value *JSON) Scan(input any) error {
 
 // MetafieldDefinitionModel is the GORM model for metafield definitions.
 type MetafieldDefinitionModel struct {
-	orm.ID
-	OwnerType   string `gorm:"size:64;not null;index"`
-	Key         string `gorm:"size:64;not null;index"`
-	Name        string `gorm:"size:120;not null"`
-	Description string `gorm:"size:500"`
-	ValueType   string `gorm:"size:64;not null"`
-	List        bool   `gorm:"not null;column:is_list"`
-	Required    bool   `gorm:"not null;column:is_required"`
-	Rules       JSON   `gorm:"not null;type:jsonb"`
-	SortOrder   int    `gorm:"not null;default:0"`
-	Active      bool   `gorm:"not null;default:true;index"`
-	Version     uint64 `gorm:"not null;default:1"`
-	orm.Timestamps
-	orm.SoftDelete
+	orm.ID                // ID embeds shared fields.
+	OwnerType      string `gorm:"size:64;not null;index"`      // OwnerType stores the owner type value.
+	Key            string `gorm:"size:64;not null;index"`      // Key stores the key value.
+	Name           string `gorm:"size:120;not null"`           // Name stores the name value.
+	Description    string `gorm:"size:500"`                    // Description stores the description value.
+	ValueType      string `gorm:"size:64;not null"`            // ValueType stores the value type value.
+	List           bool   `gorm:"not null;column:is_list"`     // List stores the list value.
+	Required       bool   `gorm:"not null;column:is_required"` // Required stores the required value.
+	Rules          JSON   `gorm:"not null;type:jsonb"`         // Rules stores the rules value.
+	SortOrder      int    `gorm:"not null;default:0"`          // SortOrder stores the sort order value.
+	Active         bool   `gorm:"not null;default:true;index"` // Active stores the active value.
+	Version        uint64 `gorm:"not null;default:1"`          // Version stores the version value.
+	orm.Timestamps        // Timestamps embeds shared fields.
+	orm.SoftDelete        // SoftDelete embeds shared fields.
 }
 
 // TableName returns the database table name.
@@ -61,14 +61,14 @@ func (MetafieldDefinitionModel) TableName() string {
 
 // MetafieldValueModel is the GORM model for metafield values.
 type MetafieldValueModel struct {
-	orm.ID
-	DefinitionID uuid.UUID `gorm:"type:uuid;not null;index"`
-	OwnerType    string    `gorm:"size:64;not null;index"`
-	OwnerID      uuid.UUID `gorm:"type:uuid;not null;index"`
-	Value        JSON      `gorm:"not null;type:jsonb;column:value_json"`
-	Version      uint64    `gorm:"not null;default:1"`
-	orm.Timestamps
-	orm.SoftDelete
+	orm.ID                   // ID embeds shared fields.
+	DefinitionID   uuid.UUID `gorm:"type:uuid;not null;index"`              // DefinitionID stores the definition i d value.
+	OwnerType      string    `gorm:"size:64;not null;index"`                // OwnerType stores the owner type value.
+	OwnerID        uuid.UUID `gorm:"type:uuid;not null;index"`              // OwnerID stores the owner i d value.
+	Value          JSON      `gorm:"not null;type:jsonb;column:value_json"` // Value stores the value value.
+	Version        uint64    `gorm:"not null;default:1"`                    // Version stores the version value.
+	orm.Timestamps           // Timestamps embeds shared fields.
+	orm.SoftDelete           // SoftDelete embeds shared fields.
 }
 
 // TableName returns the database table name.
@@ -78,15 +78,15 @@ func (MetafieldValueModel) TableName() string {
 
 // MetaobjectDefinitionModel is the GORM model for metaobject definitions.
 type MetaobjectDefinitionModel struct {
-	orm.ID
-	Type        string `gorm:"size:64;not null;index"`
-	Name        string `gorm:"size:120;not null"`
-	Description string `gorm:"size:500"`
-	Fields      JSON   `gorm:"not null;type:jsonb;column:field_definitions"`
-	Active      bool   `gorm:"not null;default:true;index"`
-	Version     uint64 `gorm:"not null;default:1"`
-	orm.Timestamps
-	orm.SoftDelete
+	orm.ID                // ID embeds shared fields.
+	Type           string `gorm:"size:64;not null;index"`                       // Type stores the type value.
+	Name           string `gorm:"size:120;not null"`                            // Name stores the name value.
+	Description    string `gorm:"size:500"`                                     // Description stores the description value.
+	Fields         JSON   `gorm:"not null;type:jsonb;column:field_definitions"` // Fields stores the fields value.
+	Active         bool   `gorm:"not null;default:true;index"`                  // Active stores the active value.
+	Version        uint64 `gorm:"not null;default:1"`                           // Version stores the version value.
+	orm.Timestamps        // Timestamps embeds shared fields.
+	orm.SoftDelete        // SoftDelete embeds shared fields.
 }
 
 // TableName returns the database table name.
@@ -96,14 +96,14 @@ func (MetaobjectDefinitionModel) TableName() string {
 
 // MetaobjectEntryModel is the GORM model for metaobject entries.
 type MetaobjectEntryModel struct {
-	orm.ID
-	DefinitionID uuid.UUID `gorm:"type:uuid;not null;index"`
-	Handle       string    `gorm:"size:120;not null;index"`
-	DisplayName  string    `gorm:"size:120;not null"`
-	Fields       JSON      `gorm:"not null;type:jsonb;column:field_values"`
-	Version      uint64    `gorm:"not null;default:1"`
-	orm.Timestamps
-	orm.SoftDelete
+	orm.ID                   // ID embeds shared fields.
+	DefinitionID   uuid.UUID `gorm:"type:uuid;not null;index"`                // DefinitionID stores the definition i d value.
+	Handle         string    `gorm:"size:120;not null;index"`                 // Handle stores the handle value.
+	DisplayName    string    `gorm:"size:120;not null"`                       // DisplayName stores the display name value.
+	Fields         JSON      `gorm:"not null;type:jsonb;column:field_values"` // Fields stores the fields value.
+	Version        uint64    `gorm:"not null;default:1"`                      // Version stores the version value.
+	orm.Timestamps           // Timestamps embeds shared fields.
+	orm.SoftDelete           // SoftDelete embeds shared fields.
 }
 
 // TableName returns the database table name.

@@ -9,7 +9,7 @@ import (
 
 // ThemeFilter filters theme families.
 type ThemeFilter struct {
-	Status domain.ThemeStatus
+	Status domain.ThemeStatus // Status stores the status value.
 }
 
 // ThemeRepository stores theme families.

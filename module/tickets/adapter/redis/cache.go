@@ -11,7 +11,7 @@ import (
 
 // Cache clears ticket cache namespaces in Redis.
 type Cache struct {
-	client *goredis.Client
+	client *goredis.Client // client stores the client value.
 }
 
 // NewCache creates a Redis ticket cache.

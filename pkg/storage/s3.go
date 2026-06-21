@@ -14,10 +14,10 @@ import (
 
 // S3Store stores objects through an S3-compatible API.
 type S3Store struct {
-	client        *s3.Client
-	presign       *s3.PresignClient
-	bucket        string
-	publicBaseURL string
+	client        *s3.Client        // client stores the client value.
+	presign       *s3.PresignClient // presign stores the presign value.
+	bucket        string            // bucket stores the bucket value.
+	publicBaseURL string            // publicBaseURL stores the public base u r l value.
 }
 
 // NewS3Store creates an S3-compatible store.

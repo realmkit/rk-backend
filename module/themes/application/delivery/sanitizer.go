@@ -9,10 +9,10 @@ import (
 
 // SanitizerProfile describes one backend rich-text boundary policy.
 type SanitizerProfile struct {
-	Profile            domain.RichTextProfile
-	AllowedElements    []string
-	AllowedAttributes  map[string][]string
-	RealmKitImagesOnly bool
+	Profile            domain.RichTextProfile // Profile stores the profile value.
+	AllowedElements    []string               // AllowedElements stores the allowed elements value.
+	AllowedAttributes  map[string][]string    // AllowedAttributes stores the allowed attributes value.
+	RealmKitImagesOnly bool                   // RealmKitImagesOnly stores the realm kit images only value.
 }
 
 // SanitizerProfiles returns reusable rich-text sanitizer policies.

@@ -37,7 +37,7 @@ func (service Service) Activate(ctx context.Context, command ActivateCommand) (d
 	if err != nil {
 		return domain.ThemeActivation{}, err
 	}
-	activation, err := service.repositories.Activations.Activate(ctx, domain.ThemeActivation{
+	activation := domain.ThemeActivation{
 		ID:               uuid.New(),
 		ThemeID:          version.ThemeID,
 		VersionID:        version.ID,
@@ -46,7 +46,11 @@ func (service Service) Activate(ctx context.Context, command ActivateCommand) (d
 		SettingsDataJSON: settings,
 		ActivatedBy:      command.ActorUserID,
 		ActivatedAt:      service.clock().UTC(),
-	})
+	}
+	if err := activation.Validate(); err != nil {
+		return domain.ThemeActivation{}, err
+	}
+	activation, err = service.repositories.Activations.Activate(ctx, activation)
 	if err != nil {
 		return domain.ThemeActivation{}, err
 	}

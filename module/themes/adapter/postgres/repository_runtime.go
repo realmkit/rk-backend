@@ -12,7 +12,7 @@ import (
 
 // SigningKeyRepository stores trusted signing keys in PostgreSQL.
 type SigningKeyRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewSigningKeyRepository creates a signing key repository.
@@ -81,7 +81,7 @@ func (repository SigningKeyRepository) updateSigningKey(
 
 // PreviewTokenRepository stores preview tokens in PostgreSQL.
 type PreviewTokenRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewPreviewTokenRepository creates a preview token repository.

@@ -11,6 +11,7 @@ import (
 // event producer names.
 const producerPunishments eventdomain.Producer = "punishments"
 
+// publishDefinitionEvent supports package behavior.
 func (service Service) publishDefinitionEvent(
 	ctx context.Context,
 	key eventdomain.EventKey,
@@ -36,6 +37,7 @@ func (service Service) publishDefinitionEvent(
 	})
 }
 
+// publishPunishmentEvent supports package behavior.
 func (service Service) publishPunishmentEvent(
 	ctx context.Context,
 	key eventdomain.EventKey,
@@ -72,6 +74,7 @@ func (service Service) publishPunishmentEvent(
 	})
 }
 
+// publishOperationsEvent supports package behavior.
 func (service Service) publishOperationsEvent(
 	ctx context.Context,
 	key eventdomain.EventKey,

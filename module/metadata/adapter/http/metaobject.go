@@ -8,25 +8,25 @@ import (
 
 // metaobjectDefinitionRequest contains metaobject definition input.
 type metaobjectDefinitionRequest struct {
-	Type        domain.MetaobjectType    `json:"type"`
-	Name        string                   `json:"name"`
-	Description string                   `json:"description"`
-	Fields      []domain.FieldDefinition `json:"fields"`
-	Active      *bool                    `json:"active"`
+	Type        domain.MetaobjectType    `json:"type"`        // Type stores the type value.
+	Name        string                   `json:"name"`        // Name stores the name value.
+	Description string                   `json:"description"` // Description stores the description value.
+	Fields      []domain.FieldDefinition `json:"fields"`      // Fields stores the fields value.
+	Active      *bool                    `json:"active"`      // Active stores the active value.
 }
 
 // metaobjectDefinitionUpdateRequest contains mutable metaobject definition input.
 type metaobjectDefinitionUpdateRequest struct {
-	Name        *string                   `json:"name"`
-	Description *string                   `json:"description"`
-	Fields      *[]domain.FieldDefinition `json:"fields"`
-	Active      *bool                     `json:"active"`
+	Name        *string                   `json:"name"`        // Name stores the name value.
+	Description *string                   `json:"description"` // Description stores the description value.
+	Fields      *[]domain.FieldDefinition `json:"fields"`      // Fields stores the fields value.
+	Active      *bool                     `json:"active"`      // Active stores the active value.
 }
 
 // metaobjectDefinitionListResponse contains paginated metaobject definition output.
 type metaobjectDefinitionListResponse struct {
-	Items         []domain.MetaobjectDefinition `json:"items"`
-	NextPageToken string                        `json:"next_page_token,omitempty"`
+	Items         []domain.MetaobjectDefinition `json:"items"`                     // Items stores the items value.
+	NextPageToken string                        `json:"next_page_token,omitempty"` // NextPageToken stores the next page token value.
 }
 
 // createMetaobjectDefinition handles metaobject definition creation.

@@ -11,25 +11,25 @@ import (
 
 // definitionRequest is the definition write DTO.
 type definitionRequest struct {
-	Key                     domain.Key              `json:"key"`
-	Name                    string                  `json:"name"`
-	Description             string                  `json:"description"`
-	Kind                    domain.Kind             `json:"kind"`
-	Status                  domain.DefinitionStatus `json:"status"`
-	DefaultTeamGroupID      *uuid.UUID              `json:"default_team_group_id"`
-	DefaultAssigneeUserID   *uuid.UUID              `json:"default_assignee_user_id"`
-	SubmitterCanClose       bool                    `json:"submitter_can_close"`
-	SubmitterCanReopen      bool                    `json:"submitter_can_reopen"`
-	AllowAnonymousSubmitter bool                    `json:"allow_anonymous_submitter"`
-	RequiresTargetUser      bool                    `json:"requires_target_user"`
-	RequiresPunishment      bool                    `json:"requires_punishment"`
-	RequiresEvidence        bool                    `json:"requires_evidence"`
-	MaxOpenPerSubmitter     int                     `json:"max_open_per_submitter"`
-	ReopenWindowSeconds     int64                   `json:"reopen_window_seconds"`
-	SLAFirstResponseSeconds int64                   `json:"sla_first_response_seconds"`
-	SLAResolutionSeconds    int64                   `json:"sla_resolution_seconds"`
-	MetadataSchemaKey       string                  `json:"metadata_schema_key"`
-	DisplayOrder            int                     `json:"display_order"`
+	Key                     domain.Key              `json:"key"`                        // Key stores the key value.
+	Name                    string                  `json:"name"`                       // Name stores the name value.
+	Description             string                  `json:"description"`                // Description stores the description value.
+	Kind                    domain.Kind             `json:"kind"`                       // Kind stores the kind value.
+	Status                  domain.DefinitionStatus `json:"status"`                     // Status stores the status value.
+	DefaultTeamGroupID      *uuid.UUID              `json:"default_team_group_id"`      // DefaultTeamGroupID stores the default team group i d value.
+	DefaultAssigneeUserID   *uuid.UUID              `json:"default_assignee_user_id"`   // DefaultAssigneeUserID stores the default assignee user i d value.
+	SubmitterCanClose       bool                    `json:"submitter_can_close"`        // SubmitterCanClose stores the submitter can close value.
+	SubmitterCanReopen      bool                    `json:"submitter_can_reopen"`       // SubmitterCanReopen stores the submitter can reopen value.
+	AllowAnonymousSubmitter bool                    `json:"allow_anonymous_submitter"`  // AllowAnonymousSubmitter stores the allow anonymous submitter value.
+	RequiresTargetUser      bool                    `json:"requires_target_user"`       // RequiresTargetUser stores the requires target user value.
+	RequiresPunishment      bool                    `json:"requires_punishment"`        // RequiresPunishment stores the requires punishment value.
+	RequiresEvidence        bool                    `json:"requires_evidence"`          // RequiresEvidence stores the requires evidence value.
+	MaxOpenPerSubmitter     int                     `json:"max_open_per_submitter"`     // MaxOpenPerSubmitter stores the max open per submitter value.
+	ReopenWindowSeconds     int64                   `json:"reopen_window_seconds"`      // ReopenWindowSeconds stores the reopen window seconds value.
+	SLAFirstResponseSeconds int64                   `json:"sla_first_response_seconds"` // SLAFirstResponseSeconds stores the s l a first response seconds value.
+	SLAResolutionSeconds    int64                   `json:"sla_resolution_seconds"`     // SLAResolutionSeconds stores the s l a resolution seconds value.
+	MetadataSchemaKey       string                  `json:"metadata_schema_key"`        // MetadataSchemaKey stores the metadata schema key value.
+	DisplayOrder            int                     `json:"display_order"`              // DisplayOrder stores the display order value.
 }
 
 // createDefinition handles ticket definition creation.

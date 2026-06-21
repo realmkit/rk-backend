@@ -33,17 +33,17 @@ type Skipper func(*fiber.Ctx) bool
 
 // routeProfile binds one exact route to a profile.
 type routeProfile struct {
-	method  string
-	path    string
-	prefix  bool
-	profile Profile
+	method  string  // method stores the method value.
+	path    string  // path stores the path value.
+	prefix  bool    // prefix stores the prefix value.
+	profile Profile // profile stores the profile value.
 }
 
 // settings contains request context middleware configuration.
 type settings struct {
-	defaultProfile Profile
-	profiles       []routeProfile
-	skipper        Skipper
+	defaultProfile Profile        // defaultProfile stores the default profile value.
+	profiles       []routeProfile // profiles stores the profiles value.
+	skipper        Skipper        // skipper stores the skipper value.
 }
 
 // Middleware creates Fiber middleware that installs a deadline-bound user context.

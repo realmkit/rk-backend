@@ -8,9 +8,9 @@ import (
 
 // authHandlers contains required and optional auth middleware.
 type authHandlers struct {
-	required   fiber.Handler
-	optional   fiber.Handler
-	configured bool
+	required   fiber.Handler // required stores the required value.
+	optional   fiber.Handler // optional stores the optional value.
+	configured bool          // configured stores the configured value.
 }
 
 // authHandlers returns shared auth middleware for server route composition.

@@ -93,6 +93,7 @@ func (repository CaseRepository) RebuildRestrictions(ctx context.Context, now ti
 	return report, nil
 }
 
+// expectedSlice supports package behavior.
 func (repository CaseRepository) expectedSlice(ctx context.Context, now time.Time) []domain.ActiveRestriction {
 	expected, _ := repository.expectedRestrictions(ctx, now)
 	out := make([]domain.ActiveRestriction, 0, len(expected))
@@ -102,6 +103,7 @@ func (repository CaseRepository) expectedSlice(ctx context.Context, now time.Tim
 	return out
 }
 
+// expectedRestrictions supports package behavior.
 func (repository CaseRepository) expectedRestrictions(ctx context.Context, now time.Time) (map[string]domain.ActiveRestriction, error) {
 	var punishments []PunishmentModel
 	err := repository.store.DB(ctx).
@@ -124,6 +126,7 @@ func (repository CaseRepository) expectedRestrictions(ctx context.Context, now t
 	return expected, nil
 }
 
+// actualRestrictions supports package behavior.
 func (repository CaseRepository) actualRestrictions(ctx context.Context) (map[string]domain.ActiveRestriction, error) {
 	var models []RestrictionModel
 	if err := repository.store.DB(ctx).Find(&models).Error; err != nil {
@@ -194,4 +197,5 @@ func restrictionKey(punishmentID uuid.UUID, actionKey string) string {
 	return punishmentID.String() + ":" + actionKey
 }
 
+// CaseRepositoryContract verifies repository interface conformance.
 var _ port.CaseRepository = CaseRepository{}

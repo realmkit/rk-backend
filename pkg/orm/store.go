@@ -8,7 +8,7 @@ import (
 
 // Store provides composable access to a GORM database handle.
 type Store struct {
-	db *gorm.DB
+	db *gorm.DB // db stores the db value.
 }
 
 // NewStore creates a Store backed by db.

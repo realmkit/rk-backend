@@ -12,23 +12,25 @@ import (
 	"github.com/realmkit/rk-backend/pkg/search"
 )
 
+// definitionRequest defines package data.
 type definitionRequest struct {
-	Key                    domain.Key              `json:"key"`
-	Name                   string                  `json:"name"`
-	Description            string                  `json:"description"`
-	Color                  domain.Color            `json:"color"`
-	Severity               int                     `json:"severity"`
-	Status                 domain.DefinitionStatus `json:"status"`
-	DefaultDurationSeconds *int64                  `json:"default_duration_seconds"`
-	MinDurationSeconds     *int64                  `json:"min_duration_seconds"`
-	MaxDurationSeconds     *int64                  `json:"max_duration_seconds"`
-	AllowPermanent         bool                    `json:"allow_permanent"`
-	RequiresReason         bool                    `json:"requires_reason"`
-	RequiresTargetIP       bool                    `json:"requires_target_ip"`
-	DisplayOrder           int                     `json:"display_order"`
-	Actions                []domain.ActionTemplate `json:"actions"`
+	Key                    domain.Key              `json:"key"`                      // Key stores the key value.
+	Name                   string                  `json:"name"`                     // Name stores the name value.
+	Description            string                  `json:"description"`              // Description stores the description value.
+	Color                  domain.Color            `json:"color"`                    // Color stores the color value.
+	Severity               int                     `json:"severity"`                 // Severity stores the severity value.
+	Status                 domain.DefinitionStatus `json:"status"`                   // Status stores the status value.
+	DefaultDurationSeconds *int64                  `json:"default_duration_seconds"` // DefaultDurationSeconds stores the default duration seconds value.
+	MinDurationSeconds     *int64                  `json:"min_duration_seconds"`     // MinDurationSeconds stores the min duration seconds value.
+	MaxDurationSeconds     *int64                  `json:"max_duration_seconds"`     // MaxDurationSeconds stores the max duration seconds value.
+	AllowPermanent         bool                    `json:"allow_permanent"`          // AllowPermanent stores the allow permanent value.
+	RequiresReason         bool                    `json:"requires_reason"`          // RequiresReason stores the requires reason value.
+	RequiresTargetIP       bool                    `json:"requires_target_ip"`       // RequiresTargetIP stores the requires target i p value.
+	DisplayOrder           int                     `json:"display_order"`            // DisplayOrder stores the display order value.
+	Actions                []domain.ActionTemplate `json:"actions"`                  // Actions stores the actions value.
 }
 
+// createDefinition supports package behavior.
 func (handler handler) createDefinition(ctx *fiber.Ctx) error {
 	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsManageDefinitions, uuid.Nil); err != nil {
 		return err
@@ -48,6 +50,7 @@ func (handler handler) createDefinition(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusCreated, created)
 }
 
+// listDefinitions supports package behavior.
 func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 	if err := requirePunishment(ctx, handler.services.Checker, groupsdomain.PermissionPunishmentsManageDefinitions, uuid.Nil); err != nil {
 		return err
@@ -71,6 +74,7 @@ func (handler handler) listDefinitions(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusOK, result)
 }
 
+// getDefinition supports package behavior.
 func (handler handler) getDefinition(ctx *fiber.Ctx) error {
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
@@ -87,6 +91,7 @@ func (handler handler) getDefinition(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusOK, definition)
 }
 
+// updateDefinition supports package behavior.
 func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
@@ -111,6 +116,7 @@ func (handler handler) updateDefinition(ctx *fiber.Ctx) error {
 	return writeJSON(ctx, fiber.StatusOK, updated)
 }
 
+// deleteDefinition supports package behavior.
 func (handler handler) deleteDefinition(ctx *fiber.Ctx) error {
 	id, err := idFromParam(ctx, "definition_id")
 	if err != nil {
@@ -129,6 +135,7 @@ func (handler handler) deleteDefinition(ctx *fiber.Ctx) error {
 	return ctx.SendStatus(fiber.StatusNoContent)
 }
 
+// reorderActions supports package behavior.
 func (handler handler) reorderActions(ctx *fiber.Ctx) error {
 	if err := requireIdempotency(ctx); err != nil {
 		return err
@@ -190,17 +197,18 @@ func definitionFilter(ctx *fiber.Ctx) (port.DefinitionFilter, error) {
 	}, nil
 }
 
+// issueRequest defines package data.
 type issueRequest struct {
-	DefinitionID  uuid.UUID         `json:"definition_id"`
-	TargetUserID  uuid.UUID         `json:"target_user_id"`
-	TargetIPHash  string            `json:"target_ip_hash"`
-	IssuerType    domain.IssuerType `json:"issuer_type"`
-	IssuerKey     string            `json:"issuer_key"`
-	Reason        string            `json:"reason"`
-	PrivateReason string            `json:"private_reason"`
-	StartsAt      *time.Time        `json:"starts_at"`
-	ExpiresAt     *time.Time        `json:"expires_at"`
-	Source        string            `json:"source"`
+	DefinitionID  uuid.UUID         `json:"definition_id"`  // DefinitionID stores the definition i d value.
+	TargetUserID  uuid.UUID         `json:"target_user_id"` // TargetUserID stores the target user i d value.
+	TargetIPHash  string            `json:"target_ip_hash"` // TargetIPHash stores the target i p hash value.
+	IssuerType    domain.IssuerType `json:"issuer_type"`    // IssuerType stores the issuer type value.
+	IssuerKey     string            `json:"issuer_key"`     // IssuerKey stores the issuer key value.
+	Reason        string            `json:"reason"`         // Reason stores the reason value.
+	PrivateReason string            `json:"private_reason"` // PrivateReason stores the private reason value.
+	StartsAt      *time.Time        `json:"starts_at"`      // StartsAt stores the starts at value.
+	ExpiresAt     *time.Time        `json:"expires_at"`     // ExpiresAt stores the expires at value.
+	Source        string            `json:"source"`         // Source stores the source value.
 }
 
 // issueCommand maps HTTP issue input to an application command.

@@ -13,14 +13,14 @@ import (
 
 // createTicketRequest is the ticket intake DTO.
 type createTicketRequest struct {
-	DefinitionID        uuid.UUID       `json:"definition_id"`
-	Title               string          `json:"title"`
-	SubmitterUserID     *uuid.UUID      `json:"submitter_user_id"`
-	TargetUserID        *uuid.UUID      `json:"target_user_id"`
-	PunishmentID        *uuid.UUID      `json:"punishment_id"`
-	ContentDocumentJSON json.RawMessage `json:"content_document_json"`
-	ContentText         string          `json:"content_text"`
-	EvidenceAssetIDs    []uuid.UUID     `json:"evidence_asset_ids"`
+	DefinitionID        uuid.UUID       `json:"definition_id"`         // DefinitionID stores the definition i d value.
+	Title               string          `json:"title"`                 // Title stores the title value.
+	SubmitterUserID     *uuid.UUID      `json:"submitter_user_id"`     // SubmitterUserID stores the submitter user i d value.
+	TargetUserID        *uuid.UUID      `json:"target_user_id"`        // TargetUserID stores the target user i d value.
+	PunishmentID        *uuid.UUID      `json:"punishment_id"`         // PunishmentID stores the punishment i d value.
+	ContentDocumentJSON json.RawMessage `json:"content_document_json"` // ContentDocumentJSON stores the content document j s o n value.
+	ContentText         string          `json:"content_text"`          // ContentText stores the content text value.
+	EvidenceAssetIDs    []uuid.UUID     `json:"evidence_asset_ids"`    // EvidenceAssetIDs stores the evidence asset i ds value.
 }
 
 // createTicket handles ticket intake.

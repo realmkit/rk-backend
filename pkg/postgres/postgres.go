@@ -23,8 +23,8 @@ type Option func(*settings)
 
 // settings contains PostgreSQL open settings.
 type settings struct {
-	dialector  gorm.Dialector
-	gormConfig *gorm.Config
+	dialector  gorm.Dialector // dialector stores the dialector value.
+	gormConfig *gorm.Config   // gormConfig stores the gorm config value.
 }
 
 // WithDialector overrides the GORM dialector used by Open.

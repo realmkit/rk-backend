@@ -14,7 +14,7 @@ import (
 
 // PostRepository stores forum posts in PostgreSQL.
 type PostRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewPostRepository creates a post repository.

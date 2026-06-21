@@ -8,7 +8,7 @@ import (
 
 // Locker manages migration mutual exclusion.
 type Locker struct {
-	db *gorm.DB
+	db *gorm.DB // db stores the db value.
 }
 
 // NewLocker creates a migration locker.

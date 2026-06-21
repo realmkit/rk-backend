@@ -8,10 +8,10 @@ import (
 
 // PunishmentSummary is a safe punishment projection for ticket intake.
 type PunishmentSummary struct {
-	ID           uuid.UUID
-	TargetUserID uuid.UUID
-	IssuerUserID *uuid.UUID
-	Status       string
+	ID           uuid.UUID  // ID stores the i d value.
+	TargetUserID uuid.UUID  // TargetUserID stores the target user i d value.
+	IssuerUserID *uuid.UUID // IssuerUserID stores the issuer user i d value.
+	Status       string     // Status stores the status value.
 }
 
 // PunishmentReader resolves punishments for appeals.

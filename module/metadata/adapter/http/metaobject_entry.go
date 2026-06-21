@@ -10,21 +10,21 @@ import (
 
 // metaobjectEntryRequest contains metaobject entry input.
 type metaobjectEntryRequest struct {
-	Handle      domain.Handle                  `json:"handle"`
-	DisplayName string                         `json:"display_name"`
-	Fields      map[domain.Key]json.RawMessage `json:"fields"`
+	Handle      domain.Handle                  `json:"handle"`       // Handle stores the handle value.
+	DisplayName string                         `json:"display_name"` // DisplayName stores the display name value.
+	Fields      map[domain.Key]json.RawMessage `json:"fields"`       // Fields stores the fields value.
 }
 
 // metaobjectEntryUpdateRequest contains mutable metaobject entry input.
 type metaobjectEntryUpdateRequest struct {
-	DisplayName *string                        `json:"display_name"`
-	Fields      map[domain.Key]json.RawMessage `json:"fields"`
+	DisplayName *string                        `json:"display_name"` // DisplayName stores the display name value.
+	Fields      map[domain.Key]json.RawMessage `json:"fields"`       // Fields stores the fields value.
 }
 
 // metaobjectEntryListResponse contains paginated metaobject entry output.
 type metaobjectEntryListResponse struct {
-	Items         []domain.MetaobjectEntry `json:"items"`
-	NextPageToken string                   `json:"next_page_token,omitempty"`
+	Items         []domain.MetaobjectEntry `json:"items"`                     // Items stores the items value.
+	NextPageToken string                   `json:"next_page_token,omitempty"` // NextPageToken stores the next page token value.
 }
 
 // createMetaobjectEntry handles metaobject entry creation.

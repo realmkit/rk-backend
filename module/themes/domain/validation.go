@@ -10,8 +10,8 @@ import (
 
 // IntegrityFile is one path and content digest pair used by version hashing.
 type IntegrityFile struct {
-	Path          FilePath
-	ContentSHA256 Digest
+	Path          FilePath // Path stores the path value.
+	ContentSHA256 Digest   // ContentSHA256 stores the content s h a256 value.
 }
 
 const (

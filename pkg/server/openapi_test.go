@@ -55,7 +55,7 @@ func requiresContract(route fiber.Route) bool {
 	if route.Method == fiber.MethodHead {
 		return false
 	}
-	if route.Path == "/" {
+	if route.Path == "/" && route.Method != fiber.MethodGet {
 		return false
 	}
 	if route.Path == "/users" || route.Path == "/users/" {

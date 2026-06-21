@@ -9,32 +9,32 @@ import (
 
 // definitionRequest contains metafield definition input.
 type definitionRequest struct {
-	OwnerType   domain.OwnerType `json:"owner_type"`
-	Key         domain.Key       `json:"key"`
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	ValueType   domain.ValueType `json:"value_type"`
-	List        bool             `json:"list"`
-	Required    bool             `json:"required"`
-	Rules       domain.Rules     `json:"rules"`
-	SortOrder   int              `json:"sort_order"`
-	Active      *bool            `json:"active"`
+	OwnerType   domain.OwnerType `json:"owner_type"`  // OwnerType stores the owner type value.
+	Key         domain.Key       `json:"key"`         // Key stores the key value.
+	Name        string           `json:"name"`        // Name stores the name value.
+	Description string           `json:"description"` // Description stores the description value.
+	ValueType   domain.ValueType `json:"value_type"`  // ValueType stores the value type value.
+	List        bool             `json:"list"`        // List stores the list value.
+	Required    bool             `json:"required"`    // Required stores the required value.
+	Rules       domain.Rules     `json:"rules"`       // Rules stores the rules value.
+	SortOrder   int              `json:"sort_order"`  // SortOrder stores the sort order value.
+	Active      *bool            `json:"active"`      // Active stores the active value.
 }
 
 // definitionUpdateRequest contains mutable metafield definition input.
 type definitionUpdateRequest struct {
-	Name        *string       `json:"name"`
-	Description *string       `json:"description"`
-	Required    *bool         `json:"required"`
-	Rules       *domain.Rules `json:"rules"`
-	SortOrder   *int          `json:"sort_order"`
-	Active      *bool         `json:"active"`
+	Name        *string       `json:"name"`        // Name stores the name value.
+	Description *string       `json:"description"` // Description stores the description value.
+	Required    *bool         `json:"required"`    // Required stores the required value.
+	Rules       *domain.Rules `json:"rules"`       // Rules stores the rules value.
+	SortOrder   *int          `json:"sort_order"`  // SortOrder stores the sort order value.
+	Active      *bool         `json:"active"`      // Active stores the active value.
 }
 
 // definitionListResponse contains paginated definition output.
 type definitionListResponse struct {
-	Items         []domain.MetafieldDefinition `json:"items"`
-	NextPageToken string                       `json:"next_page_token,omitempty"`
+	Items         []domain.MetafieldDefinition `json:"items"`                     // Items stores the items value.
+	NextPageToken string                       `json:"next_page_token,omitempty"` // NextPageToken stores the next page token value.
 }
 
 // createDefinition handles definition creation.

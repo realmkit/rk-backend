@@ -36,22 +36,22 @@ type Option func(*options)
 
 // options contains optional server modules.
 type options struct {
-	cors                  realmkitcors.Config
-	config                Config
-	idempotencyConfigured bool
-	idempotencyStore      idempotency.Store
-	assets                *assetshttp.Services
-	auth                  *auth.Config
-	authProvisioner       auth.Provisioner
-	cron                  *cronhttp.Services
-	events                *eventshttp.Services
-	forums                *forumshttp.Services
-	groups                *groupshttp.Services
-	metadata              *metadatahttp.Services
-	punishments           *punishmentshttp.Services
-	rateLimitStore        ratelimit.Store
-	tickets               *ticketshttp.Services
-	users                 *userhttp.Services
+	cors                  realmkitcors.Config       // cors stores the cors value.
+	config                Config                    // config stores the config value.
+	idempotencyConfigured bool                      // idempotencyConfigured stores the idempotency configured value.
+	idempotencyStore      idempotency.Store         // idempotencyStore stores the idempotency store value.
+	assets                *assetshttp.Services      // assets stores the assets value.
+	auth                  *auth.Config              // auth stores the auth value.
+	authProvisioner       auth.Provisioner          // authProvisioner stores the auth provisioner value.
+	cron                  *cronhttp.Services        // cron stores the cron value.
+	events                *eventshttp.Services      // events stores the events value.
+	forums                *forumshttp.Services      // forums stores the forums value.
+	groups                *groupshttp.Services      // groups stores the groups value.
+	metadata              *metadatahttp.Services    // metadata stores the metadata value.
+	punishments           *punishmentshttp.Services // punishments stores the punishments value.
+	rateLimitStore        ratelimit.Store           // rateLimitStore stores the rate limit store value.
+	tickets               *ticketshttp.Services     // tickets stores the tickets value.
+	users                 *userhttp.Services        // users stores the users value.
 }
 
 // WithConfig configures server timeouts and network behavior.
@@ -179,6 +179,7 @@ func New(log *zap.Logger, development bool, opts ...Option) *fiber.App {
 	}))
 	app.Use(ratelimit.Middleware(options.rateLimitStore, DefaultRateLimit))
 	app.Use(idempotency.Middleware(options.idempotencyStore, idempotency.WithLogger(log)))
+	app.Get("/", root(development))
 	app.Get("/health", health)
 	swagger.Register(app, development)
 

@@ -11,19 +11,19 @@ import (
 
 // messageRequest is the ticket message DTO.
 type messageRequest struct {
-	Visibility          domain.MessageVisibility `json:"visibility"`
-	ContentDocumentJSON json.RawMessage          `json:"content_document_json"`
-	ContentText         string                   `json:"content_text"`
+	Visibility          domain.MessageVisibility `json:"visibility"`            // Visibility stores the visibility value.
+	ContentDocumentJSON json.RawMessage          `json:"content_document_json"` // ContentDocumentJSON stores the content document j s o n value.
+	ContentText         string                   `json:"content_text"`          // ContentText stores the content text value.
 }
 
 // evidenceRequest is the evidence write DTO.
 type evidenceRequest struct {
-	MessageID   *uuid.UUID               `json:"message_id"`
-	AssetID     *uuid.UUID               `json:"asset_id"`
-	ExternalURL string                   `json:"external_url"`
-	Label       string                   `json:"label"`
-	Description string                   `json:"description"`
-	Visibility  domain.MessageVisibility `json:"visibility"`
+	MessageID   *uuid.UUID               `json:"message_id"`   // MessageID stores the message i d value.
+	AssetID     *uuid.UUID               `json:"asset_id"`     // AssetID stores the asset i d value.
+	ExternalURL string                   `json:"external_url"` // ExternalURL stores the external u r l value.
+	Label       string                   `json:"label"`        // Label stores the label value.
+	Description string                   `json:"description"`  // Description stores the description value.
+	Visibility  domain.MessageVisibility `json:"visibility"`   // Visibility stores the visibility value.
 }
 
 // createMessage handles ticket replies.

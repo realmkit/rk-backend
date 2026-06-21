@@ -13,7 +13,7 @@ import (
 
 // MetaobjectEntryRepository stores metaobject entries in PostgreSQL.
 type MetaobjectEntryRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewMetaobjectEntryRepository creates a metaobject entry repository.

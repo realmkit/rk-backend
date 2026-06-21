@@ -121,13 +121,13 @@ func New(t *testing.T, opts ...Option) *Ecosystem {
 
 // options contains bootstrap settings before dependencies are created.
 type options struct {
-	database      *Database
-	development   bool
-	log           *zap.Logger
-	logBuffer     *bytes.Buffer
-	serverOptions []server.Option
-	storage       *MemoryStorage
-	storageBucket string
+	database      *Database       // database stores the database value.
+	development   bool            // development stores the development value.
+	log           *zap.Logger     // log stores the log value.
+	logBuffer     *bytes.Buffer   // logBuffer stores the log buffer value.
+	serverOptions []server.Option // serverOptions stores the server options value.
+	storage       *MemoryStorage  // storage stores the storage value.
+	storageBucket string          // storageBucket stores the storage bucket value.
 }
 
 // newOptions creates default e2e bootstrap settings.

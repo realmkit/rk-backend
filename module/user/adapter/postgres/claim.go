@@ -12,7 +12,7 @@ import (
 
 // ClaimCacheRepository stores provider claim cache rows.
 type ClaimCacheRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewClaimCacheRepository creates a claim cache repository.

@@ -16,7 +16,7 @@ import (
 
 // Repository stores cron state.
 type Repository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewRepository creates a cron repository.

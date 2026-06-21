@@ -14,7 +14,7 @@ import (
 
 // MetafieldDefinitionRepository stores definitions in PostgreSQL.
 type MetafieldDefinitionRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewMetafieldDefinitionRepository creates a metafield definition repository.

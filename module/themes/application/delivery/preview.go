@@ -60,7 +60,7 @@ func (service Service) ValidatePreviewToken(
 	if err != nil {
 		return domain.ThemePreviewToken{}, err
 	}
-	if !token.ExpiresAt.After(service.clock().UTC()) {
+	if err := token.ValidateAt(service.clock().UTC()); err != nil {
 		return domain.ThemePreviewToken{}, port.ErrInvalidState
 	}
 	return token, nil

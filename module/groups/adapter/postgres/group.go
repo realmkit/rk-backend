@@ -16,7 +16,7 @@ import (
 
 // GroupRepository stores groups in PostgreSQL.
 type GroupRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewGroupRepository creates a group repository.

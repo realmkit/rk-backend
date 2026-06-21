@@ -28,7 +28,7 @@ var (
 
 // TextQuery is a normalized user-provided search query.
 type TextQuery struct {
-	value string
+	value string // value stores the value value.
 }
 
 // QueryOptions controls text query validation.

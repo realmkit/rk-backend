@@ -9,53 +9,53 @@ import (
 
 // categoryRequest is a category write request.
 type categoryRequest struct {
-	Key          domain.Key            `json:"key"`
-	Name         string                `json:"name"`
-	Description  string                `json:"description"`
-	DisplayOrder int                   `json:"display_order"`
-	Status       domain.CategoryStatus `json:"status"`
+	Key          domain.Key            `json:"key"`           // Key stores the key value.
+	Name         string                `json:"name"`          // Name stores the name value.
+	Description  string                `json:"description"`   // Description stores the description value.
+	DisplayOrder int                   `json:"display_order"` // DisplayOrder stores the display order value.
+	Status       domain.CategoryStatus `json:"status"`        // Status stores the status value.
 }
 
 // reorderRequest is a display-order request.
 type reorderRequest struct {
-	Items []port.ReorderItem `json:"items"`
+	Items []port.ReorderItem `json:"items"` // Items stores the items value.
 }
 
 // categoryListResponse contains one category page.
 type categoryListResponse struct {
-	Items         []domain.ForumCategory `json:"items"`
-	NextPageToken string                 `json:"next_page_token,omitempty"`
+	Items         []domain.ForumCategory `json:"items"`                     // Items stores the items value.
+	NextPageToken string                 `json:"next_page_token,omitempty"` // NextPageToken stores the next page token value.
 }
 
 // forumRequest is a forum write request.
 type forumRequest struct {
-	CategoryID                    uuid.UUID                   `json:"category_id"`
-	ParentForumID                 *uuid.UUID                  `json:"parent_forum_id"`
-	Kind                          domain.ForumKind            `json:"kind"`
-	Key                           domain.Key                  `json:"key"`
-	Slug                          domain.Slug                 `json:"slug"`
-	Name                          string                      `json:"name"`
-	Description                   string                      `json:"description"`
-	DisplayOrder                  int                         `json:"display_order"`
-	ExternalURL                   string                      `json:"external_url"`
-	IconAssetID                   *uuid.UUID                  `json:"icon_asset_id"`
-	ThreadVisibilityMode          domain.ThreadVisibilityMode `json:"thread_visibility_mode"`
-	MaxStickyThreads              int                         `json:"max_sticky_threads"`
-	DefaultThreadStatus           domain.ThreadStatus         `json:"default_thread_status"`
-	AuthorPostEditWindowSeconds   int                         `json:"author_post_edit_window_seconds"`
-	AuthorPostDeleteWindowSeconds int                         `json:"author_post_delete_window_seconds"`
-	Status                        domain.ForumStatus          `json:"status"`
+	CategoryID                    uuid.UUID                   `json:"category_id"`                       // CategoryID stores the category i d value.
+	ParentForumID                 *uuid.UUID                  `json:"parent_forum_id"`                   // ParentForumID stores the parent forum i d value.
+	Kind                          domain.ForumKind            `json:"kind"`                              // Kind stores the kind value.
+	Key                           domain.Key                  `json:"key"`                               // Key stores the key value.
+	Slug                          domain.Slug                 `json:"slug"`                              // Slug stores the slug value.
+	Name                          string                      `json:"name"`                              // Name stores the name value.
+	Description                   string                      `json:"description"`                       // Description stores the description value.
+	DisplayOrder                  int                         `json:"display_order"`                     // DisplayOrder stores the display order value.
+	ExternalURL                   string                      `json:"external_url"`                      // ExternalURL stores the external u r l value.
+	IconAssetID                   *uuid.UUID                  `json:"icon_asset_id"`                     // IconAssetID stores the icon asset i d value.
+	ThreadVisibilityMode          domain.ThreadVisibilityMode `json:"thread_visibility_mode"`            // ThreadVisibilityMode stores the thread visibility mode value.
+	MaxStickyThreads              int                         `json:"max_sticky_threads"`                // MaxStickyThreads stores the max sticky threads value.
+	DefaultThreadStatus           domain.ThreadStatus         `json:"default_thread_status"`             // DefaultThreadStatus stores the default thread status value.
+	AuthorPostEditWindowSeconds   int                         `json:"author_post_edit_window_seconds"`   // AuthorPostEditWindowSeconds stores the author post edit window seconds value.
+	AuthorPostDeleteWindowSeconds int                         `json:"author_post_delete_window_seconds"` // AuthorPostDeleteWindowSeconds stores the author post delete window seconds value.
+	Status                        domain.ForumStatus          `json:"status"`                            // Status stores the status value.
 }
 
 // moveForumRequest is a forum move request.
 type moveForumRequest struct {
-	CategoryID    uuid.UUID  `json:"category_id"`
-	ParentForumID *uuid.UUID `json:"parent_forum_id"`
-	DisplayOrder  int        `json:"display_order"`
+	CategoryID    uuid.UUID  `json:"category_id"`     // CategoryID stores the category i d value.
+	ParentForumID *uuid.UUID `json:"parent_forum_id"` // ParentForumID stores the parent forum i d value.
+	DisplayOrder  int        `json:"display_order"`   // DisplayOrder stores the display order value.
 }
 
 // forumListResponse contains one forum page.
 type forumListResponse struct {
-	Items         []domain.Forum `json:"items"`
-	NextPageToken string         `json:"next_page_token,omitempty"`
+	Items         []domain.Forum `json:"items"`                     // Items stores the items value.
+	NextPageToken string         `json:"next_page_token,omitempty"` // NextPageToken stores the next page token value.
 }

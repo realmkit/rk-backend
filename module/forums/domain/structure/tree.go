@@ -67,6 +67,7 @@ type ForumTree struct {
 	Categories []CategoryNode `json:"categories"`
 }
 
+// validPath supports package behavior.
 func validPath(path string, id uuid.UUID) bool {
 	if id == uuid.Nil {
 		return true

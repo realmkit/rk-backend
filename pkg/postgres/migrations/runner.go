@@ -17,13 +17,13 @@ var ErrChecksumChanged = errors.New("migration checksum changed")
 
 // Runner applies and validates global schema migrations.
 type Runner struct {
-	db         *gorm.DB
-	source     Source
-	store      Store
-	locker     Locker
-	log        *zap.Logger
-	executor   string
-	appVersion string
+	db         *gorm.DB    // db stores the db value.
+	source     Source      // source stores the source value.
+	store      Store       // store stores the store value.
+	locker     Locker      // locker stores the locker value.
+	log        *zap.Logger // log stores the log value.
+	executor   string      // executor stores the executor value.
+	appVersion string      // appVersion stores the app version value.
 }
 
 // Option configures a Runner.

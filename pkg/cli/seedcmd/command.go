@@ -22,10 +22,10 @@ import (
 
 // Dependencies contains seed command runtime dependencies.
 type Dependencies struct {
-	LoadConfig    func() (config.Config, error)
-	NewLogger     func(logger.Config) (*zap.Logger, error)
-	OpenPostgres  func(context.Context, postgres.Config) (*gorm.DB, error)
-	ClosePostgres func(*gorm.DB) error
+	LoadConfig    func() (config.Config, error)                            // LoadConfig stores the load config value.
+	NewLogger     func(logger.Config) (*zap.Logger, error)                 // NewLogger stores the new logger value.
+	OpenPostgres  func(context.Context, postgres.Config) (*gorm.DB, error) // OpenPostgres stores the open postgres value.
+	ClosePostgres func(*gorm.DB) error                                     // ClosePostgres stores the close postgres value.
 }
 
 // New creates the seed command group.

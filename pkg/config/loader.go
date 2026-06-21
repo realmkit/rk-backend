@@ -22,8 +22,8 @@ type Option func(*loader)
 
 // loader contains configuration loading settings.
 type loader struct {
-	envFile string
-	prefix  string
+	envFile string // envFile stores the env file value.
+	prefix  string // prefix stores the prefix value.
 }
 
 // Load reads RealmKit configuration from defaults, .env, and environment variables.

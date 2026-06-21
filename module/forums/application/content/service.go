@@ -11,15 +11,15 @@ import (
 
 // Service manages forum content use cases.
 type Service struct {
-	forums       port.ForumRepository
-	threads      port.ThreadRepository
-	posts        port.PostRepository
-	assets       port.AssetResolver
-	authorizer   port.VisibilityAuthorizer
-	restrictions port.RestrictionChecker
-	cache        port.ReadCache
-	transactions transaction.Runner
-	events       emitter.Publisher
+	forums       port.ForumRepository      // forums stores the forums value.
+	threads      port.ThreadRepository     // threads stores the threads value.
+	posts        port.PostRepository       // posts stores the posts value.
+	assets       port.AssetResolver        // assets stores the assets value.
+	authorizer   port.VisibilityAuthorizer // authorizer stores the authorizer value.
+	restrictions port.RestrictionChecker   // restrictions stores the restrictions value.
+	cache        port.ReadCache            // cache stores the cache value.
+	transactions transaction.Runner        // transactions stores the transactions value.
+	events       emitter.Publisher         // events stores the events value.
 }
 
 // Dependencies contains content service dependencies.

@@ -11,12 +11,12 @@ import (
 
 // Service manages forum admin use cases.
 type Service struct {
-	forums       port.ForumRepository
-	authorizer   port.VisibilityAuthorizer
-	permissions  port.PermissionAdmin
-	cache        port.ReadCache
-	transactions transaction.Runner
-	events       emitter.Publisher
+	forums       port.ForumRepository      // forums stores the forums value.
+	authorizer   port.VisibilityAuthorizer // authorizer stores the authorizer value.
+	permissions  port.PermissionAdmin      // permissions stores the permissions value.
+	cache        port.ReadCache            // cache stores the cache value.
+	transactions transaction.Runner        // transactions stores the transactions value.
+	events       emitter.Publisher         // events stores the events value.
 }
 
 // Dependencies contains admin service dependencies.

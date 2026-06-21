@@ -17,7 +17,7 @@ import (
 
 // AssetRepository stores assets in PostgreSQL.
 type AssetRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewAssetRepository creates an asset repository.

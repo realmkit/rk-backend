@@ -11,15 +11,15 @@ import (
 
 // staffRequest is the common staff workflow DTO.
 type staffRequest struct {
-	AssigneeUserID *uuid.UUID `json:"assignee_user_id"`
-	TeamGroupID    *uuid.UUID `json:"team_group_id"`
-	Reason         string     `json:"reason"`
+	AssigneeUserID *uuid.UUID `json:"assignee_user_id"` // AssigneeUserID stores the assignee user i d value.
+	TeamGroupID    *uuid.UUID `json:"team_group_id"`    // TeamGroupID stores the team group i d value.
+	Reason         string     `json:"reason"`           // Reason stores the reason value.
 }
 
 // appealDecisionRequest is the appeal decision DTO.
 type appealDecisionRequest struct {
-	Reason           string `json:"reason"`
-	RevokePunishment bool   `json:"revoke_punishment"`
+	Reason           string `json:"reason"`            // Reason stores the reason value.
+	RevokePunishment bool   `json:"revoke_punishment"` // RevokePunishment stores the revoke punishment value.
 }
 
 // assignTicket handles ticket assignment.

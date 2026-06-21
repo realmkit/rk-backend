@@ -80,6 +80,7 @@ func (settings ForumSettings) Validate() error {
 	return NewValidationError(violations)
 }
 
+// behaviorSettings defines package data.
 type behaviorSettings interface {
 	behaviorKind() ForumKind
 	behaviorExternalURL() string
@@ -88,46 +89,57 @@ type behaviorSettings interface {
 	behaviorDeleteWindowSeconds() int
 }
 
+// behaviorKind supports package behavior.
 func (forum Forum) behaviorKind() ForumKind {
 	return forum.Kind
 }
 
+// behaviorExternalURL supports package behavior.
 func (forum Forum) behaviorExternalURL() string {
 	return forum.ExternalURL
 }
 
+// behaviorMaxStickyThreads supports package behavior.
 func (forum Forum) behaviorMaxStickyThreads() int {
 	return forum.MaxStickyThreads
 }
 
+// behaviorEditWindowSeconds supports package behavior.
 func (forum Forum) behaviorEditWindowSeconds() int {
 	return forum.AuthorPostEditWindowSeconds
 }
 
+// behaviorDeleteWindowSeconds supports package behavior.
 func (forum Forum) behaviorDeleteWindowSeconds() int {
 	return forum.AuthorPostDeleteWindowSeconds
 }
 
+// behaviorKind supports package behavior.
 func (settings ForumSettings) behaviorKind() ForumKind {
 	return settings.Kind
 }
 
+// behaviorExternalURL supports package behavior.
 func (settings ForumSettings) behaviorExternalURL() string {
 	return settings.ExternalURL
 }
 
+// behaviorMaxStickyThreads supports package behavior.
 func (settings ForumSettings) behaviorMaxStickyThreads() int {
 	return settings.MaxStickyThreads
 }
 
+// behaviorEditWindowSeconds supports package behavior.
 func (settings ForumSettings) behaviorEditWindowSeconds() int {
 	return settings.AuthorPostEditWindowSeconds
 }
 
+// behaviorDeleteWindowSeconds supports package behavior.
 func (settings ForumSettings) behaviorDeleteWindowSeconds() int {
 	return settings.AuthorPostDeleteWindowSeconds
 }
 
+// validateForumBehavior supports package behavior.
 func validateForumBehavior(
 	settings behaviorSettings,
 	violations []Violation,

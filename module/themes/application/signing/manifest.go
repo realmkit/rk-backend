@@ -13,11 +13,11 @@ import (
 
 // Envelope is the detached package signature document.
 type Envelope struct {
-	Algorithm      string `json:"algorithm"`
-	KeyID          string `json:"key_id"`
-	ManifestSHA256 string `json:"manifest_sha256"`
-	Signature      string `json:"signature"`
-	SignedAt       string `json:"signed_at"`
+	Algorithm      string `json:"algorithm"`       // Algorithm stores the algorithm value.
+	KeyID          string `json:"key_id"`          // KeyID stores the key i d value.
+	ManifestSHA256 string `json:"manifest_sha256"` // ManifestSHA256 stores the manifest s h a256 value.
+	Signature      string `json:"signature"`       // Signature stores the signature value.
+	SignedAt       string `json:"signed_at"`       // SignedAt stores the signed at value.
 }
 
 // CanonicalManifestJSON returns deterministic JSON used for hashing and signing.

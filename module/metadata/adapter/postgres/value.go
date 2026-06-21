@@ -12,7 +12,7 @@ import (
 
 // MetafieldValueRepository stores values in PostgreSQL.
 type MetafieldValueRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewMetafieldValueRepository creates a metafield value repository.

@@ -15,8 +15,8 @@ type Option func(*settings)
 
 // settings contains logger builder settings.
 type settings struct {
-	output      zapcore.WriteSyncer
-	errorOutput zapcore.WriteSyncer
+	output      zapcore.WriteSyncer // output stores the output value.
+	errorOutput zapcore.WriteSyncer // errorOutput stores the error output value.
 }
 
 // New creates a JSON Zap logger for the supplied logging configuration.

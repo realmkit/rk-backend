@@ -10,6 +10,23 @@ import (
 	"github.com/realmkit/rk-backend/module/themes/domain"
 )
 
+var (
+	// realmKitTagPattern stores package state.
+	realmKitTagPattern = regexp.MustCompile(`{%\s*(rk_[a-zA-Z0-9_]+)`)
+	// referencePatterns stores package state.
+	referencePatterns = []referencePattern{
+		{pattern: regexp.MustCompile(`rk_section\s+['"]([^'"]+)['"]`), format: "sections/%s.liquid"},
+		{pattern: regexp.MustCompile(`render\s+['"]([^'"]+)['"]`), format: "snippets/%s.liquid"},
+		{pattern: regexp.MustCompile(`['"]([^'"]+)['"]\s*\|\s*asset_url`), format: "assets/%s"},
+	}
+)
+
+// referencePattern describes one Liquid dependency matcher.
+type referencePattern struct {
+	pattern *regexp.Regexp // pattern stores the pattern value.
+	format  string         // format stores the format value.
+}
+
 // indexFiles indexes files by path and kind-derived key.
 func indexFiles(files []domain.ThemeFile) map[domain.FilePath]domain.ThemeFile {
 	index := map[domain.FilePath]domain.ThemeFile{}
@@ -106,23 +123,32 @@ func isLiquid(file domain.ThemeFile) bool {
 
 // unknownRKTagIssues returns unsupported RealmKit tag diagnostics.
 func unknownRKTagIssues(file domain.ThemeFile) []domain.ThemeValidationIssue {
-	matches := regexp.MustCompile(`{%\s*(rk_[a-zA-Z0-9_]+)`).FindAllStringSubmatch(file.ContentText, -1)
-	allowed := map[string]struct{}{"rk_layout": {}, "rk_section": {}, "rk_schema": {}, "rk_stylesheet": {}, "rk_javascript": {}, "rk_doc": {}}
+	matches := realmKitTagPattern.FindAllStringSubmatch(file.ContentText, -1)
 	issues := make([]domain.ThemeValidationIssue, 0)
 	for _, match := range matches {
-		if _, ok := allowed[match[1]]; !ok {
+		if !allowedRealmKitTag(match[1]) {
 			issues = append(issues, issue(domain.IssueUnknownRealmKitTag, file.Path, "Unknown RealmKit Liquid tag."))
 		}
 	}
 	return issues
 }
 
+// allowedRealmKitTag reports whether a custom RealmKit tag is supported.
+func allowedRealmKitTag(tag string) bool {
+	switch tag {
+	case "rk_layout", "rk_section", "rk_schema", "rk_stylesheet", "rk_javascript", "rk_doc":
+		return true
+	default:
+		return false
+	}
+}
+
 // dependencyIssues returns missing section, snippet, and asset diagnostics.
 func dependencyIssues(file domain.ThemeFile, index map[domain.FilePath]domain.ThemeFile) []domain.ThemeValidationIssue {
 	issues := make([]domain.ThemeValidationIssue, 0)
-	issues = append(issues, missingReferences(file, index, `rk_section\s+['"]([^'"]+)['"]`, "sections/%s.liquid")...)
-	issues = append(issues, missingReferences(file, index, `render\s+['"]([^'"]+)['"]`, "snippets/%s.liquid")...)
-	issues = append(issues, missingReferences(file, index, `['"]([^'"]+)['"]\s*\|\s*asset_url`, "assets/%s")...)
+	for _, reference := range referencePatterns {
+		issues = append(issues, missingReferences(file, index, reference)...)
+	}
 	return issues
 }
 
@@ -130,17 +156,21 @@ func dependencyIssues(file domain.ThemeFile, index map[domain.FilePath]domain.Th
 func missingReferences(
 	file domain.ThemeFile,
 	index map[domain.FilePath]domain.ThemeFile,
-	pattern string,
-	format string,
+	reference referencePattern,
 ) []domain.ThemeValidationIssue {
-	matches := regexp.MustCompile(pattern).FindAllStringSubmatch(file.ContentText, -1)
+	matches := reference.pattern.FindAllStringSubmatch(file.ContentText, -1)
 	issues := make([]domain.ThemeValidationIssue, 0, len(matches))
 	for _, match := range matches {
-		if _, ok := index[domain.FilePath(strings.ReplaceAll(format, "%s", match[1]))]; !ok {
+		if _, ok := index[referencePath(reference.format, match[1])]; !ok {
 			issues = append(issues, issue(domain.IssueMissingDependency, file.Path, "Theme file references a missing dependency."))
 		}
 	}
 	return issues
+}
+
+// referencePath returns a normalized dependency path.
+func referencePath(format string, value string) domain.FilePath {
+	return domain.NormalizeFilePath(domain.FilePath(strings.ReplaceAll(format, "%s", value)))
 }
 
 // routeTemplatePath returns the required template path for a route.

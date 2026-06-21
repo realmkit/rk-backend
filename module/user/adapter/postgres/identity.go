@@ -10,7 +10,7 @@ import (
 
 // IdentityLinkRepository stores provider identity links.
 type IdentityLinkRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewIdentityLinkRepository creates an identity link repository.

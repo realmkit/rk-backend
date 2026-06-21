@@ -37,25 +37,25 @@ func userFromModel(model UserModel) domain.User {
 
 // userListRow contains one joined user and provider claim row.
 type userListRow struct {
-	ID              uuid.UUID
-	Status          string
-	AvatarAssetID   *uuid.UUID
-	FirstSeenAt     time.Time
-	LastSeenAt      *time.Time
-	Version         uint64
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	ClaimID         *uuid.UUID
-	Issuer          string
-	Subject         string
-	Username        string
-	Email           string
-	EmailVerified   bool
-	DisplayName     string
-	PictureURL      string
-	PreferredLocale string
-	ClaimsHash      string
-	SyncedAt        *time.Time
+	ID              uuid.UUID  // ID stores the i d value.
+	Status          string     // Status stores the status value.
+	AvatarAssetID   *uuid.UUID // AvatarAssetID stores the avatar asset i d value.
+	FirstSeenAt     time.Time  // FirstSeenAt stores the first seen at value.
+	LastSeenAt      *time.Time // LastSeenAt stores the last seen at value.
+	Version         uint64     // Version stores the version value.
+	CreatedAt       time.Time  // CreatedAt stores the created at value.
+	UpdatedAt       time.Time  // UpdatedAt stores the updated at value.
+	ClaimID         *uuid.UUID // ClaimID stores the claim i d value.
+	Issuer          string     // Issuer stores the issuer value.
+	Subject         string     // Subject stores the subject value.
+	Username        string     // Username stores the username value.
+	Email           string     // Email stores the email value.
+	EmailVerified   bool       // EmailVerified stores the email verified value.
+	DisplayName     string     // DisplayName stores the display name value.
+	PictureURL      string     // PictureURL stores the picture u r l value.
+	PreferredLocale string     // PreferredLocale stores the preferred locale value.
+	ClaimsHash      string     // ClaimsHash stores the claims hash value.
+	SyncedAt        *time.Time // SyncedAt stores the synced at value.
 }
 
 // sortValue returns the cursor value for a user list row.

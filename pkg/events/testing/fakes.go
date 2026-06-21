@@ -12,14 +12,14 @@ import (
 
 // Recorder records published event drafts in tests.
 type Recorder struct {
-	mu     sync.Mutex
-	drafts []domain.Draft
+	mu     sync.Mutex     // mu stores the mu value.
+	drafts []domain.Draft // drafts stores the drafts value.
 }
 
 // PublisherRecorder records event drafts through the publisher shape.
 type PublisherRecorder struct {
-	mu     sync.Mutex
-	drafts []domain.Draft
+	mu     sync.Mutex     // mu stores the mu value.
+	drafts []domain.Draft // drafts stores the drafts value.
 }
 
 // Publish records one draft and returns a synthetic event.

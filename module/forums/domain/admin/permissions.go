@@ -128,6 +128,7 @@ func AuthenticatedPermissionSubjectID() uuid.UUID {
 	return uuid.MustParse("00000000-0000-0000-0000-000000000002")
 }
 
+// normalizePermissionGrants supports package behavior.
 func normalizePermissionGrants(grants []ForumPermissionGrant) []ForumPermissionGrant {
 	normalized := make([]ForumPermissionGrant, 0, len(grants))
 	for _, grant := range grants {
@@ -136,6 +137,7 @@ func normalizePermissionGrants(grants []ForumPermissionGrant) []ForumPermissionG
 	return normalized
 }
 
+// validatePermissionGrants supports package behavior.
 func validatePermissionGrants(field string, grants []ForumPermissionGrant) []Violation {
 	var violations []Violation
 	for index, grant := range grants {
@@ -145,6 +147,7 @@ func validatePermissionGrants(field string, grants []ForumPermissionGrant) []Vio
 	return violations
 }
 
+// validatePrivatePermissionGrants supports package behavior.
 func validatePrivatePermissionGrants(field string, grants []ForumPermissionGrant) []Violation {
 	var violations []Violation
 	for index, grant := range grants {
@@ -161,6 +164,7 @@ func validatePrivatePermissionGrants(field string, grants []ForumPermissionGrant
 	return violations
 }
 
+// validatePublic supports package behavior.
 func (grant ForumPermissionGrant) validatePublic(
 	field string,
 	violations []Violation,
@@ -171,6 +175,7 @@ func (grant ForumPermissionGrant) validatePublic(
 	return violations
 }
 
+// validateAuthenticated supports package behavior.
 func (grant ForumPermissionGrant) validateAuthenticated(
 	field string,
 	violations []Violation,
@@ -181,6 +186,7 @@ func (grant ForumPermissionGrant) validateAuthenticated(
 	return violations
 }
 
+// validateUser supports package behavior.
 func (grant ForumPermissionGrant) validateUser(
 	field string,
 	violations []Violation,
@@ -191,6 +197,7 @@ func (grant ForumPermissionGrant) validateUser(
 	return violations
 }
 
+// validateGroup supports package behavior.
 func (grant ForumPermissionGrant) validateGroup(
 	field string,
 	violations []Violation,

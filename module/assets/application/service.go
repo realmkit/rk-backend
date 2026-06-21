@@ -22,11 +22,11 @@ const readURLTTL = 15 * time.Minute
 
 // Service manages assets.
 type Service struct {
-	repository port.AssetRepository
-	store      storage.Store
-	bucket     string
-	clock      func() time.Time
-	events     emitter.Publisher
+	repository port.AssetRepository // repository stores the repository value.
+	store      storage.Store        // store stores the store value.
+	bucket     string               // bucket stores the bucket value.
+	clock      func() time.Time     // clock stores the clock value.
+	events     emitter.Publisher    // events stores the events value.
 }
 
 // NewService creates an assets service.

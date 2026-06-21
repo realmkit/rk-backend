@@ -188,6 +188,7 @@ func (reference PostReference) Validate() error {
 	return NewValidationError(violations)
 }
 
+// validateTargets supports package behavior.
 func (reference PostReference) validateTargets(violations []Violation) []Violation {
 	if reference.ReferenceType == ReferenceAttachment && missingUUID(reference.TargetAssetID) {
 		violations = AppendViolation(violations, "target_asset_id", "is required for attachments")
@@ -204,11 +205,13 @@ func (reference PostReference) validateTargets(violations []Violation) []Violati
 	return violations
 }
 
+// requiresTargetPost supports package behavior.
 func (reference PostReference) requiresTargetPost() bool {
 	return reference.ReferenceType == ReferenceReplyTo ||
 		reference.ReferenceType == ReferenceQuote
 }
 
+// missingUUID supports package behavior.
 func missingUUID(id *uuid.UUID) bool {
 	return id == nil || *id == uuid.Nil
 }

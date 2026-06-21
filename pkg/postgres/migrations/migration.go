@@ -104,20 +104,20 @@ var migrationNamePattern = regexp.MustCompile(`^([0-9]{6})_([a-z][a-z0-9_]*?)\.(
 
 // filePart contains parsed migration file metadata.
 type filePart struct {
-	version   int64
-	name      string
-	direction Direction
-	fileName  string
+	version   int64     // version stores the version value.
+	name      string    // name stores the name value.
+	direction Direction // direction stores the direction value.
+	fileName  string    // fileName stores the file name value.
 }
 
 // migrationParts contains the up and down scripts for one version.
 type migrationParts struct {
-	version  int64
-	name     string
-	upPath   string
-	downPath string
-	upSQL    string
-	downSQL  string
+	version  int64  // version stores the version value.
+	name     string // name stores the name value.
+	upPath   string // upPath stores the up path value.
+	downPath string // downPath stores the down path value.
+	upSQL    string // upSQL stores the up s q l value.
+	downSQL  string // downSQL stores the down s q l value.
 }
 
 // parseFileName parses one migration file name.

@@ -11,16 +11,17 @@ import (
 
 // Dependencies contains ticket service dependencies.
 type Dependencies struct {
-	Definitions  port.DefinitionRepository
-	Tickets      port.TicketRepository
-	Cache        port.Cache
-	Transactions port.TransactionRunner
-	Events       emitter.Publisher
-	Authorizer   port.Authorizer
-	Assets       port.AssetResolver
-	Users        port.UserResolver
-	Groups       port.GroupResolver
-	Punishments  interface {
+	Definitions  port.DefinitionRepository // Definitions stores the definitions value.
+	Tickets      port.TicketRepository     // Tickets stores the tickets value.
+	Cache        port.Cache                // Cache stores the cache value.
+	Transactions port.TransactionRunner    // Transactions stores the transactions value.
+	Events       emitter.Publisher         // Events stores the events value.
+	Authorizer   port.Authorizer           // Authorizer stores the authorizer value.
+	Assets       port.AssetResolver        // Assets stores the assets value.
+	Users        port.UserResolver         // Users stores the users value.
+	Groups       port.GroupResolver        // Groups stores the groups value.
+	// Punishments resolves and mutates linked punishments.
+	Punishments interface {
 		port.PunishmentReader
 		port.PunishmentExecutor
 	}
@@ -28,16 +29,17 @@ type Dependencies struct {
 
 // Service implements ticket use cases.
 type Service struct {
-	definitions  port.DefinitionRepository
-	tickets      port.TicketRepository
-	cache        port.Cache
-	transactions port.TransactionRunner
-	events       emitter.Publisher
-	authorizer   port.Authorizer
-	assets       port.AssetResolver
-	users        port.UserResolver
-	groups       port.GroupResolver
-	punishments  interface {
+	definitions  port.DefinitionRepository // definitions stores the definitions value.
+	tickets      port.TicketRepository     // tickets stores the tickets value.
+	cache        port.Cache                // cache stores the cache value.
+	transactions port.TransactionRunner    // transactions stores the transactions value.
+	events       emitter.Publisher         // events stores the events value.
+	authorizer   port.Authorizer           // authorizer stores the authorizer value.
+	assets       port.AssetResolver        // assets stores the assets value.
+	users        port.UserResolver         // users stores the users value.
+	groups       port.GroupResolver        // groups stores the groups value.
+	// punishments resolves and mutates linked punishments.
+	punishments interface {
 		port.PunishmentReader
 		port.PunishmentExecutor
 	}

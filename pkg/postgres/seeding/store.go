@@ -46,7 +46,7 @@ type Record struct {
 
 // Store persists data seed history.
 type Store struct {
-	db *gorm.DB
+	db *gorm.DB // db stores the db value.
 }
 
 // NewStore creates a data seed history store.
@@ -116,17 +116,17 @@ func (store Store) Repair(ctx context.Context, version int64, checksum string, r
 
 // historyRow is the database representation of a seed record.
 type historyRow struct {
-	Version    int64
-	Name       string
-	Checksum   string
-	StartedAt  time.Time
-	FinishedAt *time.Time
-	DurationMS *int64
-	Success    bool
-	Error      string
-	Executor   string
-	AppVersion string
-	Dirty      bool
+	Version    int64      // Version stores the version value.
+	Name       string     // Name stores the name value.
+	Checksum   string     // Checksum stores the checksum value.
+	StartedAt  time.Time  // StartedAt stores the started at value.
+	FinishedAt *time.Time // FinishedAt stores the finished at value.
+	DurationMS *int64     // DurationMS stores the duration m s value.
+	Success    bool       // Success stores the success value.
+	Error      string     // Error stores the error value.
+	Executor   string     // Executor stores the executor value.
+	AppVersion string     // AppVersion stores the app version value.
+	Dirty      bool       // Dirty stores the dirty value.
 }
 
 // record maps row to Record.

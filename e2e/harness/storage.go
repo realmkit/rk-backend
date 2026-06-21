@@ -17,10 +17,10 @@ import (
 
 // MemoryStorage stores S3-compatible objects in memory for e2e tests.
 type MemoryStorage struct {
-	mu      sync.RWMutex
-	objects map[string]memoryObject
-	baseURL string
-	now     func() time.Time
+	mu      sync.RWMutex            // mu stores the mu value.
+	objects map[string]memoryObject // objects stores the objects value.
+	baseURL string                  // baseURL stores the base u r l value.
+	now     func() time.Time        // now stores the now value.
 }
 
 // MemoryStorageOption changes in-memory storage behavior.
@@ -151,8 +151,8 @@ func (store *MemoryStorage) url(kind string, key string) string {
 
 // memoryObject contains one stored test object.
 type memoryObject struct {
-	infoValue storage.ObjectInfo
-	payload   []byte
+	infoValue storage.ObjectInfo // infoValue stores the info value value.
+	payload   []byte             // payload stores the payload value.
 }
 
 // info returns a defensive copy of object metadata.

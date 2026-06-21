@@ -14,7 +14,7 @@ import (
 
 // CategoryRepository stores forum categories in PostgreSQL.
 type CategoryRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewCategoryRepository creates a category repository.

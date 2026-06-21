@@ -43,15 +43,15 @@ type Store interface {
 
 // MemoryStore stores rate limits in process memory.
 type MemoryStore struct {
-	mu      sync.Mutex
-	windows map[string]window
-	now     func() time.Time
+	mu      sync.Mutex        // mu stores the mu value.
+	windows map[string]window // windows stores the windows value.
+	now     func() time.Time  // now stores the now value.
 }
 
 // window contains rate limit state for one key.
 type window struct {
-	count   int
-	resetAt time.Time
+	count   int       // count stores the count value.
+	resetAt time.Time // resetAt stores the reset at value.
 }
 
 // NewMemoryStore creates an in-memory rate limit store.

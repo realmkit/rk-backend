@@ -8,8 +8,8 @@ import (
 
 // MemoryStore stores idempotency records in process memory.
 type MemoryStore struct {
-	mu      sync.Mutex
-	entries map[string]Entry
+	mu      sync.Mutex       // mu stores the mu value.
+	entries map[string]Entry // entries stores the entries value.
 }
 
 // NewMemoryStore creates an in-memory idempotency store.

@@ -101,9 +101,9 @@ func (repository TicketRepository) CloseStale(ctx context.Context, now time.Time
 
 // ticketCounterSet contains source-of-truth aggregate counts.
 type ticketCounterSet struct {
-	messages      int64
-	staffMessages int64
-	evidence      int64
+	messages      int64 // messages stores the messages value.
+	staffMessages int64 // staffMessages stores the staff messages value.
+	evidence      int64 // evidence stores the evidence value.
 }
 
 // ticketCounts computes counters from source rows.

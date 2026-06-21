@@ -5,8 +5,8 @@ import "strings"
 
 // Issue describes one JavaScript validation issue.
 type Issue struct {
-	Code    string
-	Message string
+	Code    string // Code stores the code value.
+	Message string // Message stores the message value.
 }
 
 // Validate checks first-version JavaScript safety rules.

@@ -143,6 +143,7 @@ const (
 	ActionFailed ActionStatus = "failed"
 )
 
+// keyPattern stores package state.
 var keyPattern = regexp.MustCompile(`^[a-z][a-z0-9_]{1,62}[a-z0-9]$`)
 
 // ErrValidation reports invalid ticket state.
@@ -150,13 +151,13 @@ var ErrValidation = errors.New("ticket validation failed")
 
 // Violation describes one invalid field.
 type Violation struct {
-	Field   string `json:"field"`
-	Message string `json:"message"`
+	Field   string `json:"field"`   // Field stores the field value.
+	Message string `json:"message"` // Message stores the message value.
 }
 
 // ValidationError contains validation violations.
 type ValidationError struct {
-	Violations []Violation `json:"violations"`
+	Violations []Violation `json:"violations"` // Violations stores the violations value.
 }
 
 // Error returns the validation error message.

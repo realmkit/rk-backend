@@ -27,7 +27,7 @@ var managedForumActions = []groupsdomain.Action{
 
 // VisibilityAuthorizer resolves forum permissions from authorization tuples.
 type VisibilityAuthorizer struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewVisibilityAuthorizer creates a visibility authorizer.
@@ -207,17 +207,17 @@ func (authorizer VisibilityAuthorizer) groupPermissionGrants(
 
 // permissionGrantRow is a compact permission grant projection.
 type permissionGrantRow struct {
-	ScopeID     uuid.UUID
-	Action      string
-	SubjectType string
-	SubjectID   uuid.UUID
+	ScopeID     uuid.UUID // ScopeID stores the scope i d value.
+	Action      string    // Action stores the action value.
+	SubjectType string    // SubjectType stores the subject type value.
+	SubjectID   uuid.UUID // SubjectID stores the subject i d value.
 }
 
 // groupPermissionGrantRow is a compact group permission grant projection.
 type groupPermissionGrantRow struct {
-	ScopeID uuid.UUID
-	Action  string
-	GroupID uuid.UUID
+	ScopeID uuid.UUID // ScopeID stores the scope i d value.
+	Action  string    // Action stores the action value.
+	GroupID uuid.UUID // GroupID stores the group i d value.
 }
 
 // Ensure VisibilityAuthorizer implements port.VisibilityAuthorizer.

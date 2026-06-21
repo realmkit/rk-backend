@@ -62,6 +62,7 @@ func (service Service) ListTickets(
 	return service.tickets.List(ctx, filter, page)
 }
 
+// validateIntake supports package behavior.
 func (service Service) validateIntake(ctx context.Context, command port.CreateTicketCommand, definition domain.Definition) error {
 	if err := service.requireAuthorizer(); err != nil {
 		return err
@@ -83,6 +84,7 @@ func (service Service) validateIntake(ctx context.Context, command port.CreateTi
 	return service.validatePunishmentAndAssets(ctx, command, definition)
 }
 
+// validatePunishmentAndAssets supports package behavior.
 func (service Service) validatePunishmentAndAssets(
 	ctx context.Context,
 	command port.CreateTicketCommand,
@@ -114,6 +116,7 @@ func (service Service) validatePunishmentAndAssets(
 	return nil
 }
 
+// prepareTicket supports package behavior.
 func (service Service) prepareTicket(
 	command port.CreateTicketCommand,
 	definition domain.Definition,

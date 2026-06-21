@@ -13,14 +13,14 @@ const widgetCacheTTL = 20 * time.Second
 
 // Service manages forum interaction use cases.
 type Service struct {
-	forums       port.ForumRepository
-	threads      port.ThreadRepository
-	posts        port.PostRepository
-	interactions port.InteractionRepository
-	authorizer   port.VisibilityAuthorizer
-	restrictions port.RestrictionChecker
-	cache        port.ReadCache
-	events       emitter.Publisher
+	forums       port.ForumRepository       // forums stores the forums value.
+	threads      port.ThreadRepository      // threads stores the threads value.
+	posts        port.PostRepository        // posts stores the posts value.
+	interactions port.InteractionRepository // interactions stores the interactions value.
+	authorizer   port.VisibilityAuthorizer  // authorizer stores the authorizer value.
+	restrictions port.RestrictionChecker    // restrictions stores the restrictions value.
+	cache        port.ReadCache             // cache stores the cache value.
+	events       emitter.Publisher          // events stores the events value.
 }
 
 // Dependencies contains interaction service dependencies.

@@ -14,12 +14,12 @@ const treeCacheTTL = 30 * time.Second
 
 // Service manages forum structure use cases.
 type Service struct {
-	categories   port.CategoryRepository
-	forums       port.ForumRepository
-	authorizer   port.VisibilityAuthorizer
-	cache        port.ReadCache
-	transactions transaction.Runner
-	events       emitter.Publisher
+	categories   port.CategoryRepository   // categories stores the categories value.
+	forums       port.ForumRepository      // forums stores the forums value.
+	authorizer   port.VisibilityAuthorizer // authorizer stores the authorizer value.
+	cache        port.ReadCache            // cache stores the cache value.
+	transactions transaction.Runner        // transactions stores the transactions value.
+	events       emitter.Publisher         // events stores the events value.
 }
 
 // Dependencies contains structure service dependencies.

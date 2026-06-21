@@ -15,7 +15,7 @@ import (
 
 // Repository stores events in PostgreSQL.
 type Repository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewRepository creates an event repository.

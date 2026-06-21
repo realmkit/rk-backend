@@ -14,11 +14,11 @@ import (
 
 // Service manages groups, memberships, grants, and permission checks.
 type Service struct {
-	groups      port.GroupRepository
-	memberships port.MembershipRepository
-	permissions port.PermissionRepository
-	clock       func() time.Time
-	events      emitter.Publisher
+	groups      port.GroupRepository      // groups stores the groups value.
+	memberships port.MembershipRepository // memberships stores the memberships value.
+	permissions port.PermissionRepository // permissions stores the permissions value.
+	clock       func() time.Time          // clock stores the clock value.
+	events      emitter.Publisher         // events stores the events value.
 }
 
 // NewService creates a groups service.

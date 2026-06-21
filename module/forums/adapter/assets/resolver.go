@@ -11,7 +11,7 @@ import (
 
 // Resolver validates forum attachment references through the assets service.
 type Resolver struct {
-	service assetport.Service
+	service assetport.Service // service stores the service value.
 }
 
 // NewResolver creates an asset resolver.

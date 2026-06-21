@@ -17,7 +17,7 @@ const threadViewsKey = "forums:views:v1:threads"
 
 // TreeCache stores visible forum trees in Redis.
 type TreeCache struct {
-	client *goredis.Client
+	client *goredis.Client // client stores the client value.
 }
 
 // NewTreeCache creates a Redis tree cache.

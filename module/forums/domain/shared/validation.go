@@ -201,6 +201,7 @@ func ValidateContentText(field string, value string) []Violation {
 	return []Violation{{Field: field, Message: "must be between 1 and 200000 characters"}}
 }
 
+// validateEnum supports package behavior.
 func validateEnum(field string, allowed bool) []Violation {
 	if allowed {
 		return nil

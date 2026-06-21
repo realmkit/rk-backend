@@ -15,7 +15,7 @@ import (
 
 // TicketRepository stores ticket cases and their child records.
 type TicketRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewTicketRepository creates a ticket repository.

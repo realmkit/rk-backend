@@ -11,7 +11,7 @@ import (
 
 // Authorizer checks ticket permissions through the groups module.
 type Authorizer struct {
-	checker groupsport.Checker
+	checker groupsport.Checker // checker stores the checker value.
 }
 
 // NewAuthorizer creates a ticket authorizer backed by groups permissions.
@@ -53,6 +53,7 @@ func (authorizer Authorizer) CanRevokePunishmentFromAppeal(
 	return authorizer.checkPunishment(ctx, actorID, punishmentID, groupsdomain.PermissionPunishmentsRevoke)
 }
 
+// checkTicket supports package behavior.
 func (authorizer Authorizer) checkTicket(
 	ctx context.Context,
 	actorID uuid.UUID,
@@ -62,6 +63,7 @@ func (authorizer Authorizer) checkTicket(
 	return authorizer.check(ctx, actorID, groupsdomain.ObjectTicket, objectID, permission)
 }
 
+// checkPunishment supports package behavior.
 func (authorizer Authorizer) checkPunishment(
 	ctx context.Context,
 	actorID uuid.UUID,
@@ -71,6 +73,7 @@ func (authorizer Authorizer) checkPunishment(
 	return authorizer.check(ctx, actorID, groupsdomain.ObjectPunishment, objectID, permission)
 }
 
+// check supports package behavior.
 func (authorizer Authorizer) check(
 	ctx context.Context,
 	actorID uuid.UUID,

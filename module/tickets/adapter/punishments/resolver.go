@@ -11,7 +11,7 @@ import (
 
 // Resolver resolves and mutates punishments for appeals.
 type Resolver struct {
-	service punishmentport.Service
+	service punishmentport.Service // service stores the service value.
 }
 
 // NewResolver creates a punishment resolver.

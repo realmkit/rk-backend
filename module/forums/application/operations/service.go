@@ -8,11 +8,11 @@ import (
 
 // Service manages forum operational use cases.
 type Service struct {
-	forums     port.ForumRepository
-	operations port.OperationsRepository
-	authorizer port.VisibilityAuthorizer
-	cache      port.ReadCache
-	events     emitter.Publisher
+	forums     port.ForumRepository      // forums stores the forums value.
+	operations port.OperationsRepository // operations stores the operations value.
+	authorizer port.VisibilityAuthorizer // authorizer stores the authorizer value.
+	cache      port.ReadCache            // cache stores the cache value.
+	events     emitter.Publisher         // events stores the events value.
 }
 
 // Dependencies contains operations service dependencies.

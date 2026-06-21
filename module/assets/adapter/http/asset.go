@@ -13,36 +13,36 @@ import (
 
 // uploadIntentRequest is the create upload intent request body.
 type uploadIntentRequest struct {
-	Namespace       domain.Namespace   `json:"namespace"`
-	Path            domain.VirtualPath `json:"path"`
-	Filename        domain.Filename    `json:"filename"`
-	DisplayName     string             `json:"display_name"`
-	Visibility      domain.Visibility  `json:"visibility"`
-	ContentType     string             `json:"content_type"`
-	SizeBytes       int64              `json:"size_bytes"`
-	CreatedByUserID *uuid.UUID         `json:"created_by_user_id"`
+	Namespace       domain.Namespace   `json:"namespace"`          // Namespace stores the namespace value.
+	Path            domain.VirtualPath `json:"path"`               // Path stores the path value.
+	Filename        domain.Filename    `json:"filename"`           // Filename stores the filename value.
+	DisplayName     string             `json:"display_name"`       // DisplayName stores the display name value.
+	Visibility      domain.Visibility  `json:"visibility"`         // Visibility stores the visibility value.
+	ContentType     string             `json:"content_type"`       // ContentType stores the content type value.
+	SizeBytes       int64              `json:"size_bytes"`         // SizeBytes stores the size bytes value.
+	CreatedByUserID *uuid.UUID         `json:"created_by_user_id"` // CreatedByUserID stores the created by user i d value.
 }
 
 // updateAssetRequest is the update asset request body.
 type updateAssetRequest struct {
-	Namespace   domain.Namespace   `json:"namespace"`
-	DisplayName string             `json:"display_name"`
-	Path        domain.VirtualPath `json:"path"`
-	Visibility  domain.Visibility  `json:"visibility"`
+	Namespace   domain.Namespace   `json:"namespace"`    // Namespace stores the namespace value.
+	DisplayName string             `json:"display_name"` // DisplayName stores the display name value.
+	Path        domain.VirtualPath `json:"path"`         // Path stores the path value.
+	Visibility  domain.Visibility  `json:"visibility"`   // Visibility stores the visibility value.
 }
 
 // uploadIntentResponse is the create upload intent response body.
 type uploadIntentResponse struct {
-	Asset     domain.Asset      `json:"asset"`
-	UploadURL uploadURLResponse `json:"upload"`
+	Asset     domain.Asset      `json:"asset"`  // Asset stores the asset value.
+	UploadURL uploadURLResponse `json:"upload"` // UploadURL stores the upload u r l value.
 }
 
 // uploadURLResponse describes a signed upload request.
 type uploadURLResponse struct {
-	Method    string            `json:"method"`
-	URL       string            `json:"url"`
-	Headers   map[string]string `json:"headers"`
-	ExpiresAt time.Time         `json:"expires_at"`
+	Method    string            `json:"method"`     // Method stores the method value.
+	URL       string            `json:"url"`        // URL stores the u r l value.
+	Headers   map[string]string `json:"headers"`    // Headers stores the headers value.
+	ExpiresAt time.Time         `json:"expires_at"` // ExpiresAt stores the expires at value.
 }
 
 // createUploadIntent creates an upload intent.

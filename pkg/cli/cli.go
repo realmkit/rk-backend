@@ -27,16 +27,16 @@ import (
 
 // commandDeps contains root command dependencies.
 type commandDeps struct {
-	loadConfig    func() (config.Config, error)
-	newLogger     func(logger.Config) (*zap.Logger, error)
-	newServer     func(*zap.Logger, bool, ...server.Option) *fiber.App
-	serveServer   func(context.Context, *fiber.App, string, server.Config) error
-	openPostgres  func(context.Context, postgres.Config) (*gorm.DB, error)
-	closePostgres func(*gorm.DB) error
-	openRedis     func(context.Context, realmkitredis.Config) (*goredis.Client, error)
-	closeRedis    func(*goredis.Client) error
-	newStorage    func(context.Context, storage.Config) (storage.Store, error)
-	newRunner     func(*gorm.DB, *zap.Logger) migrations.Runner
+	loadConfig    func() (config.Config, error)                                        // loadConfig stores the load config value.
+	newLogger     func(logger.Config) (*zap.Logger, error)                             // newLogger stores the new logger value.
+	newServer     func(*zap.Logger, bool, ...server.Option) *fiber.App                 // newServer stores the new server value.
+	serveServer   func(context.Context, *fiber.App, string, server.Config) error       // serveServer stores the serve server value.
+	openPostgres  func(context.Context, postgres.Config) (*gorm.DB, error)             // openPostgres stores the open postgres value.
+	closePostgres func(*gorm.DB) error                                                 // closePostgres stores the close postgres value.
+	openRedis     func(context.Context, realmkitredis.Config) (*goredis.Client, error) // openRedis stores the open redis value.
+	closeRedis    func(*goredis.Client) error                                          // closeRedis stores the close redis value.
+	newStorage    func(context.Context, storage.Config) (storage.Store, error)         // newStorage stores the new storage value.
+	newRunner     func(*gorm.DB, *zap.Logger) migrations.Runner                        // newRunner stores the new runner value.
 }
 
 // Run executes the RealmKit CLI.

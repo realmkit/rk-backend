@@ -36,13 +36,13 @@ type Dependencies struct {
 
 // Service coordinates cron jobs.
 type Service struct {
-	repository   port.Repository
-	clock        port.Clock
-	handlers     map[string]port.Handler
-	workerID     string
-	lockDuration time.Duration
-	runTimeout   time.Duration
-	events       emitter.Publisher
+	repository   port.Repository         // repository stores the repository value.
+	clock        port.Clock              // clock stores the clock value.
+	handlers     map[string]port.Handler // handlers stores the handlers value.
+	workerID     string                  // workerID stores the worker i d value.
+	lockDuration time.Duration           // lockDuration stores the lock duration value.
+	runTimeout   time.Duration           // runTimeout stores the run timeout value.
+	events       emitter.Publisher       // events stores the events value.
 }
 
 // NewService creates a cron service.

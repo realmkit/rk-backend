@@ -12,7 +12,7 @@ import (
 
 // FileRepository stores version files in PostgreSQL.
 type FileRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewFileRepository creates a theme file repository.
@@ -80,7 +80,7 @@ func (repository FileRepository) FindByPath(
 
 // AssetRepository stores version assets in PostgreSQL.
 type AssetRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewAssetRepository creates a theme asset repository.
@@ -132,7 +132,7 @@ func (repository AssetRepository) ListByVersion(ctx context.Context, versionID u
 
 // ValidationIssueRepository stores validation diagnostics in PostgreSQL.
 type ValidationIssueRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewValidationIssueRepository creates a validation issue repository.
@@ -187,7 +187,7 @@ func (repository ValidationIssueRepository) ListByVersion(
 
 // SignatureRepository stores signature verification data in PostgreSQL.
 type SignatureRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewSignatureRepository creates a package signature repository.

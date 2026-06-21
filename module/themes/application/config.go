@@ -25,14 +25,14 @@ type Config struct {
 
 // SigningKeySeed is one configured package signing key.
 type SigningKeySeed struct {
-	KeyID       string `json:"key_id"`
-	Algorithm   string `json:"algorithm"`
-	PublicKey   string `json:"public_key"`
-	TrustLevel  string `json:"trust_level"`
-	Status      string `json:"status"`
-	NotBefore   string `json:"not_before"`
-	NotAfter    string `json:"not_after"`
-	Description string `json:"description"`
+	KeyID       string `json:"key_id"`      // KeyID stores the key i d value.
+	Algorithm   string `json:"algorithm"`   // Algorithm stores the algorithm value.
+	PublicKey   string `json:"public_key"`  // PublicKey stores the public key value.
+	TrustLevel  string `json:"trust_level"` // TrustLevel stores the trust level value.
+	Status      string `json:"status"`      // Status stores the status value.
+	NotBefore   string `json:"not_before"`  // NotBefore stores the not before value.
+	NotAfter    string `json:"not_after"`   // NotAfter stores the not after value.
+	Description string `json:"description"` // Description stores the description value.
 }
 
 // SeedSigningKeys upserts configured signing keys into persistence.

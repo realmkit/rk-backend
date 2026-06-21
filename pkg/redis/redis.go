@@ -12,7 +12,7 @@ type Option func(*settings)
 
 // settings contains Redis open settings.
 type settings struct {
-	client *goredis.Client
+	client *goredis.Client // client stores the client value.
 }
 
 // WithClient overrides the Redis client used by Open.

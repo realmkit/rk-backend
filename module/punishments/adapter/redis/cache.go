@@ -13,7 +13,7 @@ import (
 
 // Cache stores restriction check results in Redis.
 type Cache struct {
-	client *goredis.Client
+	client *goredis.Client // client stores the client value.
 }
 
 // NewCache creates a restriction cache.

@@ -61,8 +61,8 @@ type Option func(*settings)
 
 // settings contains idempotency middleware settings.
 type settings struct {
-	log *zap.Logger
-	ttl time.Duration
+	log *zap.Logger   // log stores the log value.
+	ttl time.Duration // ttl stores the ttl value.
 }
 
 // WithLogger configures structured idempotency logging.

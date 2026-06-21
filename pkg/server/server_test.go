@@ -47,6 +47,30 @@ func TestNewUsesDefaultIdempotencyStore(t *testing.T) {
 	}
 }
 
+// TestNewServesRootEntrypoint verifies browser visits to the service root are intentional.
+func TestNewServesRootEntrypoint(t *testing.T) {
+	development := New(nil, true)
+	production := New(nil, false)
+
+	devRes, err := development.Test(httptest.NewRequest(fiber.MethodGet, "/", nil), -1)
+	if err != nil {
+		t.Fatalf("development Test() error = %v", err)
+	}
+	defer devRes.Body.Close()
+	prodRes, err := production.Test(httptest.NewRequest(fiber.MethodGet, "/", nil), -1)
+	if err != nil {
+		t.Fatalf("production Test() error = %v", err)
+	}
+	defer prodRes.Body.Close()
+
+	if devRes.StatusCode != fiber.StatusFound || devRes.Header.Get("Location") != swagger.DocsPath {
+		t.Fatalf("development root status=%d location=%q, want docs redirect", devRes.StatusCode, devRes.Header.Get("Location"))
+	}
+	if prodRes.StatusCode != fiber.StatusNoContent {
+		t.Fatalf("production root status = %d, want %d", prodRes.StatusCode, fiber.StatusNoContent)
+	}
+}
+
 // TestNewConfiguresLargeHeaderBuffer verifies auth cookies do not break docs.
 func TestNewConfiguresLargeHeaderBuffer(t *testing.T) {
 	app := newApp(t, nil, true)

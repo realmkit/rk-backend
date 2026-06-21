@@ -21,12 +21,12 @@ var ErrUserNotFound = errors.New("user not found for admin seed grant")
 
 // Runner applies and validates global data seeds.
 type Runner struct {
-	db         *gorm.DB
-	source     Source
-	store      Store
-	log        *zap.Logger
-	executor   string
-	appVersion string
+	db         *gorm.DB    // db stores the db value.
+	source     Source      // source stores the source value.
+	store      Store       // store stores the store value.
+	log        *zap.Logger // log stores the log value.
+	executor   string      // executor stores the executor value.
+	appVersion string      // appVersion stores the app version value.
 }
 
 // Option configures a Runner.

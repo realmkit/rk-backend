@@ -12,24 +12,25 @@ import (
 	"github.com/realmkit/rk-backend/pkg/pagination"
 )
 
+// restrictionCacheTTL stores package state.
 const restrictionCacheTTL = 30 * time.Second
 
 // Dependencies contains punishment service dependencies.
 type Dependencies struct {
-	Definitions  port.DefinitionRepository
-	Cases        port.CaseRepository
-	Cache        port.RestrictionCache
-	Transactions port.TransactionRunner
-	Events       emitter.Publisher
+	Definitions  port.DefinitionRepository // Definitions stores the definitions value.
+	Cases        port.CaseRepository       // Cases stores the cases value.
+	Cache        port.RestrictionCache     // Cache stores the cache value.
+	Transactions port.TransactionRunner    // Transactions stores the transactions value.
+	Events       emitter.Publisher         // Events stores the events value.
 }
 
 // Service implements punishment use cases.
 type Service struct {
-	definitions  port.DefinitionRepository
-	cases        port.CaseRepository
-	cache        port.RestrictionCache
-	transactions port.TransactionRunner
-	events       emitter.Publisher
+	definitions  port.DefinitionRepository // definitions stores the definitions value.
+	cases        port.CaseRepository       // cases stores the cases value.
+	cache        port.RestrictionCache     // cache stores the cache value.
+	transactions port.TransactionRunner    // transactions stores the transactions value.
+	events       emitter.Publisher         // events stores the events value.
 }
 
 // NewService creates a punishment service.

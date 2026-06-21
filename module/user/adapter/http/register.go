@@ -31,5 +31,5 @@ func Register(router fiber.Router, services Services, authenticate fiber.Handler
 
 // handler contains user route dependencies.
 type handler struct {
-	services Services
+	services Services // services stores the services value.
 }

@@ -146,6 +146,54 @@
     }
   ],
   "paths": {
+    "/": {
+      "get": {
+        "operationId": "getRootEntrypoint",
+        "tags": [
+          "health"
+        ],
+        "summary": "Open the service entrypoint",
+        "description": "In development this redirects browsers to Swagger UI. In non-development environments it returns a lightweight service probe response.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AcceptHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "302": {
+            "description": "Development redirect to Swagger UI.",
+            "headers": {
+              "Location": {
+                "description": "Swagger UI path.",
+                "schema": {
+                  "type": "string",
+                  "example": "/docs"
+                }
+              }
+            }
+          },
+          "406": {
+            "$ref": "#/components/responses/NotAcceptable"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "operationId": "getRootHealth",

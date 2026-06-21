@@ -9,102 +9,102 @@ import (
 
 // threadSearchRow is a compact thread search row.
 type threadSearchRow struct {
-	ID           uuid.UUID
-	ForumID      uuid.UUID
-	AuthorUserID uuid.UUID
-	Title        string
-	Slug         string
-	CreatedAt    time.Time
+	ID           uuid.UUID // ID stores the i d value.
+	ForumID      uuid.UUID // ForumID stores the forum i d value.
+	AuthorUserID uuid.UUID // AuthorUserID stores the author user i d value.
+	Title        string    // Title stores the title value.
+	Slug         string    // Slug stores the slug value.
+	CreatedAt    time.Time // CreatedAt stores the created at value.
 }
 
 // postSearchRow is a compact post search row.
 type postSearchRow struct {
-	PostID       uuid.UUID
-	ThreadID     uuid.UUID
-	ForumID      uuid.UUID
-	AuthorUserID uuid.UUID
-	Title        string
-	Slug         string
-	Excerpt      string
-	CreatedAt    time.Time
+	PostID       uuid.UUID // PostID stores the post i d value.
+	ThreadID     uuid.UUID // ThreadID stores the thread i d value.
+	ForumID      uuid.UUID // ForumID stores the forum i d value.
+	AuthorUserID uuid.UUID // AuthorUserID stores the author user i d value.
+	Title        string    // Title stores the title value.
+	Slug         string    // Slug stores the slug value.
+	Excerpt      string    // Excerpt stores the excerpt value.
+	CreatedAt    time.Time // CreatedAt stores the created at value.
 }
 
 // threadIDRow is a compact active thread row.
 type threadIDRow struct {
-	ID uuid.UUID
+	ID uuid.UUID // ID stores the i d value.
 }
 
 // forumIDRow is a compact forum stats identity row.
 type forumIDRow struct {
-	ForumID uuid.UUID
+	ForumID uuid.UUID // ForumID stores the forum i d value.
 }
 
 // threadCounterRow is a stored thread counter row.
 type threadCounterRow struct {
-	ID                uuid.UUID
-	PostCount         int64
-	VisiblePostCount  int64
-	ReplyCount        int64
-	VisibleReplyCount int64
-	LikeCount         int64
+	ID                uuid.UUID // ID stores the i d value.
+	PostCount         int64     // PostCount stores the post count value.
+	VisiblePostCount  int64     // VisiblePostCount stores the visible post count value.
+	ReplyCount        int64     // ReplyCount stores the reply count value.
+	VisibleReplyCount int64     // VisibleReplyCount stores the visible reply count value.
+	LikeCount         int64     // LikeCount stores the like count value.
 }
 
 // postCounterRow is a stored post counter row.
 type postCounterRow struct {
-	ID        uuid.UUID
-	LikeCount int64
+	ID        uuid.UUID // ID stores the i d value.
+	LikeCount int64     // LikeCount stores the like count value.
 }
 
 // forumCounterRow is a stored forum counter row.
 type forumCounterRow struct {
-	ForumID            uuid.UUID
-	ThreadCount        int64
-	VisibleThreadCount int64
-	PostCount          int64
-	VisiblePostCount   int64
+	ForumID            uuid.UUID // ForumID stores the forum i d value.
+	ThreadCount        int64     // ThreadCount stores the thread count value.
+	VisibleThreadCount int64     // VisibleThreadCount stores the visible thread count value.
+	PostCount          int64     // PostCount stores the post count value.
+	VisiblePostCount   int64     // VisiblePostCount stores the visible post count value.
 }
 
 // threadExpectation contains source-of-truth thread counters.
 type threadExpectation struct {
-	PostCount         int64
-	VisiblePostCount  int64
-	ReplyCount        int64
-	VisibleReplyCount int64
+	PostCount         int64 // PostCount stores the post count value.
+	VisiblePostCount  int64 // VisiblePostCount stores the visible post count value.
+	ReplyCount        int64 // ReplyCount stores the reply count value.
+	VisibleReplyCount int64 // VisibleReplyCount stores the visible reply count value.
 }
 
 // forumExpectation contains source-of-truth forum counters.
 type forumExpectation struct {
-	ThreadCount        int64
-	VisibleThreadCount int64
-	PostCount          int64
-	VisiblePostCount   int64
+	ThreadCount        int64 // ThreadCount stores the thread count value.
+	VisibleThreadCount int64 // VisibleThreadCount stores the visible thread count value.
+	PostCount          int64 // PostCount stores the post count value.
+	VisiblePostCount   int64 // VisiblePostCount stores the visible post count value.
 }
 
 // threadPostCounterRow is a grouped thread post count.
 type threadPostCounterRow struct {
-	ThreadID         uuid.UUID
-	PostCount        int64
-	VisiblePostCount int64
+	ThreadID         uuid.UUID // ThreadID stores the thread i d value.
+	PostCount        int64     // PostCount stores the post count value.
+	VisiblePostCount int64     // VisiblePostCount stores the visible post count value.
 }
 
 // forumThreadCounterRow is a grouped forum thread count.
 type forumThreadCounterRow struct {
-	ForumID            uuid.UUID
-	ThreadCount        int64
-	VisibleThreadCount int64
+	ForumID            uuid.UUID // ForumID stores the forum i d value.
+	ThreadCount        int64     // ThreadCount stores the thread count value.
+	VisibleThreadCount int64     // VisibleThreadCount stores the visible thread count value.
 }
 
 // forumPostCounterRow is a grouped forum post count.
 type forumPostCounterRow struct {
-	ForumID          uuid.UUID
-	PostCount        int64
-	VisiblePostCount int64
+	ForumID          uuid.UUID // ForumID stores the forum i d value.
+	PostCount        int64     // PostCount stores the post count value.
+	VisiblePostCount int64     // VisiblePostCount stores the visible post count value.
 }
 
 // likeCounterRow is a grouped like count.
 type likeCounterRow struct {
-	ID    uuid.UUID
-	Count int64
+	ID    uuid.UUID // ID stores the i d value.
+	Count int64     // Count stores the count value.
 }
 
 // searchResult maps a thread row to a domain result.

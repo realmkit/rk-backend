@@ -23,8 +23,8 @@ const (
 
 // Hub stores active local WebSocket clients.
 type Hub struct {
-	mu      sync.Mutex
-	clients map[uuid.UUID]*client
+	mu      sync.Mutex            // mu stores the mu value.
+	clients map[uuid.UUID]*client // clients stores the clients value.
 }
 
 // NewHub creates a WebSocket hub.
@@ -104,14 +104,14 @@ func (handler handler) webSocket(conn *websocket.Conn) {
 
 // client is one WebSocket connection.
 type client struct {
-	id       uuid.UUID
-	conn     *websocket.Conn
-	ctx      context.Context
-	userID   uuid.UUID
-	scopes   map[string]domain.Scope
-	scopesMu sync.RWMutex
-	writeMu  sync.Mutex
-	authz    port.ScopeAuthorizer
+	id       uuid.UUID               // id stores the id value.
+	conn     *websocket.Conn         // conn stores the conn value.
+	ctx      context.Context         // ctx stores the ctx value.
+	userID   uuid.UUID               // userID stores the user i d value.
+	scopes   map[string]domain.Scope // scopes stores the scopes value.
+	scopesMu sync.RWMutex            // scopesMu stores the scopes mu value.
+	writeMu  sync.Mutex              // writeMu stores the write mu value.
+	authz    port.ScopeAuthorizer    // authz stores the authz value.
 }
 
 // handle handles one client message.
@@ -207,8 +207,8 @@ func (client *client) closeOnContext() {
 
 // socketMessage is a client WebSocket message.
 type socketMessage struct {
-	Type  string       `json:"type"`
-	Scope domain.Scope `json:"scope"`
+	Type  string       `json:"type"`  // Type stores the type value.
+	Scope domain.Scope `json:"scope"` // Scope stores the scope value.
 }
 
 // scopeKey returns a comparable scope key.

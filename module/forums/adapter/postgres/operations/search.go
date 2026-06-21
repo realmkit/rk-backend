@@ -18,7 +18,7 @@ import (
 
 // Repository runs forum search, repair, and counter flushes in PostgreSQL.
 type Repository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewRepository creates an operations repository.

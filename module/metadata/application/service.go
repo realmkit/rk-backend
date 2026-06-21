@@ -40,14 +40,14 @@ type Dependencies struct {
 
 // Service implements metadata application use cases.
 type Service struct {
-	definitions           port.MetafieldDefinitionRepository
-	values                port.MetafieldValueRepository
-	metaobjectDefinitions port.MetaobjectDefinitionRepository
-	metaobjectEntries     port.MetaobjectEntryRepository
-	owners                port.OwnerResolver
-	references            port.ReferenceResolver
-	policy                port.Policy
-	events                emitter.Publisher
+	definitions           port.MetafieldDefinitionRepository  // definitions stores the definitions value.
+	values                port.MetafieldValueRepository       // values stores the values value.
+	metaobjectDefinitions port.MetaobjectDefinitionRepository // metaobjectDefinitions stores the metaobject definitions value.
+	metaobjectEntries     port.MetaobjectEntryRepository      // metaobjectEntries stores the metaobject entries value.
+	owners                port.OwnerResolver                  // owners stores the owners value.
+	references            port.ReferenceResolver              // references stores the references value.
+	policy                port.Policy                         // policy stores the policy value.
+	events                emitter.Publisher                   // events stores the events value.
 }
 
 // NewService creates a metadata service.

@@ -13,7 +13,7 @@ import (
 
 // MembershipRepository stores memberships in PostgreSQL.
 type MembershipRepository struct {
-	store orm.Store
+	store orm.Store // store stores the store value.
 }
 
 // NewMembershipRepository creates a membership repository.

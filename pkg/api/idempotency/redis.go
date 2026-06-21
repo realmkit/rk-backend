@@ -28,8 +28,8 @@ var ErrEntryConflict = errors.New("idempotency entry fingerprint conflict")
 
 // RedisStore stores idempotency records in Redis.
 type RedisStore struct {
-	client *goredis.Client
-	scope  string
+	client *goredis.Client // client stores the client value.
+	scope  string          // scope stores the scope value.
 }
 
 // RedisOption changes RedisStore behavior.

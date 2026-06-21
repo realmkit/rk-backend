@@ -21,9 +21,9 @@ var schemaCache sync.Map
 
 // fieldSpec describes one leaf configuration field.
 type fieldSpec struct {
-	key          string
-	defaultValue string
-	hasDefault   bool
+	key          string // key stores the key value.
+	defaultValue string // defaultValue stores the default value value.
+	hasDefault   bool   // hasDefault stores the has default value.
 }
 
 // env returns the prefixed environment variable name for the field.

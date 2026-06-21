@@ -20,7 +20,7 @@ type Runner interface {
 
 // GormRunner implements Runner with GORM.
 type GormRunner struct {
-	db *gorm.DB
+	db *gorm.DB // db stores the db value.
 }
 
 // New creates a GORM transaction runner.

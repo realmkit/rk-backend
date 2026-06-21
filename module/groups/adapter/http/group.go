@@ -15,22 +15,22 @@ import (
 
 // groupRequest is the group create or update body.
 type groupRequest struct {
-	Key         domain.Key         `json:"key"`
-	Name        string             `json:"name"`
-	Description string             `json:"description"`
-	Color       domain.Color       `json:"color"`
-	Weight      int                `json:"weight"`
-	Status      domain.GroupStatus `json:"status"`
-	IconAssetID *uuid.UUID         `json:"icon_asset_id"`
+	Key         domain.Key         `json:"key"`           // Key stores the key value.
+	Name        string             `json:"name"`          // Name stores the name value.
+	Description string             `json:"description"`   // Description stores the description value.
+	Color       domain.Color       `json:"color"`         // Color stores the color value.
+	Weight      int                `json:"weight"`        // Weight stores the weight value.
+	Status      domain.GroupStatus `json:"status"`        // Status stores the status value.
+	IconAssetID *uuid.UUID         `json:"icon_asset_id"` // IconAssetID stores the icon asset i d value.
 }
 
 // groupListResponse contains one group page.
 type groupListResponse struct {
-	Items         []domain.Group `json:"items"`
-	NextPageToken string         `json:"next_page_token,omitempty"`
-	Query         string         `json:"query,omitempty"`
-	Sort          string         `json:"sort,omitempty"`
-	Direction     string         `json:"direction,omitempty"`
+	Items         []domain.Group `json:"items"`                     // Items stores the items value.
+	NextPageToken string         `json:"next_page_token,omitempty"` // NextPageToken stores the next page token value.
+	Query         string         `json:"query,omitempty"`           // Query stores the query value.
+	Sort          string         `json:"sort,omitempty"`            // Sort stores the sort value.
+	Direction     string         `json:"direction,omitempty"`       // Direction stores the direction value.
 }
 
 // createGroup creates a group.
